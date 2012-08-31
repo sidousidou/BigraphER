@@ -1,0 +1,15 @@
+BigraphER - Bigraph Evaluator & Rewriting
+http://dcs.gla.ac.uk/~michele/bigrapher.html
+
+Build instructions
+~~~~~~~~~~~~~~~~~~
+
+A native executable can be built with the following command
+  $ ocamlbuild bigrapher.native
+
+Running BigraphER
+~~~~~~~~~~~~~~~~~
+
+1. Install dot in your system (http://www.graphviz.org/)
+2. Add match/match.exe to your path
+3. Run _build/bigrapher.native --help to display a list of options
