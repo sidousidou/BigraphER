@@ -15,8 +15,7 @@
 (** {6 Controls} *)
 
 (** The type of bigraphical controls. *)
-type ctrl =
- | Ctrl of string * int
+type ctrl = Ctrl of string * int
 (** [Ctrl (s, ar)] creates a control of arity [ar] from string [s]. *)
 
 (* [sort ctrls] generates a sort for controls [ctrls]. The sort is encoded as
@@ -134,6 +133,14 @@ val string_of_ports : Ports.t -> string
 (** [ports_of_nodes ns] transform a set of nodes into a set of ports. *)
 val ports_of_nodes : Nodes.t -> Ports.t
 
+(** Construct a list of the cardinalities of the ports belonging to
+   the same node. Example: [(1,0);(1,1);(2,0)] -> [1;2] *)
+val card_ports : Ports.t -> int list
+
+(*
+(** Construct a list of lists of pairs representing a set of clauses. The first
+    element in every list has to be negated.*)
+val clauses_of_ports : int -> int -> Ports.t -> Ports.t -> (int * int) list list*)
 (** {6 Sets of integers} *)
 
 (** This module provides operations for sets of int.*)
@@ -216,10 +223,11 @@ sig
 	val elements : t -> elt list
 	val min_elt : t -> elt
 	val max_elt : t -> elt
-
 	val choose : t -> elt
 	val split : elt -> t -> t * bool * t
 end
+
+val string_of_iso : Iso.t -> string
 
 (** [get_i e i] returns the image via isomorphism [i] of element [e], i.e. 
     [i(e)].
@@ -252,6 +260,9 @@ val dom : Iso.t -> Int_set.t
 (** [codom i] returns the codomain of isomorphism [i].*)
 val codom : Iso.t -> Int_set.t
 
+(** [union_list l] computes the union of the isos in list [l]. *)
+val union_list : Iso.t list -> Iso.t
+
 (** [fix_num s] generates an isomorphism to fix the numbering of [s]: e.g. 
     [{2, 5, 6, 7} --> {(2,0), (5,1), (6,2), (7,3)}]*)
 val fix_num : Int_set.t -> Iso.t
@@ -262,6 +273,17 @@ val apply_nodes : Nodes.t -> Iso.t -> Nodes.t
 
 (** [apply_ports ps i] applies isomorphism [i] to set of ports [ps].*)
 val apply_ports : Ports.t -> Iso.t -> Ports.t
+
+(** [match_nodes t p] returns an iso from nodes in [p] to nodes in [t] having
+     different controls.*)
+val match_nodes: Nodes.t -> Nodes.t -> Iso.t
+
+(** [multiset_of_ports p] returns an isomrphism with domain the cardinality of
+    the port set of a node and with codomain the node indexes. *)
+val multiset_of_ports : Ports.t -> Iso.t
+
+(** [set_cart a b] returns the cartesian product of sets [a] and [b] *)
+val set_cart : Int_set.t -> Int_set.t -> Iso.t
 
 (** {6 Combinatorics} *)
 
@@ -288,5 +310,12 @@ val sub_multi : 'a list -> 'a list -> bool
 (** [count l f] returns a list with the sum of rates of each element 
     in [l]. Function [f] is a comparison function. *)
 val count : ('a * float) list -> ('a -> 'a -> bool) -> ('a * float) list 
+
+(** [cart_of_list l] returns the cartesian product of the elements of [l]. For instance,
+when input is [\[\[\[1\];\[2\]\]; \[\[3\];\[4\]\]\]] the result is 
+    [\[\[1;3\];\[1;4\];\[2;3\];\[2;4\]\]].*)
+val cart_of_list : 'a list list list -> 'a list list
+
+val  cart_of_list_iso : Iso.t list -> Iso.t list
 
 (**/**)

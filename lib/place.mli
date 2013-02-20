@@ -24,14 +24,18 @@ exception COMP_ERROR of (int * int)
 (** [string_of_pg p] returns a string representation of place graph [p]. *)
 val string_of_pg : pg -> string
 
+(** [snf_of_placing p] returns the normal form of  a placing. *)
+val snf_of_placing :  pg -> string
+
 (** [get_dot p] returns three strings expressing place graph [p] in dot format.
     The first two elements encode roots and sites shapes, the third
     encodes the node ranks and the fourth represents the adjacency matrix. *)
 val get_dot : pg -> string * string * string * string
 
-(* [match_string p] returns a triple which elements are the number of roots,
-    the number of sites and the adjacency matrix, respectively.*)
-(*val match_string : pg -> int * int * string*)
+(** [match_list t p] returns a list of non isomorphic nodes. Every element
+    takes the form [(i,l,j,k)] with [i] and [l] nodes of [p] and [j] and [k]
+    nodes of [t]. All indices are columns.*)
+val match_list : pg -> pg -> (int * int * int * int) list
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying 
     isomorphism [i] to [p].*)
@@ -115,22 +119,24 @@ val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
     *)
 val levels : pg -> pg * (Base.Int_set.t * int * pg) list
 
-(* REQUIRED for Big.fix_bug_roots and Big.fix_bug_sites *)
+(** {6 Misc} *)
 
-(*(** [children_of_roots p] returns a set of nodes which are children of a root.
- Nodes are counted from 0 to n-1. *)
-val children_of_roots : pg -> Base.Int_set.t
+(** [match_leaves t p] computes all the pairs of nodes [(i,j)] where [i] is a leaf
+    in [p] and [j] is not a leaf in [t].*)
+val match_leaves : pg -> pg -> Base.Iso.t
 
-(** [parents_of_sites p] returns a set of nodes which are parents of a site.
- Nodes are counted from 0 to n-1. *)
-val parents_of_sites : pg -> Base.Int_set.t
+(** Dual of {!Place.match_leaves}. *)
+val match_orphans : pg -> pg -> Base.Iso.t
 
-(** [siblings p i] returns the set of nodes having a parent in common with node
- [i]. Nodes and [i] are counted from 0 to n-1. *)
-val siblings : pg -> int -> Base.Int_set.t
+(** [match_sites t p] computes all the pairs of nodes [(i,j)] where [i] and [j]
+    have a different number of siblings. *)
+val match_sites : pg -> pg -> Base.Iso.t
 
-(** [partners p i] returns the set of nodes having a child in common with node
- [i]. Nodes and [i] are counted from 0 to n-1. *)
-val partners : pg -> int -> Base.Int_set.t*)
+(** Dual of {!Place.match_sites}.*)
+val match_roots : pg -> pg -> Base.Iso.t
+
+(** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is
+    valid. [t_trans] is the transitive closure of [t]. *)
+val is_match_valid : pg -> pg -> Matrix.bmatrix -> Base.Iso.t -> bool
 
 (**/**)

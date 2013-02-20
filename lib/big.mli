@@ -35,6 +35,12 @@ exception CTRL_ERROR of int * Link.Face.t
     domain of definition. *)
 exception ISO_ERROR of int * int
 
+(** Raised when there are no matches.*)
+exception NO_MATCH
+
+(** Raised when the matching pattern has no nodes. *)
+exception INF_MATCHES
+
 (** {6 Functions on interfaces} *)
 
 (** [inter_equals a b] is [true] if [a] and [b] are equal.*)
@@ -53,6 +59,9 @@ val face_of_inter : inter -> Link.Face.t
 
 (** [string_of_bg b] returns a string representation of bigraph [b]. *)
 val string_of_bg: bg -> string
+
+(** [snf b] returns a the normal form of bigraph [b].*)
+val snf: bg -> string
 
 (** [get_dot b i] returns a string expressing bigraph [b] named [i] in 
     dot format. *)
@@ -182,15 +191,22 @@ val decomp :  bg -> bg -> Base.Iso.t -> Base.Iso.t -> bg * bg * bg
 (** [levels b] computes the decomposition in levels of [b]. *)
 val levels : bg -> bg list
 
-(*val equals : bg -> bg -> out_channel -> in_channel -> bool*)
-(*val norm*)
+(** {6 Matching} *)
 
-(* Matching string*)
-(*val match_string : bg -> string
+(** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false] otherwise.*)
+val occurs : bg -> bg ->  bool
 
-val occurrences : bg -> bg -> out_channel -> in_channel -> (Base.Iso.t * Base.Iso.t) list
+(** [occurrence t p] returns a pair of isomorphisms [(i,j)] if pattern [p] occurs in target 
+    [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
+    @raise NO_MATCH when there is no match. 
+    @raise INF_MATCHES when [p] has an empty node set.*)
+val occurrence : bg -> bg ->  Base.Iso.t * Base.Iso.t
 
-val occurrence : bg -> bg -> out_channel -> in_channel -> Base.Iso.t * Base.Iso.t
+(** [occurrences t p] returns a list of pairs of isomorphisms.
+    @raise INF_MATCHES when [p] has an empty node set. *)
+val occurrences : bg -> bg -> (Base.Iso.t * Base.Iso.t) list
 
-val occurs : bg -> bg -> out_channel -> in_channel -> bool*)
+(** [equals a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise.*)
+val equals : bg -> bg -> bool
 
+(**/**)

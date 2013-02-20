@@ -47,7 +47,7 @@ module Face :
 type edg = {
   i: Face.t; (** Inner face *)
   o: Face.t; (** Outer face *)
-  p: Base.Ports.t (** Set of ports *)
+  p: Base.Ports.t; (** Set of ports *)
   }
   
 (** This module provides set operations for link graphs. *)
@@ -98,6 +98,9 @@ val string_of_face : Face.t -> string
 
 (** [string_of_lg l] returns a string representation of link graph [l].*)
 val string_of_lg : Lg.t -> string
+
+(** [snf_of_linking l] Returns the normal form of linking [l].*)
+val snf_of_linking : Lg.t -> string
 
 (** [get_dot l] returns four strings for the dot representation of link graph
     [l]. The first two elements represent inner and outer names shape
@@ -181,5 +184,27 @@ val decomp : Lg.t -> Lg.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.
     by {!Place.levels}. The output is a wiring and a list of
     identities.*)
 val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
+
+(** {6 Misc} *)
+
+(** [close_edges l]  returns a pair [(h, i)] in which [h] is the set of 
+    closed edges of [l] and [i] is an iso between the indices of [l] and [h]. *)
+val close_edges : Lg.t -> Lg.t
+
+val match_edges : Lg.t -> Lg.t -> Base.Iso.t -> ((int * int) * Base.Iso.t) list * (int * int * int * int) list * Base.Iso.t
+
+val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t
+
+val match_peers : Lg.t -> Lg.t -> int -> int -> (int * int * int * int) list 
+
+val is_match_valid : Lg.t -> Lg.t -> Base.Iso.t -> bool 
+
+(*(** Returns the pairs of nodes that can't be matched.*)
+ val match_open : Lg.t -> Lg.t -> Base.Iso.t*)
+
+(** Returns a par of isos and a list of clauses: nodes and close edges that can't be 
+    matched, respectively. A clause is a list of pairs.*)
+(*val match_close : Lg.t -> Lg.t -> 
+  (int * int * int * int) list * Base.Iso.t * (int * int) list list*)
 
 (**/**)

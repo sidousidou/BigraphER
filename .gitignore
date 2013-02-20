@@ -1,0 +1,12 @@
+_build/*
+old/*
+tests/*
+*~
+*.byte
+*.native
+*.docdir
+*.log
+log*
+massif*
+gmon.out
+out*
