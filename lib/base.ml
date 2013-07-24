@@ -131,6 +131,22 @@ let card_ports p =
   List.fast_sort (fun a b -> a - b) 
     (Iso.fold (fun (card, id) acc -> card :: acc) (multiset_of_ports p) [])
 
+(* Construct a list of control strings [AA;BBBB;C]*)
+let type_of_ports p n =
+  let type_of_ctrl c =
+    match c with
+    | Ctrl(t, _) -> t in
+  List.fast_sort compare (List.map snd (Ports.fold (fun (i, _) acc ->
+    let c = type_of_ctrl (ctrl_of_node i n) in
+    let (l, r) = List.partition (fun (v, _) -> v = i) acc in
+    match l with
+    | [] -> (i, c) :: acc
+    | [(_, s)] -> (i, s ^ c) :: r) p []))
+
+(* Construct a list of node identifiers (with duplicates)*)
+(*let card_of_ports p = 
+  List.fast_sort compare (List.map fst (Ports.elements p))*)
+
 (*
 (* Given a pair (i,j) of node ids with i in the pattern and j in the 
    target and two port sets from close edges in the pattern and the target,
@@ -357,9 +373,9 @@ let count l f =
      in aux l f [] 
 
 let get_dot ns =
-  Nodes.fold (fun (i, c) buff ->
+  Nodes.fold (fun (i, Ctrl (c, _)) buff ->
     sprintf "%sv%d [label=\"%s\", fontname=Arial];\n" (*, shape=circle*)
-      buff i (string_of_ctrl c)) ns ""
+      buff i c) ns ""
 
 (* build the list of all the possible isos from a to b (assumed of equal length)*)    
 (*let list_isos (a : 'a list) (b : 'b list) =
@@ -414,8 +430,19 @@ let cart_of_list_iso l =
   List.map of_list (cart_of_list (List.map (fun i ->
     List.map (fun pair -> [pair]) (Iso.elements i)) l))
 
-
 let string_of_iso iso = 
   sprintf "{%s}"
     (String.concat ", " (List.map (fun (x, y) ->
       sprintf "(%d,%d)" x y) (Iso.elements iso)))
+
+let is_id iso = 
+  Iso.for_all (fun (i, j) -> i = j) iso
+
+(* input: 
+   i : P -> T
+   autos : P -> P *)
+let gen_isos (i, e) autos =
+  let apply a iso = 
+    Iso.fold (fun (i, j) acc ->
+      Iso.add (get_i i a, j) acc) iso Iso.empty in
+  List.map (fun (a_i, a_e) -> (apply a_i i, apply a_e e)) autos

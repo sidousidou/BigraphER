@@ -9,6 +9,10 @@ type pg = {r: int; n: int; s: int; m: bmatrix}
 (* Raised by comp. The elements are (sites, roots) *)
 exception COMP_ERROR of (int * int) 
 
+(* Not exposed *)
+(*exception EPI of bool
+exception MONO of bool*)
+
 (* String representation *)
 let string_of_pg p =
   sprintf "%d %d %d\n%s\n" p.r p.n p.s (to_string p.m)
@@ -18,29 +22,33 @@ let match_string p = (p.r, p.s, to_string p.m)
 
 (* Apply isomorphism *)  
 let apply_iso i p =
-  {r = p.r;
-   n = p.n;
-   s = p.s;
-   m = Matrix.apply_iso i p.m p.r}
+  { r = p.r;
+    n = p.n;
+    s = p.s;
+    m = Matrix.apply_iso i p.m p.r
+  }
 
 (* Elementary place graphs *)
 let elementary_id n =
-  {r = n;
-   n = 0;
-   s = n;
-   m = diag n}
+  { r = n;
+    n = 0;
+    s = n;
+    m = diag n
+  }
     
 let elementary_merge n =
-  {r = 1;
-   n = 0;
-   s = n;
-   m = row_1 n}
+  { r = 1;
+    n = 0;
+    s = n;
+    m = row_1 n
+  }
     
 let elementary_split n =
-  {r = n;
-   n = 0;
-   s = 1;
-   m = col_1 n}
+  { r = n;
+    n = 0;
+    s = 1;
+    m = col_1 n
+  }
 
 let id0 = elementary_id 0
 
@@ -49,16 +57,18 @@ let one = elementary_merge 0
 let zero = elementary_split 0
 
 let elementary_sym m n =
-  {r = m + n;
-   n = 0;
-   s = m + n;
-   m = stack (append (make n m) (diag n)) (append (diag m) (make m n))}
+  { r = m + n;
+    n = 0;
+    s = m + n;
+    m = stack (append (make_0 n m) (diag n)) (append (diag m) (make_0 m n))
+  }
     
 let elementary_ion =
-  {r = 1;
-   n = 1;
-   s = 1;
-   m = diag 2}
+  { r = 1;
+    n = 1;
+    s = 1;
+    m = diag 2
+  }
 
 (* Parse a placing *)
 let parse_placing l r =
@@ -67,36 +77,54 @@ let parse_placing l r =
    n = 0; 
    s = List.length l;
    m = v}
+
+(* placing equality *)
+let equal_placing a b =
+  (a.r = b.r) && (a.s = b.s) && (a.m = b.m)
+
+(* placing compare *)  
+let compare_placing a b =
+  let x = a.r - b.r in
+  match x with
+    | 0 -> (let x = a.s - b.s in
+	    match x with
+	      | 0 -> compare a.m b.m
+	      | _ -> x)
+    | _ -> x
     
-(* Tensor product: A x B (indeces in the right handside are increased) *)
+(* Tensor product: A x B (indices in the right handside are increased) *)
 let tens a b =
   let (m_s, m_n, m_v, m_r) = split a.m a.r a.n
   and (n_s, n_n, n_v, n_r) = split b.m b.r b.n in
   let res = 
     stack
-      (append m_s (append (make a.r b.n) (append m_n (make a.r b.s))))
+      (append m_s (append (make_0 a.r b.n) (append m_n (make_0 a.r b.s))))
       (stack
-	 (append (make b.r a.n) (append n_s (append (make b.r a.s) n_n)))
+	 (append (make_0 b.r a.n) (append n_s (append (make_0 b.r a.s) n_n)))
 	 (stack
-            (append m_v (append (make a.n b.n) (append m_r (make a.n b.s))))
-            (append (make b.n a.n) (append n_v 
-				      (append (make b.n a.s) n_r))))) in
-  {r = a.r + b.r;
-   n = a.n + b.n;
-   s = a.s + b.s;
-   m = res}
-
-(* Composition: G o F (indeces in the right handside are increased) *)
+            (append m_v (append (make_0 a.n b.n) (append m_r (make_0 a.n b.s))))
+            (append (make_0 b.n a.n) (append n_v 
+					(append (make_0 b.n a.s) n_r))))) in
+  { r = a.r + b.r;
+    n = a.n + b.n;
+    s = a.s + b.s;
+    m = res
+  }
+    
+(* Composition: G o F (indices in the right handside are increased) *)
 let comp g f =
+  (*printf "COMP\na:\n%s\nb:\n%s\n" (string_of_pg g) (string_of_pg f);*)
   if g.s = f.r then
     let (a, b, _, _) = split g.m (g.r + g.n) g.n
     and (c, _, d, _) = split f.m f.r (f.n + f.s) in
     let res =
-      stack (append a (mul b c)) (append (make f.n g.n) d) in
-    {r = g.r;
-     n = g.n + f.n;
-     s = f.s;
-     m = res}
+      stack (append a (mul b c)) (append (make_0 f.n g.n) d) in
+    (*printf "res:\n%s\n" (to_string res);*)
+    { r = g.r;
+      n = g.n + f.n;
+      s = f.s;
+      m = res
+    }
   else raise (COMP_ERROR (g.s, f.r))
 
 (* Is p an identity? *)
@@ -105,6 +133,8 @@ let is_id p =
   | {r = x; n = 0; _} -> p.m = diag x
   | _ -> false
 
+let is_plc p = p.n = 0
+  
 (* Is p monomorphic?: no two sites are siblings and no site is an orphan *)
 let is_mono p =
   (* Orphan sites? *)  
@@ -183,7 +213,22 @@ let partners p j =
   Int_set.remove j (Int_set.fold (fun j acc ->
     Int_set.union acc (Int_set.filter (fun j -> 
       j >= 0) (off (-p.r) (prn p.m j)))) chi Int_set.empty)
-    
+
+(* Equivalence class *)
+(*let part_root_class p = 
+  Int_set.fold (fun r acc -> 
+    let c = chl p.m r in
+    List.fold_left (fun acc s ->
+      if Int_set.equal c (chl p.m (Int_set.singleton s)) then begin
+	(Int_set.add r s) :: acc
+      end else begin 
+	s :: acc
+      end
+    ) [] acc
+  ) (of_int p.r) [] *)
+
+(* Dual *)
+
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: t -> p. The result is context c, id, d, and nodes in c and d 
    expressed as rows of t. Pattern p is mono and epi.
@@ -194,63 +239,68 @@ let decomp t p iso =
   (* Nodes (rows) of target used for p' *)
   let v_p = off t.r (codom iso) in
   (* Nodes (rows) of target used for context c *)
-  let v_c =
+  let v_c = 
     Int_set.filter (fun i ->
       i > t.r) (Int_set.diff (anc t (codom iso)) v_p) in
   (* Nodes (rows) of target used for argument d *) 
   let v_d = Int_set.diff v_t (Int_set.union v_c v_p) in
-  (* Iso from nodes or roots (rows) of target to indeces from 0.
+  (* Iso from nodes or roots (rows) of target to indices from 0.
      Domain is the set of elements being in c and having a child
      in d. Codomain is the set of sites. *)
-  let (iso_id, j) =
+  let iso_id, _ =
     Int_set.fold (fun i (iso, k) ->
       Int_set.fold (fun j (acc, k) ->
         if (j > t.n) || Int_set.mem (j + t.r) v_d
         then (Iso.add (i, k) acc, k + 1) 
-        else (acc, k)) (chl t.m i) (iso, k)) v_c (Iso.empty, 0) in
+        else (acc, k)) (chl t.m i) (iso, k)
+    ) (Int_set.union v_c (of_int t.r)) (Iso.empty, 0) in
+  (*printf "iso_id: %s\n" (string_of_iso iso_id);*)
   (* Interface id *)
-  let j = if iso_id = Iso.empty then 0 else j + 1 in 
+  let j = Iso.cardinal iso_id in
+    (* if iso_id = Iso.empty then 0 else j + 1 in *) 
   (* Context c *)      
-  let (r_c, n_c, s_c) = (t.r, Int_set.cardinal v_c, p.r + j) in   
+  let (r_c, n_c, s_c) = (t.r, Int_set.cardinal v_c, p.r + j) in
+  (*printf "context c = (%d, %d, %d)\n" r_c n_c s_c;*)
   (* Parameter d *)
   let (r_d, n_d, s_d) = (p.s + j, Int_set.cardinal v_d, t.s) in
+  (*printf "parameter d = (%d, %d, %d)\n" r_d n_d s_d;*)
   (* Context c matrix *)
-  let m_c = make (r_c + n_c) (n_c + s_c)
+  let m_c = make_0 (r_c + n_c) (n_c + s_c)
   (* Iso from columns in c to rows in t *)
   and iso_c = inverse (fix_num v_c) in
-  (* MOVE TO MODULE MATRIX *)
-  for i = 0 to r_c + n_c - 1 do
+    for i = 0 to r_c + n_c - 1 do
     let new_i =
-      if i < r_c then
-        (* Root *)
-        i
-      else
-        (* Node *)
-        get_i (i - r_c) iso_c in
-    for j = 0 to n_c + s_c - 1 do
+      if i < r_c then i else get_i (i - r_c) iso_c in
+    (*printf "new_i = %d\n" new_i;*)
+    for j = 0 to n_c + p.r - 1 do
       let new_j =
         if j < n_c then
           (* Node *)
           (get_i j iso_c) - t.r
-        else if j < (n_c + p.r) then
+        else (*if j < (n_c + p.r) then*)
           (* Site to pattern *)
-          (* p epi -> Roots in p have one child *)
-          get_i (Int_set.choose (chl p.m (j - n_c))) iso 
-        else
+	  Int_set.choose (apply (Int_set.filter (fun x ->
+	    x < p.n) (chl p.m (j - n_c))) iso)
+	(*else
           (* Site to id *)
-          (get_inv_i (j - n_c - p.r) iso_id) - t.r in
+          (get_inv_i (j - n_c - p.r) iso_id) - t.r*) in
+      (*printf "new_j = %d\n" new_j;*)
       m_c.{i,j} <- t.m.{new_i,new_j}
     done
-  done;  
+  done;
+  (* edges to j *)
+  Iso.iter (fun (i, j) ->
+    let new_i = if i < r_c then i else get_i (i - r_c) iso_c in 
+    m_c.{new_i, j + n_c + p.r} <- 1) iso_id;
   (* Parameter d matrix*)
-  let m_d = make (r_d + n_d) (n_d + s_d)
+  let m_d = make_0 (r_d + n_d) (n_d + s_d)
   (* Iso from columns in d to columns in t *)
   and iso_d =  inverse (fix_num (off (-t.r) v_d)) in
   for i = 0 to r_d + n_d - 1 do
     let new_i =
       if i < p.s then
         (* Root to pattern *)
-        (* p mono -> Sites in p have one parent *)
+        (*NOT TRUE!! p mono -> Sites in p have one parent *)
         (get_i ((Int_set.choose (prn p.m (i + p.n))) - p.r) iso) + t.r
       else if i < r_d then
         (* Root to id *)
@@ -389,7 +439,7 @@ let get_dot p =
           else
             (* Site *)
             sprintf "s%d" (j - p.n) in             
-        out := !out ^ (sprintf "%s -> %s;\n" new_i new_j)
+        out := !out ^ (sprintf "%s -> %s [arrowhead=\"vee\" arrowsize=0.5];\n" new_i new_j)
       else ()
     done
   done;
@@ -409,6 +459,15 @@ let snf_of_placing p =
   done;
   sprintf "([%s],%d)" (String.concat "," !out) p.r  
 
+(* Counts the number of edges in the DAG *)
+let edges p =
+  let e = ref 0 in
+  for i = 0 to p.r + p.n - 1 do
+    for j = 0 to p.n + p.s - 1 do
+      e := p.m.{i,j} + !e
+    done
+  done;
+  !e
 
 (* Returns a list of pairs of non-iso nodes. Every node is expressed as a 
    pair of indices. *) (* USE ISO instead*)
@@ -419,7 +478,7 @@ let match_list t p =
       for j = t.r to t.r + t.n - 1 do
         for k = 0 to t.n - 1 do
           if p.m.{i,l} <> t.m.{j,k} then
-            res := (i - p.r, l, j - t.r, k):: !res
+            res := (i - p.r, l, j - t.r, k) :: !res
           else ()
         done
       done
@@ -427,6 +486,40 @@ let match_list t p =
   done;
   !res          
 
+let match_root_nodes a b =
+  let res = ref [] in
+  for i = 0 to a.r - 1 do
+    for l = 0 to a.n - 1 do
+      for k = 0 to b.n - 1 do
+        if a.m.{i,l} <> b.m.{i,k} then
+          res := (l, k) :: !res
+        else ()
+      done
+    done
+  done;
+  !res          
+
+let match_nodes_sites a b =
+  let res = ref [] in
+  for i = a.r to a.r + a.n - 1 do
+    for j = b.r to b.r + b.n - 1 do
+      for k = a.n to a.n + a.s - 1 do
+        if a.m.{i,k} <> b.m.{j,k} then
+          res := (i - a.r, j - b.r) :: !res
+        else ()
+      done
+    done
+  done;
+  !res          
+
+let compare_roots_sites a b =
+  let (_, a_s, _, _) = split a.m a.r a.n
+  and (_, b_s, _, _) = split b.m b.r b.n in
+  compare a_s b_s
+
+let match_roots_sites a b = 
+  (compare_roots_sites a b) = 0
+  
 (* Returns the set of nodes (columns) having at least one site child *)
 let nodes_site_child b = 
   Int_set.filter (fun j ->
@@ -457,7 +550,7 @@ let match_orphans t p =
     Iso.union acc (Int_set.fold (fun j acc ->
       Iso.add (i,j) acc) non_orphans_t Iso.empty)) orphans_p Iso.empty 
 
-(* Add easy blocking pairs, Iso checking of the siblings and partenrs is left out *)
+(* Add easy blocking pairs, Iso checking of the siblings and partners is left out *)
 let match_sites t p =
   let n_p =  nodes_site_child p 
   and n_t = of_int t.n in

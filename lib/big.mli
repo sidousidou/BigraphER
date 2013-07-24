@@ -39,12 +39,12 @@ exception ISO_ERROR of int * int
 exception NO_MATCH
 
 (** Raised when the matching pattern has no nodes. *)
-exception INF_MATCHES
+exception NODE_FREE
 
 (** {6 Functions on interfaces} *)
 
-(** [inter_equals a b] is [true] if [a] and [b] are equal.*)
-val inter_equals : inter -> inter -> bool
+(** [inter_equal a b] is [true] if [a] and [b] are equal.*)
+val inter_equal : inter -> inter -> bool
 
 (** [string_of_inter f] returns a string representation of interface [f]. *)
 val string_of_inter: inter -> string
@@ -155,6 +155,9 @@ val nest : bg -> bg -> bg
     @raise SHARING_ERROR if [psi] is not a placing. *)
 val share : bg -> bg -> bg -> bg
 
+(** [close f b] closes names in [f].*)
+val close : Link.Face.t -> bg -> bg
+
 (** {6 Predicates} *)
 
 (** [is_id b] returns [true] if bigraph [b] is an identity, [false] otherwise.*)
@@ -191,6 +194,14 @@ val decomp :  bg -> bg -> Base.Iso.t -> Base.Iso.t -> bg * bg * bg
 (** [levels b] computes the decomposition in levels of [b]. *)
 val levels : bg -> bg list
 
+(** {6 Comparison} *)
+
+(** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise.*)
+val equal : bg -> bg -> bool
+
+(** [compare] function for bigraphs. *)
+val compare : bg -> bg -> int
+
 (** {6 Matching} *)
 
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false] otherwise.*)
@@ -199,14 +210,14 @@ val occurs : bg -> bg ->  bool
 (** [occurrence t p] returns a pair of isomorphisms [(i,j)] if pattern [p] occurs in target 
     [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
     @raise NO_MATCH when there is no match. 
-    @raise INF_MATCHES when [p] has an empty node set.*)
+    @raise NODE_FREE when [p] has an empty node set.*)
 val occurrence : bg -> bg ->  Base.Iso.t * Base.Iso.t
 
 (** [occurrences t p] returns a list of pairs of isomorphisms.
-    @raise INF_MATCHES when [p] has an empty node set. *)
+    @raise NODE_FREE when [p] has an empty node set. *)
 val occurrences : bg -> bg -> (Base.Iso.t * Base.Iso.t) list
 
-(** [equals a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise.*)
-val equals : bg -> bg -> bool
+(** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
+val auto : bg -> (Base.Iso.t * Base.Iso.t) list
 
 (**/**)

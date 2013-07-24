@@ -10,18 +10,23 @@ type bmatrix = (int, int8_unsigned_elt, c_layout) Array2.t
 let make rows cols =
   Array2.create int8_unsigned c_layout rows cols
 
+(* Create an empty matrix*)
+let make_0 rows cols = 
+  let m = make rows cols in
+  Array2.fill m 0;
+  m
+
 (* String representation. 0 = false and 1 = true. *)
 let to_string m =
-  let buff = Buffer.create (2 * (Array2.dim1 m) * (Array2.dim2 m)) in
-  for i = 0 to (Array2.dim1 m) - 1 do  
-    for j = 0 to (Array2.dim2 m) - 2 do
-      Buffer.add_string buff (sprintf "%d " m.{i,j})      
+  let buff = ref [] in
+  for i = (Array2.dim1 m) - 1 downto 0 do
+    let row_buff = ref [] in
+    for j = (Array2.dim2 m) - 1 downto 0 do
+      row_buff := (sprintf "%d" m.{i,j}) :: !row_buff      
     done;
-    Buffer.add_string buff (sprintf "%d\n" m.{i,(Array2.dim2 m) - 1})
+    buff := (String.concat " " !row_buff) :: !buff
   done;
-  match Buffer.length buff with
-    | 0 -> ""
-    | l -> Buffer.sub buff 0 (l - 1)
+  String.concat "\n" !buff
 
 let row_1 n =
   let m = make 1 n in
@@ -90,8 +95,9 @@ let append a b =
 (* Boolean matrix multiplication 
    raise Assert_failure   *)
 let mul a b =
+  (*printf "MUL\na:\n%s\nb:\n%s\n" (to_string a) (to_string b);*)
   assert (Array2.dim2 a = Array2.dim1 b);
-  let m = make (Array2.dim1 a) (Array2.dim2 b) in
+  let m = make_0 (Array2.dim1 a) (Array2.dim2 b) in
   for i = 0 to (Array2.dim1 a) - 1 do
     for j = 0 to (Array2.dim2 b) - 1 do
       for k = 0 to (Array2.dim1 b) - 1 do
@@ -99,6 +105,7 @@ let mul a b =
       done;
     done;
   done;
+  (*printf "res:\n%s\n" (to_string m);*)
   m
 
 (*    

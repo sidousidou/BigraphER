@@ -14,15 +14,21 @@ exception SHARING_ERROR
 exception CTRL_ERROR of int * Link.Face.t
 exception ISO_ERROR of int * int (* number of nodes, size domain *)
 exception NO_MATCH
-exception INF_MATCHES
+exception NODE_FREE
+(*exception INF_MATCHES of Iso.t * Iso.t*)
 
-  
 let inner b = Inter (b.p.Place.s, Link.inner b.l)
   
 let outer b = Inter (b.p.Place.r, Link.outer b.l)
     
-let inter_equals (Inter (i, n)) (Inter (j, m)) =
+let inter_equal (Inter (i, n)) (Inter (j, m)) =
   (i = j) && (Link.Face.equal n m)
+
+let inter_compare (Inter (i, n)) (Inter (j, m)) =
+  let x = i - j in
+  match x with
+  | 0 -> Link.Face.compare n m
+  | _ -> x
 
 let ord_of_inter (Inter (i, _)) = i
 
@@ -31,7 +37,10 @@ let face_of_inter (Inter (_, f)) = f
 let string_of_inter (Inter (n, f)) =
   sprintf "<%d, %s>" n (Link.string_of_face f)
 
-    
+let string_of_bg b =
+  sprintf "%s\n%s%s" (string_of_nodes b.n) (Place.string_of_pg b.p)
+    (Link.string_of_lg b.l)    
+
 let id (Inter (m, i)) =
   {n = Nodes.empty;
    p = Place.elementary_id m;
@@ -104,7 +113,7 @@ let placing l r f =
 let is_plc b =
   (Link.Lg.equal b.l Link.id_empty) &&
   (Nodes.cardinal b.n = 0) &&
-  (b.p.Place.n = 0)
+  (Place.is_plc b.p)
   
 (* Empty place graph and no nodes in the link graph. *)
 let is_wir b =
@@ -133,13 +142,16 @@ let ppar a b =
   
 let ppar_of_list bs =
   List.fold_left (fun acc b -> ppar acc b) id_eps bs
+
+let tens_of_list bs = 
+  List.fold_left (fun acc b -> tens acc b) id_eps bs
   
 let par a b =
   let p = ppar a b in
   let out_p = outer p in 
   comp (tens (merge (ord_of_inter out_p))
-          (id (Inter (0, face_of_inter out_p)))
-    ) p
+          (id (Inter (0, face_of_inter out_p)))) 
+    p
   
 let par_of_list bs =
   List.fold_left (fun acc b -> par acc b) id_eps bs
@@ -153,11 +165,15 @@ let share f psi g =
   if is_plc psi
   then comp (comp g (tens psi (id (Inter (0, face_of_inter (outer f)))))) f
   else raise SHARING_ERROR
-  
-let string_of_bg b =
-  sprintf "%s\n%s%s" (string_of_nodes b.n) (Place.string_of_pg b.p)
-    (Link.string_of_lg b.l)    
-  
+
+(* not checking if f is a subset of outern b names *)
+let close f b =   
+  let g = Link.Face.diff (face_of_inter (outer b)) f 
+  and n = ord_of_inter (outer b) 
+  and cs = tens_of_list (List.map (fun n ->
+    closure (Link.Face.singleton n)) (Link.Face.elements f)) in
+  comp (tens cs (id (Inter (n, g)))) b
+    
 let is_mono b =
   (Place.is_mono b.p) && (Link.is_mono b.l)
   
@@ -281,7 +297,7 @@ let snf b =
 let init_vars r c solver =
   let m = Array.make_matrix r c 0 in
   for i = 0 to r - 1 do
-    for j = 0 to c -1 do
+    for j = 0 to c - 1 do
       m.(i).(j) <- solver#new_var 
     done;
   done;
@@ -318,17 +334,6 @@ let add_bijection v n m solver =
     done;
   done           
 
-(* check clauses with only negation or empty *)
-(* list of clauses in the form [!(e,e) | (n,n) | ...]*)
-(*let clauses_iter l v w solver =
-  List.iter (fun clause ->
-  solver#add_clause (
-    let (i, j) = List.hd clause in
-    (*printf "\n!w[%d,%d] " i j;*)
-    neg_lit w.(i).(j) :: (List.map (fun (i,j) ->
-      (*printf "V v[%d,%d] " i j;*)
-      pos_lit v.(i).(j)) (List.tl clause)))) l *)
-
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver vars n m = 
   let res = ref [] in
@@ -359,7 +364,6 @@ let add_blocking solver v n m w e f =
     !blocking_clause in
   solver#add_clause ((scan_matrix v n m) @ (scan_matrix w e f))
 
-
 let rec filter_loop solver t p v n m w e f t_trans = 
     solver#simplify;
     match solver#solve with
@@ -374,8 +378,8 @@ let rec filter_loop solver t p v n m w e f t_trans =
 	  (* printf "MATCH\n"; *)
 	  (* solver#print_stats; *)
 	  let iso_v, iso_e = get_iso solver v n m, get_iso solver w e f in
-	  if (Place.is_match_valid t.p p.p t_trans iso_v) && 
-	    (Link.is_match_valid t.l p.l iso_e) then
+	  if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
+	    (Link.is_match_valid t.l p.l iso_e)*) then
 	    solver, v, n, m, w, e, f, t_trans
 	  else
 	    begin
@@ -383,13 +387,13 @@ let rec filter_loop solver t p v n m w e f t_trans =
 	      filter_loop solver t p v n m w e f t_trans
 	    end   
 	end 
+	  
+(* Aux function *)
+let iso_iter m iso solver =
+  Iso.iter (fun (i, j) -> 
+    solver#add_clause [(neg_lit m.(i).(j))]) iso
 
 (*isos from pattern(col) to target(col)*)
-(* Return empty iso when no nodes in the pattern *)
-(* TO FINISH:
-   - add constraint for SITES )
-   - add constraint for ROOTS
-   - add constraint for TRANSITIVE CLOSURE *)
 let aux_match t p  =
   let solver = new solver
   and m, n = t.p.Place.n, p.p.Place.n 
@@ -397,11 +401,6 @@ let aux_match t p  =
     Link.Lg.cardinal (Link.close_edges t.l) in
   let _,_,v,_ = Matrix.split t.p.Place.m t.p.Place.r t.p.Place.n in
   let t_trans = Matrix.trans v in 
-  (* Aux function *)
-  let iso_iter m iso =
-    Iso.iter (fun (i, j) -> 
-      (*printf "!m[%d,%d]\n" i j;*)
-      solver#add_clause [(neg_lit m.(i).(j))]) iso in
   (* Iso between nodes *)
   let v = init_vars n m solver
   (* Iso between closed edges *)
@@ -436,9 +435,9 @@ let aux_match t p  =
   and block_l_n, block_l_e = Link.match_links t.l p.l in   
   let blocking_pairs_v = Iso.union block_l_n block_ctrl in
   (*printf "Adding blocking pairs v\n";*)
-  iso_iter v blocking_pairs_v;
+  iso_iter v blocking_pairs_v solver;
   (*printf "Adding blocking pairs e\n";*)
-  iso_iter w (Iso.union block_e_e block_l_e); 
+  iso_iter w (Iso.union block_e_e block_l_e) solver; 
   (*printf "Adding constraint e\n";*)
   List.iter (fun (e_i, e_j, i, j) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
@@ -460,48 +459,161 @@ let occurs t p =
        true)
   with
     | NO_MATCH -> false
-
+    
 let occurrence t p =
   if Nodes.cardinal p.n = 0 then
-    raise INF_MATCHES (* Also check idle edges *)
+    raise NODE_FREE 
   else
     let s, v, n, m, w, e, f, _ = aux_match t p in
     (get_iso s v n m, get_iso s w e f)
 
+(* compute non-trivial automorphisms of b *)
+let auto b =
+  if Nodes.cardinal b.n = 0 then
+    raise NODE_FREE 
+  else
+    let rem_id res = 
+      List.filter (fun (i, e) ->
+	not ((Base.is_id i) && (Base.is_id e))) res in
+    rem_id (try 
+	      let solver, v, n, m, w, e, f, t_trans = aux_match b b in
+	      let rec loop_occur res =
+		add_blocking solver v n m w e f;
+		try 
+		  ignore (filter_loop solver b b v n m w e f t_trans);
+		  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
+		with
+		| NO_MATCH -> res in
+	      loop_occur [(get_iso solver v n m, get_iso solver w e f)]
+      with
+      | NO_MATCH -> [])
+      
+let clause_of_iso iso m r c = 
+  let clause = ref [] in
+  for i = 0 to r - 1 do
+    for j = 0 to c - 1 do
+      if Iso.mem (i, j) iso then clause := ((neg_lit m.(i).(j)) :: !clause)
+      else clause := ((pos_lit m.(i).(j)) :: !clause)
+    done;
+  done;
+  !clause
+
 let occurrences t p =
   if Nodes.cardinal p.n = 0 then
-    raise INF_MATCHES (* Also check idle edges *)
+    raise NODE_FREE 
   else
     try 
-      let solver, v, n, m, w, e, f, t_trans = aux_match t p in
+      let solver, v, n, m, w, e, f, t_trans = aux_match t p
+      and autos = auto p in
       let rec loop_occur res =
 	add_blocking solver v n m w e f;
+	(****************AUTOMORPHISMS****************)
+	let gen = 
+	  gen_isos (get_iso solver v n m, get_iso solver w e f) autos in
+	List.iter (fun (iso_i, iso_e) ->
+	  solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
+	(*********************************************)
 	try 
 	  ignore (filter_loop solver t p v n m w e f t_trans);
 	  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
 	with
-	  | NO_MATCH -> ((*solver#print_stats;*) res) in
+	  | NO_MATCH -> res in
       loop_occur [(get_iso solver v n m, get_iso solver w e f)]
     with
       | NO_MATCH -> []
 
-(* TO FINISH *)
-let id_equals id0 id1 =
-  true
+let add_roots_sites v n solver = 
+  for i = 0 to n - 1 do
+    for j = 0 to n - 1 do
+      if i = j then solver#add_clause [(pos_lit v.(i).(j))]
+      else solver#add_clause [(neg_lit v.(i).(j))]
+    done;
+  done
+    
+let equal_SAT a b =
+  let solver = new solver in
+  let v_n = init_vars (a.p.Place.n) (b.p.Place.n) solver
+  and v_l = init_vars (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver in 
+  add_bijection v_n (a.p.Place.n) (b.p.Place.n) solver;
+  add_bijection v_l (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver;
+  (* CTRL *)
+  iso_iter v_n (match_nodes a.n b.n) solver;
+  (* DAG EDGES *)
+  (* N x N *)
+  List.iter (fun (i, l, j, k) ->
+    solver#add_clause [(neg_lit v_n.(i).(j)); (neg_lit v_n.(l).(k))])
+    (Place.match_list a.p b.p);
+  (* N x S *)
+  List.iter (fun (i, j) -> 
+    solver#add_clause [neg_lit v_n.(i).(j)]) 
+    (Place.match_nodes_sites a.p b.p);
+  (* R x N *)
+  List.iter (fun (l, k) -> 
+    solver#add_clause [neg_lit v_n.(l).(k)]) 
+    (Place.match_root_nodes a.p b.p);
+  (* HYPERGRAPH *)
+  List.iter (fun (i, j) -> 
+    solver#add_clause [neg_lit v_l.(i).(j)]) 
+    (Link.match_link_pairs a.l b.l a.n b.n);
+  (* Ports *)
+  (* a var matrix ports X ports for every hyperedge (not already negated)*)
+  solver#simplify;
+  match solver#solve with
+  | Minisat.UNSAT -> false
+  | Minisat.SAT -> true
 
-(* ADD ids *)
-let equals a b =
-  (inter_equals (inner a) (inner b)) && 
-    (inter_equals (outer a) (outer b)) &&
-    (Nodes.cardinal a.n = Nodes.cardinal b.n) &&
+let equal a b =
+  (Nodes.cardinal a.n = Nodes.cardinal b.n) &&
     (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l) &&
-    (try
-       let i, e = occurrence a b in
-       let c, d, _ = decomp a b i e in
-       (is_id c) && (is_id d)
-     with
-       | NO_MATCH -> false)
- 
+    (inter_equal (inner a) (inner b)) && 
+    (inter_equal (outer a) (outer b)) &&
+    (Place.edges a.p = Place.edges b.p) &&
+    (Place.match_roots_sites a.p b.p) &&
+    (*placing or wiring *)
+    if Nodes.cardinal b.n = 0 then
+      (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
+    else 
+      equal_SAT a b
+
+let compare a b =
+  match (Nodes.cardinal a.n) - (Nodes.cardinal b.n) with
+  | 0 -> 
+    begin
+      match (Link.Lg.cardinal a.l) - (Link.Lg.cardinal b.l) with
+      | 0 -> 
+	begin
+	  match inter_compare (inner a) (inner b) with
+	  | 0 -> 
+	    begin
+	      match inter_compare (outer a) (outer b) with
+	      | 0 -> 
+		begin
+		  match (Place.edges a.p) - (Place.edges b.p) with
+		  | 0 -> 
+		    begin
+		      match Place.compare_roots_sites a.p b.p with
+		      | 0 ->
+			begin
+			  (*placing or wiring *)
+			  if Nodes.cardinal b.n = 0 then
+			    match Place.compare_placing a.p b.p with
+			    | 0 -> Link.Lg.compare a.l b.l
+			    | v -> v
+			  else if equal_SAT a b then 0
+			  else compare a b
+			end
+		      | v -> v
+		    end
+		  | v -> v
+		end
+	      | v -> v 
+	    end
+	  | v -> v 
+	end
+      | v -> v 
+    end
+  | v -> v 
+
 (* DEBUG *)
 (*let _ =
   let parse =

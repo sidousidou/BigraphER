@@ -1,4 +1,6 @@
 _build/*
+lib/_build/*
+front-end/_build/*
 old/*
 tests/*
 *~

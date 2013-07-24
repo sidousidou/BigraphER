@@ -19,6 +19,10 @@ type bmatrix =
     are not initialised. *) 
 val make : int -> int -> bmatrix
 
+(** [make_0 r c] build a matrix with [r] rows and [c] columns. Elements
+    are initialised to [0].*)
+val make_0 : int -> int -> bmatrix
+
 (** String representation. 0 = false and 1 = true *)
 val to_string : bmatrix -> string
 
@@ -45,7 +49,8 @@ val mul : bmatrix -> bmatrix -> bmatrix
 val copy : bmatrix -> bmatrix
 *)
 
-(** [split m r c] splits matrix [a] in four submatrices as follows
+(** [split m r c] splits matrix [m] in four submatrices [h], [k], [c], [d]
+ as follows
          [h | k] 
      [m = -----]     where h has [r] rows and [c] columns.
          [c | d]                          

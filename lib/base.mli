@@ -137,6 +137,9 @@ val ports_of_nodes : Nodes.t -> Ports.t
    the same node. Example: [(1,0);(1,1);(2,0)] -> [1;2] *)
 val card_ports : Ports.t -> int list
 
+(** Construct a list of control strings.*)
+val type_of_ports : Ports.t -> Nodes.t -> string list
+
 (*
 (** Construct a list of lists of pairs representing a set of clauses. The first
     element in every list has to be negated.*)
@@ -285,6 +288,12 @@ val multiset_of_ports : Ports.t -> Iso.t
 (** [set_cart a b] returns the cartesian product of sets [a] and [b] *)
 val set_cart : Int_set.t -> Int_set.t -> Iso.t
 
+(** [is_id i] returns [true] if iso [i] is an identity, [false] otherwise.*)
+val is_id : Iso.t -> bool
+
+(** Generate equivalent isomorphisms. *)
+val gen_isos : Iso.t * Iso.t -> (Iso.t * Iso.t) list -> (Iso.t * Iso.t) list
+
 (** {6 Combinatorics} *)
 
 (** [int_interval start delta end] computes a list of integers with first 
@@ -316,6 +325,6 @@ when input is [\[\[\[1\];\[2\]\]; \[\[3\];\[4\]\]\]] the result is
     [\[\[1;3\];\[1;4\];\[2;3\];\[2;4\]\]].*)
 val cart_of_list : 'a list list list -> 'a list list
 
-val  cart_of_list_iso : Iso.t list -> Iso.t list
+val cart_of_list_iso : Iso.t list -> Iso.t list
 
 (**/**)

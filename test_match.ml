@@ -3,7 +3,6 @@
 open Printf
 open Big
 
-
 (* parse a .big file *)
 let parse path = 
   let file = open_in path in
@@ -121,13 +120,13 @@ type test =
       exp_res : (Base.Iso.t * Base.Iso.t) list;
       mutable res : (Base.Iso.t * Base.Iso.t) list;
     }
-
+      
 let sort_res = 
   List.fast_sort (fun (iv0, ie0) (iv1, ie1) ->
-    match compare iv0 iv1 with
-      |	0 -> compare ie0 ie1
-      | 1 -> 1
-      | _ -> -1
+    let x = Base.Iso.compare iv0 iv1 in
+    match x with
+      |	0 -> Base.Iso.compare ie0 ie1
+      | _ -> x
   ) 
 
 let print_res res =
@@ -144,7 +143,10 @@ let check_res res exp_res  =
     List.for_all (fun ((i0,j0), (i1,j1)) ->
       (Base.Iso.equal i0 i1) & (Base.Iso.equal j0 j1))
       (List.combine (sort_res res) (sort_res exp_res))
-     
+
+let beep () = 
+  printf "\007"
+      
 let do_tests ts = 
   let count = ref 0 in
   flush_all ();
@@ -152,7 +154,7 @@ let do_tests ts =
   let t0 = Unix.gettimeofday () in
   Array.iteri (fun i t -> 
     try 
-      t.res <- Big.occurrences t.target t.pattern;
+      t.res <- occurrences t.target t.pattern;
       if check_res t.res t.exp_res then
 	begin
 	  count := !count + 1;
@@ -161,24 +163,43 @@ let do_tests ts =
 	end
       else
 	begin
+	  beep ();
 	  printf "Test %d failed.\nExpected result :\n%s\nResult :\n%s\n"
-	     (i + 1) (print_res t.exp_res) (print_res t.res);
+	    (i + 1) (print_res t.exp_res) (print_res t.res);
 	  printf "Target:\n%s\nPattern:\n%s\n"
-	    (Big.string_of_bg t.target) (Big.string_of_bg t.pattern)
+	    (string_of_bg t.target) (string_of_bg t.pattern)
 	end
     with
-      | INF_MATCHES -> (* tests 23 and 16 are special cases *) 
-	  (if (i = 15 || i = 22) then
+      | NODE_FREE -> (* tests 23 and 16 are special cases *) 
+	(if (i = 15 || i = 22) then
 	    (count := !count + 1;
-	     (* printf "Test %d passed.\nResult :\nInfinite matches\n" (i + 1)) *)
 	     printf "Test %d passed.\n" (i + 1))
-	   else
-	      printf "Test %d failed.\nExpected result :\nInfinite matches\nResult :\n%s\n"
-		(i + 1) (print_res t.res))
+	 else
+	    (beep ();
+	     printf "Test %d failed.\nExpected result :\nInfinite matches\nResult :\n%s\n"
+	       (i + 1) (print_res t.res)))
       | e -> print_endline (Printexc.to_string e)) (Array.of_list ts);
   printf "Finished in %f seconds.\n" ((Unix.gettimeofday ()) -. t0);
   printf "%d/%d tests passed.\n" !count (List.length ts)
 
+let do_equality_tests l ts = 
+  flush_all ();
+  printf "Starting equality tests ...\n";
+  let t0 = Unix.gettimeofday () in
+  try
+    let count = 
+      (List.fold_left (fun x (n, b) ->
+	if Big.equal b b then (printf "Test %s=%s passed.\n" n n; x + 1)
+	else (printf "Test %s=%s failed.\n" n n; x)) 0 (List.sort (fun (x, _) (y, _) ->
+	  String.compare x y) l)) +
+	(snd (List.fold_left (fun (i, x) t ->
+	  if (equal t.target t.pattern) && (i <> 27) then (printf "Test %d failed.\n" i; (i + 1, x))
+	  else (printf "Test %d passed.\n" i; (i + 1, x + 1))) (1, 0) ts)) in
+    printf "Finished in %f seconds.\n" ((Unix.gettimeofday ()) -. t0);
+    printf "%d/%d tests passed.\n" count ((List.length l) + List.length ts)
+  with
+    | _ -> printf "Internal error\n"
+    
 let wait_before_exit () =
   let rec loop () =
     try
@@ -445,10 +466,17 @@ let () =
 	  exp_res = [ ];
 	  res = [ ];
 	};
+	(* TEST 38 *)
+	{ target = List.assoc "T26" bgs;
+	  pattern = List.assoc "P37" bgs;
+	  exp_res = [ ];
+	  res = [ ];
+	};
       ]
     with
       | Not_found -> failwith ("Error loading tests.\n") in
   do_tests tests;
+  do_equality_tests bgs tests;
   wait_before_exit ();
   Gc.full_major ()
 (* can compile with -noassert *)

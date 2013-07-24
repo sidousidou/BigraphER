@@ -3,31 +3,15 @@ open Base
 open Printf
 
 type react = {
-    rdx : bg;   (** Redex *)
-    rct : bg;   (** Reactum *)
-  }
-
-type stats = {
-  time : float;   (** Time *)
-  states : int;   (** Non Iso states discoverd *)
-  reacts : int;   (** Transitions *)
-  occurs : int;   (** Total number of occurrences *)
+  rdx : bg;   (** Redex *)
+  rct : bg;   (** Reactum *)
+  rate : float; (** Rate *)
 }
 
-module V = 
-  Set.Make
-    (struct 
-      type t = int * bg
-      let compare (v, a) (u, b) =
-	match v - u with
-	| 0 -> Big.compare a b
-	| x -> x  
-     end)
-
-type ts = {
-  v : V.t;
+type ctmc = {
+  v : Brs.V.t;
   (* p : (int, Bilog) Hashtbl.t Predicates *)
-  e : (int, int) Hashtbl.t;
+  e : (int, (int * float)) Hashtbl.t;
   l : (int, int) Hashtbl.t;  
 }
 
@@ -37,19 +21,16 @@ type p_class = P_class of react list | P_rclass of react list
 exception OLD of int
 
 (* raised when the size of the ts reaches the limit *)
-exception LIMIT of ts
+exception LIMIT of ctmc
 
 let string_of_react r =
-  Printf.sprintf "%s\n->\n%s" 
-    (string_of_bg r.rdx) (string_of_bg r.rct) 
-
-let aux_check_react r0 r1 =
-  (inter_equal (inner r0)  (inner r1)) 
-  && (inter_equal (outer r0) (outer r1))
-  && (is_solid r0)
+  Printf.sprintf "%s\n-%g->\n%s" 
+    (string_of_bg r.rdx) r.rate (string_of_bg r.rct) 
 
 let is_valid_react r =
-  aux_check_react r.rdx r.rct 
+  (inter_equal (inner r.rdx)  (inner r.rct)) &&
+  (inter_equal (outer r.rdx) (outer r.rct)) &&
+  (is_solid r.rdx) && (r.rate > 0.0)
 
 (* At least a non-reducing class *)
 let is_valid_p l =
@@ -111,6 +92,46 @@ let is_new b v =
     raise (OLD (fst old))
   with
   | Not_found -> true
+
+(* compute a list of children sorted by rate *)
+let chl s0 rules store oc ic =
+  List.fast_sort (fun (_, a) (_, b) -> compare a b)
+    (Base.count
+       (List.flatten
+          (List.map (fun r -> evolve_s s0 (get_srule store r) oc ic) rules))
+       (fun b c -> Big.equals b c oc ic))
+
+(* compute the exit rate of a state *)
+let exit l = List.fold_left (fun acc (_, r) -> r +. acc) 0.0 l
+
+(* rule selection: second step of SSA *)
+let select_react a0 l =
+  let r = (u_rand ()) *. a0 in
+  let rec aux l acc =
+    match l with
+    | (s, alpha) :: xs ->
+        if (acc +. alpha) > r then s else aux xs (acc +. alpha)
+    | [] -> failwith "Error in select_react\n"
+  in aux l 0.0
+
+(* SSA Gillespie direct method *)
+let sim_class_s (s0 : Big.bg) (cls : string list) store oc ic t t_max =
+  if t < t_max
+  then
+    (let active_rules =
+       List.filter
+         (fun r -> Brs.is_enabled_s s0 (get_srule store r) oc ic)
+         cls
+     in
+       match active_rules with
+       | [] -> raise FIX_POINT
+       | _ ->
+         let children = chl s0 active_rules store oc ic in
+         let a0 = exit children in
+         let tau = (1. /. a0) *. (log (1. /. (u_rand ())))
+         and s1 = select_react a0 children
+         in (s1, (t +. tau)))
+  else raise SIM_LIMIT
 
 let _bfs s0 rules limit ts_size verb step_f =
   let t0 = Unix.gettimeofday ()
@@ -205,7 +226,7 @@ let sim s0 rules limit ts_size verb =
       let (s, l) = random_step x y in
       ([s], l)
     with
-    | NO_MATCH -> ([], 0))
+    | NO_SUCC -> ([], 0))
 
 let to_dot ts =
   let states =

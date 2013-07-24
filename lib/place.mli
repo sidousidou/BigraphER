@@ -77,6 +77,15 @@ val elementary_ion : pg
 (** [elementary_ions n] creates [n] ions in parallel. *)
 val elementary_ions: int -> pg
 
+(** {6 Comparison} *)
+
+(** [equal_placing a b] returns [true] if placings [a] and [b] are equal. 
+Inputs are assumed to be valid placing. No check performed. *)
+val  equal_placing : pg -> pg -> bool
+
+(** [compare_placing a b] compares placings [a] and [b].*)
+val compare_placing : pg -> pg -> int
+
 (** {6 Operations} *)
 
 (** [tens p0 p1] returns the tensor product of place graphs [p0] and [p1]. *)
@@ -91,6 +100,9 @@ val comp : pg -> pg -> pg
 (** [is_id p] returns [true] if place graph [p] is an identity, [false]
     otherwise.*)
 val is_id : pg -> bool
+
+(** Test for the absence of nodes.*)
+val is_plc : pg -> bool
 
 (** [is_mono p] returns [true] if place graph [p] is monomorphic, [false]
     otherwise.*)
@@ -135,8 +147,19 @@ val match_sites : pg -> pg -> Base.Iso.t
 (** Dual of {!Place.match_sites}.*)
 val match_roots : pg -> pg -> Base.Iso.t
 
+val match_root_nodes : pg -> pg -> (int * int) list
+
+val match_nodes_sites : pg -> pg -> (int * int) list
+
+val match_roots_sites : pg -> pg -> bool
+
+val compare_roots_sites : pg -> pg -> int
+
 (** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is
     valid. [t_trans] is the transitive closure of [t]. *)
 val is_match_valid : pg -> pg -> Matrix.bmatrix -> Base.Iso.t -> bool
+
+(** Computes the number of edges in the DAG. *)
+val edges : pg -> int
 
 (**/**)

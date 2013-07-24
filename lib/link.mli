@@ -197,7 +197,9 @@ val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t
 
 val match_peers : Lg.t -> Lg.t -> int -> int -> (int * int * int * int) list 
 
-val is_match_valid : Lg.t -> Lg.t -> Base.Iso.t -> bool 
+val match_link_pairs : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list
+
+(*val is_match_valid : Lg.t -> Lg.t -> Base.Iso.t -> bool*) 
 
 (*(** Returns the pairs of nodes that can't be matched.*)
  val match_open : Lg.t -> Lg.t -> Base.Iso.t*)

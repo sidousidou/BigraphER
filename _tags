@@ -1,2 +1,3 @@
 true: package(minisat), package(str), package(unix), package(bigarray)
 <lib>: include
+<front-end>: include
