@@ -296,6 +296,7 @@ val gen_isos : Iso.t * Iso.t -> (Iso.t * Iso.t) list -> (Iso.t * Iso.t) list
 
 (** {6 Combinatorics} *)
 
+(*
 (** [int_interval start delta end] computes a list of integers with first 
     element [start], last element [end], and interval between the elements 
     [delta].*)
@@ -305,11 +306,13 @@ val int_interval : int -> int -> int -> int list
     element [start], last element [end], and interval between the elements 
     [delta].*)
 val float_interval : float -> float -> float -> float list
-
+*)
+(*
 (** [par_comb l] computes all the possible combinations of the elements of [l].
     For example, [par_comb \[\[1;2\];\[3\];\[5;6;1\]\]] gives [\[\[1; 3; 5\]; 
     \[1; 3; 6\]; \[1; 3; 1\]; \[2; 3; 5\]; \[2; 3; 6\]; \[2; 3; 1\]\]].*)
 val par_comb : 'a list list -> 'a list list
+*)
 
 (** [sub_multi a b] returns [true] if multiset [b] is a sub-multiset of
     multiset [a], [false] otherwise. Multisets are represented as ordered list 

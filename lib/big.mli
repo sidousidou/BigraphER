@@ -30,7 +30,7 @@ exception SHARING_ERROR
    face. *)
 exception CTRL_ERROR of int * Link.Face.t
 
-(** Raised when an {!Iso.t} is not total. The first element is the cardinality
+(** Raised when an {!Base.Iso.t} is not total. The first element is the cardinality
     of the domain while the second is the cardinality of the isomorphism's
     domain of definition. *)
 exception ISO_ERROR of int * int

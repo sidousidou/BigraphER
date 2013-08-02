@@ -6,9 +6,9 @@ type name = Nam of string
 
 module Face = Set.Make (
   struct
-  type t = name
-  let compare = fun (Nam s0) (Nam s1) -> String.compare s0 s1
-end)
+    type t = name
+    let compare = fun (Nam s0) (Nam s1) -> String.compare s0 s1
+  end)
 
 (* Module used to compute equivalence classes *)
 module Face_set = Set.Make (
@@ -34,6 +34,7 @@ end)
 
 (* tensor product fails (inner common names, outer common names)*)
 exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
+
 (* Composition fails *)
 exception FACES_MISMATCH of (Face.t * Face.t)
 
@@ -44,11 +45,11 @@ let parse_face =
 
 let string_of_face f =
   sprintf "{%s}"
-  (String.concat ", " (List.map string_of_name (Face.elements f))) 
+    (String.concat ", " (List.map string_of_name (Face.elements f))) 
   
 let string_of_edge e =
   sprintf "(%s, %s, %s)" 
- (string_of_face e.i) (string_of_face e.o) (string_of_ports e.p)
+    (string_of_face e.i) (string_of_face e.o) (string_of_ports e.p)
 
 let string_of_lg l = 
   String.concat "\n" (List.map string_of_edge (Lg.elements l))
@@ -59,20 +60,17 @@ let snf_of_linking l =
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub f_i f_o =
-  if Face.is_empty f_i && Face.is_empty f_o
-  then Lg.empty
+  if Face.is_empty f_i && Face.is_empty f_o then Lg.empty
   else Lg.singleton {i = f_i; o = f_o; p = Ports.empty}
 
 (* Node index is 0. Ports are from 0 to |f| - 1 *)
 let elementary_ion f =
   fst (Face.fold (fun n (acc, i) ->
-    let e =
-      Lg.singleton
-	{i = Face.empty;
-	 o = Face.singleton n;
-	 p = Ports.singleton (0, i)} in
-    (Lg.union e acc, i + 1))
-	 f (Lg.empty, 0))
+    let e = Lg.singleton { i = Face.empty;
+			   o = Face.singleton n;
+			   p = Ports.singleton (0, i);
+			 } in
+    (Lg.union e acc, i + 1)) f (Lg.empty, 0))
 
 let inner (lg : Lg.t) =
   Lg.fold (fun e acc -> Face.union e.i acc) lg Face.empty
@@ -86,9 +84,10 @@ let ports lg =
 (* Add offset m to all the port indeces *)
 let offset (lg : Lg.t) (m : int) =
   Lg.fold (fun e acc ->
-    Lg.add {i = e.i; o = e.o;
-	    p = Ports.fold (fun (i, p) acc ->
-	      Ports.add (i + m, p) acc) e.p Ports.empty;
+    Lg.add { i = e.i; 
+	     o = e.o;
+	     p = Ports.fold (fun (i, p) acc ->
+	       Ports.add (i + m, p) acc) e.p Ports.empty;
 	   } acc) lg Lg.empty
 
 (* n0 is necessary because some nodes my be present in the left place      *)
@@ -96,17 +95,18 @@ let offset (lg : Lg.t) (m : int) =
 let tens lg0 lg1 n0 =
   let i_in = Face.inter (inner lg0) (inner lg1)
   and i_out = Face.inter (outer lg0) (outer lg1)
-  in if Face.is_empty i_in && Face.is_empty i_out then
-      Lg.union lg0 (offset lg1 n0)
+  in if Face.is_empty i_in && Face.is_empty i_out 
+    then Lg.union lg0 (offset lg1 n0)
     else raise (NAMES_ALREADY_DEFINED (i_in, i_out))
 
 (* Identity. One edge for every name in f *)
 let elementary_id f =
   Face.fold (fun n acc ->
-    Lg.union (Lg.singleton
-		{i = Face.singleton n; o = Face.singleton n; p = Ports.empty})
-      acc) f Lg.empty
-
+    Lg.union (Lg.singleton { i = Face.singleton n; 
+			     o = Face.singleton n; 
+			     p = Ports.empty;
+			   }) acc) f Lg.empty
+    
 let id_empty = elementary_id Face.empty
 
 let is_id l =
@@ -120,7 +120,7 @@ let equiv_class a b =
     try
       ((* Smallest face in set s *)
 	let f = Face_set.min_elt s in
-       (* set s without face f *) 
+	(* set s without face f *) 
 	let new_s = Face_set.remove f s in
 	try
          (* Largest face having names in common with f *) 
@@ -137,9 +137,10 @@ let equiv_class a b =
 
 (* Merge a set of edges *)
 let merge lg =
-  {i = inner lg;
-   o = outer lg;
-   p = Lg.fold (fun e acc -> Ports.union e.p acc) lg Ports.empty}
+  { i = inner lg;
+    o = outer lg;
+    p = Lg.fold (fun e acc -> Ports.union e.p acc) lg Ports.empty;
+  }
 
 (* Merge a set of edges on the inner face according to equivalence classes *)
 let merge_in lg cls =
@@ -167,19 +168,19 @@ let fuse a b =
 let comp a b n = 
   let x = inner a
   and y = outer b in
-  if Face.equal x y then
+  if Face.equal x y 
+  then 
     (let new_b = offset b n 
-    and cls_in =
-       Lg.fold (fun e acc -> Face_set.add e.i acc) a Face_set.empty in
-     let cls_out =
-       Lg.fold (fun e acc -> Face_set.add e.o acc) new_b Face_set.empty in
+    and cls_in = Lg.fold (fun e acc ->
+      Face_set.add e.i acc) a Face_set.empty in
+     let cls_out = Lg.fold (fun e acc -> 
+       Face_set.add e.o acc) new_b Face_set.empty in
      let cls = equiv_class cls_in cls_out in
      Lg.union (fuse (merge_in a cls) (merge_out new_b cls))
-       (Lg.union
-          (Lg.filter (fun e -> Face.is_empty e.i) a)
-          (Lg.filter (fun e -> Face.is_empty e.o) new_b)))    
-  else
-    raise (FACES_MISMATCH (x, y))
+       (Lg.union 
+	  (Lg.filter (fun e -> Face.is_empty e.i) a) 
+	  (Lg.filter (fun e -> Face.is_empty e.o) new_b)))    
+  else raise (FACES_MISMATCH (x, y))
 
 (* no inner names that are siblings *)
 let is_mono l =
@@ -332,7 +333,7 @@ let get_dot l =
     | (_, a, b, c, d) -> (a, b , c, d)
 
 (* names linking to an iso set of ports *)
-let eq_names l =
+(*let eq_names l =
   let eq_out = Face.fold (fun n acc ->
     (* find edge e with n *)
     let e = Lg.choose (Lg.filter (fun e -> Face.mem n e.o) l) in 
@@ -349,7 +350,7 @@ let eq_names l =
       Iso.equal (multiset_of_ports x.p) (multiset_of_ports e.p)) l in
     Face_set.add (Face.union e.o (inner es)) acc
   ) (inner l) Face_set.empty in
-  eq_out, eq_in
+  eq_out, eq_in*)
   
 (* decompose t. p is assumed epi and mono. Ports are normalised.
    i_c and i_d are isos from t to c and d.*)
@@ -481,14 +482,14 @@ let match_peers t p m n =
 	Quad.union acc1 (aux i j  pairs_t))
       else acc1) v_t Quad.empty)) v_p Quad.empty)
    
-let open_edges l = Lg.diff l (close_edges l)
+(*let open_edges l = Lg.diff l (close_edges l)*)
 
 (* generates a list of unmatchable nodes = blocking pairs *)
 let gen_blocking_pairs_edges e_t e_p = 
   let m_t = multiset_of_ports e_t.p
   and m_p = multiset_of_ports e_p.p in
   Iso.fold (fun (n, i) acc ->
-    (List.map (fun (m, j) -> (i, j)) (Iso.elements (Iso.filter (fun (m, _) ->
+    (List.map (fun (_, j) -> (i, j)) (Iso.elements (Iso.filter (fun (m, _) ->
       m <> n) m_t))) @ acc)  m_p []
 
 exception NO_ISO

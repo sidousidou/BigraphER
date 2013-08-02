@@ -91,11 +91,11 @@ let append a b =
     done;
   done;
   m
-  
+ 
+(* GPROF *) 
 (* Boolean matrix multiplication 
    raise Assert_failure   *)
 let mul a b =
-  (*printf "MUL\na:\n%s\nb:\n%s\n" (to_string a) (to_string b);*)
   assert (Array2.dim2 a = Array2.dim1 b);
   let m = make_0 (Array2.dim1 a) (Array2.dim2 b) in
   for i = 0 to (Array2.dim1 a) - 1 do
@@ -105,7 +105,6 @@ let mul a b =
       done;
     done;
   done;
-  (*printf "res:\n%s\n" (to_string m);*)
   m
 
 (*    
@@ -263,12 +262,12 @@ let trans m =
   (*printf "Matrix.trans\n%s\n\n%s\n" (to_string m) (to_string res);*)
   res
 
-let trans_ref m = 
+(*let trans_ref m = 
   let res = trans m in
   for i = 0 to (Array2.dim1 res) - 1 do
     res.{i,i} <- 1
   done;
-  m  
+  m *) 
 
 let to_iso m = 
   let res = ref Iso.empty in
@@ -278,48 +277,3 @@ let to_iso m =
     done;
   done;
   !res
-
-(*
-(* DEBUG *)
-let _ = 
-  let a = diag 5
-  and b = diag 3 in
-  printf "a[%d,%d]:\n%s\nb[%d,%d]:\n%s\n" 5 5 (to_string a) 3 3 (to_string b);
-  printf "stack a a:\n%s\n" (to_string (stack a a));
-  let c = diag 0
-  and d = diag 1 in
-  printf "c[%d,%d]:\n%s\nd[%d,%d]:\n%s\n" 0 0 (to_string c) 1 1 (to_string d);
-  printf "stack c c:\n%s\n" (to_string (stack c c));
-  printf "stack d d:\n%s\n" (to_string (stack d d));
-  printf "append a a:\n%s\n" (to_string (append a a)); 
-  printf "append c c:\n%s\n" (to_string (append c c));
-  printf "append d d:\n%s\n" (to_string (append d d));
-  printf "mul b [1 1 1]:\n%s\n" (to_string (mul b (stack d (stack d d))));
-  printf "mul a a:\n%s\n" (to_string (mul a a));
-  let h0, h1, k0, k1 = split a 2 3  in
-  printf "h0:\n%s\nh1:\n%s\nk0:\n%s\nk1:\n%s\n" 
-    (to_string h0) (to_string h1) (to_string k0) (to_string k1);
-  printf "mul h0 k1:\n%s\n" (to_string (mul h0 k1));
-  let m0, m1, n0, n1 = split k1 0 1 in
-  printf "m0:\n%s\nm1:\n%s\nn0:\n%s\nn1:\n%s\n" 
-    (to_string m0) (to_string m1) (to_string n0) (to_string n1);
-  let v0 = parse_vector [[0;2]; [2;3]; [0;3;2]] 4
-  and v1 = get_vector k1 in
-  printf "v0:\n%s\n" (to_string v0);
-  printf "v1:\n[%s]\n" (String.concat "; "(List.map (fun l ->
-    sprintf "[%s]" (String.concat ";" (List.map string_of_int l))) v1));
-  let iso = of_list [(0,1); (1,2); (2,0)] 
-  and i0 = parse_vector [[0;1]; [1]; []] 2
-  and i1 = parse_vector [[]] 2
-  and i2 = parse_vector [[]; []; [0]] 3
-  and i3 = parse_vector [[2]] 3 in
-  let i = stack (append i0 i1) (append i2 i3) in
-  printf "i:\n%s\niso(i):\n%s\n" (to_string i) (to_string (apply_iso iso i 2));
-  printf "chl(1): %s\nchl(3): %s\nchl(4): %s\n" (string_of_Int_set (chl i 1)) 
-    (string_of_Int_set (chl i 3))  (string_of_Int_set (chl i 4));
-  printf "prn(3): %s\nprn(1): %s\nprn(0): %s\n" (string_of_Int_set (prn i 3)) 
-    (string_of_Int_set (prn i 1))  (string_of_Int_set (prn i 0));
-  printf "leaves(i): %s\noprhans(i): %s\n" (string_of_Int_set (zero_rows i))
-    (string_of_Int_set (zero_cols i))
-  *)
-  

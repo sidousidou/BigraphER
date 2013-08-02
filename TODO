@@ -1,0 +1,16 @@
+
+TO DO:
+
+=================================================================================
+
+[DONE] add priorities inside declarations of brs and sbrs
+[ - ]  implement stochastic brs
+[ - ]  check if is more efficient to pass to the brs engine a string list of 
+       react ides and a function string -> react instead of react lists
+[ - ]  add basic bilog with matching (keywords: true, false, pred)
+[DONE] add * (composition) and + (tensor) and check precedence
+[ - ]  add sorts
+[ - ]  validate priorities: in sbrs only instantaneous rules can be reduced and
+       no instantaneous rules in standard classes. In sbrs there is at least a
+       standard class.
+  

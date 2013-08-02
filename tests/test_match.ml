@@ -2,6 +2,7 @@
 
 open Printf
 open Big
+open Export
 
 (* parse a .big file *)
 let parse path = 
@@ -200,17 +201,9 @@ let do_equality_tests l ts =
   with
     | _ -> printf "Internal error\n"
     
-let wait_before_exit () =
-  let rec loop () =
-    try
-      ignore (Unix.wait ());
-      loop ()
-    with
-      | _ -> printf "Terminating ...\n" in
-  loop ()
-
 (* Argument is the path of the directory containing the tests *)
-let () =
+let _ =
+  check_setup ();
   let args = Sys.argv in
   assert (Array.length args = 2);
   printf "%s %s\n" args.(0) args.(1);
@@ -220,7 +213,7 @@ let () =
       printf "building %s\n" n;
       (n, build_big ls)) bg_strings in
   List.iter (fun (n, b) -> 
-    Export.dot_out b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep)) true) bgs;
+    dot_out b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep)) true) bgs;
   let tests =
     try
       [ (* TEST 1 *)
@@ -477,6 +470,6 @@ let () =
       | Not_found -> failwith ("Error loading tests.\n") in
   do_tests tests;
   do_equality_tests bgs tests;
-  wait_before_exit ();
-  Gc.full_major ()
+  Gc.full_major ();
+  wait_before_exit true
 (* can compile with -noassert *)

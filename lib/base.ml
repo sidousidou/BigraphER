@@ -129,7 +129,7 @@ let multiset_of_ports p =
    the same node. [(1,0);(1,1);(2,0)] -> [1;2] *)
 let card_ports p =
   List.fast_sort (fun a b -> a - b) 
-    (Iso.fold (fun (card, id) acc -> card :: acc) (multiset_of_ports p) [])
+    (Iso.fold (fun (card, _) acc -> card :: acc) (multiset_of_ports p) [])
 
 (* Construct a list of control strings [AA;BBBB;C]*)
 let type_of_ports p n =
@@ -141,7 +141,8 @@ let type_of_ports p n =
     let (l, r) = List.partition (fun (v, _) -> v = i) acc in
     match l with
     | [] -> (i, c) :: acc
-    | [(_, s)] -> (i, s ^ c) :: r) p []))
+    | [(_, s)] -> (i, s ^ c) :: r
+    | _ -> failwith "Internal error: Base.type_of_ports" ) p []))
 
 (* Construct a list of node identifiers (with duplicates)*)
 (*let card_of_ports p = 
@@ -271,18 +272,14 @@ let abs_nodes ns =
 let sub_multi a b =
   let rec mem l e = 
     match l with
-      | x::xs -> 
-	(if x = e
-	 then xs
-	 else mem xs e
-	)
+      | x :: xs -> if x = e then xs else mem xs e
       | [] -> failwith "Not found"
   in 
   try
     match List.fold_left mem a b with
       | _ -> true
   with
-      _ -> false		
+  | _ -> false		
 
 let match_nodes t p =
   Nodes.fold (fun (j, c) acc ->
@@ -324,7 +321,7 @@ let string_of_Int_set s =
 (* Parameters handling *)
 (* Compute a list of values starting from s to e with interval h
    inbetween each value. e is always returned *)
-let int_interval s h e =
+(*let int_interval s h e =
   let rec aux s h e res =
     if s < e
     then aux (s + h) h e (res @ [s])
@@ -336,9 +333,9 @@ let rec float_interval s h e =
     if s < e
     then aux (s +. h) h e (res @ [s])
     else (res @ [e])
-  in aux s h e []
+  in aux s h e [] *)
 
-let rec par_comb pars = 
+(*let rec par_comb pars = 
     match pars with
     | [x] -> List.map (fun v -> [v]) x
     | x::xs -> 
@@ -351,7 +348,7 @@ let rec par_comb pars =
 	     | x::xs -> (aux1 x ls) @ (aux2 xs ls)
 	   in aux2 x (par_comb xs) 
       end
-    | [] -> []
+    | [] -> []*)
 
 (* Removes duplicates and add rates. 
    Example: [(1, 1.5); (2, 0.5); (3, 1.); (2, 0.5); (1, 0.5)]
@@ -359,22 +356,20 @@ let rec par_comb pars =
 let count l f =
   let rec mem (x, rho) xs f acc =
     match xs with
-      | (r, lambda)::rs -> (if f x r
-	then mem (x, rho +. lambda) rs f acc
-	else mem (x, rho) rs f ((r, lambda)::acc)
-      )
+      | (r, lambda) :: rs -> (if f x r then mem (x, rho +. lambda) rs f acc
+	else mem (x, rho) rs f ((r, lambda) :: acc))
       | [] -> ((x, rho), acc)
   in let rec aux l f acc = 
        match l with
-	 | x::xs -> (let (v, new_l) = mem x xs f []
-		     in aux new_l f (v::acc)
-	 )
-	 | [] -> acc
+       | x :: xs -> (let (v, new_l) = mem x xs f []
+		     in aux new_l f (v :: acc))
+       | [] -> acc
      in aux l f [] 
 
 let get_dot ns =
   Nodes.fold (fun (i, Ctrl (c, _)) buff ->
-    sprintf "%sv%d [label=\"%s\", fontname=Arial];\n" (*, shape=circle*)
+    sprintf "%sv%d [label=\"%s\", fontname=Arial];\n" (*, shape=circle
+  fontname=sans-serif size=*)
       buff i c) ns ""
 
 (* build the list of all the possible isos from a to b (assumed of equal length)*)    
@@ -395,13 +390,13 @@ let get_dot ns =
 
 (* |perm a| = n! with |a| = n *)
 (* Remember 7!=  5040, use with caution *)
-let rec perm a = 
+(*let rec perm a = 
   List.fold_left (fun (acc : 'a list list) i ->
     acc @ 
       (match perm (List.filter (fun x -> x <> i) a) with
 	| [] -> [[i]]
 	| y -> List.map (fun x ->  i :: x) y)
-  ) [] a  
+  ) [] a  *)
 
 (* cartesian product *)
 let rec cart a b res = 
@@ -418,12 +413,12 @@ let set_cart a b =
 let cart_of_list l =
   let rec aux l res =
     match l with
-      | [] -> res
-      | x :: xs -> aux xs (cart res x []) in
+    | [] -> res
+    | x :: xs -> aux xs (cart res x []) in
   match l with
-    | [] -> []
-    | x :: [] -> x
-    | x :: xs -> aux xs x 
+  | [] -> []
+  | x :: [] -> x
+  | x :: xs -> aux xs x 
 
 (* Optimise *)  
 let cart_of_list_iso l = 
@@ -446,3 +441,4 @@ let gen_isos (i, e) autos =
     Iso.fold (fun (i, j) acc ->
       Iso.add (get_i i a, j) acc) iso Iso.empty in
   List.map (fun (a_i, a_e) -> (apply a_i i, apply a_e e)) autos
+    

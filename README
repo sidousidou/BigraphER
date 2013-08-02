@@ -5,11 +5,12 @@ Build instructions
 ~~~~~~~~~~~~~~~~~~
 
 A native executable can be built with the following command
-  $ ocamlbuild bigrapher.native
+
+>  $ ./build.sh bin
 
 Running BigraphER
 ~~~~~~~~~~~~~~~~~
+byte need ocamlrun -I/usr/lib/ocaml/site-lib/minisat under cygwin
 
 1. Install dot in your system (http://www.graphviz.org/)
-2. Add match/match.exe to your path
-3. Run _build/bigrapher.native --help to display a list of options
+

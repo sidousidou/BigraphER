@@ -1,7 +1,7 @@
 open Big
-open Base
-open Printf
+open Format
 
+(* functional react or sreact *)
 type react = {
     rdx : bg;   (** Redex *)
     rct : bg;   (** Reactum *)
@@ -24,6 +24,7 @@ module V =
 	| x -> x  
      end)
 
+(*functional int or (int, float) for ctmc*)
 type ts = {
   v : V.t;
   (* p : (int, Bilog) Hashtbl.t Predicates *)
@@ -31,7 +32,13 @@ type ts = {
   l : (int, int) Hashtbl.t;  
 }
 
-type p_class = P_class of react list | P_rclass of react list
+type p_class = 
+| P_class of react list 
+| P_rclass of react list
+
+type p_class_ide = 
+| P_class_ide of string list  (** Priority class *)
+| P_rclass_ide of string list (** Reducable priority class *)
 
 (* raised when a state was already discovered *)
 exception OLD of int
@@ -39,29 +46,41 @@ exception OLD of int
 (* raised when the size of the ts reaches the limit *)
 exception LIMIT of ts
 
+(*CHECK with format*)
 let string_of_react r =
   Printf.sprintf "%s\n->\n%s" 
     (string_of_bg r.rdx) (string_of_bg r.rct) 
 
-let aux_check_react r0 r1 =
-  (inter_equal (inner r0)  (inner r1)) 
-  && (inter_equal (outer r0) (outer r1))
-  && (is_solid r0)
-
 let is_valid_react r =
-  aux_check_react r.rdx r.rct 
+  (inter_equal (inner r.rdx)  (inner r.rct)) 
+  && (inter_equal (outer r.rdx) (outer r.rct))
+  && (is_solid r.rdx)
 
-(* At least a non-reducing class *)
-let is_valid_p l =
-  (List.exists (fun c ->
-    match c with
-    | P_class _ -> true
-    | P_rclass _ -> false) l) &&
-    (List.for_all (fun c ->
-      match c with
-      | P_class r -> (List.length r > 0) && (List.for_all is_valid_react r)
-      | P_rclass r -> (List.length r > 0) && (List.for_all is_valid_react r)) l)
-    
+(* Requirements for validity :
+   - at least a standard class
+   - every reaction has to be valid: solid and matching interfaces
+ *)
+let is_valid_p c =
+  match c with
+  | P_class rs -> List.for_all (fun r -> is_valid_react r) rs
+  | P_rclass rs -> List.for_all (fun r -> is_valid_react r) rs
+
+let is_valid_p_ide get_react c =
+  match c with
+  | P_class_ide rs -> List.for_all (fun r -> is_valid_react (get_react r)) rs
+  | P_rclass_ide rs -> List.for_all (fun r -> is_valid_react (get_react r)) rs
+
+(* validity of each class is not checked *)
+let is_valid_p_l l = List.exists (fun c ->
+  match c with
+  | P_class _ -> true
+  | P_rclass _ -> false) l
+
+let is_valid_p_ide_l get_react l = List.exists (fun c ->
+  match c with
+  | P_class_ide _ -> true
+  | P_rclass_ide _ -> false) l
+
 let is_react_enabled b r = occurs b r.rdx
 
 let aux_apply (i_n, i_e) b r0 r1 =
@@ -112,7 +131,68 @@ let is_new b v =
   with
   | Not_found -> true
 
-let _bfs s0 rules limit ts_size verb step_f =
+(* Partition into new and old states *)
+let _partition_aux ts i verb =
+  List.fold_left (fun (new_acc, old_acc) b ->
+    try 
+      ignore (is_new b !ts.v);
+      i := !i + 1;
+      if verb then (printf "@[\r%d states found@?" (!i + 1)) else ();
+      ((!i, b) :: new_acc, old_acc)
+    with
+    | OLD x -> (new_acc, x :: old_acc)
+  ) ([], [])
+
+(* Iterate over priority classes *)
+let rec _scan step_f curr m ts i verb (l : p_class list) =
+  match l with
+  | [] -> [], []
+  | c :: cs ->
+    begin
+      match c with
+      | P_class rr ->
+	begin
+	  let ss, l = step_f curr rr in (* apply rewriting ? *)
+	  if l = 0 then _scan step_f curr m ts i verb cs 
+	  else (m := !m + l; _partition_aux ts i verb ss)
+	end
+      | P_rclass rr ->
+	begin
+	  try 
+	    let b, l = fix curr rr in
+	    m := !m + l;
+	    _partition_aux ts i verb [b]
+	  with
+	  | NO_MATCH -> ([], [])
+	end 	  
+    end 
+
+(* Iterate over priority classes *)
+let rec _scan_ide get_react step_f curr m ts i verb (l : p_class_ide list) =
+  match l with
+  | [] -> [], []
+  | c :: cs ->
+    begin
+      match c with
+      | P_class_ide rr ->
+	begin
+	  let ss, l = step_f curr (List.map get_react rr) in (* apply rewriting ? *)
+	  if l = 0 then _scan_ide get_react step_f curr m ts i verb cs 
+	  else (m := !m + l; _partition_aux ts i verb ss)
+	end
+      | P_rclass_ide rr ->
+	begin
+	  try 
+	    let b, l = fix curr (List.map get_react rr) in
+	    m := !m + l;
+	    _partition_aux ts i verb [b]
+	  with
+	  | NO_MATCH -> ([], [])
+	end 	  
+    end 
+
+(* scan : a' list -> Big.bg list * int list *)
+let _bfs s0 p_classes scan limit ts_size verb step_f =
   let t0 = Unix.gettimeofday ()
   and q = Queue.create () 
   and ts = ref 
@@ -123,51 +203,16 @@ let _bfs s0 rules limit ts_size verb step_f =
   and i = ref 0 
   and m = ref 1 in
   Queue.push (!i, s0) q;
-  if verb then printf "1 state found " else ();
+  if verb then printf "@[1 state found@ " else ();
   while not (Queue.is_empty q) do
     if !i > limit then 
-      (if verb then printf "in %f seconds.\n" ((Unix.gettimeofday ()) -. t0) else (); 
+      (if verb then printf "in %f seconds.@]@." ((Unix.gettimeofday ()) -. t0) else (); 
        raise (LIMIT !ts))
     else 
       begin 
 	let v, curr = Queue.pop q in
-	
-	(* Partition into new and old states *)
-	let _partition =
-	  List.fold_left (fun (new_acc, old_acc) b ->
-	    try 
-	      ignore (is_new b !ts.v);
-	      i := !i + 1;
-	      if verb then (printf "\r%d states found " (!i + 1); flush_all ()) else ();
-	      ((!i, b) :: new_acc, old_acc)
-	    with
-	    | OLD x -> (new_acc, x :: old_acc)
-	  ) ([], []) in
-	
-	(* Iterate over priority classes *)
-	let rec _scan (l : p_class list) =
-	  match l with
-	  | [] -> [], []
-	  | c :: cs ->
-	    begin
-	      match c with
-	      | P_class rr ->
-		begin
-		  let ss, l = step_f curr rr in (* apply rewriting ? *)
-		  if l = 0 then _scan cs else (m := !m + l; _partition ss)
-		end
-	      | P_rclass rr ->
-		begin
-		  try 
-		    let b, l = fix curr rr in
-		    m := !m + l;
-		    _partition [b]
-		  with
-		  | NO_MATCH -> ([], [])
-		end 	  
-	    end in
-	
-	let new_s, old_s = _scan rules in
+		
+	let new_s, old_s = scan step_f curr m ts i verb p_classes in
 
 	(* Add new states to v *)
 	ts := 
@@ -191,21 +236,34 @@ let _bfs s0 rules limit ts_size verb step_f =
       end
   done;
   let t = (Unix.gettimeofday ()) -. t0 in 
-  if verb then printf "in %f seconds.\n" t else ();
-  (!ts, { time = t; states = V.cardinal !ts.v; reacts = Hashtbl.length !ts.e; occurs = !m })
+  if verb then printf "in %f seconds.@]@." t else ();
+  (!ts, { time = t; 
+	  states = V.cardinal !ts.v; 
+	  reacts = Hashtbl.length !ts.e; 
+	  occurs = !m })
 
 let bfs s0 rules limit ts_size verb =
-  if verb then (printf "Starting execution of BRS ...\n"; flush_all ()) else ();
-  _bfs s0 rules limit ts_size verb step
+  if verb then (printf "@[Starting execution of BRS ...@]@.") else ();
+  _bfs s0 rules _scan limit ts_size verb step
+
+let bfs_ide s0 p_classes get_react limit ts_size verb =
+  if verb then (printf "@[Starting execution of BRS ...@]@.") else ();
+  _bfs s0 p_classes (_scan_ide get_react) limit ts_size verb step
+
+let _sim_step x y =
+  try
+    let (s, l) = random_step x y in
+    ([s], l)
+  with
+  | NO_MATCH -> ([], 0)
 
 let sim s0 rules limit ts_size verb =
-  if verb then (printf "Starting simulation of BRS ...\n"; flush_all ()) else ();
-  _bfs s0 rules limit ts_size verb (fun x y ->
-    try
-      let (s, l) = random_step x y in
-      ([s], l)
-    with
-    | NO_MATCH -> ([], 0))
+  if verb then (printf "@[Starting simulation of BRS ...@]@.") else ();
+  _bfs s0 rules _scan limit ts_size verb _sim_step
+
+let sim_ide s0 p_classes get_react limit ts_size verb =
+  if verb then (printf "@[Starting simulation of BRS ...@]@.") else ();
+  _bfs s0 p_classes (_scan_ide get_react) limit ts_size verb _sim_step
 
 let to_dot ts =
   let states =
@@ -218,9 +276,9 @@ let to_dot ts =
   sprintf "digraph ts {\n%s\n%s}" states edges
  
 let string_of_stats s =
-  (sprintf "\n==============================[ BRS Statistics ]===============================\n") ^
-    (sprintf "| Execution time (s)   : %-8g                                             |\n" s.time) ^
-    (sprintf "| States               : %-8d                                             |\n" s.states) ^
-    (sprintf "| Reactions            : %-8d                                             |\n" s.reacts) ^
-    (sprintf "| Occurrences          : %-8d                                             |\n" s.occurs) ^
-    (sprintf "===============================================================================\n")
+  (sprintf "@\n@[===============================[ BRS Statistics ]================================@\n") ^
+    (sprintf "|  Execution time (s)   : %-8g                                              |@\n" s.time) ^
+    (sprintf "|  States               : %-8d                                              |@\n" s.states) ^
+    (sprintf "|  Reactions            : %-8d                                              |@\n" s.reacts) ^
+    (sprintf "|  Occurrences          : %-8d                                              |@\n" s.occurs) ^
+    (sprintf "=================================================================================@]@\n")

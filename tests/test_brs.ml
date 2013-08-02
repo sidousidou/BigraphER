@@ -1,7 +1,8 @@
 open Base
 open Big
 open Brs
-open Printf
+open Format
+open Export
 
 let s = 
   close (Link.parse_face ["x"]) 
@@ -47,23 +48,32 @@ let reacts =
 	    ]
   ]
   
-let () =
+let _ =
+  check_setup ();
   let verb = 
-    try
-      bool_of_string Sys.argv.(1)
+    try match Sys.argv.(2) with
+      | "v" -> true
+      | _ -> raise (Invalid_argument "") 
     with
-    | _ -> false in
+    | _ -> false
+  and path = 
+    try Unix.access Sys.argv.(1) [Unix.W_OK; Unix.F_OK];
+	Sys.argv.(1) 
+    with
+      | Unix.Unix_error (err, _, arg) -> 
+	(eprintf "@[Error: cannot acccess %s: %s@]@." 
+	   arg (Unix.error_message err); exit 1)
+      | _ -> (eprintf "@[Usage: test_brs PATH [v]@]@."; exit 1) in 
   Random.self_init ();
-  if is_valid_p reacts then
-    begin
-      let ts, stats = bfs s reacts 10000 50 verb in
-      printf "%s" (string_of_stats stats);
-      Export.write_svg (to_dot ts) "ts" "tests/brs/" verb;
-      V.iter (fun (i, s) ->
-	let name = sprintf "%d" i in
-	Export.write_svg (get_dot s name) name "tests/brs/" verb) ts.v;
-      let ts, stats = sim s reacts 10000 50 verb in
-      printf "%s" (string_of_stats stats);
-    end 
-  else
-    printf "Invalid reactions.\n"
+  if is_valid_p_l reacts then begin
+    let ts, stats = bfs s reacts 10000 50 verb in
+    printf "@[%s@]@." (string_of_stats stats);
+    Export.write_svg (to_dot ts) "ts" path verb;
+    V.iter (fun (i, s) ->
+      let name = sprintf "%d" i in
+      Export.write_svg (get_dot s name) name path verb) ts.v;
+    let _, stats = sim s reacts 10000 50 verb in
+    printf "@[%s@]@." (string_of_stats stats);
+    wait_before_exit verb;
+    Gc.full_major ();
+  end else eprintf "@[Error: Invalid reactions.@]@."

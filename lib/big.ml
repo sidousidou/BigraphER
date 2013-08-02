@@ -306,6 +306,7 @@ let init_vars r c solver =
       sprintf "%8d" x) row)))) m)));*)
   m
 
+(* GPROF *)
 let add_bijection v n m solver =
   (* Add first constraint; TOTAL -- at least a TRUE for every row *)
   for i = 0 to n - 1 do
@@ -341,7 +342,8 @@ let get_iso solver vars n m =
     for j = 0 to m - 1 do
       match solver#value_of vars.(i).(j) with
 	| Minisat.True -> res := (i,j)::!res
-	| _ -> ()
+	| Minisat.False -> ()
+	| Minisat.Unknown -> ()
     done;
   done;
   List.fold_left (fun acc x ->
@@ -356,9 +358,10 @@ let add_blocking solver v n m w e f =
 	  | Minisat.True -> 
 	    ((*printf "!m[%d,%d] V " i j;*)
 	     blocking_clause := (neg_lit m.(i).(j))::!blocking_clause)
-	  | _ -> 
+	  | Minisat.False -> 
 	    ((*printf "m[%d,%d] V " i j;*)
 	     blocking_clause := (pos_lit m.(i).(j))::!blocking_clause)
+	  | Minisat.Unknown -> ()
       done;
     done;
     !blocking_clause in
@@ -377,7 +380,7 @@ let rec filter_loop solver t p v n m w e f t_trans =
 	begin
 	  (* printf "MATCH\n"; *)
 	  (* solver#print_stats; *)
-	  let iso_v, iso_e = get_iso solver v n m, get_iso solver w e f in
+	  let iso_v, _ = get_iso solver v n m, get_iso solver w e f in
 	  if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
 	    (Link.is_match_valid t.l p.l iso_e)*) then
 	    solver, v, n, m, w, e, f, t_trans
@@ -522,13 +525,13 @@ let occurrences t p =
     with
       | NO_MATCH -> []
 
-let add_roots_sites v n solver = 
+(*let add_roots_sites v n solver = 
   for i = 0 to n - 1 do
     for j = 0 to n - 1 do
       if i = j then solver#add_clause [(pos_lit v.(i).(j))]
       else solver#add_clause [(neg_lit v.(i).(j))]
     done;
-  done
+  done*)
     
 let equal_SAT a b =
   let solver = new solver in

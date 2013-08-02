@@ -18,7 +18,7 @@ let string_of_pg p =
   sprintf "%d %d %d\n%s\n" p.r p.n p.s (to_string p.m)
 
 (* Representation for match *)
-let match_string p = (p.r, p.s, to_string p.m)
+(*let match_string p = (p.r, p.s, to_string p.m)*)
 
 (* Apply isomorphism *)  
 let apply_iso i p =
@@ -164,19 +164,19 @@ let is_guard p =
 
 (* Functions only for nodes *)
 (* is a child of b in p? (a and b columns)*)
-let is_chl p a b = p.m.{p.r + b, a}
+(*let is_chl p a b = p.m.{p.r + b, a}*)
 
 (* is a parent of b in p? (a and b columns)*)
-let is_prn p a b = p.m.{p.r + a, b} 
+(*let is_prn p a b = p.m.{p.r + a, b} *)
 
 (* is a a descendant of b? m is the transitive closure of the nodes-submatrix*)
-let is_desc m a b = m.{b, a}
+(*let is_desc m a b = m.{b, a}*)
 
 (* USE TRANSITIVE CLOSURE *)
 (* Get the set of descendants (columns) of a set of rows.
    Not exposed. 
    raise Assert_failure *)
-let desc p rs = 
+(*let desc p rs = 
   let rec aux acc rows =
     let chl_set = Int_set.fold (fun i acc ->
       Int_set.union (chl p.m i) acc) rows Int_set.empty   
@@ -184,7 +184,7 @@ let desc p rs =
     if chl_set = Int_set.empty then acc
     else aux (Int_set.union chl_set acc) (Int_set.filter (fun i ->
       i < p.r + p.n) (off p.r chl_set))
-  in aux Int_set.empty rs
+  in aux Int_set.empty rs*)
 
 (* Get the set of ancestors (rows) of a set of columns.
    Not exposed. 
@@ -469,6 +469,7 @@ let edges p =
   done;
   !e
 
+(* GPROF *)
 (* Returns a list of pairs of non-iso nodes. Every node is expressed as a 
    pair of indices. *) (* USE ISO instead*)
 let match_list t p =
@@ -574,10 +575,10 @@ let match_roots t p =
 	acc) n_t Iso.empty)) n_p Iso.empty
 
 (* return a set of nodes (columns). Roots are discarded. *)
-let prn_set p js =
+(*let prn_set p js =
   Int_set.fold (fun j acc ->
     Int_set.union acc (Int_set.filter (fun x -> x >= 0 ) (off (-p.r) (prn p.m j))))
-    js Int_set.empty
+    js Int_set.empty*)
 
 (* check if iso i:p -> t is valid *)
 let is_match_valid t p t_trans iso = 
@@ -625,7 +626,7 @@ let is_match_valid t p t_trans iso =
       Int_set.equal candidate chl_p)
       (Int_set.diff n_t_roots (off t.r (codom iso))) (* diff codom iso ??? YES *)
   (* check TRANS *)
-  and check_trans t p t_trans iso =
+  and check_trans t t_trans iso =
    (* check if there is a node child of codomain, outside codomain, such that
       one of its children in trans is in codomain *)
     not (Int_set.exists (fun c ->
@@ -635,7 +636,7 @@ let is_match_valid t p t_trans iso =
 	     Int_set.union acc (Int_set.filter (fun j -> 
 	       j < t.n) (chl t.m x))) (off t.r (codom iso)) Int_set.empty)
 	      (codom iso))) in
-  (check_sites t p iso) && (check_roots t p iso) && (check_trans t p t_trans iso)
+  (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso)
 
 (*let match_trans t p t_trans blocks =
   let n_t = of_int t.n 
