@@ -29,9 +29,9 @@ let add_pos () =
   Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()
 
 let print_pos (p0, p1) =
-  prerr_endline (sprintf "File \"%s\", line %d, charachters %d-%d:"
-		  p0.pos_fname p0.pos_lnum (p0.pos_cnum - p0.pos_bol)
-		  (p1.pos_cnum - p1.pos_bol))
+  eprintf "File \"%s\", line %d, charachters %d-%d:\n"
+    p0.pos_fname p0.pos_lnum (p0.pos_cnum - p0.pos_bol)
+    (p1.pos_cnum - p1.pos_bol)
 
 let parse_error_msg msg tok =
   let start_pos = Parsing.symbol_start_pos ()

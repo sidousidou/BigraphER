@@ -1,9 +1,0 @@
-true: package(str), package(unix), package(bigarray), package(minisat)
-"test-files": -traverse
-"test-files": not_hygienic
-".git": -traverse
-".git": not_hygienic
-<lib> or <front-end> or <tests>: include
-<front-end/**> or <tests/**>: package(bigraph)
-<**/*.ml*>: warn_A
-false: annot, debug, prof

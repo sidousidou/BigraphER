@@ -1,8 +1,6 @@
 open Base
 open Big
-open Brs
 open Format
-open Export
 
 let s = 
   close (Link.parse_face ["x"]) 
@@ -43,13 +41,19 @@ let g =
 	      ]
 
 let reacts = 
-  [ P_class [ { rdx = r; rct = r_p };
-	      { rdx = g; rct = r }
-	    ]
+  [ Brs.P_class [ { Brs.rdx = r; rct = r_p; };
+		  { Brs.rdx = g; rct = r; }
+		]
+  ]
+
+let sreacts =
+  [ Sbrs.P_class [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; };
+		   { Sbrs.rdx = g; rct = r; rate = 4.0; }
+		 ]
   ]
   
 let _ =
-  check_setup ();
+  Export.check_graphviz ();
   let verb = 
     try match Sys.argv.(2) with
       | "v" -> true
@@ -65,15 +69,23 @@ let _ =
 	   arg (Unix.error_message err); exit 1)
       | _ -> (eprintf "@[Usage: test_brs PATH [v]@]@."; exit 1) in 
   Random.self_init ();
-  if is_valid_p_l reacts then begin
-    let ts, stats = bfs s reacts 10000 50 verb in
-    printf "@[%s@]@." (string_of_stats stats);
-    Export.write_svg (to_dot ts) "ts" path verb;
-    V.iter (fun (i, s) ->
+  if Brs.is_valid_p_l reacts then begin
+    let (ts, stats) = Brs.bfs s reacts 10000 50 verb in
+    printf "@[%s@]@." (Brs.string_of_stats stats);
+    Export.write_ts ts "ts" path verb;
+    Brs.V.iter (fun (i, s) ->
       let name = sprintf "%d" i in
-      Export.write_svg (get_dot s name) name path verb) ts.v;
-    let _, stats = sim s reacts 10000 50 verb in
-    printf "@[%s@]@." (string_of_stats stats);
-    wait_before_exit verb;
-    Gc.full_major ();
-  end else eprintf "@[Error: Invalid reactions.@]@."
+      Export.write_big s name path verb) ts.Brs.v;
+    let (_, stats) = Brs.sim s reacts 10000 50 verb in
+    printf "@[%s@]@." (Brs.string_of_stats stats)
+  end else eprintf "@[Error: Invalid reactions.@]@.";
+  if Sbrs.is_valid_p_l sreacts then begin
+    let (ctmc, stats) = Sbrs.bfs s sreacts 10000 50 verb in
+    printf "@[%s@]@." (Sbrs.string_of_stats stats);
+    Export.write_ctmc ctmc "ctmc" path verb;
+    let (_, stats) = Sbrs.sim s sreacts 5000.0 50 verb in
+    printf "@[%s@]@." (Sbrs.string_of_stats_sim stats)
+  end else eprintf "@[Error: Invalid stochastic reactions.@]@.";
+  Export.wait_before_exit verb;
+  Gc.full_major ();
+    

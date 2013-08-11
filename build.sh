@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 set -e
 
@@ -13,20 +13,27 @@ BINOPT=bigrapher.native
 
 OCAMLBUILD=ocamlbuild
 OCBFLAGS="-use-ocamlfind -j 0 -verbose 1 -yaccflags -v"
-
-if [ `uname -o` = "Cygwin" ]; then
-    OCAMLFIND="ocamlfind"
-else
-    OCAMLFIND="sudo ocamlfind"
-fi
+OCAMLFIND=ocamlfind
 
 DLLPATH=`ocamlfind query minisat`
-OCAMLCFLAGS='-verbose -noassert "-dllpath $DLLPATH" "-dllib -lminisat" "-ccopt -O3"'
-OCAMLC="ocamlc $OCAMLCFLAGS"
-OCAMLOPTFLAGS='-verbose -noassert "-inline 2" -ffast-math "-ccopt -O3"'
-OCAMLOPT="ocamlopt $OCAMLOPTFLAGS"
 
-INSTDIR=/usr/bin/
+#OCAMLCFLAGS='-verbose -noassert "-dllpath $DLLPATH" "-dllib -lminisat" "-ccopt -O3" -ccopt "-march=native"'
+#OCAMLC="ocamlc $OCAMLCFLAGS"
+#OCAMLOPTFLAGS='-verbose -noassert "-inline 2" -ffast-math "-ccopt -O3" "-ccopt -march=native"'
+#OCAMLOPT="ocamlopt $OCAMLOPTFLAGS"
+
+: ${INSTDIR:=/usr/bin/}
+OS='uname -o'
+
+ERRMSG="Error: Unknown action $1\nUsage: build OPTION\nThe options are as follows:\n\
+clean\t\tRemove outputs of previous compilations\n\
+lib\t\tCompile library\n\
+test\t\tCompile tests\n\
+bin\t\tCompile bigrapher\n\
+all\t\tCompile library and bigrapher\n\
+dist\t\tProduce an archive for distribution\n\
+install\t\tInstall library and bigrapher\n\
+uninstall\tRemove library and bigrapher\n"
 
 ocb() {
 #    if [ `uname -o` = "Cygwin" ]; then
@@ -37,21 +44,35 @@ ocb() {
 #    fi
 }
 
-install() {
-    ocb $LIB #$BINOPT
-    MLI=`ls ./_build/lib/*.mli`
-    CMI=`ls ./_build/lib/*.cmi`
-    #CMA=`ls ./_build/lib/*.cma`
-    #CMXA=`ls ./_build/lib/*.cmxa`
-    DLL=`ls ./_build/lib/*a`
-    INSTALLFILES="./lib/META $MLI $CMI $DLL"
-    $OCAMLFIND remove $NAME || true
-    #rm $INSTDIR/$BINNAME  || true
-    $OCAMLFIND install -patch-version $VERSION $NAME $INSTALLFILES
-#    install -m 755 _build/front-end/$BINOPT $INSTDIR/$BINNAME
+lib_install_rule() {
+    printf 'Installing library.\n'
+    MLI=`ls lib/_build/*.mli` || true 
+    CMI=`ls lib/_build/*.cmi` || true
+    DLL=`ls lib/_build/*a` || true
+    #check if the files are there or not
+    if [ "$MLI $CMI $DLL" = "" ]; then
+	printf 'Error: Library not compiled.\nTry running ./build lib first.\n' 2> /dev/null
+	exit 1
+    else
+	INSTALLFILES="lib/META $MLI $CMI $DLL"
+	$OCAMLFIND remove $NAME || true
+     	$OCAMLFIND install -patch-version $VERSION $NAME $INSTALLFILES
+  fi
 }
 
-uninstall() {
+bin_install_rule() {
+    printf 'Installing bigrapher in $INSTDIR.\n'
+    if [ -e "bigrapher/_build/$BINOPT" ]; then
+	printf ""
+          #install -m 755 bigrapher/_build/$BINOPT $INSTDIR/$BINNAME
+          #add install dir of bigraph to PATH in Cygwin
+    else
+	printf 'Error: bigrapher not compiled.\nTry running ./build bin first.\n' 2> /dev/null
+	exit 1
+    fi
+}
+
+uninstall_rule() {
     $OCAMLFIND remove $NAME
     #rm $INSTDIR/$BINNAME
 }
@@ -60,18 +81,61 @@ dist() {
     echo "Not yet"
 }
 
+lib_rule() {
+    cd lib
+    ocb $LIB
+    cd ..
+}
+
+test_rule(){
+    cd tests
+    ocb $TEST
+    cd ..
+}
+
+bin_rule(){
+    cd bigrapher
+    ocb $BIN $BINOPT
+    cd ..
+}
+
+clean_rule(){
+    cd lib 
+    ocb -clean
+    echo ""
+    rm -f *.byte *.cm*a *.a *.native || true
+    cd ../tests
+    ocb -clean
+    echo ""
+    rm -f *.byte *.cm*a *.a *.native || true
+    cd ../bigrapher
+    ocb -clean
+    echo ""
+    rm -f *.byte *.cm*a *.a *.native || true
+    cd ..
+}
+
 rule() {
     case $1 in
-	clean) ocb -clean;;
-	lib) ocb $LIB;;   
-	test) ocb -clean
-	    ocb $TEST;;
-	bin) ocb $BIN $BINOPT;;
-	all) ocb $LIB $TEST $BIN $BINOPT;;
+	clean) clean_rule;;
+	lib) lib_rule;;   
+	test) test_rule;;
+	bin) bin_rule;;
+	all) #clean_rule 
+	    lib_rule
+	    lib_install_rule
+	    bin_rule;;
+	    #bin_install_rule
+	    #clean_rule;;
 	dist) dist;;
-	install) install;;
-	uninstall) uninstall;;
-	*) echo "Unknown action $1";;
+	install) clean_rule 
+	    lib_rule
+	    lib_install_rule
+	    bin_rule;;
+	    #bin_install_rule
+	    #clean_rule;;
+	uninstall) uninstall_rule;;
+	*) printf "$ERRMSG" 2> /dev/null;;
     esac;
 }
 

@@ -1,0 +1,3 @@
+true: package(unix), package(bigraph)
+<**/*.ml*>: warn_A
+true: annot, debug, prof

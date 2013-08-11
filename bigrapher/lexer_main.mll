@@ -62,7 +62,7 @@ rule lex =  parse
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | comment                 { Utils.incr_linenum lexbuf; lex lexbuf } 
   | [' ' '\t']              { lex lexbuf }
-  | ['\n']                  { Utils.incr_linenum lexbuf; lex lexbuf }
+  | ['\n' '\r']             { Utils.incr_linenum lexbuf; lex lexbuf }
   | eof                     { EOF }
   | _ as c                  { raise (Utils.UNKNOWN_CHAR (c, Lexing.lexeme_start_p lexbuf)) }
 

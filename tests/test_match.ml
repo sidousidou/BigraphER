@@ -203,7 +203,7 @@ let do_equality_tests l ts =
     
 (* Argument is the path of the directory containing the tests *)
 let _ =
-  check_setup ();
+  check_graphviz ();
   let args = Sys.argv in
   assert (Array.length args = 2);
   printf "%s %s\n" args.(0) args.(1);
@@ -213,7 +213,7 @@ let _ =
       printf "building %s\n" n;
       (n, build_big ls)) bg_strings in
   List.iter (fun (n, b) -> 
-    dot_out b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep)) true) bgs;
+    write_big b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep)) true) bgs;
   let tests =
     try
       [ (* TEST 1 *)

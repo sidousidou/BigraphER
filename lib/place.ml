@@ -268,7 +268,7 @@ let decomp t p iso =
   let m_c = make_0 (r_c + n_c) (n_c + s_c)
   (* Iso from columns in c to rows in t *)
   and iso_c = inverse (fix_num v_c) in
-    for i = 0 to r_c + n_c - 1 do
+  for i = 0 to r_c + n_c - 1 do
     let new_i =
       if i < r_c then i else get_i (i - r_c) iso_c in
     (*printf "new_i = %d\n" new_i;*)
@@ -278,29 +278,35 @@ let decomp t p iso =
           (* Node *)
           (get_i j iso_c) - t.r
         else (*if j < (n_c + p.r) then*)
+	  (* CHECK *)
           (* Site to pattern *)
 	  Int_set.choose (apply (Int_set.filter (fun x ->
 	    x < p.n) (chl p.m (j - n_c))) iso)
-	(*else
+	  (*else
           (* Site to id *)
-          (get_inv_i (j - n_c - p.r) iso_id) - t.r*) in
+            (get_inv_i (j - n_c - p.r) iso_id) - t.r*) in
       (*printf "new_j = %d\n" new_j;*)
       m_c.{i,j} <- t.m.{new_i,new_j}
     done
   done;
+  (*printf "1\n";
+  printf "iso_id = %s\n" (string_of_iso iso_id);
+  printf "r_c = %d, n_c = %d, s_c = %d\n" r_c n_c s_c;
+  printf "iso_c = %s\n" (string_of_iso iso_c);*)
   (* edges to j *)
-  Iso.iter (fun (i, j) ->
-    let new_i = if i < r_c then i else get_i (i - r_c) iso_c in 
+  Iso.iter (fun (i, j) -> (* get_i (i - r_c) iso_c *)
+    let new_i = if i < r_c then i else (get_inv_i i iso_c) + r_c in 
     m_c.{new_i, j + n_c + p.r} <- 1) iso_id;
   (* Parameter d matrix*)
-  let m_d = make_0 (r_d + n_d) (n_d + s_d)
+   let m_d = make_0 (r_d + n_d) (n_d + s_d)
   (* Iso from columns in d to columns in t *)
   and iso_d =  inverse (fix_num (off (-t.r) v_d)) in
-  for i = 0 to r_d + n_d - 1 do
+   for i = 0 to r_d + n_d - 1 do
     let new_i =
       if i < p.s then
         (* Root to pattern *)
         (*NOT TRUE!! p mono -> Sites in p have one parent *)
+	(* CHECK *)
         (get_i ((Int_set.choose (prn p.m (i + p.n))) - p.r) iso) + t.r
       else if i < r_d then
         (* Root to id *)
@@ -319,7 +325,7 @@ let decomp t p iso =
       m_d.{i,j} <- t.m.{new_i,new_j}
     done
   done;  
-  ({r = r_c; n = n_c; s = s_c; m = m_c},
+   ({r = r_c; n = n_c; s = s_c; m = m_c},
    elementary_id j,
    {r = r_d; n = n_d; s = s_d; m = m_d},
    Iso.fold (fun (x, y) acc ->

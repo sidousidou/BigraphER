@@ -1,0 +1,3 @@
+true: package(bigarray), package(minisat), package(unix), package(str)
+<**/*.ml*>: warn_A
+true: annot, debug, prof

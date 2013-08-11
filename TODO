@@ -13,4 +13,10 @@ TO DO:
 [ - ]  validate priorities: in sbrs only instantaneous rules can be reduced and
        no instantaneous rules in standard classes. In sbrs there is at least a
        standard class.
-  
+[ - ]  Implement Brs and Sbrs with a functor or a class.
+[ - ]  Implement sparse matrices with different data-structures.
+[ - ]  Bottlenecks identified bt gprof are matrix multiplication and the
+       construction of list of pairs for the bijections in the place graph. 
+[ - ]  Add assetions in the lib
+[ - ]  Produce svg with classes for controls
+[ - ]  Remove Matrix low-level operations from Place

@@ -6,7 +6,10 @@
   let add_closure n c =
     match c with
     | Big_close (l, pos) -> Big_close (n :: l, pos)
-    | _ -> parse_error_msg "Invalid closure" n; 
+    | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
+    | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
+    | Big_ion_fun _ | Big_share _ | Big_tens _ ->
+      parse_error_msg "Invalid closure" n; 
       raise Parsing.Parse_error
 
 %}
@@ -337,8 +340,6 @@ id_exp
 closures
   : closure                                 { $1 }
   | closure simple_exp                      { Big_comp_c ($1, $2, add_pos ()) }
-/*  | error                                   { parse_error_msg "Invalid closure" ""; 
-                                              raise Parsing.Parse_error} */		    
   ; 
 
 closure

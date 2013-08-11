@@ -231,9 +231,12 @@ let get_dot b ide =
       node_ranks inner_shp rank_in place_adj link_adj
 
 let decomp t p i_v i_e =
-  let p_c, p_id, p_d, i_c, i_d = Place.decomp t.p p.p i_v in
-  let l_c, l_d, l_id = Link.decomp t.l p.l i_v i_e i_c i_d
-  and n_c, n_d = apply_nodes t.n i_c, apply_nodes t.n i_d in
+  let (p_c, p_id, p_d, i_c, i_d) = 
+    Place.decomp t.p p.p i_v in
+  let (l_c, l_d, l_id) = 
+    Link.decomp t.l p.l i_v i_e i_c i_d
+  and (n_c, n_d) = 
+    apply_nodes t.n i_c, apply_nodes t.n i_d in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty })

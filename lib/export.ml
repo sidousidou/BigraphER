@@ -1,4 +1,4 @@
-open Format
+open Printf
 open Filename
 open Big
  
@@ -7,7 +7,7 @@ let _end_with_sep s =
   else s ^ dir_sep
 
 (* Write a string in dot format to an svg file *)
-let write_svg s name path verb =
+let _write_svg s name path verb =
   let dot_in, bigmc_out = Unix.pipe ()
   and n_path = _end_with_sep path in
   let svg_file =  
@@ -15,7 +15,7 @@ let write_svg s name path verb =
       [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o777 in
   Unix.set_close_on_exec dot_in;
   Unix.set_close_on_exec svg_file;
-  if verb then printf "@[Writing@ %s%s.svg@]@." n_path name else (); 
+  if verb then printf "Writing %s%s.svg\n" n_path name else (); 
   let b_w = Unix.write bigmc_out s 0 (String.length s) in
   flush_all ();
   Unix.close bigmc_out;
@@ -24,12 +24,17 @@ let write_svg s name path verb =
   match Unix.waitpid [ Unix.WNOHANG ] pid with
   | _, Unix.WSTOPPED _ -> failwith "Error: dot terminated unexpectedly"
   | _, Unix.WSIGNALED _ | _, Unix.WEXITED _ -> 
-    if verb then printf "@[%d bytes written@]@." b_w else ()
+    if verb then printf "%d bytes written\n" b_w else ()
       
-(* Write a bigraph to svg *)
-let dot_out b n path verb = 
-  write_svg (get_dot b n) n path verb
-  
+let write_big b n path verb = 
+  _write_svg (get_dot b n) n path verb
+
+let write_ts ts n path verb =
+  _write_svg (Brs.to_dot ts) n path verb
+
+let write_ctmc ctmc n path verb =
+  _write_svg (Sbrs.to_dot ctmc) n path verb
+
 (* check if cmd returns code when executed with arguments a *)
 let _check_cmd cmd a code =
   let read, write = Unix.pipe () in
@@ -45,7 +50,7 @@ let _check_cmd cmd a code =
     failwith (sprintf "Error: %s is not installed in the system" cmd)
     
 (* bimatch does not return the correct exit code*)
-let check_setup () = 
+let check_graphviz () = 
   _check_cmd "dot" "-V" 0
  
 (* Avoid zombies *)
@@ -55,9 +60,8 @@ let wait_before_exit v =
       ignore (Unix.wait ());
       loop ()
     with
-    | _ -> if v then printf "@[Terminating ...@]@." else () in
+    | _ -> if v then printf "Terminating ...\n" else () in
   loop ()
-
 
 (***************** Write the labelling funtion to a csl file ******************)
 (*let csl_out lab path verb =

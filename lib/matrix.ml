@@ -92,21 +92,24 @@ let append a b =
   done;
   m
  
-(* GPROF *) 
+(* GPROF try with exception *) 
 (* Boolean matrix multiplication 
    raise Assert_failure   *)
+(*exception BREAK*)
+
 let mul a b =
   assert (Array2.dim2 a = Array2.dim1 b);
   let m = make_0 (Array2.dim1 a) (Array2.dim2 b) in
   for i = 0 to (Array2.dim1 a) - 1 do
     for j = 0 to (Array2.dim2 b) - 1 do
       for k = 0 to (Array2.dim1 b) - 1 do
-        m.{i,j} <- if m.{i,j} = 1 then 1 else a.{i,k} * b.{k,j}
+        if m.{i,j} = 1 then ()
+	else m.{i,j} <- a.{i,k} * b.{k,j}
       done;
     done;
   done;
   m
-
+    
 (*    
 (* Copy matrix a *)
 let copy a =
@@ -255,7 +258,7 @@ let trans m =
   for k = 0 to (Array2.dim1 res) - 1 do
     for i = 0 to (Array2.dim1 res) - 1 do
       for j = 0 to (Array2.dim1 res) - 1 do
-        res.{i,j} <- if res.{i,j} = 1 then 1 else res.{i,k} * res.{k,j}
+       if res.{i,j} = 1 then () else  res.{i,j} <- res.{i,k} * res.{k,j}
       done;
     done;
   done;

@@ -1,18 +1,44 @@
-_build/*
-lib/_build/*
-front-end/_build/*
-tests/_build/*
-old/*
-test-files/*
-*~
-*.byte
-*.native
-*.docdir
-*.log
-*.html
-*.a
-log*
+# git on Cygwin does not support ** patterns
+
+# Ignore dirs
+test-files/
+old/
+lib/_build/
+bigrapher/_build/
+tests/_build/
+
+# OCaml 
+*/*.annot
+*/*.cmo
+*/*.cma
+*/*.cmi
+*/*.a
+*/*.o
+*/*.cmx
+*/*.cmxs
+*/*.cmxa
+*/*.byte
+*/*.native
+*/*.p.byte
+*/*.p.native
+
+# profiler
 massif*
-gmon.out
-out*
-*#
+*.out
+*/massif*
+*/*.out
+
+# ocamldoc
+*/*.html
+*/*.html
+
+# archives
+*.gz
+
+# temp files
+*~
+\#*\#
+.\#*
+*/*~
+*/\#*\#
+*/.\#*
