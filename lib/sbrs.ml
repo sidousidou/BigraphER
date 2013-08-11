@@ -103,7 +103,10 @@ let rec is_class_enabled b rs =
 
 let aux_apply (i_n, i_e) b r0 r1 =
   let (c, d, id) = decomp b r0 i_n i_e in
-  comp c (comp (tens r1 id) d) 
+  (*printf "c:\n%s\nd:\n%s\n\n" (string_of_bg c) (string_of_bg d);*)
+  let out = comp c (comp (tens r1 id) d) in
+  (* debug *)
+  if occurs out r1 then out else failwith "BIG_INTERNAL_ERROR" 
 
 let step s srules =
   let filter_iso l =
@@ -118,7 +121,8 @@ let step s srules =
   filter_iso (List.fold_left (fun acc r ->
     let occs = occurrences s r.rdx in 
     (List.map (fun o ->
-      (aux_apply o s r.rdx r.rct, r.rate)) occs) @ acc) [] srules) 
+      let s' = aux_apply o s r.rdx r.rct in
+	(s', r.rate)) occs) @ acc) [] srules) 
 
 (* rule selection: second step of SSA 
 raise DEAD *)
@@ -156,7 +160,7 @@ let fix s srules =
 	  (*printf "s = %s\nrdx = %s\n" (string_of_bg s) (string_of_bg r.rdx);*)
 	  aux_apply (occurrence s r.rdx) s r.rdx r.rct
 	with
-	| NO_MATCH -> printf "NO_MATCH\n";_step s rs
+	| NO_MATCH -> _step s rs
       end in
   let rec _fix s srules i =
     try
@@ -194,7 +198,6 @@ let rec rewrite (s : Big.bg) classes (m : int) =
       end 
 
 let rec rewrite_ide get_sreact s classes m =
-  printf "rewrite_ide\t %d\n" (List.length classes);
   match classes with
     | [] -> (s, m)
     | c :: cs ->
@@ -206,8 +209,6 @@ let rec rewrite_ide get_sreact s classes m =
 	    else rewrite_ide get_sreact s cs m
 	  | P_rclass_ide rr ->
 	    begin
-	      printf "Trying fix over {%s}\n" 
-		(String.concat " " rr);
 	      let (s', i) = fix s (List.map get_sreact rr) in
 	      rewrite_ide get_sreact s' cs (m + i)
 	    end
@@ -332,7 +333,6 @@ let bfs_ide s0 p_classes get_sreact limit ctmc_size verb =
   let (ctmc, q, m, consts) =
     _init_bfs s0 (rewrite_ide get_sreact) (_scan_ide get_sreact)
       p_classes limit ctmc_size verb in
-  printf "=========================HERE==========================\n";
   _bfs ctmc q 0 m consts 
     
 let _init_sim s0 rewrite _scan srules t_max ctmc_size verb =
@@ -431,7 +431,7 @@ let sim_ide s0 p_classes get_sreact t_max ctmc_size verb =
 let string_of_stats (t, s, r, o) = 
   sprintf
 "\n===============================[ SBRS Statistics ]==============================\n\
-   |  Execution time (s)   : %-8g                                             |\n\
+   |  Execution time (s)   : %-8.3g                                             |\n\
    |  States               : %-8d                                             |\n\
    |  Reactions            : %-8d                                             |\n\
    |  Occurrences          : %-8d                                             |\n\
@@ -441,8 +441,8 @@ let string_of_stats (t, s, r, o) =
 let string_of_stats_sim (t, t_sim, s, r, o) = 
   sprintf
 "\n===============================[ SBRS Statistics ]==============================\n\
-   |  Execution time (s)   : %-8g                                             |\n\
-   |  Simulation time      : %-8g                                             |\n\
+   |  Execution time (s)   : %-8.3g                                             |\n\
+   |  Simulation time      : %-8.3g                                             |\n\
    |  States               : %-8d                                             |\n\
    |  Reactions            : %-8d                                             |\n\
    |  Occurrences          : %-8d                                             |\n\

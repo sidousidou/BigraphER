@@ -321,7 +321,7 @@ let sim_ide s0 p_classes get_react limit ts_size verb =
 let string_of_stats (t, s, r, o) = 
   sprintf
 "\n===============================[ BRS Statistics ]===============================\n\
-   |  Execution time (s)   : %-8g                                             |\n\
+   |  Execution time (s)   : %-8.3g                                             |\n\
    |  States               : %-8d                                             |\n\
    |  Reactions            : %-8d                                             |\n\
    |  Occurrences          : %-8d                                             |\n\

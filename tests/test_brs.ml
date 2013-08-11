@@ -23,7 +23,7 @@ let s =
 		   comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one;
 		   comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one;
 		   comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one;
-		   comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one
+		   comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one;
 		 ])
 
 let r = 
@@ -37,18 +37,18 @@ let r_p =
 let g = 
   par_of_list [ comp (ion (Link.parse_face (["x"])) (Ctrl ("B", 1))) one; 
 		comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one;
-		comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one
+		comp (ion (Link.parse_face (["x"])) (Ctrl ("A", 1))) one;
 	      ]
 
 let reacts = 
   [ Brs.P_class [ { Brs.rdx = r; rct = r_p; };
-		  { Brs.rdx = g; rct = r; }
+		  { Brs.rdx = g; rct = r; };
 		]
   ]
 
 let sreacts =
   [ Sbrs.P_class [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; };
-		   { Sbrs.rdx = g; rct = r; rate = 4.0; }
+		   { Sbrs.rdx = g; rct = r; rate = 4.0; };
 		 ]
   ]
   
@@ -70,17 +70,17 @@ let _ =
       | _ -> (eprintf "@[Usage: test_brs PATH [v]@]@."; exit 1) in 
   Random.self_init ();
   if Brs.is_valid_p_l reacts then begin
-    let (ts, stats) = Brs.bfs s reacts 10000 50 verb in
+    let (ts, stats) = Brs.bfs s reacts 1000 50 verb in
     printf "@[%s@]@." (Brs.string_of_stats stats);
     Export.write_ts ts "ts" path verb;
     Brs.V.iter (fun (i, s) ->
       let name = sprintf "%d" i in
       Export.write_big s name path verb) ts.Brs.v;
-    let (_, stats) = Brs.sim s reacts 10000 50 verb in
+    let (_, stats) = Brs.sim s reacts 1000 50 verb in
     printf "@[%s@]@." (Brs.string_of_stats stats)
   end else eprintf "@[Error: Invalid reactions.@]@.";
   if Sbrs.is_valid_p_l sreacts then begin
-    let (ctmc, stats) = Sbrs.bfs s sreacts 10000 50 verb in
+    let (ctmc, stats) = Sbrs.bfs s sreacts 1000 50 verb in
     printf "@[%s@]@." (Sbrs.string_of_stats stats);
     Export.write_ctmc ctmc "ctmc" path verb;
     let (_, stats) = Sbrs.sim s sreacts 5000.0 50 verb in

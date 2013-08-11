@@ -162,30 +162,6 @@ let is_guard p =
     Int_set.is_empty (Int_set.filter (fun j ->
       j > p.n) (chl p.m i))) (of_int p.r)
 
-(* Functions only for nodes *)
-(* is a child of b in p? (a and b columns)*)
-(*let is_chl p a b = p.m.{p.r + b, a}*)
-
-(* is a parent of b in p? (a and b columns)*)
-(*let is_prn p a b = p.m.{p.r + a, b} *)
-
-(* is a a descendant of b? m is the transitive closure of the nodes-submatrix*)
-(*let is_desc m a b = m.{b, a}*)
-
-(* USE TRANSITIVE CLOSURE *)
-(* Get the set of descendants (columns) of a set of rows.
-   Not exposed. 
-   raise Assert_failure *)
-(*let desc p rs = 
-  let rec aux acc rows =
-    let chl_set = Int_set.fold (fun i acc ->
-      Int_set.union (chl p.m i) acc) rows Int_set.empty   
-    in
-    if chl_set = Int_set.empty then acc
-    else aux (Int_set.union chl_set acc) (Int_set.filter (fun i ->
-      i < p.r + p.n) (off p.r chl_set))
-  in aux Int_set.empty rs*)
-
 (* Get the set of ancestors (rows) of a set of columns.
    Not exposed. 
    raise Assert_failure   *)
@@ -214,26 +190,12 @@ let partners p j =
     Int_set.union acc (Int_set.filter (fun j -> 
       j >= 0) (off (-p.r) (prn p.m j)))) chi Int_set.empty)
 
-(* Equivalence class *)
-(*let part_root_class p = 
-  Int_set.fold (fun r acc -> 
-    let c = chl p.m r in
-    List.fold_left (fun acc s ->
-      if Int_set.equal c (chl p.m (Int_set.singleton s)) then begin
-	(Int_set.add r s) :: acc
-      end else begin 
-	s :: acc
-      end
-    ) [] acc
-  ) (of_int p.r) [] *)
-
-(* Dual *)
-
 (* Build the decomposition of target t given pattern p and isomorphism over
-   nodes i: t -> p. The result is context c, id, d, and nodes in c and d 
+   nodes i: p -> t. The result is context c, id, d, and nodes in c and d 
    expressed as rows of t. Pattern p is mono and epi.
    See page 76, proposition 4.2.4. *)
 let decomp t p iso =
+  (*printf "Place.decomp iso p -> t : %s\n" (string_of_iso iso);*)
   (* Nodes (rows) of target *)
   let v_t = off t.r (of_int t.n) in
   (* Nodes (rows) of target used for p' *)
@@ -241,60 +203,54 @@ let decomp t p iso =
   (* Nodes (rows) of target used for context c *)
   let v_c = 
     Int_set.filter (fun i ->
-      i > t.r) (Int_set.diff (anc t (codom iso)) v_p) in
+      i >= t.r) (Int_set.diff (anc t (codom iso)) v_p) in
   (* Nodes (rows) of target used for argument d *) 
   let v_d = Int_set.diff v_t (Int_set.union v_c v_p) in
   (* Iso from nodes or roots (rows) of target to indices from 0.
      Domain is the set of elements being in c and having a child
      in d. Codomain is the set of sites. *)
-  let iso_id, _ =
+  let (iso_id, _) =
     Int_set.fold (fun i (iso, k) ->
       Int_set.fold (fun j (acc, k) ->
-        if (j > t.n) || Int_set.mem (j + t.r) v_d
+        if (j >= t.n) || Int_set.mem (j + t.r) v_d
         then (Iso.add (i, k) acc, k + 1) 
-        else (acc, k)) (chl t.m i) (iso, k)
-    ) (Int_set.union v_c (of_int t.r)) (Iso.empty, 0) in
-  (*printf "iso_id: %s\n" (string_of_iso iso_id);*)
-  (* Interface id *)
+        else (acc, k)) (chl t.m i) (iso, k)) 
+      (Int_set.union v_c (of_int t.r)) (Iso.empty, 0) in
+   (* Interface id *)
   let j = Iso.cardinal iso_id in
-    (* if iso_id = Iso.empty then 0 else j + 1 in *) 
   (* Context c *)      
   let (r_c, n_c, s_c) = (t.r, Int_set.cardinal v_c, p.r + j) in
-  (*printf "context c = (%d, %d, %d)\n" r_c n_c s_c;*)
-  (* Parameter d *)
+   (* Parameter d *)
   let (r_d, n_d, s_d) = (p.s + j, Int_set.cardinal v_d, t.s) in
-  (*printf "parameter d = (%d, %d, %d)\n" r_d n_d s_d;*)
-  (* Context c matrix *)
+   (* Context c matrix *)
   let m_c = make_0 (r_c + n_c) (n_c + s_c)
   (* Iso from columns in c to rows in t *)
   and iso_c = inverse (fix_num v_c) in
   for i = 0 to r_c + n_c - 1 do
     let new_i =
       if i < r_c then i else get_i (i - r_c) iso_c in
-    (*printf "new_i = %d\n" new_i;*)
     for j = 0 to n_c + p.r - 1 do
-      let new_j =
-        if j < n_c then
-          (* Node *)
-          (get_i j iso_c) - t.r
-        else (*if j < (n_c + p.r) then*)
-	  (* CHECK *)
-          (* Site to pattern *)
-	  Int_set.choose (apply (Int_set.filter (fun x ->
-	    x < p.n) (chl p.m (j - n_c))) iso)
-	  (*else
-          (* Site to id *)
-            (get_inv_i (j - n_c - p.r) iso_id) - t.r*) in
-      (*printf "new_j = %d\n" new_j;*)
-      m_c.{i,j} <- t.m.{new_i,new_j}
+      if j < n_c then
+        (* Node *)
+	let new_j = (get_i j iso_c) - t.r in
+	m_c.{i, j} <- t.m.{new_i, new_j}	  
+      else if j < (n_c + p.r) then begin
+        (* Site to pattern *)
+	(* Sites are excluded. This control shouldn't be necessary
+	   since p is always solid, i.e. roots don't have site children. *)
+	let chl_r =
+	  Int_set.filter (fun x -> x < p.n) (chl p.m (j - n_c))
+	(* Children of i in t that map to p. *)
+	and chl_i =
+	  Int_set.inter (chl t.m new_i) (codom iso) in
+	(*printf "chl_r = %s\tchl_i = %s\n" 
+	  (string_of_Int_set chl_r) (string_of_Int_set chl_r);*)
+	if Int_set.equal (apply chl_r iso) chl_i then m_c.{i, j} <- 1
+      end
     done
   done;
-  (*printf "1\n";
-  printf "iso_id = %s\n" (string_of_iso iso_id);
-  printf "r_c = %d, n_c = %d, s_c = %d\n" r_c n_c s_c;
-  printf "iso_c = %s\n" (string_of_iso iso_c);*)
-  (* edges to j *)
-  Iso.iter (fun (i, j) -> (* get_i (i - r_c) iso_c *)
+  (* Sites to id *)
+  Iso.iter (fun (i, j) ->
     let new_i = if i < r_c then i else (get_inv_i i iso_c) + r_c in 
     m_c.{new_i, j + n_c + p.r} <- 1) iso_id;
   (* Parameter d matrix*)
@@ -325,6 +281,8 @@ let decomp t p iso =
       m_d.{i,j} <- t.m.{new_i,new_j}
     done
   done;  
+   (*printf "c =\n%s\n\nt =\n%s\n\np =\n%s\n\n" (to_string m_c) (to_string t.m)
+     (to_string p.m);*)
    ({r = r_c; n = n_c; s = s_c; m = m_c},
    elementary_id j,
    {r = r_d; n = n_d; s = s_d; m = m_d},
@@ -580,13 +538,7 @@ let match_roots t p =
       else
 	acc) n_t Iso.empty)) n_p Iso.empty
 
-(* return a set of nodes (columns). Roots are discarded. *)
-(*let prn_set p js =
-  Int_set.fold (fun j acc ->
-    Int_set.union acc (Int_set.filter (fun x -> x >= 0 ) (off (-p.r) (prn p.m j))))
-    js Int_set.empty*)
-
-(* check if iso i:p -> t is valid *)
+(* check if iso i : p -> t is valid *)
 let is_match_valid t p t_trans iso = 
   (* check SITES *)
   let check_sites t p iso =
