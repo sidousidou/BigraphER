@@ -1,0 +1,35 @@
+
+          ______ __                          __     _______ ______ 
+         |   __ \__|.-----.----.---.-.-----.|  |--.|    ___|   __ \
+         |   __ <  ||  _  |   _|  _  |  _  ||     ||    ___|      <
+         |______/__||___  |__| |___._|   __||__|__||_______|___|__|
+                    |_____|          |__|                          
+
+         Bigraph Evaluator & Rewriting
+
+----------------------------------------------------------------------------
+
+REQUIREMENTS:
+
+  *  OCaml >=3.10
+  *  findlib
+  *  ocamlbuild
+  *  CamlMiniSat
+  *  Graphviz
+
+----------------------------------------------------------------------------
+
+INSTALL:
+
+  > ./build install 
+ 
+  Override variable INSTDIR (default /usr/bin) to install BigraphER in a
+  different directory. Note that superuser privileges may be required.
+
+----------------------------------------------------------------------------
+
+UNINSTALL:
+
+  > ./build uninstall
+
+----------------------------------------------------------------------------

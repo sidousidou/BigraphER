@@ -24,12 +24,11 @@ DLLPATH=`ocamlfind query minisat`
 
 : ${INSTDIR:=/usr/bin/}
 
-
-DISTBIG="`ls bigrapher/*.ml` `ls bigrapher/*.mll` `ls bigrapher/*.mly` bigrapher/_tags"
+DISTBIG="`ls bin/*.ml` `ls bin/*.mll` `ls bin/*.mly` bin/_tags"
 DISTLIB="`ls lib/*.ml` `ls lib/*.mli` lib/bigraph.mllib lib/_tags lib/lib.itarget lib/bigraph.odocl lib/META"
-DISTTEST="`ls tests/*.ml` _tags tests/test.itarget"
-DISTTEST="$DISTTEST test-files/bigrapher/rts_cts.big `ls test-files/match/*.big` test-files/brs/svg"
-DISTSRC="build.sh INSTALL LICENSE README TODO"
+DISTTEST="`ls tests/*.ml` tests/_tags tests/test.itarget"
+DISTTEST="$DISTTEST test-files/bigrapher/rts_cts.big `ls test-files/match/*.big`"
+DISTSRC="build.sh INSTALL LICENSE README"
 DISTSRC="$DISTBIG $DISTLIB $DISTTEST $DISTSRC"
 
 ERRMSG="Error: Unknown action $1\nUsage: build OPTION\nThe options are as follows:\n\
@@ -43,12 +42,7 @@ install\t\tInstall library and bigrapher\n\
 uninstall\tRemove library and bigrapher\n"
 
 ocb() {
-#    if [ `uname -o` = "Cygwin" ]; then
-#	$OCAMLBUILD $OCBFLAGS -ocamlc '$OCAMLC' -ocamlopt '$OCAMLOPT' $*
-# Still need ocamlrun -I $DLLPATH *.byte
-#    else
 	$OCAMLBUILD $OCBFLAGS $*
-#    fi
 }
 
 lib_install_rule() {
@@ -56,7 +50,7 @@ lib_install_rule() {
     MLI=`ls lib/_build/*.mli` || true 
     CMI=`ls lib/_build/*.cmi` || true
     DLL=`ls lib/_build/*a` || true
-    #check if the files are there or not
+    #check if the files are there
     if [ "$MLI$CMI$DLL" = "" ]; then
 	printf 'Error: Library not compiled.\nTry running ./build lib first.\n' 2> /dev/null
 	exit 1
@@ -69,12 +63,12 @@ lib_install_rule() {
 
 bin_install_rule() {
     printf 'Installing bigrapher in %s.\n' $INSTDIR
-    if [ -e "bigrapher/_build/$BINOPT" ]; then
+    if [ -e "bin/_build/$BINOPT" ]; then
 	if [ "$OSTYPE" = "cygwin" ]; then
-            install -m 755 bigrapher/_build/$BINOPT "$INSTDIR$BINNAME.exe"
+            install -m 755 bin/_build/$BINOPT "$INSTDIR$BINNAME.exe"
             #add install dir of bigraph to PATH in Cygwin
 	else
-	    install -m 755 bigrapher/_build/$BINOPT $INSTDIR$BINNAME
+	    install -m 755 bin/_build/$BINOPT $INSTDIR$BINNAME
  	fi
     else
 	printf 'Error: bigrapher not compiled.\nTry running ./build bin first.\n' 2> /dev/null
@@ -92,14 +86,15 @@ uninstall_rule() {
 }
 
 dist() {
+    printf "Preparing files...\n"
     TARSRC=""
     for f in $DISTSRC; do
 	TARSRC="$TARSRC `printf "$BINNAME-$VERSION/%s" $f`"
     done
     cd ..
-    mv $BINNAME "$BINNAME-$VERSION"
+    cp -R $BINNAME "$BINNAME-$VERSION"
     tar zcvf "$BINNAME-$VERSION.tar.gz" $TARSRC
-    mv "$BINNAME-$VERSION" $BINNAME
+    rm -Rf "$BINNAME-$VERSION"
     cd $BINNAME
 }
 
@@ -116,7 +111,7 @@ test_rule(){
 }
 
 bin_rule(){
-    cd bigrapher
+    cd bin
     ocb $BIN $BINOPT
     cd ..
 }
@@ -130,11 +125,14 @@ clean_rule(){
     ocb -clean
     echo ""
     rm -f *.byte *.cm*a *.a *.native || true
-    cd ../bigrapher
+    cd ../bin
     ocb -clean
     echo ""
     rm -f *.byte *.cm*a *.a *.native || true
     cd ..
+    rm test-files/match/svg/*.svg || true
+    rm test-files/brs/*.svg || true
+    rm test-files/bigrapher/*.svg || true
 }
 
 all_rule(){
