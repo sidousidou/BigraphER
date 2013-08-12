@@ -15,7 +15,7 @@ let _write_svg s name path verb =
       [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o777 in
   Unix.set_close_on_exec dot_in;
   Unix.set_close_on_exec svg_file;
-  if verb then printf "Writing %s%s.svg\n" n_path name else (); 
+  if verb then printf "Writing %s%s.svg\n" n_path name; 
   let b_w = Unix.write bigmc_out s 0 (String.length s) in
   flush_all ();
   Unix.close bigmc_out;
@@ -24,7 +24,15 @@ let _write_svg s name path verb =
   match Unix.waitpid [ Unix.WNOHANG ] pid with
   | _, Unix.WSTOPPED _ -> failwith "Error: dot terminated unexpectedly"
   | _, Unix.WSIGNALED _ | _, Unix.WEXITED _ -> 
-    if verb then printf "%d bytes written\n" b_w else ()
+    if verb then printf "%d bytes written\n" b_w
+
+let _write_string s name path verb =
+  let f_name = concat (_end_with_sep path) name in
+  if verb then printf "Writing %s\n" f_name; 
+  let out_ch = open_out f_name in
+  output_string out_ch s;
+  close_out out_ch;
+  if verb then printf "%d bytes written\n" (String.length s)
       
 let write_big b n path verb = 
   _write_svg (get_dot b n) n path verb
@@ -34,6 +42,12 @@ let write_ts ts n path verb =
 
 let write_ctmc ctmc n path verb =
   _write_svg (Sbrs.to_dot ctmc) n path verb
+
+let write_ts_prism ts n path verb =
+  _write_string (Brs.to_prism ts) n path verb
+
+let write_ctmc_prism ctmc n path verb =
+  _write_string (Sbrs.to_prism ctmc) n path verb
 
 (* check if cmd returns code when executed with arguments a *)
 let _check_cmd cmd a code =
@@ -63,28 +77,17 @@ let wait_before_exit v =
     | _ -> if v then printf "Terminating ...\n" else () in
   loop ()
 
-(***************** Write the labelling funtion to a csl file ******************)
-(*let csl_out lab path verb =
-  let rec add_mem l (ide : string) (x : int) =
-    match l with
-      | [] -> [(ide, [x])]
-      | (i, xs)::rest ->
-          (if i = ide
-          then (if List.mem x xs
-            then (i, xs)::rest
-            else (i, x::xs)::rest)
-          else (i, xs)::(add_mem rest ide x))
-  in let lab_list = 
-    Hashtbl.fold (fun ide x acc ->
-      add_mem acc ide x) lab []
-  in let oc = open_out path
-  in
-    if verb then printf "Writing %s\n" path else ();
-    List.iter (fun (ide, xs) ->
-      fprintf oc "label \"%s\" = %s;\n" ide (
-        String.concat " | " (List.map (fun x ->
-        sprintf "x = %d" x) xs)
-      )) lab_list;
-    fprintf oc "%c" end_of_file;  
-    close_out oc*)
+let string_of_l l =
+  let inv = Hashtbl.create (Hashtbl.length l) in
+  let properties = 
+    Hashtbl.fold (fun s p acc -> 
+      Hashtbl.add inv p s;
+      p :: acc) l [] in
+  String.concat "\n" (List.map (fun p ->
+    sprintf "label \"p_%d\" = %s;" p 
+      (String.concat " | " (List.map (fun s ->
+       sprintf "x = %d" s) (Hashtbl.find_all inv p)))) properties)
+
+let write_csl l n path verb =
+  _write_string (string_of_l l) n path verb
 

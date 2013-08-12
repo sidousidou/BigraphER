@@ -23,7 +23,14 @@ DLLPATH=`ocamlfind query minisat`
 #OCAMLOPT="ocamlopt $OCAMLOPTFLAGS"
 
 : ${INSTDIR:=/usr/bin/}
-OS='uname -o'
+
+
+DISTBIG="`ls bigrapher/*.ml` `ls bigrapher/*.mll` `ls bigrapher/*.mly` bigrapher/_tags"
+DISTLIB="`ls lib/*.ml` `ls lib/*.mli` lib/bigraph.mllib lib/_tags lib/lib.itarget lib/bigraph.odocl lib/META"
+DISTTEST="`ls tests/*.ml` _tags tests/test.itarget"
+DISTTEST="$DISTTEST test-files/bigrapher/rts_cts.big `ls test-files/match/*.big` test-files/brs/svg"
+DISTSRC="build.sh INSTALL LICENSE README TODO"
+DISTSRC="$DISTBIG $DISTLIB $DISTTEST $DISTSRC"
 
 ERRMSG="Error: Unknown action $1\nUsage: build OPTION\nThe options are as follows:\n\
 clean\t\tRemove outputs of previous compilations\n\
@@ -50,22 +57,25 @@ lib_install_rule() {
     CMI=`ls lib/_build/*.cmi` || true
     DLL=`ls lib/_build/*a` || true
     #check if the files are there or not
-    if [ "$MLI $CMI $DLL" = "" ]; then
+    if [ "$MLI$CMI$DLL" = "" ]; then
 	printf 'Error: Library not compiled.\nTry running ./build lib first.\n' 2> /dev/null
 	exit 1
     else
 	INSTALLFILES="lib/META $MLI $CMI $DLL"
 	$OCAMLFIND remove $NAME || true
      	$OCAMLFIND install -patch-version $VERSION $NAME $INSTALLFILES
-  fi
+    fi
 }
 
 bin_install_rule() {
-    printf 'Installing bigrapher in $INSTDIR.\n'
+    printf 'Installing bigrapher in %s.\n' $INSTDIR
     if [ -e "bigrapher/_build/$BINOPT" ]; then
-	printf ""
-          #install -m 755 bigrapher/_build/$BINOPT $INSTDIR/$BINNAME
-          #add install dir of bigraph to PATH in Cygwin
+	if [ "$OSTYPE" = "cygwin" ]; then
+            install -m 755 bigrapher/_build/$BINOPT "$INSTDIR$BINNAME.exe"
+            #add install dir of bigraph to PATH in Cygwin
+	else
+	    install -m 755 bigrapher/_build/$BINOPT $INSTDIR$BINNAME
+ 	fi
     else
 	printf 'Error: bigrapher not compiled.\nTry running ./build bin first.\n' 2> /dev/null
 	exit 1
@@ -74,11 +84,23 @@ bin_install_rule() {
 
 uninstall_rule() {
     $OCAMLFIND remove $NAME
-    #rm $INSTDIR/$BINNAME
+    if [ "$OSTYPE" = "cygwin" ]; then
+	rm "$INSTDIR$BINNAME.exe"
+    else
+	rm "$INSTDIR$BINNAME"
+    fi
 }
 
 dist() {
-    echo "Not yet"
+    TARSRC=""
+    for f in $DISTSRC; do
+	TARSRC="$TARSRC `printf "$BINNAME-$VERSION/%s" $f`"
+    done
+    cd ..
+    mv $BINNAME "$BINNAME-$VERSION"
+    tar zcvf "$BINNAME-$VERSION.tar.gz" $TARSRC
+    mv "$BINNAME-$VERSION" $BINNAME
+    cd $BINNAME
 }
 
 lib_rule() {
@@ -115,25 +137,29 @@ clean_rule(){
     cd ..
 }
 
+all_rule(){
+    lib_rule
+    lib_install_rule
+    bin_rule
+    test_rule
+}
+
+install_rule(){
+    lib_rule
+    lib_install_rule
+    bin_rule
+    bin_install_rule
+}
+
 rule() {
     case $1 in
 	clean) clean_rule;;
 	lib) lib_rule;;   
 	test) test_rule;;
 	bin) bin_rule;;
-	all) #clean_rule 
-	    lib_rule
-	    lib_install_rule
-	    bin_rule;;
-	    #bin_install_rule
-	    #clean_rule;;
+	all) all_rule;;
 	dist) dist;;
-	install) clean_rule 
-	    lib_rule
-	    lib_install_rule
-	    bin_rule;;
-	    #bin_install_rule
-	    #clean_rule;;
+	install) install_rule;;
 	uninstall) uninstall_rule;;
 	*) printf "$ERRMSG" 2> /dev/null;;
     esac;

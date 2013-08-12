@@ -121,6 +121,10 @@ val sim_ide: Big.bg -> p_class_ide list -> (string -> react) -> int -> int -> bo
 (** String representation of BRS execution statistics. *)
 val string_of_stats : float * int* int * int -> string
 
+(** Textual representation of a transition system. The format is compatible
+    with PRISM input format. *)
+val to_prism : ts -> string
+
 (** Compute the string representation in [dot] format of a transition system. *)
 val to_dot : ts -> string
 

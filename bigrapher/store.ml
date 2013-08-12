@@ -622,18 +622,18 @@ let export decs env path verb =
   | Big_dec_f (ide, forms, exp, _) ->
     let b = eval_big exp (scope env forms (_dummy_acts forms)) in
     Export.write_big b ide path verb
-  | React_dec (ide, lhs, rhs, p) ->
+  | React_dec (ide, lhs, rhs, _) ->
     Export.write_big (eval_big lhs env) (ide ^ "_lhs") path verb;
     Export.write_big (eval_big rhs env) (ide ^ "_rhs") path verb
-  | React_dec_f (ide, forms, lhs, rhs, p) ->
+  | React_dec_f (ide, forms, lhs, rhs, _) ->
     let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
     and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
     Export.write_big l (ide ^ "_lhs") path verb;
     Export.write_big r (ide ^ "_rhs") path verb
-  | Sreact_dec (ide, lhs, rhs, exp, p) ->
+  | Sreact_dec (ide, lhs, rhs, _, _) ->
     Export.write_big (eval_big lhs env) (ide ^ "_lhs") path verb;
     Export.write_big (eval_big rhs env) (ide ^ "_rhs") path verb
-  | Sreact_dec_f (ide, forms, lhs, rhs, exp, p) ->
+  | Sreact_dec_f (ide, forms, lhs, rhs, _, _) ->
     let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
     and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
     Export.write_big l (ide ^ "_lhs") path verb;

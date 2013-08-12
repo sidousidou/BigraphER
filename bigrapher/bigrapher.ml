@@ -35,9 +35,7 @@ let usage =
   "Usage: bigrapher [options] <model-file> [<properties-file>] [more-options]"
   
 let speclist =
-  [ (*("-p", (Arg.String (fun s -> priorities_str := s)), 
-     "<file> Import rule priorities from a file");*)
-    ("-v", (Arg.Unit (fun () -> verbose_bool := true)), " Verbose output");
+  [ ("-v", (Arg.Unit (fun () -> verbose_bool := true)), " Verbose output");
     ("-V", (Arg.Unit (fun () -> version_bool := true)), " Program version");
     ("-t", (Arg.Float (fun t -> t_max := t)),
      "<float> Set the termination time of the simulation");
@@ -127,19 +125,6 @@ let _ =
       if !export_store <> "" then
 	Store.export decs env !export_store !verbose_bool;
       print_stats_store env stoch t0;
-      (*(* Debug *)
-      printf "s0:\n%s\nReaction rules:\n" (Big.string_of_bg s0);
-      List.iter (fun c -> 
-	let _aux r = 
-	  String.concat ", " (List.map (sprintf "%s") r) in
-	match c with
-	| Store.P_class_ide r -> printf "%s\n" (_aux r)	
-	| Store.P_rclass_ide r -> printf "%s\n" (_aux r)) p_classes;
-      printf "%d\n" (List.fold_left (fun acc c -> 
-	match c with
-	| Store.P_class_ide r -> acc + (List.length r)
-	| Store.P_rclass_ide r -> acc + (List.length r)) 0 p_classes);
-      (****************************************************************)*)
       let p = Store.dummy_pos  
       and n = Hashtbl.length env in
       if not stoch then begin
@@ -157,9 +142,10 @@ let _ =
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
 		!verbose_bool) ts.Brs.v;
 	Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool;
-	(* TODO *)
-	if !export_trans_str <> "" then ();
-	if !export_csl_str <> "" then ();
+	if !export_trans_str <> "" then 
+	  Export.write_ts_prism ts "ts_prism" !export_trans_str !verbose_bool;
+	if !export_csl_str <> "" then
+	  Export.write_csl ts.Brs.l "properties.csl" !export_csl_str !verbose_bool;
       end else begin
 	let sbrs_p_classes = List.map Store.p_to_sbrs p_classes 
 	and get_f = Store.get_sreact p env in
@@ -180,9 +166,10 @@ let _ =
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
 		!verbose_bool) ctmc.Sbrs.v;
 	Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool;
-	(* TODO *)
-	if !export_trans_str <> "" then ();
-	if !export_csl_str <> "" then ();
+	if !export_trans_str <> "" then
+	  Export.write_ctmc_prism ctmc "ctmc_prism" !export_trans_str !verbose_bool;
+	if !export_csl_str <> "" then
+	  Export.write_csl ctmc.Sbrs.l "properties.csl" !export_csl_str !verbose_bool;
       end;
       Export.wait_before_exit !verbose_bool
     end
@@ -198,30 +185,3 @@ let _ =
     exit 1
   | e -> 
     prerr_endline (Printexc.to_string e); exit 1
-  
-
-(* Parse model file *)
-        (*let (store, s0, ctmc) = Env.eval_model m !model_str in
-        (* Parse properties file *)
-        let bilog =
-          if !properties_str = ""
-          then ([], B_null)
-          else 
-            (let file = open_in !properties_str in
-             let lexbuf = init_lex file !properties_str in
-                let out = Parser_pred.preds Lexer_pred.lex lexbuf
-                in (close_in file; out)) in
-        let preds = Env.eval_properties bilog !properties_str in
-        (* Parse priorities file *)
-        let pri =
-          if !priorities_str = ""
-          then []
-          else
-            (let file = open_in !priorities_str in
-             let lexbuf = init_lex file !priorities_str in
-                let out = Parser_pri.priorities Lexer_pri.lex lexbuf
-                in (close_in file; out)) in
-        let pri_queue = Env.eval_priorities pri store ctmc !priorities_str
-        in*)
-          (* Output for debug *)
-    

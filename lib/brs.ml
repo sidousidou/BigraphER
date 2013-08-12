@@ -338,3 +338,10 @@ let to_dot ts =
       sprintf "%s%d -> %d [arrowhead=\"vee\", arrowsize=0.5];\n"
 	buff v u) ts.e "" in
   sprintf "digraph ts {\n%s\n%s}" states edges
+
+let to_prism ts =
+  let dims = 
+    sprintf "%d %d\n" (V.cardinal ts.v) (Hashtbl.length ts.e) in
+  Hashtbl.fold (fun v u buff -> 
+    sprintf "%s%d %d\n" buff v u) ts.e dims
+  

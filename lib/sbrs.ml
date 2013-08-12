@@ -460,4 +460,8 @@ let to_dot ctmc =
                arrowsize=0.5];\n" buff v u rho) ctmc.e "" in
   sprintf "digraph ctmc {\n%s\n%s}" states edges
 
-
+let to_prism ctmc =
+  let dims = 
+    sprintf "%d %d\n" (V.cardinal ctmc.v) (Hashtbl.length ctmc.e) in
+  Hashtbl.fold (fun v (u, rho) buff ->
+    sprintf "%s%d %d %f\n" buff v u rho) ctmc.e dims

@@ -138,6 +138,10 @@ val string_of_stats : float * int* int * int -> string
 (** String representation of SBRS simulation statistics. *)
 val string_of_stats_sim : float * float * int* int * int -> string
 
+(** Textual representation of a ctmc. The format is compatible with PRISM input 
+    format. *)
+val to_prism : ctmc -> string
+
 (** Compute the string representation in [dot] format of a transition system. *)
 val to_dot : ctmc -> string
 
