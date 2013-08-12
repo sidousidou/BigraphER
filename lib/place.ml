@@ -243,9 +243,9 @@ let decomp t p iso =
 	(* Children of i in t that map to p. *)
 	and chl_i =
 	  Int_set.inter (chl t.m new_i) (codom iso) in
-	(*printf "chl_r = %s\tchl_i = %s\n" 
-	  (string_of_Int_set chl_r) (string_of_Int_set chl_r);*)
-	if Int_set.equal (apply chl_r iso) chl_i then m_c.{i, j} <- 1
+	(*printf "(%d,%d)\tchl_r = %s\tchl_i = %s\n" i j 
+	  (string_of_Int_set chl_r) (string_of_Int_set chl_i);*)
+	if Int_set.subset (apply chl_r iso) chl_i then m_c.{i, j} <- 1
       end
     done
   done;
@@ -281,7 +281,7 @@ let decomp t p iso =
       m_d.{i,j} <- t.m.{new_i,new_j}
     done
   done;  
-   (*printf "c =\n%s\n\nt =\n%s\n\np =\n%s\n\n" (to_string m_c) (to_string t.m)
+   (*printf "v_c =%s\nc =\n%s\n\nt =\n%s\n\np =\n%s\n\n" (string_of_Int_set v_c) (to_string m_c) (to_string t.m)
      (to_string p.m);*)
    ({r = r_c; n = n_c; s = s_c; m = m_c},
    elementary_id j,

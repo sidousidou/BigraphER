@@ -147,9 +147,9 @@ let _ =
 	and get_f = Store.get_react p env in
 	let (ts, stats) = 
 	  if !sim_bool then
-	    Brs.sim_ide s0 brs_p_classes get_f !s_max n !verbose_bool
+	    Brs.sim_ide s0 brs_p_classes get_f !s_max n true
 	  else
-	    Brs.bfs_ide s0 brs_p_classes get_f !s_max n !verbose_bool in
+	    Brs.bfs_ide s0 brs_p_classes get_f !s_max n true in
 	printf "\n%s\n" (Sbrs.string_of_stats stats);
 	if !export_trans_dot_str <> "" then
 	  if !export_states_bool then
@@ -166,12 +166,12 @@ let _ =
 	let ctmc = 
 	  if !sim_bool then
 	    let (ctmc, stats) = 
-	      Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n !verbose_bool in
+	      Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n true in
 	    printf "\n%s\n" (Sbrs.string_of_stats_sim stats);
 	    ctmc
 	  else
 	    let (ctmc, stats) = 
-	      Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n !verbose_bool in
+	      Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n true in
 	    printf "\n%s\n" (Sbrs.string_of_stats stats);
 	    ctmc in
 	if !export_trans_dot_str <> "" then

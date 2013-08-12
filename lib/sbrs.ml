@@ -104,9 +104,9 @@ let rec is_class_enabled b rs =
 let aux_apply (i_n, i_e) b r0 r1 =
   let (c, d, id) = decomp b r0 i_n i_e in
   (*printf "c:\n%s\nd:\n%s\n\n" (string_of_bg c) (string_of_bg d);*)
-  let out = comp c (comp (tens r1 id) d) in
+  comp c (comp (tens r1 id) d)
   (* debug *)
-  if occurs out r1 then out else failwith "BIG_INTERNAL_ERROR" 
+  (*if occurs out r1 then out else failwith "BIG_INTERNAL_ERROR"*) 
 
 let step s srules =
   let filter_iso l =
