@@ -4,7 +4,7 @@
 test-files/
 old/
 lib/_build/
-bigrapher/_build/
+bin/_build/
 tests/_build/
 
 # OCaml 

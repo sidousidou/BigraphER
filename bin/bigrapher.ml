@@ -136,12 +136,13 @@ let _ =
 	  else
 	    Brs.bfs_ide s0 brs_p_classes get_f !s_max n true in
 	printf "\n%s\n" (Sbrs.string_of_stats stats);
-	if !export_trans_dot_str <> "" then
+	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
 	    Brs.V.iter (fun (i, s) ->
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
 		!verbose_bool) ts.Brs.v;
-	Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool;
+	  Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool
+	end;
 	if !export_trans_str <> "" then 
 	  Export.write_ts_prism ts "ts_prism" !export_trans_str !verbose_bool;
 	if !export_csl_str <> "" then
@@ -160,12 +161,13 @@ let _ =
 	      Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n true in
 	    printf "\n%s\n" (Sbrs.string_of_stats stats);
 	    ctmc in
-	if !export_trans_dot_str <> "" then
+	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
 	    Sbrs.V.iter (fun (i, s) ->
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
 		!verbose_bool) ctmc.Sbrs.v;
-	Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool;
+	  Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool
+	end;
 	if !export_trans_str <> "" then
 	  Export.write_ctmc_prism ctmc "ctmc_prism" !export_trans_str !verbose_bool;
 	if !export_csl_str <> "" then
