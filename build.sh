@@ -35,7 +35,7 @@ DLLPATH=`ocamlfind query minisat`
 DISTBIG="`ls bin/*.ml` `ls bin/*.mll` `ls bin/*.mly` bin/_tags"
 DISTLIB="`ls lib/*.ml` `ls lib/*.mli` lib/bigraph.mllib lib/_tags lib/lib.itarget lib/bigraph.odocl lib/META"
 DISTTEST="`ls tests/*.ml` tests/_tags tests/test.itarget"
-DISTTEST="$DISTTEST test-files/bigrapher/rts_cts.big `ls test-files/match/*.big`"
+DISTTEST="$DISTTEST tests/files/rts_cts.big `ls tests/files/match/*.big`"
 DISTSRC="build.sh INSTALL LICENSE README"
 DISTSRC="$DISTBIG $DISTLIB $DISTTEST $DISTSRC"
 
@@ -138,9 +138,6 @@ clean_rule(){
     echo ""
     rm -f *.byte *.cm*a *.a *.native || true
     cd ..
-    rm test-files/match/svg/*.svg || true
-    rm test-files/brs/*.svg || true
-    rm test-files/bigrapher/*.svg || true
 }
 
 all_rule(){

@@ -201,19 +201,22 @@ let do_equality_tests l ts =
   with
     | _ -> printf "Internal error\n"
     
-(* Argument is the path of the directory containing the tests *)
+(* The first argument is the path of the directory containing the tests. The
+   second optional argument is the path for the svg output. *)
 let _ =
   check_graphviz ();
   let args = Sys.argv in
-  assert (Array.length args = 2);
+  assert (Array.length args = 2 || Array.length args = 3);
   printf "%s %s\n" args.(0) args.(1);
   let bg_strings = parse_all args.(1) in
   let bgs = 
     List.map (fun (n, ls) ->
       printf "building %s\n" n;
       (n, build_big ls)) bg_strings in
-  List.iter (fun (n, b) -> 
-    write_big b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep)) true) bgs;
+  if Array.length args = 3 then
+    List.iter (fun (n, b) -> 
+      write_big b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep))
+	true) bgs;
   let tests =
     try
       [ (* TEST 1 *)
