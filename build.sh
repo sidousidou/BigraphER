@@ -154,6 +154,10 @@ install_rule(){
     bin_install_rule
 }
 
+emacs_rule(){
+    #install -m 755 ./big-mode/big-mode.el /usr/share/emacs/site-lisp/
+}
+
 rule() {
     case $1 in
 	clean) clean_rule;;
