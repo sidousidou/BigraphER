@@ -7,30 +7,50 @@ type name = Nam of string
 module Face = Set.Make (
   struct
     type t = name
-    let compare = fun (Nam s0) (Nam s1) -> String.compare s0 s1
+    let compare = fun (Nam s0) (Nam s1) -> 
+      String.compare s0 s1
   end)
 
 (* Module used to compute equivalence classes *)
 module Face_set = Set.Make (
   struct
     type t = Face.t
-    let compare = compare
+    let compare = Face.compare
   end)
 
 (* (in, out, ports) *)
 type edg = {i: Face.t; o: Face.t; p: Ports.t}
 
+let edg_compare (h : edg) (k : edg) =
+  match Face.compare h.i k.i with
+    | 0 -> begin
+      match Face.compare h.o k.o with
+	| 0 -> Ports.compare h.p k.p
+	| x -> x
+    end
+    | x -> x  
+      
 module Lg = Set.Make (struct
   type t = edg
-  let compare = fun a b ->
-    match compare a.i b.i with
-    | 0 -> begin
-      match compare a.o b.o with
-      | 0 -> Ports.compare a.p b.p
-      | x -> x
-    end
-    | x -> x
+  let compare = edg_compare
 end)
+
+module Quad = 
+  Set.Make(struct 
+    type t = (int * int * int * int)
+    let compare = fun (a, b, c, d) (x, y, z, w) ->
+      match a - x with
+      | 0 -> begin
+	match b - y with
+	| 0 -> begin
+	  match c - z with
+	  | 0 -> d - w
+	  | v -> v
+	end
+	| v -> v
+      end
+      | v -> v
+  end)
 
 (* tensor product fails (inner common names, outer common names)*)
 exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
@@ -459,12 +479,6 @@ let non_peers_pairs l v =
     let a = Int_set.fold (fun x acc ->
       Iso.add (i, x) acc) non_peers Iso.empty in
     Iso.union acc a) v Iso.empty (* inverse a???*)
-
-module Quad = 
-  Set.Make(struct 
-    type t = (int * int * int * int)
-    let compare = (compare : (int * int * int * int) -> (int * int * int * int) -> int)
-  end)
 
 let match_peers t p m n =
   (* merge a pair of peers with a set of non-peers pairs *)

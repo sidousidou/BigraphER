@@ -79,7 +79,7 @@ let print_header () =
           Version: %s\n\
           Date: %s\n\
           Hostname: %s\n\
-          Operating system: %s\n\
+          OS type: %s\n\
           Command line: %s\n\n"
     version (format_time ()) (Unix.gethostname ()) Sys.os_type 
     (String.concat " " (Array.to_list Sys.argv))

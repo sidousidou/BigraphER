@@ -27,6 +27,7 @@ massif*
 *.out
 */massif*
 */*.out
+prof*
 
 # ocamldoc
 */*.html

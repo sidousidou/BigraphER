@@ -2,6 +2,8 @@
 
 set -e
 
+: ${DEBUG:=false}
+
 VERSION=0.3.0
 NAME=bigraph
 BINNAME=bigrapher
@@ -9,7 +11,13 @@ BINNAME=bigrapher
 LIB=lib.otarget
 TEST=test.otarget
 BIN=bigrapher.byte
-BINOPT=bigrapher.native
+
+if [ "$DEBUG" = "false" ]; then
+    BINOPT=bigrapher.native
+else
+    BINOPT=bigrapher.p.native
+fi
+
 
 OCAMLBUILD=ocamlbuild
 OCBFLAGS="-use-ocamlfind -j 0 -verbose 1 -yaccflags -v"
