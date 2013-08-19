@@ -77,23 +77,23 @@
   (append
    big-font-lock-keywords-1
    (list
-    ;; Fontify declarations
-    '((concat "\\<\\(" big-identifier "\\)\\((" form-identifier ")\\)?\s-=")
-      (1 font-lock-function-name-face nil t)
-      (2 font-lock-keyword-face))))
+    ;; Fontify declarations -- It doesn't work
+    (cons
+     (concat "\\<\\(" big-identifier "\\)\\((" form-identifier ")\\)?\s-=")
+     '(1 font-lock-function-name-face nil t))))
   "Medium level highlighting for BigraphER mode.")
 
 (defvar big-font-lock-keywords big-font-lock-keywords-2
   "Default highlighting expressions for BigraphER mode.")
 
 (defun big-indent-line ()
-  "Indent current line as WPDL code."
+  "Indent current line as big code."
   (interactive)
   (beginning-of-line)
   (if (bobp)
       (indent-line-to 0)   ; First line is always non-indented
     (let ((not-indented t) cur-indent)
-      (if (looking-at "^[ \t]*END_") ; If the line we are looking at is the end of a block, then decrease the indentation
+      (if (looking-at "^[ \t]*\\(endbrs\\|endsbrs\\)") ; If the line we are looking at is the end of a block, then decrease the indentation
 	  (progn
 	    (save-excursion
 	      (forward-line -1)
@@ -103,7 +103,7 @@
 	(save-excursion
 	  (while not-indented ; Iterate backwards until we find an indentation hint
 	    (forward-line -1)
-	    (if (looking-at "^[ \t]*END_") ; This hint indicates that we need to indent at the level of the END_ token
+	    (if (looking-at "^[ \t]*\\(endbrs\\|endsbrs\\)") ; This hint indicates that we need to indent at the level of the END_ token
 		(progn
 		  (setq cur-indent (current-indentation))
 		  (setq not-indented nil))
