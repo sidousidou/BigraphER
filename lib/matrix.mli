@@ -66,9 +66,11 @@ val apply_iso : Base.Iso.t -> bmatrix -> int -> bmatrix
     sets. *)
 val parse_vector : int list list -> int -> bmatrix
 
+(*
 (** [get_vector m] build a list of parent (rows) sets starting from matrix
     [m]. *)
 val get_vector : bmatrix -> int list list
+*)
 
 (** [chl m i] gets the set of children (columns) of [i] (row), 
     i.e. all the [m.(i).(j) = true]. *)
@@ -90,7 +92,9 @@ val trans : bmatrix -> bmatrix
 (* Computes the reflexive-trasitive closure of a square matrix. 
 val trans_ref : bmatrix -> bmatrix *)
 
+(*
 (** Computes the set of edges in a matrix. *)
 val to_iso : bmatrix -> Base.Iso.t
+*)
 
 (**/**)

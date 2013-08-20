@@ -161,8 +161,8 @@ let split m i j =
   h, k, c, d
 
 (* Apply isomorphism i to place graph m. The result is a fresh matrix. Argument
-   r is the number of roots. Iso iso is assumed to be total (no check performed).
- *)
+   r is the number of roots. Iso iso is assumed to be total (no check
+   performed). *)
 let apply_iso iso m r =
   let new_m = make (Array2.dim1 m) (Array2.dim2 m) 
   and n = (Array2.dim1 m) - r in
@@ -203,7 +203,7 @@ let parse_vector adj rows =
   m 
 
 (* Build a list of parent (rows) sets starting from a matrix *)
-let get_vector m =
+(*let get_vector m =
   let out = ref [] in 
   for j = (Array2.dim2 m) - 1 downto 0 do
     let p_set = ref [] in
@@ -212,7 +212,7 @@ let get_vector m =
     done;
     out := !p_set::!out
   done;    
-  !out
+  !out*)
                          
 (* Get the set of children (columns) of an element i (row), 
    i.e. all the m.(i).(j) = true *)
@@ -272,11 +272,11 @@ let trans m =
   done;
   m *) 
 
-let to_iso m = 
+(*let to_iso m = 
   let res = ref Iso.empty in
   for i = 0 to (Array2.dim1 m) - 1 do
     for j =0 to (Array2.dim2 m) - 1 do
       if m.{i,j} == 1 then res := Iso.add (i, j) !res else ()
     done;
   done;
-  !res
+  !res*)
