@@ -156,6 +156,7 @@ install_rule(){
 
 emacs_rule(){
     #install -m 755 ./big-mode/big-mode.el /usr/share/emacs/site-lisp/
+    printf ""
 }
 
 rule() {

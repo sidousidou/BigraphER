@@ -15,6 +15,12 @@ let make rows cols =
     c_major = Hashtbl.create cols;
   }
 
+let copy m =
+  { m with
+    r_major = Hashtbl.copy m.r_major;
+    c_major = Hashtbl.copy m.c_major;
+  }
+
 let to_string m =
   let buff = Array.make_matrix m.r m.c "0" in
   Hashtbl.iter (fun i j -> 
@@ -73,6 +79,37 @@ let tens a b =
     Hashtbl.add m.r_major (i + a.r) (j + a.c)) b.r_major;
   Hashtbl.iter (fun j i -> 
     Hashtbl.add m.c_major (j + a.c) (i + a.r)) b.c_major;
+  m
+
+let append a b =
+  assert (a.r = b.r);
+  let m = make a.r (a.c + b.c) in
+  (* Insert elements of a *)
+  Hashtbl.iter (fun i j -> 
+    Hashtbl.add m.r_major i j) a.r_major;
+  Hashtbl.iter (fun j i -> 
+    Hashtbl.add m.c_major j i) a.c_major;
+  (* Insert elements of b *)
+  Hashtbl.iter (fun i j -> 
+    Hashtbl.add m.r_major i (j + a.c)) b.r_major;
+  Hashtbl.iter (fun j i -> 
+    Hashtbl.add m.c_major (j + a.c) i) b.c_major;
+  m
+  
+
+let stack a b
+  assert (a.c = b.c);
+  let m = make (a.r + b.r) a.c in
+  (* Insert elements of a *)
+  Hashtbl.iter (fun i j -> 
+    Hashtbl.add m.r_major i j) a.r_major;
+  Hashtbl.iter (fun j i -> 
+    Hashtbl.add m.c_major j i) a.c_major;
+  (* Insert elements of b *)
+  Hashtbl.iter (fun i j -> 
+    Hashtbl.add m.r_major (i + a.r) j) b.r_major;
+  Hashtbl.iter (fun j i -> 
+    Hashtbl.add m.c_major j (i + a.r)) b.c_major;
   m
 
 let apply_iso iso m =
@@ -150,9 +187,24 @@ let mul a b =
       end) acc vec) a.r_major Base.Iso.empty);
   m
 
+(* It seems the same entries are checked too many times.
+   Leaves don't need to be scanned. They can be removed and added again at the
+   end of the recursion. *)
 let trans m =
-  ()  
-
+  let t = copy m in
+  let rec fix () =
+    let chl_2 = Hashtbl.fold (fun i j acc ->
+      acc @ (List.map (fun c -> (i, c)) (chl m j))) t.r_major [] in
+    let count = List.fold_left (fun acc (i, c) ->
+    if List.mem c (Hashtbl.find_all t.r_major i) then acc
+    else begin
+      Hashtbl.add t.r_major i c;
+      Hashtbl.add t.c_major c i;
+      acc + 1
+    end) 0 chl_2 in
+    if count > 0 then fix ()
+    else t in
+  fix ()
 
 (* Not exposed *)
 let of_list l r c =
@@ -185,6 +237,8 @@ let () =
   print_newline ();
   print_endline (to_string (mul a b));
   print_newline ();
+  print_endline (to_string (trans a));
+  print_newline ();
   let c = of_list [ [1;0;1];
 		    [1;0;0];
 		    [0;1;1];
@@ -200,6 +254,8 @@ let () =
   print_newline ();
   print_endline (to_string (mul c d));
   print_newline ();
+  print_endline (to_string (trans c));
+  print_newline ()
 
 
 
