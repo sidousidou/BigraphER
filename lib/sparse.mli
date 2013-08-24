@@ -15,6 +15,8 @@ type bmatrix =
 (** [make r c] build a matrix with [r] rows and [c] columns. *) 
 val make : int -> int -> bmatrix
 
+val copy : bmatrix -> bmatrix
+
 (** String representation. 0 = false and 1 = true *)
 val to_string : bmatrix -> string
 
@@ -30,6 +32,10 @@ val diag : int -> bmatrix
 
 val tens : bmatrix -> bmatrix -> bmatrix
 
+val append : bmatrix -> bmatrix -> bmatrix
+
+val stack : bmatrix -> bmatrix -> bmatrix
+
 val apply_iso : Base.Iso.t -> bmatrix -> bmatrix
 
 val parse_vector : int list list -> int -> bmatrix
@@ -38,14 +44,16 @@ val chl : bmatrix -> int -> int list
 
 val prn : bmatrix -> int -> int list
 
-(* rename to leaves *)
-val zero_rows : bmatrix -> int list
+(* zero rows *)
+val leaves : bmatrix -> int list
 
-(* rename to orphans *)
-val zero_cols : bmatrix -> int list
+(* zero columns *)
+val orphans : bmatrix -> int list
 
 val siblings : bmatrix -> int -> int list
 
 val partners : bmatrix -> int -> int list
 
 val mul : bmatrix -> bmatrix -> bmatrix
+
+val trans : bmatrix -> bmatrix

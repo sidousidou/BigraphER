@@ -53,6 +53,7 @@ ocb() {
 	$OCAMLBUILD $OCBFLAGS $*
 }
 
+#set CAML_LD_LIBRARY_PATH=/usr/lib/ocaml/site-lib/minisat/ in cygwin 
 lib_install_rule() {
     printf 'Installing library.\n'
     MLI=`ls lib/_build/*.mli` || true 

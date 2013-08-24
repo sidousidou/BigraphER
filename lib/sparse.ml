@@ -96,8 +96,7 @@ let append a b =
     Hashtbl.add m.c_major (j + a.c) i) b.c_major;
   m
   
-
-let stack a b
+let stack a b =
   assert (a.c = b.c);
   let m = make (a.r + b.r) a.c in
   (* Insert elements of a *)
@@ -144,7 +143,7 @@ let prn m j =
   assert (j < m.c);
   Hashtbl.find_all m.c_major j
 
-let zero_rows m =
+let leaves m =
   let rec iter i acc =
     if i < 0 then acc
     else match chl m i with
@@ -152,7 +151,7 @@ let zero_rows m =
     | _ -> iter (i - 1) acc in
   iter (m.r - 1) []
 
-let zero_cols m =
+let orphans m =
   let rec iter j acc =
     if j < 0 then acc
     else match prn m j with
@@ -235,9 +234,20 @@ let () =
   print_newline ();
   print_endline (to_string b);
   print_newline ();
+  print_endline "mul:";
   print_endline (to_string (mul a b));
   print_newline ();
+  print_endline "trans:";
   print_endline (to_string (trans a));
+  print_newline ();
+  print_endline "tens:";
+  print_endline (to_string (tens a a));
+  print_newline ();
+  print_endline "stack:";
+  print_endline (to_string (stack a a));
+  print_newline ();
+  print_endline "append:";
+  print_endline (to_string (append a a));
   print_newline ();
   let c = of_list [ [1;0;1];
 		    [1;0;0];
@@ -252,8 +262,10 @@ let () =
   print_newline ();
   print_endline (to_string d);
   print_newline ();
+  print_endline "mul:";
   print_endline (to_string (mul c d));
   print_newline ();
+  print_endline "trans:";
   print_endline (to_string (trans c));
   print_newline ()
 
