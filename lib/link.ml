@@ -69,9 +69,9 @@ let string_of_face f =
   
 let string_of_edge e =
   sprintf "(%s, %s, %s)" 
-    (string_of_face e.i) (string_of_face e.o) (string_of_ports e.p)
+    (string_of_face e.i) (string_of_face e.o) (Ports.to_string e.p)
 
-let string_of_lg l = 
+let to_string l = 
   String.concat "\n" (List.map string_of_edge (Lg.elements l))
 
 let snf_of_linking l =
@@ -268,7 +268,7 @@ let ppar a b n =
 
 let apply_iso i l =
   Lg.fold (fun e acc ->
-    Lg.add {i = e.i; o= e.o; p = apply_ports e.p i} acc) l Lg.empty
+    Lg.add { i = e.i; o= e.o; p = Ports.apply e.p i } acc) l Lg.empty
 
 (* Is e a hyperedge? An extra node is not required when it is an edge or an
    idle name.*)   

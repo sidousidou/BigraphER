@@ -114,7 +114,7 @@ val sym : inter -> inter -> bg
 
 (** [ion ns c] returns an ion of control [c]. It's outer names are [ns].
     @raise CONTROL_ERROR when [ns] has size different than the arity of [c].*)
-val ion : Link.Face.t -> Base.ctrl -> bg
+val ion : Link.Face.t -> Base.Ctrl.t -> bg
 
 (** [sub n m] returns a substitution where [n] and [m] are the inner and outer 
     faces, respectively.*)

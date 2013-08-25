@@ -3,8 +3,6 @@
     @version 0.3 *)
 
 (** The type of boolean matrices. *)    
-
-(** The type of boolean matrices. *)    
 type bmatrix =
   { r: int;
     c: int;
@@ -16,6 +14,12 @@ type bmatrix =
 val make : int -> int -> bmatrix
 
 val copy : bmatrix -> bmatrix
+
+val ( = ) : bmatrix -> bmatrix -> bool
+
+val compare : bmatrix -> bmatrix -> int
+
+val is_0 : bmatrix -> bool
 
 (** String representation. 0 = false and 1 = true *)
 val to_string : bmatrix -> string
@@ -36,6 +40,10 @@ val append : bmatrix -> bmatrix -> bmatrix
 
 val stack : bmatrix -> bmatrix -> bmatrix
 
+val apply_iso_rows : Base.Iso.t -> bmatrix -> bmatrix
+
+val apply_iso_cols : Base.Iso.t -> bmatrix -> bmatrix
+
 val apply_iso : Base.Iso.t -> bmatrix -> bmatrix
 
 val parse_vector : int list list -> int -> bmatrix
@@ -44,15 +52,21 @@ val chl : bmatrix -> int -> int list
 
 val prn : bmatrix -> int -> int list
 
-(* zero rows *)
+val dom : bmatrix -> int list
+
 val leaves : bmatrix -> int list
 
-(* zero columns *)
+val codom : bmatrix -> int list
+
 val orphans : bmatrix -> int list
 
 val siblings : bmatrix -> int -> int list
 
+val siblings_chk: bmatrix -> bool
+
 val partners : bmatrix -> int -> int list
+
+val partners_chk : bmatrix -> bool
 
 val mul : bmatrix -> bmatrix -> bmatrix
 

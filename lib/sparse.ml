@@ -1,3 +1,5 @@
+open Base
+
 type bmatrix =
   { r: int;
     c: int;
@@ -21,13 +23,31 @@ let copy m =
     c_major = Hashtbl.copy m.c_major;
   }
 
+let ( = ) a b = 
+  (a.r = b.r) && (a.c = b.c) && 
+    (a.r_major = b.r_major) && (a.c_major = b.c_major)
+
+let compare a b =
+  match a.r - b.r with
+  | 0 -> begin match a.c - b.c with
+    | 0 -> begin match compare a.r_major b.r_major with
+      | 0 -> compare a.c_major b.c_major
+      | x -> x
+    end
+    | x -> x
+  end
+  | x -> x
+
+let is_0 m =
+  ( = ) m (make 0 0)
+    
 let to_string m =
   let buff = Array.make_matrix m.r m.c "0" in
   Hashtbl.iter (fun i j -> 
     buff.(i).(j) <- "1") m.r_major;
   String.concat "\n" (Array.to_list (Array.map (fun r ->
     String.concat "" (Array.to_list r)) buff))
-
+   
 let row_1 n =
   assert (n >= 0);
   let m = make 1 n in (* inline to speed up *)
@@ -61,7 +81,7 @@ let col_0 n =
 let diag n =
   assert (n >= 0);
   let m = make n n in
-  for i =0 to n - 1 do
+  for i = 0 to n - 1 do
     Hashtbl.add m.r_major i i;
     Hashtbl.add m.c_major i i;
   done;
@@ -71,61 +91,71 @@ let tens a b =
   let m = make (a.r + b.r) (a.c + b.c) in
   (* Insert elements of a *)
   Hashtbl.iter (fun i j -> 
-    Hashtbl.add m.r_major i j) a.r_major;
-  Hashtbl.iter (fun j i -> 
-    Hashtbl.add m.c_major j i) a.c_major;
+    Hashtbl.add m.r_major i j;
+    Hashtbl.add m.c_major j i) a.r_major;
   (* Insert elements of b *)
   Hashtbl.iter (fun i j -> 
-    Hashtbl.add m.r_major (i + a.r) (j + a.c)) b.r_major;
-  Hashtbl.iter (fun j i -> 
-    Hashtbl.add m.c_major (j + a.c) (i + a.r)) b.c_major;
+    Hashtbl.add m.r_major (i + a.r) (j + a.c);
+    Hashtbl.add m.c_major (j + a.c) (i + a.r)) b.r_major;
   m
-
+    
 let append a b =
-  assert (a.r = b.r);
+  (*assert (a.r = b.r);*)
   let m = make a.r (a.c + b.c) in
   (* Insert elements of a *)
   Hashtbl.iter (fun i j -> 
-    Hashtbl.add m.r_major i j) a.r_major;
-  Hashtbl.iter (fun j i -> 
-    Hashtbl.add m.c_major j i) a.c_major;
+    Hashtbl.add m.r_major i j;
+    Hashtbl.add m.c_major j i) a.r_major;
   (* Insert elements of b *)
   Hashtbl.iter (fun i j -> 
-    Hashtbl.add m.r_major i (j + a.c)) b.r_major;
-  Hashtbl.iter (fun j i -> 
-    Hashtbl.add m.c_major (j + a.c) i) b.c_major;
+    Hashtbl.add m.r_major i (j + a.c);
+    Hashtbl.add m.c_major (j + a.c) i) b.r_major;
   m
   
 let stack a b =
-  assert (a.c = b.c);
+  (*assert (a.c = b.c);*)
   let m = make (a.r + b.r) a.c in
   (* Insert elements of a *)
   Hashtbl.iter (fun i j -> 
-    Hashtbl.add m.r_major i j) a.r_major;
-  Hashtbl.iter (fun j i -> 
-    Hashtbl.add m.c_major j i) a.c_major;
+    Hashtbl.add m.r_major i j;
+    Hashtbl.add m.c_major j i) a.r_major;
   (* Insert elements of b *)
   Hashtbl.iter (fun i j -> 
-    Hashtbl.add m.r_major (i + a.r) j) b.r_major;
-  Hashtbl.iter (fun j i -> 
-    Hashtbl.add m.c_major j (i + a.r)) b.c_major;
+    Hashtbl.add m.r_major (i + a.r) j;
+    Hashtbl.add m.c_major j (i + a.r)) b.r_major;
   m
 
+let apply_iso_rows iso m =
+  (*assert (Iso.cardinal iso = m.r);*)
+  let m' = make m.r m.c in
+  Hashtbl.iter (fun i j ->
+    let i' = Iso.find iso i in
+    Hashtbl.add m'.r_major i' j;
+    Hashtbl.add m'.c_major j i') m.r_major;
+   m'
+
+let apply_iso_cols iso m =
+  (*assert (Iso.cardinal iso = m.c);*)
+  let m' = make m.r m.c in
+  Hashtbl.iter (fun i j ->
+    let j' = Iso.find iso j in
+    Hashtbl.add m'.r_major i j';
+    Hashtbl.add m'.c_major j' i) m.r_major;
+  m'
+
 let apply_iso iso m =
-  assert (Base.Iso.cardinal iso = m.r);
-  assert (m.r = m.c);
+  (*assert (Iso.cardinal iso = m.r);*)
+  (*assert (m.r = m.c);*)
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let (i', j') = 
-      (Base.get_i i iso, Base.get_i j iso) in
-    Hashtbl.add m'.r_major i' j') m.r_major;
-  Hashtbl.iter (fun j i ->
-    let (i', j') = 
-      (Base.get_i i iso, Base.get_i j iso) in
-    Hashtbl.add m'.c_major j' i') m.c_major;
+      (Iso.find iso i, Iso.find iso j) in
+    Hashtbl.add m'.r_major i' j';
+    Hashtbl.add m'.c_major j' i') m.r_major;
   m'
 
 let parse_vector adj rows =
+  assert (rows >= 0);
   let m = make rows (List.length adj) in
   Array.iteri (fun j i_list ->
     List.iter (fun i -> 
@@ -143,47 +173,21 @@ let prn m j =
   assert (j < m.c);
   Hashtbl.find_all m.c_major j
 
-let leaves m =
-  let rec iter i acc =
-    if i < 0 then acc
-    else match chl m i with
-    | [] -> iter (i - 1) (i :: acc)
-    | _ -> iter (i - 1) acc in
-  iter (m.r - 1) []
-
-let orphans m =
-  let rec iter j acc =
-    if j < 0 then acc
-    else match prn m j with
-    | [] -> iter (j - 1) (j :: acc)
-    | _ -> iter (j - 1) acc in
-  iter (m.c - 1) []
-
-let siblings m j = 
-  let p = prn m j in
-  Base.Int_set.elements 
-    (Base.Int_set.remove j (List.fold_left (fun acc i ->
-      Base.Int_set.union acc (Base.set_of_list (chl m i)))
-			      Base.Int_set.empty p))
-  
-let partners m i =
-  let c = chl m i in
-  Base.Int_set.elements 
-    (Base.Int_set.remove i (List.fold_left (fun acc j ->
-      Base.Int_set.union acc (Base.set_of_list (prn m j)))
-			      Base.Int_set.empty c))
-
 let mul a b =
-  assert (a.c = b.r);
-  let m = make a.r b.c in
-  ignore (Hashtbl.fold (fun i j acc ->
-    let vec = Hashtbl.find_all b.r_major j in
-    List.fold_left (fun acc k ->
-      if Base.Iso.mem (i, k) acc then acc
-      else begin Hashtbl.add m.r_major i k;
-	Hashtbl.add m.c_major k i;
-	Base.Iso.add (i, k) acc
-      end) acc vec) a.r_major Base.Iso.empty);
+  (*assert (a.c = b.r);*)
+  let m = make a.r b.c 
+  and acc = Hashtbl.create a.r in
+  Hashtbl.iter
+    (fun i j ->
+      let vec = Hashtbl.find_all b.r_major j in
+      List.iter (fun k ->
+	if List.mem k (Hashtbl.find_all acc i) then () 
+	else begin 
+	  Hashtbl.add m.r_major i k;
+	  Hashtbl.add m.c_major k i;
+	  Hashtbl.add acc i k;
+	end) vec) 
+    a.r_major;
   m
 
 (* It seems the same entries are checked too many times.
@@ -192,8 +196,11 @@ let mul a b =
 let trans m =
   let t = copy m in
   let rec fix () =
-    let chl_2 = Hashtbl.fold (fun i j acc ->
-      acc @ (List.map (fun c -> (i, c)) (chl m j))) t.r_major [] in
+    let chl_2 = 
+      Hashtbl.fold 
+	(fun i j acc ->
+	  acc @ (List.map (fun c -> (i, c)) (chl m j))) 
+	t.r_major [] in
     let count = List.fold_left (fun acc (i, c) ->
     if List.mem c (Hashtbl.find_all t.r_major i) then acc
     else begin
@@ -204,6 +211,62 @@ let trans m =
     if count > 0 then fix ()
     else t in
   fix ()
+
+let dom m =
+  IntSet.elements 
+    (Hashtbl.fold (fun i _ acc ->
+      IntSet.add i acc) m.r_major IntSet.empty)
+
+let codom m =
+  IntSet.elements 
+    (Hashtbl.fold (fun j _ acc ->
+      IntSet.add j acc) m.c_major IntSet.empty)
+
+let leaves m =
+  let d = dom m in
+  let rec iter i acc =
+    if i < 0 then acc
+    else if List.mem i d then iter (i - 1) acc
+    else iter (i - 1) (i :: acc) in
+  iter (m.r - 1) []
+
+let orphans m =
+  let c = codom m in
+  let rec iter j acc =
+    if j < 0 then acc
+    else if List.mem j c then iter (j - 1) acc
+    else iter (j - 1) (j :: acc) in
+  iter (m.c - 1) []
+
+let siblings m j = 
+  let p = prn m j in
+  IntSet.elements
+    (IntSet.remove j 
+       (List.fold_left (fun acc i ->
+	 IntSet.union acc (IntSet.of_list (chl m i))) 
+	 IntSet.empty p))
+    
+(* Return false if any two columns are siblings. Orphans are not considered
+   siblings.*) 
+let siblings_chk m =
+  List.for_all (fun j ->
+    match siblings m j with
+    | [] -> true
+    | _ -> false) (codom m)
+     
+let partners m i =
+  let c = chl m i in
+  IntSet.elements
+    (IntSet.remove i 
+       (List.fold_left (fun acc j ->
+	 IntSet.union acc (IntSet.of_list (prn m j)))
+	 IntSet.empty c))
+
+let partners_chk m =
+  List.for_all (fun i ->
+    match partners m i with
+    | [] -> true
+    | _ -> false) (dom m)
 
 (* Not exposed *)
 let of_list l r c =

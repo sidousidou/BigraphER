@@ -38,8 +38,8 @@ let string_of_inter (Inter (n, f)) =
   sprintf "<%d, %s>" n (Link.string_of_face f)
 
 let string_of_bg b =
-  sprintf "%s\n%s%s" (string_of_nodes b.n) (Place.string_of_pg b.p)
-    (Link.string_of_lg b.l)    
+  sprintf "%s\n%s%s" (Nodes.to_string b.n) (Place.to_string b.p)
+    (Link.to_string b.l)    
 
 let id (Inter (m, i)) =
   {n = Nodes.empty;
@@ -84,10 +84,10 @@ let sym (Inter (m, i)) (Inter (n, j)) =
   }
   
 let ion f c =
-  if (arity c) <> (Link.Face.cardinal f) then
-    raise (CTRL_ERROR (arity c, f))
+  if (Ctrl.arity c) <> (Link.Face.cardinal f) then
+    raise (CTRL_ERROR (Ctrl.arity c, f))
   else
-    {n = Nodes.singleton (0, c);
+    {n = Nodes.add Nodes.empty 0 c;
      p = Place.elementary_ion;
      l = Link.elementary_ion f;
     } 
@@ -112,32 +112,32 @@ let placing l r f =
 (* Empty link graph and no nodes in the place graph. *)
 let is_plc b =
   (Link.Lg.equal b.l Link.id_empty) &&
-  (Nodes.cardinal b.n = 0) &&
+  (b.n.Nodes.size = 0) &&
   (Place.is_plc b.p)
   
 (* Empty place graph and no nodes in the link graph. *)
 let is_wir b =
-  (b.p = Place.id0) && (Nodes.cardinal b.n = 0)
+  (b.p = Place.id0) && (b.n.Nodes.size = 0)
   
 let is_id b =
   (Nodes.is_empty b.n) && (Place.is_id b.p) && (Link.is_id b.l)
   
 let tens a b =
-  {n = uplus a.n b.n;
-   p = Place.tens a.p b.p;
-   l = Link.tens a.l b.l (Nodes.cardinal a.n);
+  { n = Nodes.tens a.n b.n;
+    p = Place.tens a.p b.p;
+    l = Link.tens a.l b.l a.n.Nodes.size;
   }
 
 let comp a b =
-  {n = uplus a.n b.n;
-   p = Place.comp a.p b.p;
-   l = Link.comp a.l b.l (Nodes.cardinal a.n);
+  { n = Nodes.tens a.n b.n;
+    p = Place.comp a.p b.p;
+    l = Link.comp a.l b.l a.n.Nodes.size;
   }
  
 let ppar a b =
-  {n = uplus a.n b.n;
-   p = Place.tens a.p b.p;
-   l = Link.ppar a.l b.l (Nodes.cardinal a.n);
+  { n = Nodes.tens a.n b.n;
+    p = Place.tens a.p b.p;
+    l = Link.ppar a.l b.l a.n.Nodes.size;
   }
   
 let ppar_of_list bs =
@@ -190,9 +190,9 @@ let is_solid b =
 (*let latex_of_big = function | Bg (ns, p, l) -> "latex representation"*)
   
 let apply_iso i b =
-  let (x, y) = ((Iso.cardinal i), (Nodes.cardinal b.n)) in
+  let (x, y) = ((Iso.cardinal i), b.n.Nodes.size) in
   if x = y then
-    {n = apply_nodes b.n i;
+    {n = Nodes.apply b.n i;
      p = Place.apply_iso i b.p;
      l = Link.apply_iso i b.l;
     }
@@ -206,7 +206,7 @@ let get_dot b ide =
     else if flag then
       let ss =
         (List.map (fun i ->
-          sprintf "r%d" i) (Int_set.elements (of_int ord))) @
+          sprintf "r%d" i) (IntSet.elements (IntSet.of_int ord))) @
         (List.map (fun (Link.Nam n) ->
           sprintf "o%s" n) (Link.Face.elements f)) in
       match ss with
@@ -215,7 +215,7 @@ let get_dot b ide =
       else
         let xs =
         (List.map (fun i ->
-          sprintf "s%d" i) (Int_set.elements (of_int ord))) @
+          sprintf "s%d" i) (IntSet.elements (IntSet.of_int ord))) @
         (List.map (fun (Link.Nam n) ->
           sprintf "i%s" n) (Link.Face.elements f)) in
         match xs with
@@ -223,7 +223,7 @@ let get_dot b ide =
          | _ -> sprintf "{rank=sink; %s};\n" (String.concat "; " xs) in 
   let inner_shp, outer_shp, hyp_shp, link_adj = Link.get_dot b.l
   and roots_shp, sites_shp, node_ranks, place_adj = Place.get_dot b.p
-  and nodes_shp = get_dot b.n
+  and nodes_shp = Nodes.to_dot b.n
   and rank_out = build_rank (outer b) true
   and rank_in = build_rank (inner b) false in
   sprintf "digraph \"%s\"{\n%s%s%s%s%s%s%s%s%s%s%s}"
@@ -236,7 +236,7 @@ let decomp t p i_v i_e =
   let (l_c, l_d, l_id) = 
     Link.decomp t.l p.l i_v i_e i_c i_d
   and (n_c, n_d) = 
-    apply_nodes t.n i_c, apply_nodes t.n i_d in
+    Nodes.apply t.n i_c, Nodes.apply t.n i_d in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty })
@@ -245,18 +245,18 @@ let decomp t p i_v i_e =
 let levels b =
   let phi, ls = Place.levels b.p in
   let w, ids = Link.levels b.l (List.map (fun (ps, _, _) ->
-    ports_of_nodes (Nodes.filter (fun (i, _) ->
-      Int_set.mem i ps) b.n)) ls) in
+    Ports.of_nodes (Nodes.filter (fun (i, _) ->
+      IntSet.mem i ps) b.n)) ls) in
   (tens {p = phi; n = Nodes.empty; l = Link.id_empty;}(* no need for tens *)
         {p = Place.id0; l = w; n = Nodes.empty;}) ::
     (List.map2 (fun (ions, n, psi) l ->
-      tens (comp (tens (ppar_of_list (Int_set.fold (fun j acc ->
+      tens (comp (tens (ppar_of_list (IntSet.fold (fun j acc ->
             (* find j in the node set *)
             let n_j = (* Not_found? *)
               snd (Nodes.choose (Nodes.filter (fun (i, _) ->
                 i = j) b.n)) in
             let f = 
-              Int_set.fold (fun i acc ->
+              IntSet.fold (fun i acc ->
                 (sprintf "n%d_%d" j i) :: acc) (of_int (arity n_j)) [] in    
             (ion (Link.parse_face f) n_j) :: acc) ions []))
           {p = Place.elementary_id n; l = Link.id_empty; n = Nodes.empty;})

@@ -14,15 +14,18 @@ type pg = {
   r : int; (** Number of roots *)
   n : int; (** Number of nodes *)
   s : int; (** Number of sites *)
-  m : Matrix.bmatrix; (** Boolean adjacency matrix of size [r+n] x [n+s] *)
+  rn : Sparse.bmatrix; (** Boolean adjacency matrix roots X nodes *)
+  rs : Sparse.bmatrix; (** Boolean adjacency matrix roots X sites *)
+  nn : Sparse.bmatrix; (** Boolean adjacency matrix nodes X nodes *)
+  ns : Sparse.bmatrix; (** Boolean adjacency matrix nodes X sites *)
  }
 	
 (** Raised when a composition between two incompatible place graphs is 
     attempted. *)
 exception COMP_ERROR of (int * int)
 
-(** [string_of_pg p] returns a string representation of place graph [p]. *)
-val string_of_pg : pg -> string
+(** [to_string p] returns a string representation of place graph [p]. *)
+val to_string : pg -> string
 
 (** [snf_of_placing p] returns the normal form of  a placing. *)
 val snf_of_placing :  pg -> string
@@ -129,7 +132,7 @@ val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
     a set of ions, the second component is the size of the level's identity,
     and the third is the level's placing.
     *)
-val levels : pg -> pg * (Base.Int_set.t * int * pg) list
+val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 
 (** {6 Misc} *)
 

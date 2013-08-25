@@ -96,8 +96,8 @@ val parse_face : string list -> Face.t
 (** [string_of_face f] returns a string rapresentation of face [f].*)
 val string_of_face : Face.t -> string
 
-(** [string_of_lg l] returns a string representation of link graph [l].*)
-val string_of_lg : Lg.t -> string
+(** [to_string l] returns a string representation of link graph [l].*)
+val to_string : Lg.t -> string
 
 (** [snf_of_linking l] Returns the normal form of linking [l].*)
 val snf_of_linking : Lg.t -> string
