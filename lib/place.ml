@@ -141,7 +141,9 @@ let comp g f =
 		      s = f.s;
 		      rn = Sparse.append g.rn (Sparse.mul g.rs f.rn);
 		      rs = Sparse.mul g.rs f.rs;
-		      nn = Sparse.tens g.nn (Sparse.mul g.ns f.rn);
+		      nn = Sparse.stack 
+      (Sparse.append g.nn (Sparse.mul g.ns f.rn)) 
+      (Sparse.append (Sparse.make f.n g.n) f.nn);
 		      ns = Sparse.stack (Sparse.mul g.ns f.rs) f.ns;
 		    }
   else raise (COMP_ERROR (g.s, f.r))
