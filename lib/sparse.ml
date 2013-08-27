@@ -9,8 +9,8 @@ type bmatrix =
 
 (* Create an empty matrix *)
 let make rows cols =
-  assert(rows >= 0);
-  assert(cols >= 0);
+  assert (rows >= 0);
+  assert (cols >= 0);
   { r = rows;
     c = cols;
     r_major = Hashtbl.create rows;
@@ -99,8 +99,8 @@ let tens a b =
     Hashtbl.add m.c_major (j + a.c) (i + a.r)) b.r_major;
   m
     
-let append a b =
-  (*assert (a.r = b.r);*)
+let append (a : bmatrix) (b : bmatrix) =
+  assert (Pervasives.(=) a.r b.r);
   let m = make a.r (a.c + b.c) in
   (* Insert elements of a *)
   Hashtbl.iter (fun i j -> 
@@ -113,7 +113,7 @@ let append a b =
   m
   
 let stack a b =
-  (*assert (a.c = b.c);*)
+  assert (Pervasives.(=)  a.c b.c);
   let m = make (a.r + b.r) a.c in
   (* Insert elements of a *)
   Hashtbl.iter (fun i j -> 
@@ -126,7 +126,7 @@ let stack a b =
   m
 
 let apply_iso_rows iso m =
-  (*assert (Iso.cardinal iso = m.r);*)
+  assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let i' = Iso.find iso i in
@@ -135,7 +135,7 @@ let apply_iso_rows iso m =
    m'
 
 let apply_iso_cols iso m =
-  (*assert (Iso.cardinal iso = m.c);*)
+  assert (Pervasives.(=) (Iso.cardinal iso) m.c);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let j' = Iso.find iso j in
@@ -144,8 +144,8 @@ let apply_iso_cols iso m =
   m'
 
 let apply_iso iso m =
-  (*assert (Iso.cardinal iso = m.r);*)
-  (*assert (m.r = m.c);*)
+  assert (Pervasives.(=) (Iso.cardinal iso) m.r);
+  assert (Pervasives.(=) m.r m.c);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let (i', j') = 
@@ -174,7 +174,7 @@ let prn m j =
   Hashtbl.find_all m.c_major j
 
 let mul a b =
-  (*assert (a.c = b.r);*)
+  assert (Pervasives.(=) a.c b.r);
   let m = make a.r b.c 
   and acc = Hashtbl.create a.r in
   Hashtbl.iter
@@ -267,6 +267,23 @@ let partners_chk m =
     match partners m i with
     | [] -> true
     | _ -> false) (dom m)
+
+let iter f m = 
+  Hashtbl.iter f m.r_major
+
+let fold f m acc = 
+  Hashtbl.fold f m.r_major acc
+
+let add m i j =
+  assert (i >= 0);
+  assert (j >= 0);
+  assert (i < m.r);
+  assert (j < m.c);
+  Hashtbl.add m.r_major i j;
+  Hashtbl.add m.c_major j i
+
+let add_list m l =
+  List.iter (fun (i, j) -> add m i j) l
 
 (* Not exposed *)
 let of_list l r c =

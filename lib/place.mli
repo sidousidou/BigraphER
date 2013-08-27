@@ -160,7 +160,7 @@ val compare_roots_sites : pg -> pg -> int
 
 (** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is
     valid. [t_trans] is the transitive closure of [t]. *)
-val is_match_valid : pg -> pg -> Matrix.bmatrix -> Base.Iso.t -> bool
+val is_match_valid : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
 
 (** Computes the number of edges in the DAG. *)
 val edges : pg -> int
