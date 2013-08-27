@@ -172,134 +172,123 @@ let is_epi p =
 (* Is p guarded: no root has sites as children *)
 let is_guard p = Sparse.is_0 p.rs
  
-(* Get the set of ancestors (rows) of a set of columns.
-   Not exposed. 
-   raise Assert_failure   *)
-(*let anc p cs =
-  let rec aux acc cols =
-    let prn_set = IntSet.fold (fun j acc ->
-      IntSet.union (prn p.m j) acc) cols IntSet.empty   
-    in
-    if prn_set = IntSet.empty then acc
-    else aux (IntSet.union prn_set acc) (IntSet.filter (fun i ->
-      i >= 0) (off (-p.r) prn_set))
-  in aux IntSet.empty cs*)
-
-(* Get the set of siblings (nodes) of a node (column)
-   Not exposed. *)
-(*let siblings p j = 
-  let par = IntSet.filter (fun i -> i >= p.r) (prn p.m j) in
-  IntSet.remove j (IntSet.fold (fun i acc ->
-    IntSet.union acc (IntSet.filter (fun j -> 
-      j < p.n) (chl p.m i))) par IntSet.empty)
-
-(* Dual *)
-let partners p j =
-  let  chi = IntSet.filter (fun j -> j < p.n) (chl p.m (j + p.r)) in
-  IntSet.remove j (IntSet.fold (fun j acc ->
-    IntSet.union acc (IntSet.filter (fun j -> 
-      j >= 0) (off (-p.r) (prn p.m j)))) chi IntSet.empty)
-*)
-
-(* Move subparts to sparse.ml Don't use Hashtbl here*)
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d 
    expressed as rows of t. Pattern p is mono and epi.
    See page 76, proposition 4.2.4. *)
 let decomp t p iso =
-  (*printf "Place.decomp iso p -> t : %s\n" (string_of_iso iso);*)
-  (* Nodes (rows) of target *)
-  let v_t = off t.r (of_int t.n) in
-  (* Nodes (rows) of target used for p' *)
-  let v_p = off t.r (codom iso) in
-  (* Nodes (rows) of target used for context c *)
+  let trans_t_nn = Sparse.trans t.nn
+  and iso' = Iso.inverse iso 
+  and v_p' = IntSet.of_list (Iso.codom iso) in 
   let v_c = 
-    IntSet.filter (fun i ->
-      i >= t.r) (IntSet.diff (anc t (codom iso)) v_p) in
-  (* Nodes (rows) of target used for argument d *) 
-  let v_d = IntSet.diff v_t (IntSet.union v_c v_p) in
-  (* Iso from nodes or roots (rows) of target to indices from 0.
-     Domain is the set of elements being in c and having a child
-     in d. Codomain is the set of sites. *)
-  let (iso_id, _) =
-    IntSet.fold (fun i (iso, k) ->
-      IntSet.fold (fun j (acc, k) ->
-        if (j >= t.n) || IntSet.mem (j + t.r) v_d
-        then (Iso.add (i, k) acc, k + 1) 
-        else (acc, k)) (chl t.m i) (iso, k)) 
-      (IntSet.union v_c (of_int t.r)) (Iso.empty, 0) in
-   (* Interface id *)
-  let j = Iso.cardinal iso_id in
-  (* Context c *)      
-  let (r_c, n_c, s_c) = (t.r, IntSet.cardinal v_c, p.r + j) in
-   (* Parameter d *)
-  let (r_d, n_d, s_d) = (p.s + j, IntSet.cardinal v_d, t.s) in
-   (* Context c matrix *)
-  let m_c = make_0 (r_c + n_c) (n_c + s_c)
-  (* Iso from columns in c to rows in t *)
-  and iso_c = inverse (fix_num v_c) in
-  for i = 0 to r_c + n_c - 1 do
-    let new_i =
-      if i < r_c then i else get_i (i - r_c) iso_c in
-    for j = 0 to n_c + p.r - 1 do
-      if j < n_c then
-        (* Node *)
-	let new_j = (get_i j iso_c) - t.r in
-	m_c.{i, j} <- t.m.{new_i, new_j}	  
-      else if j < (n_c + p.r) then begin
-        (* Site to pattern *)
-	(* Sites are excluded. This control shouldn't be necessary
-	   since p is always solid, i.e. roots don't have site children. *)
-	let chl_r =
-	  IntSet.filter (fun x -> x < p.n) (chl p.m (j - n_c))
-	(* Children of i in t that map to p. *)
-	and chl_i =
-	  IntSet.inter (chl t.m new_i) (codom iso) in
-	(*printf "(%d,%d)\tchl_r = %s\tchl_i = %s\n" i j 
-	  (string_of_IntSet chl_r) (string_of_IntSet chl_i);*)
-	if IntSet.subset (apply chl_r iso) chl_i then m_c.{i, j} <- 1
-      end
-    done
-  done;
-  (* Sites to id *)
-  Iso.iter (fun (i, j) ->
-    let new_i = if i < r_c then i else (get_inv_i i iso_c) + r_c in 
-    m_c.{new_i, j + n_c + p.r} <- 1) iso_id;
-  (* Parameter d matrix*)
-   let m_d = make_0 (r_d + n_d) (n_d + s_d)
-  (* Iso from columns in d to columns in t *)
-  and iso_d =  inverse (fix_num (off (-t.r) v_d)) in
-   for i = 0 to r_d + n_d - 1 do
-    let new_i =
-      if i < p.s then
-        (* Root to pattern *)
-        (*NOT TRUE!! p mono -> Sites in p have one parent *)
-	(* CHECK *)
-        (get_i ((IntSet.choose (prn p.m (i + p.n))) - p.r) iso) + t.r
-      else if i < r_d then
-        (* Root to id *)
-        get_inv_i (i - p.s) iso_id
-      else  
-        (* Node *)
-        (get_i (i - r_d) iso_d) + t.r in
-    for j = 0 to n_d + s_d - 1 do
-      let new_j = 
-	if j < n_d then
-          (* Node *)
-          get_i j iso_d
-	else
-          (* Site *)  
-          (j - n_d) + t.n  in
-      m_d.{i,j} <- t.m.{new_i,new_j}
-    done
-  done;  
-   (*printf "v_c =%s\nc =\n%s\n\nt =\n%s\n\np =\n%s\n\n" (string_of_IntSet v_c) (to_string m_c) (to_string t.m)
-     (to_string p.m);*)
-   ({r = r_c; n = n_c; s = s_c; m = m_c},
-   elementary_id j,
-   {r = r_d; n = n_d; s = s_d; m = m_d},
-   Iso.fold (fun (x, y) acc ->
-     Iso.add (y - t.r, x) acc) iso_c Iso.empty, inverse iso_d)
+    IntSet.diff 
+      (IntSet.fold (fun i acc ->
+	IntSet.union acc (IntSet.of_list (Sparse.prn trans_t_nn i)))
+	 v_p' IntSet.empty) v_p' in
+  let v_d = IntSet.diff (IntSet.of_int t.n) (IntSet.union v_c v_p') in
+  (* fix numbering of nodes in c and d : t -> c and t -> d *)
+  let iso_v_c = IntSet.fix v_c 
+  and iso_v_d = IntSet.fix v_d in
+  (* c roots to d nodes *)
+  let (edg_c_rs0, edg_d_rn0, s0) = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun (acc_c, acc_d, s) c ->
+	if IntSet.mem c v_d then 
+	  ((r, s) :: acc_c, (s, Iso.find iso_v_d c) :: acc_d, s + 1)
+	else (acc_c, acc_d, s)) acc (Sparse.chl t.rn r)) 
+      (IntSet.of_int t.r) ([], [], p.r) in
+  (* c roots to d sites *)
+  let (edg_c_rs1, edg_d_rs0, j0) = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun (acc_c, acc_d, s) c ->
+	((r, s) :: acc_c, (s, c) :: acc_d, s + 1)) acc (Sparse.chl t.rs r)) 
+      (IntSet.of_int t.r) ([], [], s0) in
+  (* c nodes to d nodes *)
+  let (edg_c_ns0, edg_d_rn1, s1) = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun (acc_c, acc_d, s) c ->
+	if IntSet.mem c v_d then 
+	  ((Iso.find iso_v_c r, s) :: acc_c, 
+	   (s, Iso.find iso_v_d c) :: acc_d, 
+	   s + 1)
+	else (acc_c, acc_d, s)) acc (Sparse.chl t.nn r)) 
+      v_c ([], [], j0) in
+  (* c nodes to d sites *)
+  let (edg_c_ns1, edg_d_rs1, j1) = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun (acc_c, acc_d, s) c ->
+	((Iso.find iso_v_c r, s) :: acc_c, 
+	 (s, c) :: acc_d, s + 1)) acc (Sparse.chl t.ns r)) 
+      v_c ([], [], s1)
+  (* c roots to p nodes *)
+  and edg_c_rp = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun acc c ->
+	if IntSet.mem c v_p' then 
+	  let s = List.hd (Sparse.prn p.rn (Iso.find iso' c)) in 
+	  (r, s) :: acc
+	else acc) acc (Sparse.chl t.rn r)) 
+      (IntSet.of_int t.r) []
+  (* c nodes to p nodes *)
+  and edg_c_np = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun acc c ->
+	if IntSet.mem c v_p' then 
+	  let s = List.hd (Sparse.prn p.rn (Iso.find iso' c)) in 
+	  (Iso.find iso_v_c r, s) :: acc
+	else acc) acc (Sparse.chl t.nn r)) 
+      v_c []
+  (* p nodes to d nodes *)
+  and edg_d_nn = 
+    IntSet.fold (fun n acc ->
+      List.fold_left (fun acc c ->
+	if IntSet.mem c v_d then 
+	  let s = List.hd (Sparse.chl p.ns (Iso.find iso' n)) in 
+	  (s, Iso.find iso_v_d c) :: acc
+	else acc) acc (Sparse.chl t.nn n)) 
+      v_p' []
+  (* p nodes to d sites *)
+  and edg_d_ns = 
+    IntSet.fold (fun n acc ->
+      List.fold_left (fun acc c ->
+	let s = List.hd (Sparse.chl p.ns (Iso.find iso' n)) in 
+	(s, c) :: acc) acc (Sparse.chl t.ns n)) 
+      v_p' [] in      
+  let (c, d) =
+    ((* Context c *)
+      { r = t.r;
+	n = IntSet.cardinal v_c;
+	s = p.r + j1;
+	rn = Sparse.make t.r n;
+	rs = Sparse.make t.r (p.r + j1);
+	nn = Sparse.make n n;
+	ns = Sparse.make n (p.r + j1);
+      },
+     (* Parameter d *)
+     { r = p.s + j1;
+       n = IntSet.cardinal v_d;
+       s = t.s;
+       rn = Sparse.make r n;
+       rs = Sparse.make r s;
+       nn = Sparse.make n n;
+       ns = Sparse.make n s;
+     }) in
+  (* Add old edges *)
+  Sparse.iter (fun i j ->
+    if IntSet.mem j v_c then Sparse.add c.rn i (Iso.find iso_v_c j)) t.rn;
+  Sparse.iter (fun  i j ->
+  if (IntSet.mem i v_c) && (IntSet.mem j v_c) then
+    Sparse.add c.nn (Iso.find iso_v_c i) (Iso.find iso_v_c j)
+  else if (IntSet.mem i v_d) && (IntSet.mem j v_d) then
+    Sparse.add d.nn (Iso.find iso_v_d i) (Iso.find iso_v_d j)) t.nn;
+  Sparse.iter (fun i j ->
+    if IntSet.mem i v_d then Sparse.add d.ns (Iso.find iso_v_d i) j) t.ns;
+  (* Add new edges *)
+  Sparse.add_list c.rs (edg_c_rs0 @  edg_c_rs1 @ edg_c_rp);
+  Sparse.add_list c.ns (edg_c_ns0 @  edg_c_ns1 @ edg_c_np);
+  Sparse.add_list d.rn (edg_d_rn0 @  edg_d_rn1 @ edg_d_nn);
+  Sparse.add_list d.rs (edg_d_rs0 @  edg_d_rs1 @ edg_d_ns); 
+  (c, d, elementary_id (j1 - p.r),  iso_v_c, iso_v_d)
 
 (* Parallel composition of n ions *)
 let elementary_ions n =

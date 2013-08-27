@@ -376,7 +376,7 @@ let get_dot l =
    i_c and i_d are isos from t to c and d.*)
 let decomp t p i_n i_e i_c i_d =
   (* compute sets of nodes in c and d *)
-  let v_c, v_d = dom i_c, dom i_d 
+  let (v_c, v_d) = (Iso.dom i_c, Iso.dom i_d) 
   (* Introduce indices *)
   and t_a = Array.of_list (Lg.elements t)
   and p_a = Array.of_list (Lg.elements p) in

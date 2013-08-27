@@ -71,3 +71,11 @@ val partners_chk : bmatrix -> bool
 val mul : bmatrix -> bmatrix -> bmatrix
 
 val trans : bmatrix -> bmatrix
+
+val iter : (int -> int -> unit) -> bmatrix -> unit
+
+val fold : (int -> int -> 'a -> 'a) -> bmatrix -> 'a -> 'a
+
+val add : bmatrix -> int -> int -> unit
+
+val add_list : bmatrix -> (int * int) list -> unit
