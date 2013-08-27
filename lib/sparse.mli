@@ -1,6 +1,5 @@
 (** This module provides operations on boolean matrices
-    @author Michele Sevegnani
-    @version 0.3 *)
+    @author Michele Sevegnani *)
 
 (** The type of boolean matrices. *)    
 type bmatrix =
@@ -19,7 +18,7 @@ val ( = ) : bmatrix -> bmatrix -> bool
 
 val compare : bmatrix -> bmatrix -> int
 
-val is_0 : bmatrix -> bool
+(*val is_0 : bmatrix -> bool*)
 
 (** String representation. 0 = false and 1 = true *)
 val to_string : bmatrix -> string
@@ -79,3 +78,5 @@ val fold : (int -> int -> 'a -> 'a) -> bmatrix -> 'a -> 'a
 val add : bmatrix -> int -> int -> unit
 
 val add_list : bmatrix -> (int * int) list -> unit
+
+val entries : bmatrix -> int

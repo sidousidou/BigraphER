@@ -243,8 +243,8 @@ let decomp t p i_v i_e =
 
 (* List of bigraphs. First one is the top level. *)
 let levels b =
-  let phi, ls = Place.levels b.p in
-  let w, ids = Link.levels b.l (List.map (fun (ps, _, _) ->
+  let (phi, ls) = Place.levels b.p in
+  let (w, ids) = Link.levels b.l (List.map (fun (ps, _, _) ->
     Ports.of_nodes (Nodes.filter (fun (i, _) ->
       IntSet.mem i ps) b.n)) ls) in
   (tens {p = phi; n = Nodes.empty; l = Link.id_empty;}(* no need for tens *)

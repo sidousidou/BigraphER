@@ -351,26 +351,6 @@ let get_dot l =
       )
     ) l (0, "", "", "", "edge [color=green, arrowhead=none];\n") with
     | (_, a, b, c, d) -> (a, b , c, d)
-
-(* names linking to an iso set of ports *)
-(*let eq_names l =
-  let eq_out = Face.fold (fun n acc ->
-    (* find edge e with n *)
-    let e = Lg.choose (Lg.filter (fun e -> Face.mem n e.o) l) in 
-    (* find edges iso to e *)
-    let es = Lg.filter (fun x -> (*card_ports x.p = card_ports e.p &&*) 
-	Iso.equal (multiset_of_ports x.p) (multiset_of_ports e.p)) l in
-    Face_set.add (Face.union e.o (outer es)) acc
-  ) (outer l) Face_set.empty 
-  and eq_in = Face.fold (fun n acc ->
-    (* find edge e with n *)
-    let e = Lg.choose (Lg.filter (fun e -> Face.mem n e.i) l) in 
-    (* find edges iso to e *)
-    let es = Lg.filter (fun x -> (*card_ports x.p = card_ports e.p &&*)
-      Iso.equal (multiset_of_ports x.p) (multiset_of_ports e.p)) l in
-    Face_set.add (Face.union e.o (inner es)) acc
-  ) (inner l) Face_set.empty in
-  eq_out, eq_in*)
   
 (* decompose t. p is assumed epi and mono. Ports are normalised.
    i_c and i_d are isos from t to c and d.*)

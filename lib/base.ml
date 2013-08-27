@@ -67,6 +67,8 @@ module Iso = struct
     Hashtbl.fold (fun _ j acc -> j :: acc) iso []
 
   let fold f iso acc = Hashtbl.fold f iso acc
+
+  let iter f iso = Hashtbl.iter f iso
   
   let to_string iso =
     sprintf "{%s}" 

@@ -38,8 +38,8 @@ let compare a b =
   end
   | x -> x
 
-let is_0 m =
-  ( = ) m (make 0 0)
+(*let is_0 m =
+  ( = ) m (make 0 0)*)
     
 let to_string m =
   let buff = Array.make_matrix m.r m.c "0" in
@@ -154,13 +154,20 @@ let apply_iso iso m =
     Hashtbl.add m'.c_major j' i') m.r_major;
   m'
 
+let add m i j =
+  assert (i >= 0);
+  assert (j >= 0);
+  assert (i < m.r);
+  assert (j < m.c);
+  Hashtbl.add m.r_major i j;
+  Hashtbl.add m.c_major j i
+
 let parse_vector adj rows =
   assert (rows >= 0);
   let m = make rows (List.length adj) in
   Array.iteri (fun j i_list ->
     List.iter (fun i -> 
-      Hashtbl.add m.r_major i j;
-      Hashtbl.add m.c_major j i) i_list) (Array.of_list adj);
+      add m i j) i_list) (Array.of_list adj);
   m
     
 let chl m i =
@@ -274,16 +281,11 @@ let iter f m =
 let fold f m acc = 
   Hashtbl.fold f m.r_major acc
 
-let add m i j =
-  assert (i >= 0);
-  assert (j >= 0);
-  assert (i < m.r);
-  assert (j < m.c);
-  Hashtbl.add m.r_major i j;
-  Hashtbl.add m.c_major j i
-
 let add_list m l =
   List.iter (fun (i, j) -> add m i j) l
+
+let entries m =
+  Hashtbl.length m.r_major
 
 (* Not exposed *)
 let of_list l r c =
@@ -292,7 +294,7 @@ let of_list l r c =
     ignore (List.fold_left (fun j x ->
       match x with
       | 0 -> j + 1
-      | 1 -> begin 
+      | _ -> begin 
 	Hashtbl.add m.r_major i j;
 	Hashtbl.add m.c_major j i;
 	j + 1

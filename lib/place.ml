@@ -123,7 +123,7 @@ let compare_placing a b =
 	      | _ -> x)
     | _ -> x
 
-(* Tensor product: A x B (indices in the right handside are increased) *)
+(* Tensor product: A x B (indices in the right hand-side are increased) *)
 let tens a b =
   { r = a.r + b.r;
     n = a.n + b.n;
@@ -134,18 +134,19 @@ let tens a b =
     ns = Sparse.tens a.ns b.ns;
   }
     
-(* Composition: G o F (indices in the right handside are increased) *)
+(* Composition: G o F (indices in the right hand-side are increased) *)
 let comp g f =
-  if g.s = f.r then { r = g.r;
-		      n = g.n + f.n;
-		      s = f.s;
-		      rn = Sparse.append g.rn (Sparse.mul g.rs f.rn);
-		      rs = Sparse.mul g.rs f.rs;
-		      nn = Sparse.stack 
-      (Sparse.append g.nn (Sparse.mul g.ns f.rn)) 
-      (Sparse.append (Sparse.make f.n g.n) f.nn);
-		      ns = Sparse.stack (Sparse.mul g.ns f.rs) f.ns;
-		    }
+  if g.s = f.r then 
+    { r = g.r;
+      n = g.n + f.n;
+      s = f.s;
+      rn = Sparse.append g.rn (Sparse.mul g.rs f.rn);
+      rs = Sparse.mul g.rs f.rs;
+      nn = Sparse.stack 
+	(Sparse.append g.nn (Sparse.mul g.ns f.rn)) 
+	(Sparse.append (Sparse.make f.n g.n) f.nn);
+      ns = Sparse.stack (Sparse.mul g.ns f.rs) f.ns;
+    }
   else raise (COMP_ERROR (g.s, f.r))
     
 (* Is p an identity? *)
@@ -172,7 +173,8 @@ let is_epi p =
   | _ -> false
     
 (* Is p guarded: no root has sites as children *)
-let is_guard p = Sparse.is_0 p.rs
+let is_guard p = 
+  (Sparse.entries p.rs) = 0
  
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d 
@@ -258,17 +260,21 @@ let decomp t p iso =
       v_p' [] in      
   let (c, d) =
     ((* Context c *)
+      let n = IntSet.cardinal v_c 
+      and s = p.r + j1 in
       { r = t.r;
-	n = IntSet.cardinal v_c;
-	s = p.r + j1;
+	n = n;
+	s = s;
 	rn = Sparse.make t.r n;
-	rs = Sparse.make t.r (p.r + j1);
+	rs = Sparse.make t.r s;
 	nn = Sparse.make n n;
-	ns = Sparse.make n (p.r + j1);
+	ns = Sparse.make n s;
       },
      (* Parameter d *)
-     { r = p.s + j1;
-       n = IntSet.cardinal v_d;
+     let n = IntSet.cardinal v_d
+     and r = p.s + j1 in
+     { r = r;
+       n = n;
        s = t.s;
        rn = Sparse.make r n;
        rs = Sparse.make r s;
@@ -290,87 +296,98 @@ let decomp t p iso =
   Sparse.add_list c.ns (edg_c_ns0 @  edg_c_ns1 @ edg_c_np);
   Sparse.add_list d.rn (edg_d_rn0 @  edg_d_rn1 @ edg_d_nn);
   Sparse.add_list d.rs (edg_d_rs0 @  edg_d_rs1 @ edg_d_ns); 
-  (c, d, elementary_id (j1 - p.r),  iso_v_c, iso_v_d)
+  (c, d, elementary_id (j1 - p.r), iso_v_c, iso_v_d)
 
-(* Parallel composition of n ions *)
-let elementary_ions n =
-  let rec fold i acc =
-    if i < 0 then acc
-    else fold (i - 1) (tens elementary_ion acc) in
-  fold (n - 1) id0
+exception PLACING of bg
 
-(* Construct the placing for a level. Firts two arguments are columns while
-   last two are rows. *)
-let build_phi sites sites_id roots roots_id p =
-  (* Generate an map with an offset in the codomain *) 
-  let fix_off target offset =
-    Array.to_list (Array.mapi (fun index i ->
-      (i, index + offset)) (Array.of_list target)) in
-  (* Iso from inputs to phi indices *) 
-  let iso_roots = fix_num roots
-  and map_roots_id = fix_off roots_id (IntSet.cardinal roots) in
-  (* Apply isos to parent sets *)
-  let map_par (s : IntSet.t) = 
-    fst (IntSet.fold (fun j (acc, map) ->
-      (* parents in roots and in roots_id *) 
-      let p_r, p_s =
-	IntSet.partition (fun i -> IntSet.mem i roots) (prn p.m j) in
-      (* map p_s to p_s0 and update map_roots_id *)
-      let p_s0, new_map =
-        IntSet.fold (fun i (acc, m) ->
-          ((try (List.assoc i m) :: acc with _ -> acc),
-           List.remove_assoc i m)) p_s ([], map) in
-      (acc @ [(IntSet.elements (apply p_r iso_roots)) @ p_s0], new_map)
-    ) s ([], map_roots_id)) in
-  (* parents of sites *)  
-  let (prn_sites : int list list) = 
-       map_par sites  
-  (* parents of sites_id *)  
-  and (prn_id : int list list) = 
-       map_par sites_id in   
-  parse_placing (prn_sites @ prn_id)
-    ((IntSet.cardinal roots) + (List.length roots_id))  
+(*  given a place graph p it returns a place graph p' a list of ions, the size
+    of an identity and a placing. Return p if it does not contain any ions. The
+    following invariant holds p = p' ((K x K x K x id) phi). An isomorphism to
+    restore the original numbering of p is also computed: p' -> p  *)
+let split_leaves p =
+  if is_plc p then raise (PLACING p)
+  else begin
+    let ions = IntSet.of_list (Sparse.leaves p.nn) in
+    (* p -> ions *)
+    let ions_iso = IntSet.fix ions 
+    and n_ions = IntSet.cardinal ions in
+    let nodes_s = IntSet.diff (IntSet.of_list (Sparse.dom p.ns)) ions
+    and roots_s = IntSet.of_list (Sparse.dom p.rs) in
+    let ns_iso = IntSet.fix nodes_s 
+    and rs_iso = IntSet.fix roots_s 
+    and j = (IntSet.cardinal nodes_s) + (IntSet.cardinal roots_s) 
+    and n_p' = IntSet.diff (IntSet.of_int p.n) ions in
+    (* p -> p'*) 
+    let p'_iso = IntSet.fix n_p' in
+    let phi = 
+      { r = n_ions + j;
+	n = 0;
+	s = p.s;
+	rn = Sparse.make (n_ions + j) 0;
+	rs = Sparse.make (n_ions + j) p.s; (* fill *)
+	nn = Sparse.make 0 0;
+	ns = Sparse.make 0 p.s;
+      }	in
+    (* edges from ions to sites *)
+    IntSet.iter (fun i -> 
+      let cs = Sparse.chl p.ns i in
+      List.iter (fun j -> 
+	Sparse.add phi.rs (Iso.find ions_iso i) j) cs) ions;
+    (* edges from id_nodes to sites *)
+    IntSet.iter (fun i -> 
+      let cs = Sparse.chl p.ns i in
+      List.iter (fun j -> 
+	Sparse.add phi.rs ((Iso.find ns_iso i) + n_ions) j) cs) nodes_s;
+    (* edges from id_roots to sites *)
+    IntSet.iter (fun i -> 
+      let cs = Sparse.chl p.rs i in
+      List.iter (fun j -> 
+	Sparse.add phi.rs 
+	  ((Iso.find rs_iso i) + n_ions + (IntSet.cardinal nodes_s)) j)
+	cs) roots_s;
+    let p' =
+      { r = p.r;
+	n = p.n - n_ions;
+	s = n_ions + j;
+	rn = Sparse.make p.r (p.n - n_ions);
+	rs = Sparse.make p.r (n_ions + j);
+	nn = Sparse.make (p.n - n_ions) (p.n - n_ions);
+	ns = Sparse.make (p.n - n_ions) (n_ions + j);
+      } in
+    (* edges from nodes to nodes/sites(ions) *)
+    IntSet.iter (fun i ->
+      let cs = Sparse.chl p.nn i in
+      List.iter (fun j ->
+	if IntSet.mem j ions then
+	  Sparse.add p'.ns (Iso.find p'_iso i) (Iso.find ions_iso j)
+	else Sparse.add p'.nn (Iso.find p'_iso i) (Iso.find p'_iso j))
+	cs) n_p';
+    (* edges from nodes to sites *)
+    Iso.iter (fun i j ->
+      Sparse.add p'.ns (Iso.find p'_iso i) (j + n_ions)) ns_iso;
+    (* edges from roots to nodes/sites(ions) *)
+    Sparse.iter (fun i j ->
+      if IntSet.mem j ions then
+	Sparse.add p'.rs r (Iso.find ions_iso j)
+      else Sparse.add p'.rn r (Iso.find p'_iso j)) p.rn;
+    (* edges from roots to sites *)
+    Iso.iter (fun i j ->
+      Sparse.add p'.rs r (j + n_ions + (IntSet.cardinal nodes_s))) rs_iso;
+    (p', ions, j, phi, Iso.inverse p'_iso)
+  end
 
-(* Compute the levels of p. Indeces are columns. *)
+(* recursively apply split leaves until a placing is returned. At each step the
+   isos are converted to isos to p *)
 let levels p =
-  (* leaves = columns already in a level*) 
-  let rec loop p sites sites_id res leaves leaves_init =
-    let roots, roots_id, prop =
-      IntSet.fold (fun j (acc, l, s) ->
-        (* Partition the set of parents of a site *)
-        let keep, discard =
-          IntSet.partition (fun i ->
-            IntSet.subset (chl p.m i) leaves) (prn p.m j) in
-	(* Keep only new roots *)    
-        let new_keep = IntSet.filter (fun i ->
-          not (IntSet.mem (i - p.r) leaves)) keep in
-	 if IntSet.is_empty discard then
-          (IntSet.union new_keep acc, (IntSet.elements discard) @ l, s)
-        else
-          (IntSet.union new_keep acc, (IntSet.elements discard) @ l,
-           IntSet.add j s)
-      ) (IntSet.union sites sites_id) (leaves_init, [], IntSet.empty) in
-    (* If no nodes in parents *)         
-    if IntSet.is_empty
-      (IntSet.filter (fun i ->
-	i >= p.r) (IntSet.union roots (set_of_list roots_id)))
-    then
-      (* Build topmost placing and return levels *)
-      (build_phi sites sites_id (of_int p.r) [] p, res)
-    else
-      (* build current level and iterate loop *)
-      (* placing *)
-      let phi = build_phi sites sites_id roots roots_id p
-      (* nodes (columns) not in leaves *)
-      and ions = IntSet.fold (fun i acc ->
-          if (i >= p.r) && not (IntSet.mem (i - p.r) leaves) then
-            IntSet.add (i - p.r) acc
-          else acc) roots IntSet.empty in  
-      loop p ions prop ((ions, IntSet.cardinal prop, phi) :: res)
-	(IntSet.union ions leaves) IntSet.empty in    
-  let sites = off p.n (of_int p.s) 
-  and leaves = zero_rows p.m in
-  loop p sites IntSet.empty [] sites leaves	 
+  let rec fix p acc iso =
+    try
+      let (p', ions, j, phi, iso') = split_leaves p in
+      fix p' ((iso ions, j, phi) :: acc) (iso iso')
+    with
+    | PLACING phi -> (phi, acc) in
+  let id_p = 
+    Iso.of_list (List.combine (IntSet.of_int p.n) (IntSet.of_int p.n)) in
+  fix p [] id_p  
 
 (* Compute three strings to build a dot representation.*)
 (* USE CSS *)
@@ -431,13 +448,8 @@ let snf_of_placing p =
 
 (* Counts the number of edges in the DAG *)
 let edges p =
-  let e = ref 0 in
-  for i = 0 to p.r + p.n - 1 do
-    for j = 0 to p.n + p.s - 1 do
-      e := p.m.{i,j} + !e
-    done
-  done;
-  !e
+  (Sparse.entries p.rn) + (Sparse.entries p.rs) + 
+    (Sparse.entries p.nn) + (Sparse.entries p.ns)
 
 (* GPROF *)
 (* Returns a list of pairs of non-iso nodes. Every node is expressed as a 
@@ -591,8 +603,8 @@ let is_match_valid t p t_trans iso =
       (IntSet.diff n_t_roots (off t.r (codom iso))) (* diff codom iso ??? YES *)
   (* check TRANS *)
   and check_trans t t_trans iso =
-   (* check if there is a node child of codomain, outside codomain, such that
-      one of its children in trans is in codomain *)
+   (* check if there is a node child of co-domain, outside co-domain, such that
+      one of its children in trans is in co-domain *)
     not (IntSet.exists (fun c ->
       IntSet.exists (fun t -> 
 	IntSet.mem t (codom iso)) (chl t_trans c))
@@ -601,47 +613,3 @@ let is_match_valid t p t_trans iso =
 	       j < t.n) (chl t.m x))) (off t.r (codom iso)) IntSet.empty)
 	      (codom iso))) in
   (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso)
-
-(*let match_trans t p t_trans blocks =
-  let n_t = of_int t.n 
-  (* pairs in t_trans *)
-  and pairs_t = to_iso t_trans in
-  (* pairs s_p x n_t *)
-  let pairs_s_t = set_cart (nodes_site_child p) n_t
-  (* pairs r_p x n_t *)
-  and pairs_r_t = set_cart (nodes_root_par p) n_t in
-  
-  (* blocking pairs are (s,i(s)), (r, i(r)) if (i(s), i(r)) in t_trans *)
-  
-*)
-
-(* DEBUG *)
-(*let _ = 
-  (* Example from page 82 *)
-  let p = {r = 1; n = 3; s = 2; m = make 4 5} 
-  and t = {r = 1; n = 8; s = 2; m = make 9 10} in
-  p.m.Matrix.m.(0).(0) <- true;
-  p.m.Matrix.m.(1).(1) <- true;
-  p.m.Matrix.m.(1).(3) <- true;
-  p.m.Matrix.m.(2).(2) <- true;
-  p.m.Matrix.m.(3).(4) <- true;
-  t.m.Matrix.m.(0).(0) <- true;
-  t.m.Matrix.m.(1).(1) <- true;
-  t.m.Matrix.m.(1).(2) <- true;
-[6~  t.m.Matrix.m.(1).(3) <- true;
-  t.m.Matrix.m.(2).(4) <- true;
-  t.m.Matrix.m.(3).(5) <- true;
-  t.m.Matrix.m.(4).(6) <- true;
-  t.m.Matrix.m.(5).(7) <- true;
-  t.m.Matrix.m.(6).(7) <- true;
-  t.m.Matrix.m.(7).(9) <- true;
-  t.m.Matrix.m.(8).(8) <- true;
-  printf "pattern:\n%starget:\n%s" (string_of_pg p) (string_of_pg t);
-  List.iter (fun (a, b, c, d) ->
-    printf "(%d,%d,%d,%d) " a b c d)(match_list t p);
-  printf "\n";
-  let psi = parse_placing [[0;2]; [1;2]; []; [1]] 3 in
-  printf "placing: %s\n" (snf_of_placing psi)
-*) 
-
-	

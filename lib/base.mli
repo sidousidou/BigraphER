@@ -9,8 +9,7 @@
 (** This module provides operations on basic bigraphical entities such as 
     controls, nodes and ports. It also defines sets of int, binary relations
     and various functions for combinatorial problems.
-    @author Michele Sevegnani
-    @version 0.5 *)
+    @author Michele Sevegnani *)
 
 (** {6 Controls} *)
 
@@ -63,14 +62,16 @@ sig
   val add : t -> int -> int -> unit
   
   val fold : (int -> int -> 'a -> 'a) -> t -> 'a -> 'a    
-
+    
+  val iter : (int -> int -> unit) -> t -> unit
+  
   (** Return the inverse of an isomorphism. *)
   val inverse : t -> t
 
   (** Compute the domain of an isomorphism. *)
   val dom : t -> int list
     
-  (** Compute the codomain of an isomorphism. *)
+  (** Compute the co-domain of an isomorphism. *)
   val codom : t -> int list
     
   val to_string : t -> string
@@ -130,7 +131,7 @@ module IntSet: sig
   (** [off i s] adds offset [i] to all the elements of set [s].*)
   val off: int -> t -> t
 
-  (** [norm s] nomalises set [s]: e.g. [{4, 6, 7, 9} --> {0, 1, 2, 3}] *)
+  (** [norm s] normalises set [s]: e.g. [{4, 6, 7, 9} --> {0, 1, 2, 3}] *)
   val norm : t -> t
     
   (** [fix s] generates an isomorphism to fix the numbering of [s]: e.g. 
@@ -243,10 +244,10 @@ end
 val match_nodes: Nodes.t -> Nodes.t -> Iso.t
 
 (** [multiset_of_ports p] returns an isomrphism with domain the cardinality of
-    the port set of a node and with codomain the node indexes. *)
+    the port set of a node and with co-domain the node indexes. *)
 val multiset_of_ports : Ports.t -> Iso.t
 
-(** [set_cart a b] returns the cartesian product of sets [a] and [b] *)
+(** [set_cart a b] returns the Cartesian product of sets [a] and [b] *)
 val set_cart : IntSet.t -> IntSet.t -> Iso.t
 *)
 (*

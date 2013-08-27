@@ -7,7 +7,7 @@
 (******************************************************************************)
 
 (** This module provides operations on place graphs.
-@author Michele Sevegnani *)
+    @author Michele Sevegnani *)
 
 (** The type of place graphs.*)
 type pg = {
@@ -77,8 +77,9 @@ val elementary_sym : int -> int -> pg
 (** [elementary_ion] creates a ion.*)
 val elementary_ion : pg
 
+(*
 (** [elementary_ions n] creates [n] ions in parallel. *)
-val elementary_ions: int -> pg
+val elementary_ions: int -> pg *)
 
 (** {6 Comparison} *)
 
@@ -130,8 +131,7 @@ val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
 (** [levels p] returns the levels of place graph [p]. The first component is the
     top placing, while the second is a list of triples. The first element is
     a set of ions, the second component is the size of the level's identity,
-    and the third is the level's placing.
-    *)
+    and the third is the level's placing. *)
 val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 
 (** {6 Misc} *)
