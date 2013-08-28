@@ -67,8 +67,8 @@ val face_of_inter : inter -> Link.Face.t
 (** [string_of_bg b] returns a string representation of bigraph [b]. *)
 val string_of_bg: bg -> string
 
-(** [snf b] returns a the normal form of bigraph [b].*)
-val snf: bg -> string
+(*(** [snf b] returns a the normal form of bigraph [b].*)
+val snf: bg -> string*)
 
 (** [get_dot b i] returns a string expressing bigraph [b] named [i] in 
     dot format. *)
@@ -198,8 +198,8 @@ val is_solid : bg -> bool
     parameter and the identity of the decomposition. *)
 val decomp :  bg -> bg -> Base.Iso.t -> Base.Iso.t -> bg * bg * bg
 
-(** [levels b] computes the decomposition in levels of [b]. *)
-val levels : bg -> bg list
+(*(** [levels b] computes the decomposition in levels of [b]. *)
+val levels : bg -> bg list*)
 
 (** {6 Comparison} *)
 

@@ -27,8 +27,9 @@ exception COMP_ERROR of (int * int)
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : pg -> string
 
-(** [snf_of_placing p] returns the normal form of  a placing. *)
+(*(** [snf_of_placing p] returns the normal form of  a placing. *)
 val snf_of_placing :  pg -> string
+*)
 
 (** [get_dot p] returns three strings expressing place graph [p] in dot format.
     The first two elements encode roots and sites shapes, the third

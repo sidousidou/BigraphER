@@ -51,19 +51,19 @@ val chl : bmatrix -> int -> int list
 
 val prn : bmatrix -> int -> int list
 
-val dom : bmatrix -> int list
+val dom : bmatrix -> Base.IntSet.t
 
-val leaves : bmatrix -> int list
+val leaves : bmatrix -> Base.IntSet.t
 
-val codom : bmatrix -> int list
+val codom : bmatrix ->  Base.IntSet.t
 
-val orphans : bmatrix -> int list
+val orphans : bmatrix ->  Base.IntSet.t
 
-val siblings : bmatrix -> int -> int list
+val siblings : bmatrix -> int ->  Base.IntSet.t
 
 val siblings_chk: bmatrix -> bool
 
-val partners : bmatrix -> int -> int list
+val partners : bmatrix -> int ->  Base.IntSet.t
 
 val partners_chk : bmatrix -> bool
 
@@ -80,3 +80,5 @@ val add : bmatrix -> int -> int -> unit
 val add_list : bmatrix -> (int * int) list -> unit
 
 val entries : bmatrix -> int
+
+val levels : bmatrix -> Base.IntSet.t list

@@ -161,16 +161,14 @@ let is_plc p =
 (* Is p monomorphic?: no two sites are siblings and no site is an orphan *)
 let is_mono p =
   let slice = Sparse.stack p.rs p.ns in
-  match Sparse.orphans slice with
-  | [] -> Sparse.siblings_chk slice
-  | _ -> false
+  if IntSet.is_empty (Sparse.orphans slice) then Sparse.siblings_chk slice
+  else false
     
 (* Is p epimorphic: no root is idle and no two roots are partners *)
 let is_epi p =
   let slice = Sparse.append p.rn p.rs in
-  match Sparse.leaves slice with
-  | [] -> Sparse.partners_chk slice
-  | _ -> false
+  if IntSet.is_empty (Sparse.leaves slice) then Sparse.partners_chk slice
+  else false
     
 (* Is p guarded: no root has sites as children *)
 let is_guard p = 
@@ -298,6 +296,7 @@ let decomp t p iso =
   Sparse.add_list d.rs (edg_d_rs0 @  edg_d_rs1 @ edg_d_ns); 
   (c, d, elementary_id (j1 - p.r), iso_v_c, iso_v_d)
 
+(*
 exception PLACING of bg
 
 (*  given a place graph p it returns a place graph p' a list of ions, the size
@@ -388,50 +387,49 @@ let levels p =
   let id_p = 
     Iso.of_list (List.combine (IntSet.of_int p.n) (IntSet.of_int p.n)) in
   fix p [] id_p  
+*)
 
 (* Compute three strings to build a dot representation.*)
-(* USE CSS *)
 let get_dot p =
-  (
-    (* Root shapes *)
+  (* Root shapes *)
+  let root_shapes =  
     IntSet.fold (fun i buff ->
-      buff ^ (sprintf "r%d [label=\"%d\", style=dashed, shape=box, width=.28, height=.18];\n" i i)
-    ) (of_int p.r) "",
+      sprintf "%sr%d [ label=\"%d\", style=\"dashed\", shape=box, width=.28,\
+                       height=.18, fontname=\"sans-serif\" ];\n" buff i i)
+      (IntSet.of_int p.r) ""
   (* Site shapes *)
+  and site_shapes = 
     IntSet.fold (fun i buff ->
-      buff ^ (sprintf
-		"s%d [label=\"%d\", style=\"filled,dashed\", shape=box, fillcolor=gray, width=.28, height=.18];\n"
-		i i)) (of_int p.s) "",
-  (* ranks *)
-    String.concat "" (List.map (fun (s, _, _) ->
-      sprintf "{rank=same; %s};\n"
-	(String.concat "; " (List.map (fun i ->
-	  sprintf "v%d" i) (IntSet.elements s)))) (snd (levels p))),  
+      sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", shape=box,\
+                       fillcolor=\"gray\", width=.28, height=.18,\
+                       fontname=\"sans-serif\" ];\n" buff i i)
+      (IntSet.of_int p.s) ""
+  (* Ranks *)
+  and ranks = 
+    List.fold_left (fun buff ns ->
+      sprintf "%s{ rank=same, %s }\n;" buff 
+	(String.concat ", " (IntSet.fold (fun i acc ->
+	  (sprintf "v%d" i) :: acc) ns []))) "" (Sparse.levels p.nn)
   (* Adjacency matrix *) 
-  let out = ref "" in
-  for i = 0 to p.r + p.n - 1 do
-    for j = 0 to p.n + p.s - 1 do
-      if p.m.{i,j} = 1 then
-        let new_i = 
-          if i < p.r then
-            (* Root *)
-            sprintf "r%d" i
-          else
-            (* Node *)
-            sprintf "v%d" (i - p.r)
-        and new_j = 
-          if j < p.n then
-            (* Node *)
-            sprintf "v%d" j
-          else
-            (* Site *)
-            sprintf "s%d" (j - p.n) in             
-        out := !out ^ (sprintf "%s -> %s [arrowhead=\"vee\" arrowsize=0.5];\n" new_i new_j)
-      else ()
-    done
-  done;
-  !out)
+  and m_rn = 
+    Sparse.fold (fun i j buff ->
+      sprintf "%sr%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.rn ""
+  and m_rs =
+    Sparse.fold (fun i j buff ->
+      sprintf "%sr%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.rs ""
+  and m_nn =
+    Sparse.fold (fun i j buff ->
+      sprintf "%sv%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.nn ""
+  and m_ns =
+    Sparse.fold (fun i j buff ->
+      sprintf "%sv%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.ns "" in
+  (root_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
 
+(*
 (* Returns a string representation of a placing. *)
 let snf_of_placing p =
   let out = ref [] in
@@ -445,6 +443,7 @@ let snf_of_placing p =
     out := (sprintf "{%s}" (String.concat "," !parents)) :: !out
   done;
   sprintf "([%s],%d)" (String.concat "," !out) p.r  
+*)
 
 (* Counts the number of edges in the DAG *)
 let edges p =

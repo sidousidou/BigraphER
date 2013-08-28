@@ -240,7 +240,7 @@ let decomp t p i_v i_e =
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty })
-
+(*
 (* List of bigraphs. First one is the top level. *)
 let levels b =
   let (phi, ls) = Place.levels b.p in
@@ -294,7 +294,7 @@ let snf b =
     ((sprintf "%s || %s" (Place.snf_of_placing h.p) (Link.snf_of_linking h.l)) :: 
 	(List.map snf_of_level tl))
   | _ -> ""
-
+    *)
   
 (* Initialise a matrix of varibles for the SAT solver *)
 let init_vars r c solver =

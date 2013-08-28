@@ -220,60 +220,52 @@ let trans m =
   fix ()
 
 let dom m =
-  IntSet.elements 
-    (Hashtbl.fold (fun i _ acc ->
-      IntSet.add i acc) m.r_major IntSet.empty)
+  Hashtbl.fold (fun i _ acc ->
+    IntSet.add i acc) m.r_major IntSet.empty
 
 let codom m =
-  IntSet.elements 
-    (Hashtbl.fold (fun j _ acc ->
-      IntSet.add j acc) m.c_major IntSet.empty)
+  Hashtbl.fold (fun j _ acc ->
+    IntSet.add j acc) m.c_major IntSet.empty
 
 let leaves m =
   let d = dom m in
   let rec iter i acc =
     if i < 0 then acc
-    else if List.mem i d then iter (i - 1) acc
-    else iter (i - 1) (i :: acc) in
-  iter (m.r - 1) []
+    else if IntSet.mem i d then iter (i - 1) acc
+    else iter (i - 1) (IntSet.add i acc) in
+  iter (m.r - 1) IntSet.empty
 
 let orphans m =
   let c = codom m in
   let rec iter j acc =
     if j < 0 then acc
-    else if List.mem j c then iter (j - 1) acc
-    else iter (j - 1) (j :: acc) in
-  iter (m.c - 1) []
+    else if IntSet.mem j c then iter (j - 1) acc
+    else iter (j - 1) (IntSet.add j acc) in
+  iter (m.c - 1) IntSet.empty
 
 let siblings m j = 
   let p = prn m j in
-  IntSet.elements
-    (IntSet.remove j 
-       (List.fold_left (fun acc i ->
-	 IntSet.union acc (IntSet.of_list (chl m i))) 
-	 IntSet.empty p))
+  IntSet.remove j 
+    (List.fold_left (fun acc i ->
+      IntSet.union acc (IntSet.of_list (chl m i))) 
+       IntSet.empty p)
     
 (* Return false if any two columns are siblings. Orphans are not considered
    siblings.*) 
 let siblings_chk m =
-  List.for_all (fun j ->
-    match siblings m j with
-    | [] -> true
-    | _ -> false) (codom m)
+  IntSet.for_all (fun j ->
+    IntSet.is_empty (siblings m j)) (codom m)
      
 let partners m i =
   let c = chl m i in
-  IntSet.elements
-    (IntSet.remove i 
-       (List.fold_left (fun acc j ->
-	 IntSet.union acc (IntSet.of_list (prn m j)))
-	 IntSet.empty c))
+  IntSet.remove i 
+    (List.fold_left (fun acc j ->
+      IntSet.union acc (IntSet.of_list (prn m j)))
+       IntSet.empty c)
 
 let partners_chk m =
-  List.for_all (fun i ->
-    match partners m i with
-    | [] -> true
-    | _ -> false) (dom m)
+  IntSet.for_all (fun i ->
+    IntSet.is_empty (partners m i)) (dom m)
 
 let iter f m = 
   Hashtbl.iter f m.r_major
@@ -287,6 +279,32 @@ let add_list m l =
 let entries m =
   Hashtbl.length m.r_major
 
+(* convert it to an array of IntSet *)
+let to_array m = 
+  let out = Array.make m.r IntSet.empty in
+  let (dom, leaves) = 
+    fold (fun i j (acc_d, acc_l) ->
+      out.(i) <- IntSet.add j out.(i);
+      (IntSet.add i acc_d, IntSet.remove i acc_l)) 
+      m (IntSet.empty, IntSet.of_int m.r) in
+  (out, dom, leaves) 
+
+(* return a list of levels. Each level is a list of indices. *)
+let levels m =
+  assert (Pervasives.(=) m.r m.c);
+  let (m', dom, l0) = to_array m in
+  let rec fix rest acc out =
+    if Base.IntSet.is_empty rest then []
+    else begin
+      let (rest', l) = 
+	IntSet.fold (fun i (r', l') ->
+	  if IntSet.subset m'.(i) acc then
+	    (IntSet.remove i r', IntSet.add i l')
+	  else (r', l')) rest (rest, IntSet.empty) in
+      fix rest' (IntSet.union acc l) (l :: out)
+    end
+  in fix dom l0 [l0]
+    
 (* Not exposed *)
 let of_list l r c =
   let m = make r c in
@@ -349,7 +367,11 @@ let () =
   print_newline ();
   print_endline "trans:";
   print_endline (to_string (trans c));
-  print_newline ()
-
-
-
+  print_newline ();
+  print_endline "levels:";
+  let l = stack (append a a) (append a a) in
+  print_endline (to_string l);
+  print_newline ();
+  List.iter (fun l ->
+    print_endline (IntSet.to_string l)) (levels l);
+  print_newline ();
