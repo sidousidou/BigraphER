@@ -60,7 +60,9 @@ sig
   val cardinal : t -> int
   
   val add : t -> int -> int -> unit
-  
+
+  val union : t -> t -> t
+
   val fold : (int -> int -> 'a -> 'a) -> t -> 'a -> 'a    
     
   val iter : (int -> int -> unit) -> t -> unit

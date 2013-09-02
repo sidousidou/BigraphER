@@ -19,7 +19,7 @@ module Face_set = Set.Make (
   end)
 
 (* (in, out, ports) *)
-type edg = {i: Face.t; o: Face.t; p: Ports.t}
+type edg = { i: Face.t; o: Face.t; p: Ports.t }
 
 let edg_compare (h : edg) (k : edg) =
   match Face.compare h.i k.i with
@@ -61,7 +61,8 @@ exception FACES_MISMATCH of (Face.t * Face.t)
 let string_of_name (Nam s) = s
 
 let parse_face =
-  List.fold_left (fun acc x -> Face.add (Nam x) acc) Face.empty
+  List.fold_left (fun acc x -> 
+    Face.add (Nam x) acc) Face.empty
 
 let string_of_face f =
   sprintf "{%s}"
@@ -74,14 +75,15 @@ let string_of_edge e =
 let to_string l = 
   String.concat "\n" (List.map string_of_edge (Lg.elements l))
 
-let snf_of_linking l =
+(*let snf_of_linking l =
   String.concat " || " (List.map (fun e ->
-    sprintf "%s/%s" (string_of_face e.o) (string_of_face e.i)) (Lg.elements l))
+    sprintf "%s/%s" (string_of_face e.o) (string_of_face e.i)) (Lg.elements l))*)
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub f_i f_o =
-  if Face.is_empty f_i && Face.is_empty f_o then Lg.empty
-  else Lg.singleton {i = f_i; o = f_o; p = Ports.empty}
+  if Face.is_empty f_i && Face.is_empty f_o then 
+    Lg.empty
+  else Lg.singleton { i = f_i; o = f_o; p = Ports.empty }
 
 (* Node index is 0. Ports are from 0 to |f| - 1 *)
 let elementary_ion f =
@@ -93,13 +95,16 @@ let elementary_ion f =
     (Lg.union e acc, i + 1)) f (Lg.empty, 0))
 
 let inner (lg : Lg.t) =
-  Lg.fold (fun e acc -> Face.union e.i acc) lg Face.empty
+  Lg.fold (fun e acc -> 
+    Face.union e.i acc) lg Face.empty
 
 let outer (lg : Lg.t) =
-  Lg.fold (fun e acc -> Face.union e.o acc) lg Face.empty
+  Lg.fold (fun e acc -> 
+    Face.union e.o acc) lg Face.empty
 
 let ports lg = 
-  Lg.fold (fun e acc -> Ports.union e.p acc) lg Ports.empty
+  Lg.fold (fun e acc -> 
+    Ports.union e.p acc) lg Ports.empty
 	
 (* Add offset m to all the port indeces *)
 let offset (lg : Lg.t) (m : int) =
@@ -115,8 +120,8 @@ let offset (lg : Lg.t) (m : int) =
 let tens lg0 lg1 n0 =
   let i_in = Face.inter (inner lg0) (inner lg1)
   and i_out = Face.inter (outer lg0) (outer lg1)
-  in if Face.is_empty i_in && Face.is_empty i_out 
-    then Lg.union lg0 (offset lg1 n0)
+  in if Face.is_empty i_in && Face.is_empty i_out then
+      Lg.union lg0 (offset lg1 n0)
     else raise (NAMES_ALREADY_DEFINED (i_in, i_out))
 
 (* Identity. One edge for every name in f *)
@@ -300,15 +305,15 @@ let get_dot l =
 	i + 1,
       (* Inner names *)
        Face.fold (fun n buff ->
-	 sprintf "%si%s [shape=plaintext, label=\"%s\", width=.18, height=.18];\n"
+	 sprintf "%si%s [ shape=plaintext, label=\"%s\", width=.18, height=.18 ];\n"
            buff (string_of_name n) (string_of_name n)) e.i buff_i,
       (* Outer names *)  
        Face.fold (fun n buff ->
-	 sprintf "%so%s [shape=plaintext, label=\"%s\", width=.18, height=.18];\n"
+	 sprintf "%so%s [ shape=plaintext, label=\"%s\", width=.18, height=.18 ];\n"
            buff (string_of_name n) (string_of_name n)) e.o buff_o,
       (* Hyperedges *)   
        (if flag then sprintf
-	   "%se%d [shape=point, label=\"\", width=.0, height=.0, style=filled, color=green];\n"
+	   "%se%d [ shape=point, label=\"\", width=.0, height=.0, style=filled, color=green ];\n"
 	   buff_h i    
 	else buff_h),
       (* Adjacency *)
@@ -321,7 +326,7 @@ let get_dot l =
               (if (Ports.cardinal e.p) = 1 && (Face.is_empty e.i) &&
 		 (Face.is_empty e.o) then
             (* closure from a port *)
-		  sprintf "e%d -> v%d [dir=back, arrowtail=tee, weight=5];\n"
+		  sprintf "e%d -> v%d [ dir=back, arrowtail=tee, weight=5 ];\n"
 		    i (fst (Ports.choose e.p))
                else Ports.fold (fun (v, _) buff ->
 		 sprintf "%se%d -> v%d;\n" buff i v) e.p ""))  
@@ -349,28 +354,32 @@ let get_dot l =
 		  (string_of_name (Face.choose e.o)))    
        )       
       )
-    ) l (0, "", "", "", "edge [color=green, arrowhead=none];\n") with
+    ) l (0, "", "", "", "edge [ color=green, arrowhead=none ];\n") with
     | (_, a, b, c, d) -> (a, b , c, d)
   
 (* decompose t. p is assumed epi and mono. Ports are normalised.
    i_c and i_d are isos from t to c and d.*)
 let decomp t p i_n i_e i_c i_d =
   (* compute sets of nodes in c and d *)
-  let (v_c, v_d) = (Iso.dom i_c, Iso.dom i_d) 
+  let (v_c, v_d) = 
+    (IntSet.of_list (Iso.dom i_c), IntSet.of_list (Iso.dom i_d)) 
   (* Introduce indices *)
   and t_a = Array.of_list (Lg.elements t)
   and p_a = Array.of_list (Lg.elements p) in
   (* normalise iso on all links not just edges *)
-  let i_e_norm = 
-    let norm a =
-      let iso, _, _ = Array.fold_left (fun (acc, i, j) e ->
-	if is_closed e then (Iso.add (i, j) acc, i + 1, j + 1) 
-	else (acc, i, j + 1)) (Iso.empty, 0, 0) a in
-      iso in
-    let iso_p = norm p_a
-    and iso_t = norm t_a in
-    Iso.fold (fun (a, b) acc ->
-    Iso.add (get_i a iso_p, get_i b iso_t) acc) i_e Iso.empty in
+  let norm a =
+    let iso = Iso.empty in
+    ignore (Array.fold_left (fun (i, j) e ->
+      if is_closed e then begin
+	Iso.add iso i j; 
+	(i + 1, j + 1)
+      end else (i, j + 1)) (0, 0) a);
+    iso in
+  let iso_p = norm p_a
+  and iso_t = norm t_a in
+  let i_e_norm = Iso.empty in
+  Iso.iter (fun a b ->
+    Iso.add i_e_norm (Iso.find iso_p a)  (Iso.find iso_t b)) i_e;
   (* construct equivalence classes on p's faces *)
   (*and eq_out, eq_in = eq_names p in*) 
   (*printf "eq_out: {%s}\neq_in: {%s}\n" 
@@ -380,9 +389,12 @@ let decomp t p i_n i_e i_c i_d =
   (*and h = hash_of_iso (inverse i_e) in*) 
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
   let vect = Array.mapi (fun n e ->
-    let p_d = Ports.filter (fun (x, _) -> Int_set.mem x v_d) e.p
-    and p_c = Ports.filter (fun (x, _) -> Int_set.mem x v_c) e.p
-    and p_p = Ports.filter (fun (x, _) -> Int_set.mem x (codom i_n)) e.p in
+    let p_d = Ports.filter (fun (x, _) -> 
+      IntSet.mem x v_d) e.p
+    and p_c = Ports.filter (fun (x, _) -> 
+      IntSet.mem x v_c) e.p
+    and p_p = Ports.filter (fun (x, _) -> 
+      IntSet.mem x (IntSet.of_list (Iso.codom i_n))) e.p in
     (* Interface of id *)
     let f_id = 
       if ((Ports.equal e.p p_c) && (Face.is_empty e.i)) || (* e is in c *)
@@ -395,11 +407,11 @@ let decomp t p i_n i_e i_c i_d =
     (* Find liks in p having ports in common with e *)
       let edges_p =  (* FIX THIS *)
 	(* if it's a matched edge no names are required *)
-	if Int_set.mem n (codom i_e_norm) then Lg.empty
+	if IntSet.mem n (IntSet.of_list (Iso.codom i_e_norm)) then Lg.empty
 	else Lg.filter (fun e_p ->
 	sub_multi (card_ports p_p) (card_ports e_p.p)) (Lg.filter (fun e_p ->
 	  Ports.exists (fun (x, _) ->
-	    Int_set.mem (get_i x i_n) (set_of_ports p_p)) e_p.p) p) in
+	    IntSet.mem (get_i x i_n) (set_of_ports p_p)) e_p.p) p) in
       (*multiset_of_ports e.p*)
       let i_c = outer edges_p 
       and o_d = inner edges_p in
@@ -423,15 +435,16 @@ let decomp t p i_n i_e i_c i_d =
    element). The output is a wiring and a list of link graphs. *)
 let levels l ps =
   (Lg.fold (fun e acc ->
-    Lg.add {i = Face.union e.i (Ports.fold (fun (n, p) acc ->
-      Face.add (Nam (sprintf "n%d_%d" n p)) acc) e.p Face.empty);
-            o = e.o;
-            p = Ports.empty} acc) l Lg.empty,
+    Lg.add { i = 
+	Face.union e.i (Ports.fold (fun (n, p) acc ->
+	  Face.add (Nam (sprintf "n%d_%d" n p)) acc) e.p Face.empty);
+             o = e.o;
+             p = Ports.empty} acc) l Lg.empty,
    fst (List.fold_left (fun (acc, in_f) lvl ->
      (elementary_id in_f) :: acc,
      Face.union in_f (Ports.fold (fun (n, p) acc ->
-       Face.add (Nam (sprintf "n%d_%d" n p)) acc) lvl Face.empty)
-   ) ([], inner l) (List.rev ps))) 
+       Face.add (Nam (sprintf "n%d_%d" n p)) acc) lvl Face.empty))
+	  ([], inner l) (List.rev ps))) 
 
 let close_edges l = Lg.filter is_closed l
 
@@ -446,31 +459,31 @@ let peers l i =
       let ports_i = (* remove one i-port *) 
 	Ports.remove (Ports.max_elt (Ports.filter (fun (x, _) -> 
 	  x = i) e.p)) e.p in
-      Int_set.union acc (set_of_ports ports_i)
-    else acc) l Int_set.empty
+      IntSet.union acc (set_of_ports ports_i)
+    else acc) l IntSet.empty
 
-let are_peers l i j =  Int_set.mem j (peers l i)
+let are_peers l i j =  IntSet.mem j (peers l i)
 
 (* if two nodes are peers in the pattern, they have to be peers in the target:
    forbid assignments with non-peers. *)
 let non_peers_pairs l v = 
-  Int_set.fold (fun i acc -> 
-    let non_peers = Int_set.diff v (peers l i) in
-    let a = Int_set.fold (fun x acc ->
+  IntSet.fold (fun i acc -> 
+    let non_peers = IntSet.diff v (peers l i) in
+    let a = IntSet.fold (fun x acc ->
       Iso.add (i, x) acc) non_peers Iso.empty in
     Iso.union acc a) v Iso.empty (* inverse a???*)
 
 let match_peers t p m n =
   (* merge a pair of peers with a set of non-peers pairs *)
   let aux i j s = 
-    Iso.fold (fun (a, b) acc ->
+    Iso.fold (fun a b acc ->
       Quad.add (i, j, a, b) acc) s Quad.empty
-  and v_t, v_p = of_int m, of_int n in
+  and (v_t, v_p) = (IntSet.of_int m, IntSet.of_int n) in
   let pairs_t = non_peers_pairs t v_t in
   (*printf "non_peers_pairs in t = {%s}.\n" (String.concat ", " (List.map (fun (a, b) ->
   sprintf "(%d,%d)" a b) (Iso.elements pairs_t)));*)
-  Quad.elements (Int_set.fold (fun i acc0 ->
-    Quad.union acc0 (Int_set.fold (fun j acc1 ->
+  Quad.elements (IntSet.fold (fun i acc0 ->
+    Quad.union acc0 (IntSet.fold (fun j acc1 ->
       if are_peers p i j then
 	((*printf "%d and %d are peers.\n" i j;*)
 	Quad.union acc1 (aux i j  pairs_t))
@@ -495,16 +508,16 @@ let gen_isos_edges e_t e_p block_ctrl =
   try
     (* List of possible pairs ((a,1), (a,2) ....); (b,3), (b,4) ....) *)
     let pairs = List.map (fun (i, js) -> 
-      Int_set.fold (fun j acc ->
+      IntSet.fold (fun j acc ->
 	Iso.add (i, j) acc) js Iso.empty) (Iso.fold (fun (c, i) acc ->
 	  (i, 
-	   let js = Int_set.diff 
+	   let js = IntSet.diff 
 	     (Iso.fold (fun (_, j) acc -> 
-	       Int_set.add j acc) (Iso.filter (fun (d, _) -> 
-		 d = c) m_t) Int_set.empty)
+	       IntSet.add j acc) (Iso.filter (fun (d, _) -> 
+		 d = c) m_t) IntSet.empty)
 	     (codom (Iso.filter (fun (x, _) -> x = i) block_ctrl)) in
 	   (* if one set is empty then the two edges can't be matched *)
-	   if Int_set.is_empty js then raise NO_ISO
+	   if IntSet.is_empty js then raise NO_ISO
 	   else js) :: acc) m_p []) in
     let out =  cart_of_list_iso pairs in
     (*printf "gen_isos_edges [%s]\n" (String.concat "; " (List.map string_of_iso out));
@@ -559,9 +572,9 @@ let is_sub_hyper a b =
 let block_links e_p t =
   let nodes_t = 
     Lg.fold (fun e acc ->
-      Int_set.union acc (set_of_ports e.p)) t Int_set.empty in
-  Int_set.fold (fun i acc ->
-    Iso.union acc (Int_set.fold (fun j acc -> 
+      IntSet.union acc (set_of_ports e.p)) t IntSet.empty in
+  IntSet.fold (fun i acc ->
+    Iso.union acc (IntSet.fold (fun j acc -> 
       Iso.add (i, j) acc) nodes_t Iso.empty)
   ) (set_of_ports e_p.p) Iso.empty
 

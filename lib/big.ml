@@ -349,8 +349,10 @@ let get_iso solver vars n m =
 	| Minisat.Unknown -> ()
     done;
   done;
-  List.fold_left (fun acc x ->
-    Base.Iso.add x acc) Base.Iso.empty !res 
+  let out = Base.Iso.empty in
+  List.iter (fun (i, j) ->
+    Base.Iso.add out i j) !res;
+  out 
 
 let add_blocking solver v n m w e f =
   let scan_matrix m r c =
@@ -370,7 +372,7 @@ let add_blocking solver v n m w e f =
     !blocking_clause in
   solver#add_clause ((scan_matrix v n m) @ (scan_matrix w e f))
 
-let rec filter_loop solver t p v n m w e f t_trans = 
+let (*rec*) filter_loop solver t p v n m w e f t_trans = 
     solver#simplify;
     match solver#solve with
       | Minisat.UNSAT -> 
@@ -384,29 +386,29 @@ let rec filter_loop solver t p v n m w e f t_trans =
 	  (* printf "MATCH\n"; *)
 	  (* solver#print_stats; *)
 	  let iso_v, _ = get_iso solver v n m, get_iso solver w e f in
-	  if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
-	    (Link.is_match_valid t.l p.l iso_e)*) then
+	  (*if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
+	    (Link.is_match_valid t.l p.l iso_e)*) then*)
 	    solver, v, n, m, w, e, f, t_trans
-	  else
+	  (*else
 	    begin
 	      add_blocking solver v n m w e f;
 	      filter_loop solver t p v n m w e f t_trans
-	    end   
+	    end*)   
 	end 
 	  
 (* Aux function *)
 let iso_iter m iso solver =
-  Iso.iter (fun (i, j) -> 
+  Iso.iter (fun i j -> 
     solver#add_clause [(neg_lit m.(i).(j))]) iso
 
 (*isos from pattern(col) to target(col)*)
 let aux_match t p  =
   let solver = new solver
-  and m, n = t.p.Place.n, p.p.Place.n 
-  and e , f = Link.Lg.cardinal (Link.close_edges p.l),
-    Link.Lg.cardinal (Link.close_edges t.l) in
-  let _,_,v,_ = Matrix.split t.p.Place.m t.p.Place.r t.p.Place.n in
-  let t_trans = Matrix.trans v in 
+  and (m, n) = (t.p.Place.n, p.p.Place.n) 
+  and (e, f) = 
+    (Link.Lg.cardinal (Link.close_edges p.l),
+     Link.Lg.cardinal (Link.close_edges t.l)) in
+  let t_trans = Sparse.trans (t.p.Place.nn) in 
   (* Iso between nodes *)
   let v = init_vars n m solver
   (* Iso between closed edges *)
@@ -417,29 +419,33 @@ let aux_match t p  =
   (* Add bijection over closed edges *)
   (*printf "add_bijection w\n";*)
   add_bijection w e f solver;
-  let block_ctrl = union_list
-    [ (* CONTROLS *)
-      match_nodes t.n p.n;
+  let block_ctrl = (*union_list
+    [*) (* CONTROLS *)
+      (*match_nodes t.n p.n;*)
       (* LEAVES *)
-      Place.match_leaves t.p p.p;
+      (Place.match_leaves t.p p.p t.n p.n) @
       (* ORPHANS *)
-      Place.match_orphans t.p p.p;
+      (Place.match_orphans t.p p.p t.n p.n)
       (* SITES *)
-      Place.match_sites t.p p.p;
+      (*Place.match_sites t.p p.p;*)
       (* ROOTS *)
-      Place.match_roots t.p p.p;
-    ]  in
+      (*Place.match_roots t.p p.p;*)
+   (* ]*)  in
   (* Add fourth constraint: EDGES in the place graph and
                             HYPEREDGES in the link graph *)
   (*printf "Adding C4\n";*)
+  (* Add Tseitin *)
   List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
-    ((Place.match_list t.p p.p) @ (Link.match_peers t.l p.l m n));
+    ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));
   (* Add blocking pairs *)
-  let iso_ports, constraint_e, block_e_e = Link.match_edges t.l p.l block_ctrl
-  and block_l_n, block_l_e = Link.match_links t.l p.l in   
-  let blocking_pairs_v = Iso.union block_l_n block_ctrl in
+  let (iso_ports, constraint_e, block_e_e) = 
+    Link.match_edges t.l p.l (Iso.of_list block_ctrl)
+  and (block_l_n, block_l_e) = 
+    Link.match_links t.l p.l in   
+  let blocking_pairs_v = 
+    Iso.union block_l_n block_ctrl in
   (*printf "Adding blocking pairs v\n";*)
   iso_iter v blocking_pairs_v solver;
   (*printf "Adding blocking pairs e\n";*)
@@ -458,7 +464,7 @@ let aux_match t p  =
 
 let occurs t p = 
   try
-    if Nodes.cardinal p.n = 0 then
+    if p.n.Nodes.size = 0 then
       true
     else
       (ignore (aux_match t p);
@@ -467,10 +473,10 @@ let occurs t p =
     | NO_MATCH -> false
     
 let occurrence t p =
-  if Nodes.cardinal p.n = 0 then
+  if p.n.Nodes.size = 0 then
     raise NODE_FREE 
   else
-    let s, v, n, m, w, e, f, _ = aux_match t p in
+    let (s, v, n, m, w, e, f, _) = aux_match t p in
     (get_iso s v n m, get_iso s w e f)
 
 (* compute non-trivial automorphisms of b *)

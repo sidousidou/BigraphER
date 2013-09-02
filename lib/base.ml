@@ -65,6 +65,13 @@ module Iso = struct
 
   let codom iso =
     Hashtbl.fold (fun _ j acc -> j :: acc) iso []
+      
+  let union a b =
+    let u = Hashtbl.create ((Hashtbl.length a) + (Hashtbl.length b)) in 
+    let f i j = add u i j in
+    Hashtbl.iter f a;
+    Hashtbl.iter f b;
+    u
 
   let fold f iso acc = Hashtbl.fold f iso acc
 
@@ -285,7 +292,7 @@ module Ports = struct
       add (Iso.find iso i, p) acc) s empty
       
 end   
-
+  
 (*       
 (* sub multi-set *)
 (* inputs are ordered lists with dupicates *)

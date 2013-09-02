@@ -377,6 +377,7 @@ let split_leaves p =
 
 (* recursively apply split leaves until a placing is returned. At each step the
    isos are converted to isos to p *)
+(* INCOMPLETE *)
 let levels p =
   let rec fix p acc iso =
     try
@@ -429,109 +430,149 @@ let get_dot p =
 	buff i j) p.ns "" in
   (root_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
 
-(*
-(* Returns a string representation of a placing. *)
-let snf_of_placing p =
-  let out = ref [] in
-  for j = p.s - 1 downto 0 do
-    let parents = ref [] in
-    for i = p.r - 1 downto 0 do
-      if p.m.{i,j} = 1 then
-        parents := (sprintf "%d" i) :: !parents
-      else ()
-    done;
-    out := (sprintf "{%s}" (String.concat "," !parents)) :: !out
-  done;
-  sprintf "([%s],%d)" (String.concat "," !out) p.r  
-*)
-
-(* Counts the number of edges in the DAG *)
+(* Number of edges in the DAG *)
 let edges p =
   (Sparse.entries p.rn) + (Sparse.entries p.rs) + 
     (Sparse.entries p.nn) + (Sparse.entries p.ns)
 
+(* given an edge of control A -> B, find all the edges with the same type.
+   return a hash table (string * string) -> (int * int) *)
+let partition_edges p n =
+  let h = Hashtbl.create (Sparse.entries p.nn) in
+  Sparse.iter (fun i j ->
+    let (a, b) = (Nodes.find n i, Nodes.find n j) in
+    match (a, b) with 
+    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+      Hashtbl.add h (a_string, b_string) (i, j)) p.nn;
+  h
+
+type deg =
+| V of int (* only vertices *)
+| S of int (* with sites or roots *)
+
+let indeg p i =
+  let d = List.length (Sparse.prn p.nn i) in
+  match Sparse.prn p.rn i with
+  | [] -> V d
+  | _ -> S d
+
+let outdeg p i =
+  let d = List.length (Sparse.chl p.nn i) in
+  match Sparse.chl p.ns i with
+  | [] -> V d
+  | _ -> S d
+
+(* true if the degrees are compatible *)
+let compat_deg t p =
+  match p with
+  | V d -> begin match t with
+    | V d' -> d = d' 
+    | S _ -> false
+    end
+  | S d -> begin match t with
+    | V d' -> d' >= d
+    | S d' -> d' >= d
+  end
+
+let compat t p t_i p_i =
+  (compat_deg (indeg t t_i) (indeg p p_i)) && 
+    (compat_deg (outdeg t t_i) (outdeg p p_i))
+
 (* GPROF *)
-(* Returns a list of pairs of non-iso nodes. Every node is expressed as a 
-   pair of indices. *) (* USE ISO instead*)
-let match_list t p =
-  let res = ref [] in
-  for i = p.r to p.r + p.n - 1 do
-    for l = 0 to p.n - 1 do
-      for j = t.r to t.r + t.n - 1 do
-        for k = 0 to t.n - 1 do
-          if p.m.{i,l} <> t.m.{j,k} then
-            res := (i - p.r, l, j - t.r, k) :: !res
-          else ()
-        done
-      done
-    done
-  done;
-  !res          
+(* Optimisation 1:
+   - Do not add a pair if one of the two literals matches nodes of different 
+     controls.
+   - Check degrees
+   Optimisation 2 - match edges instead of enumerate non matching pairs: 
+   - An edge in the pattern is matched exactly to one edge in the target. 
+     Algorithm:
+      0. (optional) Create an hashmap (ctrl,ctrl) -> (i,j) to partition t edges 
+      1. Iterate over the edges in p and for every (i, j) enforce exactly one
+         match with one of the edges in t of equal control.
+      2. Avoid "at-least" and "at-most" constraints ()*)
+(*Tseitin*)
+(*if ij then ab or cd or ... de ENCODING = (ic and jd) or ... (id and je)*)
+let match_list t p n_t n_p =
+  let h = partition_edges t n_t in
+  fst (Sparse.fold (fun i j (acc, n) ->
+    let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
+    match (a, b) with 
+    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
+      let t_edges = Hashtbl.find_all h (a_string, b_string) in
+      let (clause, z) = 
+	Cnf.tseitin (List.fold_left (fun acc (i', j') ->
+	  (* Degree check *)
+	  if (compat t p i' i) && (compat t p j' j) then
+	    ((i, i'), (j, j')) :: acc
+	  else acc) [] t_edges) n in
+      if z = n then (acc, n)
+      else (clause :: acc, z)
+    end) p.nn ([], 0))
 
-let match_root_nodes a b =
-  let res = ref [] in
-  for i = 0 to a.r - 1 do
-    for l = 0 to a.n - 1 do
-      for k = 0 to b.n - 1 do
-        if a.m.{i,l} <> b.m.{i,k} then
-          res := (l, k) :: !res
-        else ()
-      done
-    done
-  done;
-  !res          
+(* EQUALITY functions *)
+(* out clauses = (ij1 or ij2 or ij ...) :: ... *)
+let match_root_nodes a b n_a n_b =
+  Sparse.fold (fun r i acc ->
+    let c = Nodes.find n_a i in 
+    let children = 
+      List.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.chl b.rn r) in
+    (List.map (fun j -> (i, j)) children) @ acc) a.rn []
 
-let match_nodes_sites a b =
-  let res = ref [] in
-  for i = a.r to a.r + a.n - 1 do
-    for j = b.r to b.r + b.n - 1 do
-      for k = a.n to a.n + a.s - 1 do
-        if a.m.{i,k} <> b.m.{j,k} then
-          res := (i - a.r, j - b.r) :: !res
-        else ()
-      done
-    done
-  done;
-  !res          
+(*Dual*)
+let match_nodes_sites a b n_a n_b =
+  Sparse.fold (fun i s acc ->
+    let c = Nodes.find n_a i in 
+    let parents = 
+      List.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.prn b.ns s) in
+    (List.map (fun j -> (i, j)) parents) @ acc) a.ns []
+    
+(* Not needed. Just Sparse.compare a.rs b.rs *)
+(* let compare_roots_sites a b = *)
+(*   let (_, a_s, _, _) = split a.m a.r a.n *)
+(*   and (_, b_s, _, _) = split b.m b.r b.n in *)
+(*   compare a_s b_s *)
 
-let compare_roots_sites a b =
-  let (_, a_s, _, _) = split a.m a.r a.n
-  and (_, b_s, _, _) = split b.m b.r b.n in
-  compare a_s b_s
-
-let match_roots_sites a b = 
-  (compare_roots_sites a b) = 0
+(* Not needed. Just Sparse.(=) a.rs b.rs *)
+(* let match_roots_sites a b =  *)
+(*   (compare_roots_sites a b) = 0 *)
   
+(* Not needed. Just Sparse.dom b.ns *)
 (* Returns the set of nodes (columns) having at least one site child *)
-let nodes_site_child b = 
-  IntSet.filter (fun j ->
-    not (IntSet.is_empty (IntSet.filter (fun j ->
-	     j >= b.n) (chl b.m (j + b.r))))) (of_int b.n)
+(* let nodes_site_child b =  *)
+(*   IntSet.filter (fun j -> *)
+(*     not (IntSet.is_empty (IntSet.filter (fun j -> *)
+(* 	     j >= b.n) (chl b.m (j + b.r))))) (of_int b.n) *)
 
 (* Dual *)
-let nodes_root_par b = 
-  IntSet.filter (fun j ->
-    not (IntSet.is_empty (IntSet.filter (fun i ->
-	     i < b.n) (prn b.m j)))) (of_int b.n)
+(* Not needed. Just Sparse.codom b.rn *)
+(* let nodes_root_par b =  *)
+(*   IntSet.filter (fun j -> *)
+(*     not (IntSet.is_empty (IntSet.filter (fun i -> *)
+(* 	     i < b.n) (prn b.m j)))) (of_int b.n) *)
 
-let match_leaves t p =
-  (* forbid pairs (0,n>0) children *)
-  let leaves_p =  IntSet.filter (fun x -> x >= 0) (off (-p.r) (zero_rows p.m)) 
-  and non_leaves_t = IntSet.diff (of_int t.n) (IntSet.filter (fun x ->
-    x >= 0) (off (-t.r) (zero_rows t.m))) in
-  IntSet.fold (fun i acc ->
-    Iso.union acc (IntSet.fold (fun j acc ->
-      Iso.add (i,j) acc) non_leaves_t Iso.empty)) leaves_p Iso.empty
 
-let match_orphans t p =
-  (*forbid pairs (0,n>0) roots *)
-  let orphans_p = IntSet.filter (fun x -> x < p.n) (zero_cols p.m) 
-  and non_orphans_t = IntSet.diff (of_int t.n) (IntSet.filter (fun x ->
-    x < t.n) (zero_cols t.m)) in
-  IntSet.fold (fun i acc ->
-    Iso.union acc (IntSet.fold (fun j acc ->
-      Iso.add (i,j) acc) non_orphans_t Iso.empty)) orphans_p Iso.empty 
+(* leves (orphans) in t are matched to leaves (orphans) in p*)
+let match_leaves t p n_t n_p =
+  let l_p = Sparse.leaves p.nn 
+  and l_t = Sparse.leaves t.nn in
+  IntSet.fold (fun j acc ->
+    let c = Nodes.find n_t j in 
+    IntSet.fold (fun i acc ->
+      (i, j) :: acc) (IntSet.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_p i)) l_p) acc) l_t []
 
+let match_orphans t p n_t n_p =
+  let o_p = Sparse.orphans p.nn 
+  and o_t = Sparse.orphans t.nn in
+  IntSet.fold (fun j acc ->
+    let c = Nodes.find n_t j in 
+    IntSet.fold (fun i acc ->
+      (i, j) :: acc) (IntSet.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_p i)) o_p) acc) o_t []
+  
+(* Not needed - only trans and sites roots checks left out 
 (* Add easy blocking pairs, Iso checking of the siblings and partners is left out *)
 let match_sites t p =
   let n_p =  nodes_site_child p 
@@ -612,3 +653,4 @@ let is_match_valid t p t_trans iso =
 	       j < t.n) (chl t.m x))) (off t.r (codom iso)) IntSet.empty)
 	      (codom iso))) in
   (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso)
+*)

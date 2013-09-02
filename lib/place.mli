@@ -129,39 +129,51 @@ val is_guard : pg -> bool
     in [c] and [d] expressed as rows of [t]. *)
 val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
 
+(*
 (** [levels p] returns the levels of place graph [p]. The first component is the
     top placing, while the second is a list of triples. The first element is
     a set of ions, the second component is the size of the level's identity,
     and the third is the level's placing. *)
 val levels : pg -> pg * (Base.IntSet.t * int * pg) list
+*)
 
 (** {6 Misc} *)
 
+val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+                 (Cnf.z_var list * (Cnf.z_var * Cnf.m_var) list) list
+
 (** [match_leaves t p] computes all the pairs of nodes [(i,j)] where [i] is a leaf
     in [p] and [j] is not a leaf in [t].*)
-val match_leaves : pg -> pg -> Base.Iso.t
+val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list
 
 (** Dual of {!Place.match_leaves}. *)
-val match_orphans : pg -> pg -> Base.Iso.t
+val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list
 
+(*
 (** [match_sites t p] computes all the pairs of nodes [(i,j)] where [i] and [j]
     have a different number of siblings. *)
 val match_sites : pg -> pg -> Base.Iso.t
-
+*)
+(*
 (** Dual of {!Place.match_sites}.*)
 val match_roots : pg -> pg -> Base.Iso.t
+*)
 
-val match_root_nodes : pg -> pg -> (int * int) list
+val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+                       (int * int) list
 
-val match_nodes_sites : pg -> pg -> (int * int) list
+val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+                        (int * int) list
 
-val match_roots_sites : pg -> pg -> bool
+(*val match_roots_sites : pg -> pg -> bool*)
 
-val compare_roots_sites : pg -> pg -> int
+(*val compare_roots_sites : pg -> pg -> int*)
 
+(*
 (** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is
     valid. [t_trans] is the transitive closure of [t]. *)
 val is_match_valid : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
+*)
 
 (** Computes the number of edges in the DAG. *)
 val edges : pg -> int
