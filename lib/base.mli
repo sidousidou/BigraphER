@@ -81,6 +81,9 @@ sig
   (** [of_list l] returns an isomorphism with the elements in list [l]. *)
   val of_list : (int * int) list -> t
 
+  (** Return the elements of an isomorphism. Order is unspecified. *)
+  val to_list : t -> (int * int) list
+
   (** [is_id i] returns [true] if iso [i] is an identity, [false] otherwise.*)
   val is_id : t -> bool
 
@@ -226,18 +229,22 @@ sig
 	(** [of_nodes ns] transform a set of nodes into a set of ports. *)
 	val of_nodes : Nodes.t -> t
 
-	(** Construct a list of the cardinalities of the ports belonging to
-	    the same node. Example: [(1,0);(1,1);(2,0)] -> [1;2] *)
-	val card_list : t -> int list
+	(* (\** Construct a list of the cardinalities of the ports belonging to *)
+	(*     the same node. Example: [(1,0);(1,1);(2,0)] -> [1;2] *\) *)
+	(* val card_list : t -> int list *)
 
-	(** Construct a list of control strings.*)
-	val types : t -> Nodes.t -> string list
+	(* (\** Construct a list of control strings.*\) *)
+	(* val types : t -> Nodes.t -> string list *)
 
 	(** [to_IntSet ps] returns a set of node identifiers form a set of ports.*)
 	val to_IntSet : t -> IntSet.t
 
 	(** Apply an isomorphism *)
 	val apply : t -> Iso.t -> t
+	
+	(** [sub_multiset a b] returns [true] if [a] is a submultiset of [b]. 
+	    Port identifiers are ignored. *)  
+	val sub_multiset : t -> t -> bool  
 end
 
 (* 

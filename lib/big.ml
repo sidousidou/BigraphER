@@ -423,9 +423,10 @@ let aux_match t p  =
     [*) (* CONTROLS *)
       (*match_nodes t.n p.n;*)
       (* LEAVES *)
-      (Place.match_leaves t.p p.p t.n p.n) @
+    Iso.union
+      (Iso.of_list (Place.match_leaves t.p p.p t.n p.n))
       (* ORPHANS *)
-      (Place.match_orphans t.p p.p t.n p.n)
+      (Iso.of_list(Place.match_orphans t.p p.p t.n p.n))
       (* SITES *)
       (*Place.match_sites t.p p.p;*)
       (* ROOTS *)
@@ -441,7 +442,7 @@ let aux_match t p  =
     ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));
   (* Add blocking pairs *)
   let (iso_ports, constraint_e, block_e_e) = 
-    Link.match_edges t.l p.l (Iso.of_list block_ctrl)
+    Link.match_edges t.l p.l block_ctrl
   and (block_l_n, block_l_e) = 
     Link.match_links t.l p.l in   
   let blocking_pairs_v = 
@@ -458,7 +459,7 @@ let aux_match t p  =
   (*printf "Adding %d clauses for iso ports\n" (List.length iso_ports);*)
   List.iter (fun ((e_i, e_j), iso) ->
     let lits = 
-      List.map (fun (i,j) -> pos_lit v.(i).(j)) (Iso.elements iso) in
+      List.map (fun (i,j) -> pos_lit v.(i).(j)) (Iso.to_list iso) in
     solver#add_clause ((neg_lit w.(e_i).(e_j)) :: lits)) iso_ports;
   filter_loop solver t p v n m w e f t_trans
 
@@ -481,12 +482,12 @@ let occurrence t p =
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
-  if Nodes.cardinal b.n = 0 then
+  if b.n.Nodes.size = 0 then
     raise NODE_FREE 
   else
     let rem_id res = 
       List.filter (fun (i, e) ->
-	not ((Base.is_id i) && (Base.is_id e))) res in
+	not ((Iso.is_id i) && (Iso.is_id e))) res in
     rem_id (try 
 	      let solver, v, n, m, w, e, f, t_trans = aux_match b b in
 	      let rec loop_occur res =
@@ -504,14 +505,14 @@ let clause_of_iso iso m r c =
   let clause = ref [] in
   for i = 0 to r - 1 do
     for j = 0 to c - 1 do
-      if Iso.mem (i, j) iso then clause := ((neg_lit m.(i).(j)) :: !clause)
+      if Iso.mem iso i j then clause := ((neg_lit m.(i).(j)) :: !clause)
       else clause := ((pos_lit m.(i).(j)) :: !clause)
     done;
   done;
   !clause
 
 let occurrences t p =
-  if Nodes.cardinal p.n = 0 then
+  if p.n.Nodes.size = 0 then
     raise NODE_FREE 
   else
     try 
@@ -521,7 +522,9 @@ let occurrences t p =
 	add_blocking solver v n m w e f;
 	(****************AUTOMORPHISMS****************)
 	let gen = 
-	  gen_isos (get_iso solver v n m, get_iso solver w e f) autos in
+	  List.combine
+	    (Iso.gen_isos (get_iso solver v n m) (List.map fst autos)) 
+	    (Iso.gen_isos (get_iso solver w e f) (List.map snd autos))  in
 	List.iter (fun (iso_i, iso_e) ->
 	  solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
 	(*********************************************)

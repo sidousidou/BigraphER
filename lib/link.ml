@@ -405,29 +405,31 @@ let decomp t p i_n i_e i_c i_d =
       else Face.singleton (Nam (sprintf "id%d" n)) in
     (* Mediating interfaces of d and c *) 
     (* Find liks in p having ports in common with e *)
-      let edges_p =  (* FIX THIS *)
+      let edges_p = 
 	(* if it's a matched edge no names are required *)
 	if IntSet.mem n (IntSet.of_list (Iso.codom i_e_norm)) then Lg.empty
 	else Lg.filter (fun e_p ->
-	sub_multi (card_ports p_p) (card_ports e_p.p)) (Lg.filter (fun e_p ->
-	  Ports.exists (fun (x, _) ->
-	    IntSet.mem (get_i x i_n) (set_of_ports p_p)) e_p.p) p) in
+	  Ports.sub_multiset (Ports.apply e_p.p i_n) p_p)
+	  (* sub_multi (card_ports p_p) (card_ports e_p.p))  *)
+	  (Lg.filter (fun e_p ->
+	    Ports.exists (fun (x, _) ->
+	      IntSet.mem (Iso.find i_n x) (Ports.to_IntSet p_p)) e_p.p) p) in
       (*multiset_of_ports e.p*)
       let i_c = outer edges_p 
       and o_d = inner edges_p in
-      ({i = Face.union f_id i_c; o = e.o; p = p_c},
-     {i = e.i; o = Face.union f_id o_d; p = p_d},
-     {i = f_id; o = f_id; p = Ports.empty})
-  ) t_a in					
+      ({ i = Face.union f_id i_c; o = e.o; p = p_c },
+       { i = e.i; o = Face.union f_id o_d; p = p_d },
+       { i = f_id; o = f_id; p = Ports.empty })) t_a in					
   (* Build link graphs by removing empty edges*)
   let (u_c, u_d, id) =
     Array.fold_left (fun (acc_c, acc_d, acc_id) (c, d, id) ->
       let aux e acc =
-	if (Face.is_empty e.i) && (Face.is_empty e.o) && (Ports.is_empty e.p)
-	then acc
+	if (Face.is_empty e.i) && (Face.is_empty e.o) && 
+	  (Ports.is_empty e.p) then 
+	  acc
 	else Lg.add e acc in
-      (aux c acc_c, aux d acc_d, aux id acc_id)
-    ) (Lg.empty, Lg.empty, Lg.empty) vect in
+      (aux c acc_c, aux d acc_d, aux id acc_id)) 
+      (Lg.empty, Lg.empty, Lg.empty) vect in
   (* Normalise ports *) 	  
   (apply_iso i_c u_c, apply_iso i_d u_d, id)	  
 

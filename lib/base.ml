@@ -50,9 +50,14 @@ module Iso = struct
   let empty = Hashtbl.create 20
 
   (* No duplicates *)
-  let add iso i j = Hashtbl.replace iso i j  
+  let add iso i j = 
+    assert (i >= 0);
+    assert (j >= 0);
+    Hashtbl.replace iso i j  
 
-  let find iso i = Hashtbl.find iso i
+  let find iso i = 
+    assert (i >= 0);
+    Hashtbl.find iso i
     
   let inverse iso = 
     let iso' = Hashtbl.create (Hashtbl.length iso) in
@@ -88,8 +93,13 @@ module Iso = struct
     List.iter (fun (i, j) ->
       Hashtbl.add iso i j) l;
     iso
-      
+
+  let to_list  iso =
+    fold (fun i j acc -> (i, j) :: acc) iso []
+
   let mem iso i j = 
+    assert (i >= 0);
+    assert (j >= 0);
     try 
       j = Hashtbl.find iso i
     with
@@ -131,6 +141,7 @@ module IntSet = struct
   (* given a non-nagative integer i return ordinal i = {0,1,....,i-1} i.e.   *)
   (* set with cardinality i                                                  *)
   let of_int i =
+    assert (i >= 0);
     let rec fold i acc =
       match i with
       | 0 -> acc
@@ -174,6 +185,7 @@ module Nodes = struct
   let is_empty s = s.size = 0
 
   let add s i c =
+    assert (i >= 0);
     let aux (Ctrl.Ctrl (n, _)) = n in
     if Hashtbl.mem s.ctrl i then s
     else begin
@@ -186,6 +198,7 @@ module Nodes = struct
     Hashtbl.fold f s.ctrl acc
 
   let find s i =
+    assert (i >= 0);
     Hashtbl.find s.ctrl i
  
   let find_all s n =
@@ -290,7 +303,20 @@ module Ports = struct
     assert (Iso.cardinal iso = cardinal s);
     fold (fun (i, p) acc ->
       add (Iso.find iso i, p) acc) s empty
-      
+
+  (* normalise a port set: 
+     INPUT:  {(1, 1), (1, 2), (2, 3), (3, 5)}
+     OUTPUT: {(1, 0), (1, 1), (2, 0), (3, 0)} *)
+  let norm ps =
+    let h = Hashtbl.create (cardinal ps) in
+    fold (fun (i, p) res ->
+      let p' = List.length (Hashtbl.find_all h i) in
+      Hashtbl.add h i p;
+    add (i, p') res) ps empty
+
+  let sub_multiset a b =
+    subset (norm a) (norm b)
+
 end   
   
 (*       
