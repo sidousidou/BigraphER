@@ -141,7 +141,7 @@ val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 (** {6 Misc} *)
 
 val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                 (Cnf.z_var list * (Cnf.z_var * Cnf.m_var) list) list
+                 ((Cnf.z_var list * (Cnf.z_var * Cnf.m_var) list) list * int)
 
 (** [match_leaves t p] computes all the pairs of nodes [(i,j)] where [i] is a leaf
     in [p] and [j] is not a leaf in [t].*)

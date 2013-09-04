@@ -66,43 +66,43 @@ let parse lines =
 
 
 let id (Inter (m, i)) =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.elementary_id m;
     l = Link.elementary_id i;
   }   
   
 let id_eps = 
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.id0;
     l = Link.id_empty;
   } 
   
 let merge n =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.elementary_merge n;
     l = Link.id_empty;
   }
   
 let split n =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.elementary_split n;
     l = Link.id_empty;
   }
   
 let one =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.one;
     l = Link.id_empty;
   }
   
 let zero =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.zero;
     l = Link.id_empty;
   }
   
 let sym (Inter (m, i)) (Inter (n, j)) =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.elementary_sym m n;
     l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
   }
@@ -111,13 +111,13 @@ let ion f c =
   if (Ctrl.arity c) <> (Link.Face.cardinal f) then
     raise (CTRL_ERROR (Ctrl.arity c, f))
   else
-    { n = Nodes.add Nodes.empty 0 c;
+    { n = Nodes.add (Nodes.empty ()) 0 c;
       p = Place.elementary_ion;
       l = Link.elementary_ion f;
     } 
 
 let sub i o =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.id0;
     l = Link.elementary_sub i o;
   }
@@ -128,7 +128,7 @@ let intro o = sub Link.Face.empty o
 
 (* (l list of parents for each site) r roots *)  
 let placing l r f =
-  { n = Nodes.empty;
+  { n = Nodes.empty ();
     p = Place.parse_placing l r;
     l = Link.elementary_id f;
   }
@@ -245,12 +245,12 @@ let get_dot b ide =
         match xs with
          | [] -> ""
          | _ -> sprintf "{rank=sink; %s};\n" (String.concat "; " xs) in 
-  let inner_shp, outer_shp, hyp_shp, link_adj = Link.get_dot b.l
-  and roots_shp, sites_shp, node_ranks, place_adj = Place.get_dot b.p
+  let (inner_shp, outer_shp, hyp_shp, link_adj) = Link.get_dot b.l
+  and (roots_shp, sites_shp, node_ranks, place_adj) = Place.get_dot b.p
   and nodes_shp = Nodes.to_dot b.n
   and rank_out = build_rank (outer b) true
   and rank_in = build_rank (inner b) false in
-  sprintf "digraph \"%s\"{\n%s%s%s%s%s%s%s%s%s%s%s}"
+  sprintf "digraph \"%s\"{\n%s%s%s%s%s\n%s%s%s%s%s%s}"
       ide roots_shp outer_shp rank_out hyp_shp nodes_shp sites_shp
       node_ranks inner_shp rank_in place_adj link_adj
 
@@ -263,7 +263,7 @@ let decomp t p i_v i_e =
     (Nodes.apply_iso t.n i_c, Nodes.apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
-   { p = p_id; l = l_id; n = Nodes.empty })
+   { p = p_id; l = l_id; n = Nodes.empty () })
 (*
 (* List of bigraphs. First one is the top level. *)
 let levels b =
@@ -373,7 +373,7 @@ let get_iso solver vars n m =
 	| Minisat.Unknown -> ()
     done;
   done;
-  let out = Base.Iso.empty in
+  let out = Base.Iso.empty () in
   List.iter (fun (i, j) ->
     Base.Iso.add out i j) !res;
   out 
@@ -458,8 +458,18 @@ let aux_match t p  =
    (* ]*)  in
   (* Add fourth constraint: EDGES in the place graph and
                             HYPEREDGES in the link graph *)
-  (*printf "Adding C4\n";*)
   (* Add Tseitin *)
+  let (c4_l, n_z) = Place.match_list t.p p.p t.n p.n in
+  printf "n_z = %d\n" n_z;
+  let z = Array.make n_z 0 in
+  for i = 0 to n_z - 1 do
+    z.(i) <- solver#new_var 
+  done;
+  List.iter (fun (z_l, disjuncts) ->
+    solver#add_clause (List.map (fun i ->
+      pos_lit z.(i)) z_l);
+    List.iter (fun (k, (i, j)) ->
+      solver#add_clause [neg_lit z.(k); pos_lit v.(i).(j)]) disjuncts) c4_l;
   List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
@@ -607,7 +617,7 @@ let equal a b =
     (inter_equal (inner a) (inner b)) && 
     (inter_equal (outer a) (outer b)) &&
     (Place.edges a.p = Place.edges b.p) &&
-    (*(Place.match_roots_sites a.p b.p) &&*)
+    (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
     (*placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)

@@ -49,7 +49,7 @@ sig
   
   type t = (int, int) Hashtbl.t
 
-  val empty : t
+  val empty : unit -> t
   val mem : t -> int -> int -> bool
     
   (** [find iso i] returns the image via isomorphism [iso] of element [i], i.e. 
@@ -166,7 +166,7 @@ sig
   val add : t -> int -> Ctrl.t -> t
   val fold : (int -> Ctrl.t -> 'a -> 'a) -> t -> 'a -> 'a
 
-  val empty : t
+  val empty : unit -> t
   
   val is_empty : t -> bool
   

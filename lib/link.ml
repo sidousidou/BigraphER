@@ -392,7 +392,7 @@ let decomp t p i_n i_e i_c i_d =
   and p_a = Array.of_list (Lg.elements p) in
   (* normalise iso on all links not just edges *)
   let norm a =
-    let iso = Iso.empty in
+    let iso = Iso.empty () in
     ignore (Array.fold_left (fun (i, j) e ->
       if is_closed e then begin
 	Iso.add iso i j; 
@@ -401,7 +401,7 @@ let decomp t p i_n i_e i_c i_d =
     iso in
   let iso_p = norm p_a
   and iso_t = norm t_a in
-  let i_e_norm = Iso.empty in
+  let i_e_norm = Iso.empty () in
   Iso.iter (fun a b ->
     Iso.add i_e_norm (Iso.find iso_p a)  (Iso.find iso_t b)) i_e;
   (* construct equivalence classes on p's faces *)
@@ -495,10 +495,10 @@ let are_peers l i j =  IntSet.mem j (peers l i)
 let non_peers_pairs l v = 
   IntSet.fold (fun i acc -> 
     let non_peers = IntSet.diff v (peers l i) in
-    let a = Iso.empty in
+    let a = Iso.empty () in
     IntSet.iter (fun x ->
       Iso.add a i x) non_peers;
-    Iso.union acc a) v Iso.empty (* inverse a???*)
+    Iso.union acc a) v (Iso.empty ()) (* inverse a???*)
 
 let match_peers t p m n =
   (* merge a pair of peers with a set of non-peers pairs *)

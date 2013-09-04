@@ -120,9 +120,9 @@ let _ =
       printf "building %s\n" n;
       (n, Big.parse ls)) bg_strings in
   if Array.length args = 3 then
-    List.iter (fun (n, b) -> 
-      write_big b n (Filename.concat args.(1) ("svg" ^ Filename.dir_sep))
-	true) bgs;
+    List.iter (fun (n, b) ->
+      printf "%s: %s" n (Big.string_of_bg b);
+      write_big b n args.(2) true) bgs;
   let tests =
     try
       [ (* TEST 1 *)
@@ -133,7 +133,7 @@ let _ =
 		    ];
 	  res = [ ];
 	};
-	(* TEST 2 *)
+	(*(* TEST 2 *)
 	{ target = List.assoc "T2" bgs;
 	  pattern = List.assoc "P3" bgs;
 	  exp_res = [ ];
@@ -373,7 +373,7 @@ let _ =
 	  pattern = List.assoc "P37" bgs;
 	  exp_res = [ ];
 	  res = [ ];
-	};
+	};*)
       ]
     with
       | Not_found -> failwith ("Error loading tests.\n") in

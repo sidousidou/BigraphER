@@ -538,7 +538,7 @@ let compat t p t_i p_i =
 (*if ij then ab or cd or ... de ENCODING = (ic and jd) or ... (id and je)*)
 let match_list t p n_t n_p =
   let h = partition_edges t n_t in
-  fst (Sparse.fold (fun i j (acc, n) ->
+  Sparse.fold (fun i j (acc, n) ->
     let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
     match (a, b) with 
     | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
@@ -551,7 +551,7 @@ let match_list t p n_t n_p =
 	  else acc) [] t_edges) n in
       if z = n then (acc, n)
       else (clause :: acc, z)
-    end) p.nn ([], 0))
+    end) p.nn ([], 0)
 
 (* EQUALITY functions *)
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)

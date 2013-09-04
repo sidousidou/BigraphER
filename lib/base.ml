@@ -47,7 +47,7 @@ module Iso = struct
 
   type t = (int, int) Hashtbl.t                   
  
-  let empty = Hashtbl.create 20
+  let empty () = Hashtbl.create 20
 
   (* No duplicates *)
   let add iso i j = 
@@ -140,7 +140,7 @@ module Iso = struct
       assert (cardinal iso = cardinal a);
       fold (fun i j acc ->
 	add acc (find a i) j; 
-	acc) iso empty in
+	acc) iso (empty ()) in
     List.map (apply i) autos
       
 end 
@@ -200,10 +200,10 @@ module Nodes = struct
 	     size : int;
 	   }
   
-  let empty = { ctrl = Hashtbl.create 50;
-		sort = Hashtbl.create 50;
-		size = 0;
-	      } 
+  let empty () = { ctrl = Hashtbl.create 50;
+		   sort = Hashtbl.create 50;
+		   size = 0;
+		 } 
   
   let is_empty s = s.size = 0
 
@@ -237,13 +237,13 @@ module Nodes = struct
   let to_dot s =
     String.concat "\n" 
       (fold (fun i c acc ->
-	acc @ [sprintf "v%d [label=\"%s\", fontname=sans-serif];" i (Ctrl.to_string c)]) 
+	acc @ [sprintf "v%d [ label=\"%s\", fontname=\"sans-serif\" ];" i (Ctrl.to_string c)]) 
 	 s [])
 
   let tens a b =
     fold (fun i c acc ->
       add acc (i + b.size) c) b (fold (fun i c acc ->
-	add acc i c) a empty)
+	add acc i c) a (empty ()))
 
   (* is an ordered list of controls with duplicates *)
   let abs s = 
@@ -254,7 +254,7 @@ module Nodes = struct
   let apply_iso s iso =
     assert (Iso.cardinal iso = s.size);
     fold (fun i c acc ->
-      add acc (Iso.find iso i) c) s empty
+      add acc (Iso.find iso i) c) s (empty ())
   
   let parse s h =
     let tokens = Str.split (Str.regexp_string " ") s in
@@ -265,7 +265,7 @@ module Nodes = struct
 	with
 	| Not_found -> 0 in
       let c = Ctrl.Ctrl (t, ar) in
-      (add acc i c, i + 1)) (empty, 0) tokens)
+      (add acc i c, i + 1)) (empty (), 0) tokens)
       
 end
 
@@ -306,7 +306,7 @@ module Ports = struct
       | _ -> begin
 	Iso.add acc 1 p;
 	acc
-      end) ps Iso.empty
+      end) ps (Iso.empty ())
       
   (* Construct a list of the cardinalities of the ports belonging to
    the same node. [(1,0);(1,1);(2,0)] -> [1;2] *)
