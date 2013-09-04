@@ -441,26 +441,26 @@ let aux_match t p  =
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
     ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));
   (* Add blocking pairs *)
-  let (iso_ports, constraint_e, block_e_e) = 
+  (*let (iso_ports, constraint_e, block_e_e) = 
     Link.match_edges t.l p.l block_ctrl
   and (block_l_n, block_l_e) = 
-    Link.match_links t.l p.l in   
+    Link.match_links t.l p.l in*)   
   let blocking_pairs_v = 
-    Iso.union block_l_n block_ctrl in
+    (*Iso.union block_l_n*) block_ctrl in
   (*printf "Adding blocking pairs v\n";*)
   iso_iter v blocking_pairs_v solver;
   (*printf "Adding blocking pairs e\n";*)
-  iso_iter w (Iso.union block_e_e block_l_e) solver; 
+  (*iso_iter w (Iso.union block_e_e block_l_e) solver;*) 
   (*printf "Adding constraint e\n";*)
-  List.iter (fun (e_i, e_j, i, j) ->
+  (*List.iter (fun (e_i, e_j, i, j) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit w.(e_i).(e_j)); (neg_lit v.(i).(j))])
-    constraint_e;
+    constraint_e;*)
   (*printf "Adding %d clauses for iso ports\n" (List.length iso_ports);*)
-  List.iter (fun ((e_i, e_j), iso) ->
+  (*List.iter (fun ((e_i, e_j), iso) ->
     let lits = 
       List.map (fun (i,j) -> pos_lit v.(i).(j)) (Iso.to_list iso) in
-    solver#add_clause ((neg_lit w.(e_i).(e_j)) :: lits)) iso_ports;
+    solver#add_clause ((neg_lit w.(e_i).(e_j)) :: lits)) iso_ports;*)
   filter_loop solver t p v n m w e f t_trans
 
 let occurs t p = 
@@ -552,24 +552,24 @@ let equal_SAT a b =
   add_bijection v_n (a.p.Place.n) (b.p.Place.n) solver;
   add_bijection v_l (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver;
   (* CTRL *)
-  iso_iter v_n (match_nodes a.n b.n) solver;
+  (*iso_iter v_n (match_nodes a.n b.n) solver;*)
   (* DAG EDGES *)
   (* N x N *)
-  List.iter (fun (i, l, j, k) ->
+  (*List.iter (fun (i, l, j, k) ->
     solver#add_clause [(neg_lit v_n.(i).(j)); (neg_lit v_n.(l).(k))])
-    (Place.match_list a.p b.p);
+    (Place.match_list a.p b.p);*)
   (* N x S *)
-  List.iter (fun (i, j) -> 
+  (*List.iter (fun (i, j) -> 
     solver#add_clause [neg_lit v_n.(i).(j)]) 
-    (Place.match_nodes_sites a.p b.p);
+    (Place.match_nodes_sites a.p b.p);*)
   (* R x N *)
-  List.iter (fun (l, k) -> 
+  (*List.iter (fun (l, k) -> 
     solver#add_clause [neg_lit v_n.(l).(k)]) 
-    (Place.match_root_nodes a.p b.p);
+    (Place.match_root_nodes a.p b.p);*)
   (* HYPERGRAPH *)
-  List.iter (fun (i, j) -> 
+  (*List.iter (fun (i, j) -> 
     solver#add_clause [neg_lit v_l.(i).(j)]) 
-    (Link.match_link_pairs a.l b.l a.n b.n);
+    (Link.match_link_pairs a.l b.l a.n b.n);*)
   (* Ports *)
   (* a var matrix ports X ports for every hyperedge (not already negated)*)
   solver#simplify;
@@ -578,20 +578,20 @@ let equal_SAT a b =
   | Minisat.SAT -> true
 
 let equal a b =
-  (Nodes.cardinal a.n = Nodes.cardinal b.n) &&
+  (a.n.Nodes.size = b.n.Nodes.size) &&
     (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l) &&
     (inter_equal (inner a) (inner b)) && 
     (inter_equal (outer a) (outer b)) &&
     (Place.edges a.p = Place.edges b.p) &&
-    (Place.match_roots_sites a.p b.p) &&
+    (*(Place.match_roots_sites a.p b.p) &&*)
     (*placing or wiring *)
-    if Nodes.cardinal b.n = 0 then
+    if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
       equal_SAT a b
 
 let compare a b =
-  match (Nodes.cardinal a.n) - (Nodes.cardinal b.n) with
+  match (a.n.Nodes.size) - (b.n.Nodes.size) with
   | 0 -> 
     begin
       match (Link.Lg.cardinal a.l) - (Link.Lg.cardinal b.l) with
@@ -606,11 +606,11 @@ let compare a b =
 		  match (Place.edges a.p) - (Place.edges b.p) with
 		  | 0 -> 
 		    begin
-		      match Place.compare_roots_sites a.p b.p with
+		      match Sparse.compare a.p.Place.rs b.p.Place.rs with
 		      | 0 ->
 			begin
 			  (*placing or wiring *)
-			  if Nodes.cardinal b.n = 0 then
+			  if b.n.Nodes.size = 0 then
 			    match Place.compare_placing a.p b.p with
 			    | 0 -> Link.Lg.compare a.l b.l
 			    | v -> v

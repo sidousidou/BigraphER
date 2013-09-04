@@ -461,7 +461,7 @@ let peers l i =
       let ports_i = (* remove one i-port *) 
 	Ports.remove (Ports.max_elt (Ports.filter (fun (x, _) -> 
 	  x = i) e.p)) e.p in
-      IntSet.union acc (set_of_ports ports_i)
+      IntSet.union acc (Ports.to_IntSet ports_i)
     else acc) l IntSet.empty
 
 let are_peers l i j =  IntSet.mem j (peers l i)
@@ -471,8 +471,9 @@ let are_peers l i j =  IntSet.mem j (peers l i)
 let non_peers_pairs l v = 
   IntSet.fold (fun i acc -> 
     let non_peers = IntSet.diff v (peers l i) in
-    let a = IntSet.fold (fun x acc ->
-      Iso.add (i, x) acc) non_peers Iso.empty in
+    let a = Iso.empty in
+    IntSet.iter (fun x ->
+      Iso.add a i x) non_peers;
     Iso.union acc a) v Iso.empty (* inverse a???*)
 
 let match_peers t p m n =
@@ -492,7 +493,7 @@ let match_peers t p m n =
       else acc1) v_t Quad.empty)) v_p Quad.empty)
    
 (*let open_edges l = Lg.diff l (close_edges l)*)
-
+(*
 (* generates a list of unmatchable nodes = blocking pairs *)
 let gen_blocking_pairs_edges e_t e_p = 
   let m_t = multiset_of_ports e_t.p
@@ -610,7 +611,7 @@ let match_link_pairs a b n_a n_b =
     done
   done;
   !res
-    
+*)   
 (*let is_match_valid t p iso =
   true*)
 

@@ -98,9 +98,9 @@ val string_of_face : Face.t -> string
 
 (** [to_string l] returns a string representation of link graph [l].*)
 val to_string : Lg.t -> string
-
-(** [snf_of_linking l] Returns the normal form of linking [l].*)
-val snf_of_linking : Lg.t -> string
+ 
+(* (\** [snf_of_linking l] Returns the normal form of linking [l].*\) *)
+(* val snf_of_linking : Lg.t -> string *)
 
 (** [get_dot l] returns four strings for the dot representation of link graph
     [l]. The first two elements represent inner and outer names shape
@@ -191,13 +191,13 @@ val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
     closed edges of [l] and [i] is an iso between the indices of [l] and [h]. *)
 val close_edges : Lg.t -> Lg.t
 
-val match_edges : Lg.t -> Lg.t -> Base.Iso.t -> ((int * int) * Base.Iso.t) list * (int * int * int * int) list * Base.Iso.t
+(*val match_edges : Lg.t -> Lg.t -> Base.Iso.t -> ((int * int) * Base.Iso.t) list * (int * int * int * int) list * Base.Iso.t*)
 
-val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t
+(*val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t*)
 
 val match_peers : Lg.t -> Lg.t -> int -> int -> (int * int * int * int) list 
 
-val match_link_pairs : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list
+(*val match_link_pairs : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list*)
 
 (*val is_match_valid : Lg.t -> Lg.t -> Base.Iso.t -> bool*) 
 
