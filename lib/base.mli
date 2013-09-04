@@ -56,7 +56,11 @@ sig
       [iso(i)].
       @raise Not_found if element [i] is not in the domain of isomorphism [iso]. *)
   val find : t -> int -> int
+
+  val compare : t -> t -> int
   
+  val equal : t -> t -> bool  
+
   val cardinal : t -> int
   
   val add : t -> int -> int -> unit
@@ -180,12 +184,14 @@ sig
   val abs : t -> Ctrl.t list
     
   val to_string : t -> string
-    
+
+  val parse : string -> (int, int) Hashtbl.t -> t
+   
   (** [to_dot ns] returns a string expressing node shapes in dot format. *)
   val to_dot: t -> string
 
   (** Apply an isomorphism *)
-  val apply : t -> Iso.t -> t
+  val apply_iso : t -> Iso.t -> t
 
 end
 

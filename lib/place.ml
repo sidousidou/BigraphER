@@ -21,6 +21,48 @@ let to_string p =
   let m = Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) in
   sprintf "%d %d %d\n%s\n" p.r p.n p.s (Sparse.to_string m)
 
+
+(* Parse a place graph from a list of strings *)
+let parse r n s lines =
+  assert (r >= 0);
+  assert (n >= 0);
+  assert (s >= 0);
+  assert (List.length lines = r + n);
+  assert (List.for_all (fun l -> String.length l = n + s) lines);
+  let rn = Sparse.make r n
+  and rs = Sparse.make r s
+  and nn = Sparse.make n n
+  and ns = Sparse.make n s in
+  ignore (List.fold_left (fun i line ->
+    if i < r then begin
+      (* roots - nodes *)
+      for j = 0 to n - 1 do
+	if line.[j] = '1' then Sparse.add rn i j
+      done;
+      (* roots - sites *)
+      for j = n to n + s - 1 do
+	if line.[j] = '1' then Sparse.add rs i (j - n)
+      done
+    end else begin
+      (* nodes - nodes *)
+      for j = 0 to n - 1 do
+	if line.[j] = '1' then Sparse.add nn (i - r) j
+      done;
+      (* nodes - sites *)
+      for j = n to n + s - 1 do
+	if line.[j] = '1' then Sparse.add ns (i -r) (j - n)
+      done
+    end;
+    i + 1) 0 lines);
+  { r = r;
+    n = n;
+    s = s;
+    rn = rn;
+    rs = rs;
+    nn = nn;
+    ns = ns;
+  }
+
 (* Apply isomorphism *)  
 let apply_iso i p =
   { p with 
@@ -35,10 +77,10 @@ let elementary_id n =
   { r = n;
     n = 0;
     s = n;
-    rn = Sparse.make 0 0;
+    rn = Sparse.make n 0;
     rs = Sparse.diag n; 
     nn = Sparse.make 0 0;
-    ns = Sparse.make 0 0;
+    ns = Sparse.make 0 n;
   }
     
 let elementary_merge n =
@@ -46,10 +88,10 @@ let elementary_merge n =
   { r = 1;
     n = 0;
     s = n;
-    rn = Sparse.make 0 0;
+    rn = Sparse.make 1 0;
     rs = Sparse.row_1 n; 
     nn = Sparse.make 0 0;
-    ns = Sparse.make 0 0;
+    ns = Sparse.make 0 n;
   }
     
 let elementary_split n =
@@ -57,10 +99,10 @@ let elementary_split n =
   { r = n;
     n = 0;
     s = 1;
-    rn = Sparse.make 0 0;
+    rn = Sparse.make n 0;
     rs = Sparse.col_1 n; 
     nn = Sparse.make 0 0;
-    ns = Sparse.make 0 0;
+    ns = Sparse.make 0 1;
   }
 
 let id0 = elementary_id 0
@@ -75,12 +117,12 @@ let elementary_sym m n =
   { r = m + n;
     n = 0;
     s = m + n;
-    rn = Sparse.make 0 0;
+    rn = Sparse.make (m + n) 0;
     rs = Sparse.stack 
       (Sparse.append (Sparse.make n m) (Sparse.diag n)) 
       (Sparse.append (Sparse.diag m) (Sparse.make m n)); 
     nn = Sparse.make 0 0;
-    ns = Sparse.make 0 0;
+    ns = Sparse.make 0 (m + n);
   }
     
 let elementary_ion =
@@ -88,8 +130,8 @@ let elementary_ion =
     n = 1;
     s = 1;
     rn = Sparse.row_1 1;
-    rs = Sparse.make 0 0;
-    nn = Sparse.make 0 0;
+    rs = Sparse.make 1 1;
+    nn = Sparse.make 1 1;
     ns = Sparse.row_1 1;
   }
 
@@ -99,10 +141,10 @@ let parse_placing l r =
   { r = r;
     n = 0; 
     s = List.length l;
-    rn = Sparse.make 0 0;
+    rn = Sparse.make r 0;
     rs = Sparse.parse_vector l r;
     nn = Sparse.make 0 0;      
-    ns = Sparse.make 0 0;
+    ns = Sparse.make 0 (List.length l);
   }
 
 (* placing equality *)
@@ -451,12 +493,14 @@ type deg =
 | S of int (* with sites or roots *)
 
 let indeg p i =
+  assert (i >= 0);
   let d = List.length (Sparse.prn p.nn i) in
   match Sparse.prn p.rn i with
   | [] -> V d
   | _ -> S d
 
 let outdeg p i =
+  assert (i >= 0);
   let d = List.length (Sparse.chl p.nn i) in
   match Sparse.chl p.ns i with
   | [] -> V d

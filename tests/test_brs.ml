@@ -2,6 +2,14 @@ open Base
 open Big
 open Format
 
+let r_p = 
+  comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one
+
+let r = 
+  par 
+    (comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one) 
+    (comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("A", 1))) one)
+
 let s = 
   close (Link.parse_face ["x"]) 
     (par_of_list [ comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one; 
@@ -26,14 +34,6 @@ let s =
 		   comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("A", 1))) one;
 		 ])
 
-let r = 
-  par 
-    (comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one) 
-    (comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("A", 1))) one)
-
-let r_p = 
-  comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one
-
 let g = 
   par_of_list [ comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one; 
 		comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("A", 1))) one;
@@ -57,7 +57,7 @@ let _ =
   let verb = 
     try match Sys.argv.(2) with
       | "v" -> true
-      | _ -> raise (Invalid_argument "") 
+      | a -> raise (Invalid_argument a) 
     with
     | _ -> false
   and path = 

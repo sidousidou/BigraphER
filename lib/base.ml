@@ -82,6 +82,29 @@ module Iso = struct
 
   let iter f iso = Hashtbl.iter f iso
   
+  exception COMPARE of int  
+
+  let subseteq a b =     
+    try
+      iter (fun i j ->
+	match j - (find b i) with
+	| 0 -> ()
+	| x -> raise (COMPARE x)) a;
+      0
+    with
+    | Not_found -> 1
+    | COMPARE x -> x
+
+  let compare a b = 
+    let x = subseteq a b
+    and y = subseteq b a in
+    match x with
+    | 0 -> y
+    | _ -> x
+      
+  let equal a b = 
+    compare a b = 0  
+
   let to_string iso =
     sprintf "{%s}" 
       (String.concat ", " 
@@ -218,23 +241,32 @@ module Nodes = struct
 	 s [])
 
   let tens a b =
-    Hashtbl.iter (fun i c ->
-      Hashtbl.add a.ctrl (i + b.size) c) b.ctrl;
-    Hashtbl.iter (fun c i ->
-      Hashtbl.add a.sort c (i + b.size)) b.sort;
-    { a with size = a.size + b.size; }
-     
+    fold (fun i c acc ->
+      add acc (i + b.size) c) b (fold (fun i c acc ->
+	add acc i c) a empty)
+
   (* is an ordered list of controls with duplicates *)
   let abs s = 
     List.fast_sort Ctrl.compare
       (fold (fun _ c acc ->
 	c :: acc) s [])
 
-  let apply s iso =
+  let apply_iso s iso =
     assert (Iso.cardinal iso = s.size);
     fold (fun i c acc ->
       add acc (Iso.find iso i) c) s empty
   
+  let parse s h =
+    let tokens = Str.split (Str.regexp_string " ") s in
+    fst (List.fold_left (fun (acc, i) t ->
+      let ar = 
+	try
+	  Hashtbl.find h i
+	with
+	| Not_found -> 0 in
+      let c = Ctrl.Ctrl (t, ar) in
+      (add acc i c, i + 1)) (empty, 0) tokens)
+      
 end
 
 module Ports = struct
@@ -251,6 +283,7 @@ module Ports = struct
 	sprintf "(%d, %d)" a b) (elements ps)))  
 
   let of_node (n, c) =
+    assert (n >= 0);
     let rec fold i acc =
       if i < 0 then acc
       else fold (i - 1) (add (n, i) acc) in

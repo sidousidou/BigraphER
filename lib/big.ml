@@ -8,7 +8,7 @@ type bg = {
   n : Base.Nodes.t; (** Set of nodes *)
 }
 
-type inter = | Inter of int * Link.Face.t
+type inter = Inter of int * Link.Face.t
 
 exception SHARING_ERROR
 exception CTRL_ERROR of int * Link.Face.t
@@ -41,61 +41,85 @@ let string_of_bg b =
   sprintf "%s\n%s%s" (Nodes.to_string b.n) (Place.to_string b.p)
     (Link.to_string b.l)    
 
+let parse lines =
+  let (r, n, s, e) =
+    let a = 
+      Array.of_list (Str.split (Str.regexp_string " ") (List.hd lines)) in
+    (int_of_string a.(0), int_of_string a.(1), 
+     int_of_string a.(2), int_of_string a.(3)) in
+  let (s_n, lines_p, lines_l, _) =
+    List.fold_left (fun (s_n, acc_p, acc_l, i) l ->
+      match i with
+      | 0 -> (s_n, acc_p, acc_l, 1)
+      | 1 -> (l, acc_p, acc_l, 2)
+      | _ -> begin
+	if i < 2 + r + n then (s_n, acc_p @ [l], acc_l, i + 1)
+	else if i < 2 + r + n + e then (s_n, acc_p, acc_l @ [l], i + 1)
+	else (s_n, acc_p, acc_l, i + 1)
+      end) ("", [], [], 0) lines in
+  assert (List.length lines_l = e);
+  let (l, h) = Link.parse lines_l in
+  { n = Nodes.parse s_n h;
+    p = Place.parse r n s lines_p;
+    l = l;
+  }
+
+
 let id (Inter (m, i)) =
-  {n = Nodes.empty;
-   p = Place.elementary_id m;
-   l = Link.elementary_id i;
+  { n = Nodes.empty;
+    p = Place.elementary_id m;
+    l = Link.elementary_id i;
   }   
   
 let id_eps = 
-  {n = Nodes.empty;
-   p = Place.id0;
-   l = Link.id_empty;
+  { n = Nodes.empty;
+    p = Place.id0;
+    l = Link.id_empty;
   } 
   
 let merge n =
-  {n = Nodes.empty;
-   p = Place.elementary_merge n;
-   l = Link.id_empty;
+  { n = Nodes.empty;
+    p = Place.elementary_merge n;
+    l = Link.id_empty;
   }
   
 let split n =
-  {n = Nodes.empty;
-   p = Place.elementary_split n;
-   l = Link.id_empty;
+  { n = Nodes.empty;
+    p = Place.elementary_split n;
+    l = Link.id_empty;
   }
   
 let one =
-  {n = Nodes.empty;
-   p = Place.one;
-   l = Link.id_empty;
+  { n = Nodes.empty;
+    p = Place.one;
+    l = Link.id_empty;
   }
   
 let zero =
-  {n = Nodes.empty;
-   p = Place.zero;
-   l = Link.id_empty;
+  { n = Nodes.empty;
+    p = Place.zero;
+    l = Link.id_empty;
   }
   
 let sym (Inter (m, i)) (Inter (n, j)) =
-  {n = Nodes.empty;
-   p = Place.elementary_sym m n;
-   l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
+  { n = Nodes.empty;
+    p = Place.elementary_sym m n;
+    l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
   }
   
 let ion f c =
   if (Ctrl.arity c) <> (Link.Face.cardinal f) then
     raise (CTRL_ERROR (Ctrl.arity c, f))
   else
-    {n = Nodes.add Nodes.empty 0 c;
-     p = Place.elementary_ion;
-     l = Link.elementary_ion f;
+    { n = Nodes.add Nodes.empty 0 c;
+      p = Place.elementary_ion;
+      l = Link.elementary_ion f;
     } 
 
 let sub i o =
-  {n = Nodes.empty;
-   p = Place.id0;
-   l = Link.elementary_sub i o;
+  { n = Nodes.empty;
+    p = Place.id0;
+    l = Link.elementary_sub i o;
   }
   
 let closure i = sub i Link.Face.empty
@@ -104,16 +128,16 @@ let intro o = sub Link.Face.empty o
 
 (* (l list of parents for each site) r roots *)  
 let placing l r f =
-  {n = Nodes.empty;
-   p = Place.parse_placing l r;
-   l = Link.elementary_id f;
+  { n = Nodes.empty;
+    p = Place.parse_placing l r;
+    l = Link.elementary_id f;
   }
   
 (* Empty link graph and no nodes in the place graph. *)
 let is_plc b =
   (Link.Lg.equal b.l Link.id_empty) &&
-  (b.n.Nodes.size = 0) &&
-  (Place.is_plc b.p)
+    (b.n.Nodes.size = 0) &&
+    (Place.is_plc b.p)
   
 (* Empty place graph and no nodes in the link graph. *)
 let is_wir b =
@@ -192,9 +216,9 @@ let is_solid b =
 let apply_iso i b =
   let (x, y) = ((Iso.cardinal i), b.n.Nodes.size) in
   if x = y then
-    {n = Nodes.apply b.n i;
-     p = Place.apply_iso i b.p;
-     l = Link.apply_iso i b.l;
+    { n = Nodes.apply_iso b.n i;
+      p = Place.apply_iso i b.p;
+      l = Link.apply_iso i b.l;
     }
   else raise (ISO_ERROR (y, x))
 
@@ -236,7 +260,7 @@ let decomp t p i_v i_e =
   let (l_c, l_d, l_id) = 
     Link.decomp t.l p.l i_v i_e i_c i_d
   and (n_c, n_d) = 
-    Nodes.apply t.n i_c, Nodes.apply t.n i_d in
+    (Nodes.apply_iso t.n i_c, Nodes.apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty })

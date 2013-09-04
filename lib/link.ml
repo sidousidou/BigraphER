@@ -75,9 +75,33 @@ let string_of_edge e =
 let to_string l = 
   String.concat "\n" (List.map string_of_edge (Lg.elements l))
 
-(*let snf_of_linking l =
-  String.concat " || " (List.map (fun e ->
-    sprintf "%s/%s" (string_of_face e.o) (string_of_face e.i)) (Lg.elements l))*)
+(* Nodes are counted starting from 1 *)
+let parse lines = 
+  let build_edge s n h =
+    let a  = Str.split (Str.regexp_string " ") s in 
+    { p =
+	List.fold_left (fun acc x ->
+	  try
+	    let j = Hashtbl.find h x in
+	    Hashtbl.add h x (j + 1);
+	    Ports.add (x, j) acc
+	  with
+	  | Not_found -> 
+	      begin
+		Hashtbl.add h x 1;
+		Ports.add (x, 0) acc
+	      end) Ports.empty (List.map (fun x ->
+		(int_of_string x) - 1) (List.tl (List.rev a)));
+      i = Face.empty;
+      o = begin
+	match List.nth a ((List.length a) - 1) with 
+	| "t" -> parse_face [sprintf "n%d" n]
+	| _ -> Face.empty
+      end;
+    } in
+  let h = Hashtbl.create (List.length lines) in
+  (fst (List.fold_left (fun (acc, i) l -> 
+    (Lg.add (build_edge l i h) acc), i + 1) (Lg.empty, 0) lines), h)
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub f_i f_o =

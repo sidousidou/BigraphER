@@ -90,17 +90,17 @@ exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
     attempted. *)
 exception FACES_MISMATCH of (Face.t * Face.t)
 
-(** [parse_face ns] returns a face starting from list of string names [ns].*)
+(** [parse_face ns] returns a face starting from list of string names [ns]. *)
 val parse_face : string list -> Face.t
 
-(** [string_of_face f] returns a string rapresentation of face [f].*)
+(** [string_of_face f] returns a string rapresentation of face [f]. *)
 val string_of_face : Face.t -> string
 
-(** [to_string l] returns a string representation of link graph [l].*)
+(** [to_string l] returns a string representation of link graph [l]. *)
 val to_string : Lg.t -> string
- 
-(* (\** [snf_of_linking l] Returns the normal form of linking [l].*\) *)
-(* val snf_of_linking : Lg.t -> string *)
+
+(** Parse a list of strings. An Hashtbl node -> arity is also returned. *) 
+val parse : string list -> (Lg.t * (int, int) Hashtbl.t)
 
 (** [get_dot l] returns four strings for the dot representation of link graph
     [l]. The first two elements represent inner and outer names shape
@@ -108,13 +108,13 @@ val to_string : Lg.t -> string
     The fourth element specifies the adjacency matrix. *)
 val get_dot : Lg.t -> string * string * string * string 
 
-(** [inner l] returns the inner face of link graph [l].*)
+(** [inner l] returns the inner face of link graph [l]. *)
 val inner : Lg.t -> Face.t
 
-(** [outer l] returns the outer face of link graph [l].*)
+(** [outer l] returns the outer face of link graph [l]. *)
 val outer : Lg.t -> Face.t
 
-(** [ports l] returns the set of ports of link graph [l].*)
+(** [ports l] returns the set of ports of link graph [l]. *)
 val ports : Lg.t -> Base.Ports.t
 
 (** [apply_iso i l] returns a link graph obtained by applying isomorphism [i]

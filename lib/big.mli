@@ -67,9 +67,9 @@ val face_of_inter : inter -> Link.Face.t
 (** [string_of_bg b] returns a string representation of bigraph [b]. *)
 val string_of_bg: bg -> string
 
-(*(** [snf b] returns a the normal form of bigraph [b].*)
-val snf: bg -> string*)
-
+(** Parse a bigraph. *)
+val parse : string list -> bg
+ 
 (** [get_dot b i] returns a string expressing bigraph [b] named [i] in 
     dot format. *)
 val get_dot : bg -> string -> string
