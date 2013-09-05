@@ -121,7 +121,6 @@ let _ =
       (n, Big.parse ls)) bg_strings in
   if Array.length args = 3 then
     List.iter (fun (n, b) ->
-      printf "%s: %s" n (Big.string_of_bg b);
       write_big b n args.(2) true) bgs;
   let tests =
     try
@@ -378,7 +377,7 @@ let _ =
     with
       | Not_found -> failwith ("Error loading tests.\n") in
   do_tests tests;
-  do_equality_tests bgs tests;
+(*  do_equality_tests bgs tests;*)
   Gc.full_major ();
   wait_before_exit true
 (* can compile with -noassert *)

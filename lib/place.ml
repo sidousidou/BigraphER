@@ -596,25 +596,40 @@ let match_nodes_sites a b n_a n_b =
 (*     not (IntSet.is_empty (IntSet.filter (fun i -> *)
 (* 	     i < b.n) (prn b.m j)))) (of_int b.n) *)
 
+(* Nodes with no children (both nodes and sites). *)
+let leaves p =
+  let l_n = Sparse.leaves p.nn
+  and l_s = Sparse.leaves p.ns in
+  IntSet.inter l_n l_s
 
-(* leves (orphans) in t are matched to leaves (orphans) in p*)
+(* Dual *)
+let orphans p =
+  let o_r = Sparse.orphans p.rn
+  and o_n = Sparse.orphans p.nn in
+  IntSet.inter o_r o_n
+
+(* leves (orphans) in p are matched to leaves (orphans) in t.
+   C5: ij0 or ij1 or ..... *)
 let match_leaves t p n_t n_p =
-  let l_p = Sparse.leaves p.nn 
-  and l_t = Sparse.leaves t.nn in
-  IntSet.fold (fun j acc ->
-    let c = Nodes.find n_t j in 
-    IntSet.fold (fun i acc ->
-      (i, j) :: acc) (IntSet.filter (fun i -> 
-	Ctrl.(=) c (Nodes.find n_p i)) l_p) acc) l_t []
+  let l_p = leaves p
+  and l_t = leaves t in
+  IntSet.fold (fun i acc ->
+    let c = Nodes.find n_p i in 
+    let clause = IntSet.fold (fun j acc ->
+      (i, j) :: acc) (IntSet.filter (fun j -> 
+	Ctrl.(=) c (Nodes.find n_t j)) l_t) [] in
+    clause :: acc) l_p []
 
+(* Dual *)
 let match_orphans t p n_t n_p =
-  let o_p = Sparse.orphans p.nn 
-  and o_t = Sparse.orphans t.nn in
-  IntSet.fold (fun j acc ->
-    let c = Nodes.find n_t j in 
-    IntSet.fold (fun i acc ->
-      (i, j) :: acc) (IntSet.filter (fun i -> 
-	Ctrl.(=) c (Nodes.find n_p i)) o_p) acc) o_t []
+  let o_p = orphans p 
+  and o_t = orphans t in
+  IntSet.fold (fun i acc ->
+    let c = Nodes.find n_p i in
+    let clause = IntSet.fold (fun j acc ->
+      (i, j) :: acc) (IntSet.filter (fun j -> 
+	Ctrl.(=) c (Nodes.find n_t j)) o_t) [] in
+    clause :: acc) o_p []
   
 (* Not needed - only trans and sites roots checks left out 
 (* Add easy blocking pairs, Iso checking of the siblings and partners is left out *)

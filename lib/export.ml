@@ -8,13 +8,13 @@ let _end_with_sep s =
 
 (* Write a string in dot format to an svg file *)
 let _write_svg s name path verb =
-  let dot_in, bigmc_out = Unix.pipe ()
+  let (dot_in, bigmc_out) = Unix.pipe ()
   and n_path = _end_with_sep path in
   let svg_file =  
     Unix.openfile (concat n_path (name ^ ".svg")) 
       [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o777 in
-  Unix.set_close_on_exec dot_in;
-  Unix.set_close_on_exec svg_file;
+  (*Unix.set_close_on_exec dot_in;
+  Unix.set_close_on_exec svg_file;*)
   if verb then printf "Writing %s%s.svg\n" n_path name; 
   let b_w = Unix.write bigmc_out s 0 (String.length s) in
   flush_all ();
@@ -22,7 +22,7 @@ let _write_svg s name path verb =
   let pid = Unix.create_process "dot" [| "dot"; "-Tsvg" |]
     dot_in svg_file Unix.stderr in
   match Unix.waitpid [ Unix.WNOHANG ] pid with
-  | _, Unix.WSTOPPED _ -> failwith "Error: dot terminated unexpectedly"
+  | _, Unix.WSTOPPED _ -> eprintf "dot process stopped\n"(*failwith "Error: dot terminated unexpectedly"*)
   | _, Unix.WSIGNALED _ | _, Unix.WEXITED _ -> 
     if verb then printf "%d bytes written\n" b_w
 

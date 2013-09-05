@@ -328,9 +328,6 @@ let init_vars r c solver =
       m.(i).(j) <- solver#new_var 
     done;
   done;
- (* print_endline (String.concat "\n" (Array.to_list (Array.map (fun row ->
-    sprintf "|%s|" (String.concat " " (Array.to_list (Array.map (fun x ->
-      sprintf "%8d" x) row)))) m)));*)
   m
 
 (* GPROF *)
@@ -425,6 +422,26 @@ let iso_iter m iso solver =
   Iso.iter (fun i j -> 
     solver#add_clause [(neg_lit m.(i).(j))]) iso
 
+let add_c4 t p t_n p_n solver v =
+  let (c4_l, n_z) = Place.match_list t p t_n p_n in
+  let z = Array.make n_z 0 in
+  for i = 0 to n_z - 1 do
+    z.(i) <- solver#new_var 
+  done;
+  List.iter (fun (z_l, disjuncts) ->
+    solver#add_clause (List.map (fun i ->
+      pos_lit z.(i)) z_l);
+    List.iter (fun (k, (i, j)) ->
+      solver#add_clause [neg_lit z.(k); pos_lit v.(i).(j)]) disjuncts) c4_l;
+  z
+
+let add_c5 t p t_n p_n solver v =
+  let to_minisat c =
+    List.map (fun (i, j) -> pos_lit v.(i).(j)) c in
+  List.iter (fun clause -> 
+    solver#add_clause (to_minisat clause)) 
+    ((Place.match_leaves t p t_n p_n) @ (Place.match_orphans t p t_n p_n))
+
 (*isos from pattern(col) to target(col)*)
 let aux_match t p  =
   let solver = new solver
@@ -438,12 +455,15 @@ let aux_match t p  =
   (* Iso between closed edges *)
   and w = init_vars e f solver in
   (* Add bijection over nodes *)
-  (*printf "add_bijection v\n";*)
   add_bijection v n m solver;
   (* Add bijection over closed edges *)
-  (*printf "add_bijection w\n";*)
   add_bijection w e f solver;
-  let block_ctrl = (*union_list
+  (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
+     Return array of auxiliary vars. *)
+  let z = add_c4 t.p p.p t.n p.n solver v in
+  (* Add C5: orpahns and leaves matching in the place graphs. *)
+  add_c5 t.p p.p t.n p.n solver v;
+  (*let block_ctrl = (*union_list
     [*) (* CONTROLS *)
       (*match_nodes t.n p.n;*)
       (* LEAVES *)
@@ -455,34 +475,21 @@ let aux_match t p  =
       (*Place.match_sites t.p p.p;*)
       (* ROOTS *)
       (*Place.match_roots t.p p.p;*)
-   (* ]*)  in
-  (* Add fourth constraint: EDGES in the place graph and
-                            HYPEREDGES in the link graph *)
-  (* Add Tseitin *)
-  let (c4_l, n_z) = Place.match_list t.p p.p t.n p.n in
-  printf "n_z = %d\n" n_z;
-  let z = Array.make n_z 0 in
-  for i = 0 to n_z - 1 do
-    z.(i) <- solver#new_var 
-  done;
-  List.iter (fun (z_l, disjuncts) ->
-    solver#add_clause (List.map (fun i ->
-      pos_lit z.(i)) z_l);
-    List.iter (fun (k, (i, j)) ->
-      solver#add_clause [neg_lit z.(k); pos_lit v.(i).(j)]) disjuncts) c4_l;
-  List.iter (fun (i, l, j, k) ->
+   (* ]*)
+  *)
+  (*List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
-    ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));
+    ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));*)
   (* Add blocking pairs *)
   (*let (iso_ports, constraint_e, block_e_e) = 
     Link.match_edges t.l p.l block_ctrl
   and (block_l_n, block_l_e) = 
     Link.match_links t.l p.l in*)   
-  let blocking_pairs_v = 
-    (*Iso.union block_l_n*) block_ctrl in
+  (*let blocking_pairs_v = 
+    (*Iso.union block_l_n*) block_ctrl in*)
   (*printf "Adding blocking pairs v\n";*)
-  iso_iter v blocking_pairs_v solver;
+  (*iso_iter v blocking_pairs_v solver;*)
   (*printf "Adding blocking pairs e\n";*)
   (*iso_iter w (Iso.union block_e_e block_l_e) solver;*) 
   (*printf "Adding constraint e\n";*)
