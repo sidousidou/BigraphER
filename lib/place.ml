@@ -450,8 +450,8 @@ let get_dot p =
   (* Ranks *)
   and ranks = 
     List.fold_left (fun buff ns ->
-      sprintf "%s{ rank=same, %s }\n;" buff 
-	(String.concat ", " (IntSet.fold (fun i acc ->
+      sprintf "%s{ rank=same; %s };\n" buff 
+	(String.concat "; " (IntSet.fold (fun i acc ->
 	  (sprintf "v%d" i) :: acc) ns []))) "" (Sparse.levels p.nn)
   (* Adjacency matrix *) 
   and m_rn = 

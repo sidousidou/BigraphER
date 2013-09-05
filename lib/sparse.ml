@@ -280,31 +280,55 @@ let entries m =
   Hashtbl.length m.r_major
 
 (* convert it to an array of IntSet *)
-let to_array m = 
-  let out = Array.make m.r IntSet.empty in
-  let (dom, leaves) = 
-    fold (fun i j (acc_d, acc_l) ->
-      out.(i) <- IntSet.add j out.(i);
-      (IntSet.add i acc_d, IntSet.remove i acc_l)) 
-      m (IntSet.empty, IntSet.of_int m.r) in
-  (out, dom, leaves) 
+(* let to_array m =  *)
+(*   let out = Array.make m.r IntSet.empty in *)
+(*   let (dom, leaves) =  *)
+(*     fold (fun i j (acc_d, acc_l) -> *)
+(*       out.(i) <- IntSet.add j out.(i); *)
+(*       (IntSet.add i acc_d, IntSet.remove i acc_l))  *)
+(*       m (IntSet.empty, IntSet.of_int m.r) in *)
+(*   (out, dom, leaves)  *)
 
 (* return a list of levels. Each level is a list of indices. *)
-let levels m =
-  assert (Pervasives.(=) m.r m.c);
-  let (m', dom, l0) = to_array m in
-  let rec fix rest acc out =
-    if Base.IntSet.is_empty rest then []
-    else begin
-      let (rest', l) = 
-	IntSet.fold (fun i (r', l') ->
-	  if IntSet.subset m'.(i) acc then
-	    (IntSet.remove i r', IntSet.add i l')
-	  else (r', l')) rest (rest, IntSet.empty) in
-      fix rest' (IntSet.union acc l) (l :: out)
-    end
-  in fix dom l0 [l0]
+(* let levels m = *)
+(*   assert (Pervasives.(=) m.r m.c); *)
+(*   let (m', dom, l0) = to_array m in *)
+(*   let rec fix rest acc out = *)
+(*     if Base.IntSet.is_empty rest then [] *)
+(*     else begin *)
+(*       let (rest', l) =  *)
+(* 	IntSet.fold (fun i (r', l') -> *)
+(* 	  if IntSet.subset m'.(i) acc then *)
+(* 	    (IntSet.remove i r', IntSet.add i l') *)
+(* 	  else (r', l')) rest (rest, IntSet.empty) in *)
+(*       fix rest' (IntSet.union acc l) (l :: out) *)
+(*     end *)
+(*   in fix dom l0 [l0] *)
     
+(* OPTION 1:
+    - find leaves 
+    - copy withouth leaves 
+    - iterate until no more leaves
+   OPTION 2:
+    - start with empty acc and marked
+    - find nodes with all children in acc that are not marked 
+    - iterate *)
+
+let levels m = 
+  (* m is a graph *)
+  assert (Pervasives.(=) m.r m.c);
+  let rec fix acc nodes res =
+    (* find nodes with all children in acc *)
+    let leaves = 
+      IntSet.filter (fun i ->
+	IntSet.subset (IntSet.of_list (chl m i)) acc) nodes in
+    if IntSet.is_empty leaves then res
+    else begin
+      fix (IntSet.union acc leaves) (IntSet.diff nodes leaves) 
+	(leaves :: res) 
+    end in
+  fix IntSet.empty (IntSet.of_int m.r) []
+
 (* Not exposed *)
 let of_list l r c =
   let m = make r c in
