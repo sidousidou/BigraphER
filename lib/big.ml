@@ -463,29 +463,18 @@ let aux_match t p  =
   let z = add_c4 t.p p.p t.n p.n solver v in
   (* Add C5: orpahns and leaves matching in the place graphs. *)
   add_c5 t.p p.p t.n p.n solver v;
-  (*let block_ctrl = (*union_list
-    [*) (* CONTROLS *)
-      (*match_nodes t.n p.n;*)
-      (* LEAVES *)
-    Iso.union
-      (Iso.of_list (Place.match_leaves t.p p.p t.n p.n))
-      (* ORPHANS *)
-      (Iso.of_list(Place.match_orphans t.p p.p t.n p.n))
-      (* SITES *)
-      (*Place.match_sites t.p p.p;*)
-      (* ROOTS *)
-      (*Place.match_roots t.p p.p;*)
-   (* ]*)
-  *)
+
   (*List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
     ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));*)
+
   (* Add blocking pairs *)
   (*let (iso_ports, constraint_e, block_e_e) = 
     Link.match_edges t.l p.l block_ctrl
   and (block_l_n, block_l_e) = 
     Link.match_links t.l p.l in*)   
+
   (*let blocking_pairs_v = 
     (*Iso.union block_l_n*) block_ctrl in*)
   (*printf "Adding blocking pairs v\n";*)
@@ -525,7 +514,7 @@ let occurrence t p =
 let auto b =
   if b.n.Nodes.size = 0 then
     raise NODE_FREE 
-  else
+  else begin
     let rem_id res = 
       List.filter (fun (i, e) ->
 	not ((Iso.is_id i) && (Iso.is_id e))) res in
@@ -541,6 +530,7 @@ let auto b =
 	      loop_occur [(get_iso solver v n m, get_iso solver w e f)]
       with
       | NO_MATCH -> [])
+  end
       
 let clause_of_iso iso m r c = 
   let clause = ref [] in
@@ -558,7 +548,7 @@ let occurrences t p =
   else
     try 
       let solver, v, n, m, w, e, f, t_trans = aux_match t p
-      and autos = auto p in
+      (*and autos = auto p in*) and autos = [] in
       let rec loop_occur res =
 	add_blocking solver v n m w e f;
 	(****************AUTOMORPHISMS****************)

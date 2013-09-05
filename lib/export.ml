@@ -13,17 +13,16 @@ let _write_svg s name path verb =
   let svg_file =  
     Unix.openfile (concat n_path (name ^ ".svg")) 
       [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o777 in
-  (*Unix.set_close_on_exec dot_in;
-  Unix.set_close_on_exec svg_file;*)
-  if verb then printf "Writing %s%s.svg\n" n_path name; 
+  if verb then printf "Writing %s%s.svg\n%!" n_path name; 
   let b_w = Unix.write bigmc_out s 0 (String.length s) in
-  flush_all ();
   Unix.close bigmc_out;
   let pid = Unix.create_process "dot" [| "dot"; "-Tsvg" |]
     dot_in svg_file Unix.stderr in
-  match Unix.waitpid [ Unix.WNOHANG ] pid with
-  | _, Unix.WSTOPPED _ -> eprintf "dot process stopped\n"(*failwith "Error: dot terminated unexpectedly"*)
-  | _, Unix.WSIGNALED _ | _, Unix.WEXITED _ -> 
+  Unix.close dot_in;
+  Unix.close svg_file;
+  match Unix.waitpid [ Unix.WUNTRACED ] pid with
+  | (_, Unix.WSTOPPED _) -> eprintf "Warning: dot process was stopped.\n"
+  | (_, Unix.WSIGNALED _) | (_, Unix.WEXITED _) ->
     if verb then printf "%d bytes written\n" b_w
 
 let _write_string s name path verb =
@@ -34,7 +33,8 @@ let _write_string s name path verb =
   close_out out_ch;
   if verb then printf "%d bytes written\n" (String.length s)
       
-let write_big b n path verb = 
+let write_big b n path verb =
+  printf "%s:\n%s\n%s\n" n (string_of_bg b) (get_dot b n); 
   _write_svg (get_dot b n) n path verb
 
 let write_ts ts n path verb =
@@ -51,9 +51,9 @@ let write_ctmc_prism ctmc n path verb =
 
 (* check if cmd returns code when executed with arguments a *)
 let _check_cmd cmd a code =
-  let read, write = Unix.pipe () in
+  let (read, write) = Unix.pipe () in
   let _ = Unix.create_process cmd [| cmd; a |] Unix.stdin write write in
-  let _, status = Unix.wait () in
+  let (_, status) = Unix.wait () in
   Unix.close read;
   Unix.close write;
   match status with

@@ -168,8 +168,8 @@ module IntSet = struct
     let rec fold i acc =
       match i with
       | 0 -> acc
-      | _ ->  fold (i - 1) (add i acc) in
-    fold (i - 1) empty
+      | _ ->  fold (i - 1) (add (i - 1) acc) in
+    fold i empty
       
   (* add offset i to every element in set s *)
   let off i s =
@@ -237,8 +237,9 @@ module Nodes = struct
   let to_dot s =
     String.concat "\n" 
       (fold (fun i c acc ->
-	acc @ [sprintf "v%d [ label=\"%s\", fontname=\"sans-serif\" ];" i (Ctrl.to_string c)]) 
-	 s [])
+	acc @ [sprintf "v%d [ label=\"%s\", shape=ellipse,\
+                              fontname=\"sans-serif\" ];" 
+		  i (Ctrl.to_string c)]) s [])
 
   let tens a b =
     fold (fun i c acc ->

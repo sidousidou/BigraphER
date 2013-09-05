@@ -329,11 +329,13 @@ let get_dot l =
 	i + 1,
       (* Inner names *)
        Face.fold (fun n buff ->
-	 sprintf "%si%s [ shape=plaintext, label=\"%s\", width=.18, height=.18 ];\n"
+	 sprintf "%si%s [ shape=plaintext, label=\"%s\", width=.18,\
+                          height=.18, fontname=\"serif\" ];\n"
            buff (string_of_name n) (string_of_name n)) e.i buff_i,
       (* Outer names *)  
        Face.fold (fun n buff ->
-	 sprintf "%so%s [ shape=plaintext, label=\"%s\", width=.18, height=.18 ];\n"
+	 sprintf "%so%s [ shape=plaintext, label=\"%s\", width=.18,\
+                          height=.18, fontname=\"serif\" ];\n"
            buff (string_of_name n) (string_of_name n)) e.o buff_o,
       (* Hyperedges *)   
        (if flag then sprintf

@@ -379,5 +379,5 @@ let _ =
   do_tests tests;
 (*  do_equality_tests bgs tests;*)
   Gc.full_major ();
-  wait_before_exit true
+(*  wait_before_exit true*)
 (* can compile with -noassert *)
