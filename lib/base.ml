@@ -295,39 +295,40 @@ module Ports = struct
     Nodes.fold (fun n c acc -> 
       union (of_node (n, c)) acc) ns empty
 
-  (* [(1,0);(1,1);(2,0)] -> [(1,2);(2,1)] 
-     elements are (cardinality, node id) *)
-  let multiset ps =
-    fold (fun (p, _) acc ->
-      try 
-	let card = Iso.find acc p in
-	Iso.add acc (card + 1) p;
-	acc 
-      with
-      | _ -> begin
-	Iso.add acc 1 p;
-	acc
-      end) ps (Iso.empty ())
+  (* (\* [(1,0);(1,1);(2,0)] -> [(1,2);(2,1)]  *)
+  (*    elements are (cardinality, node id) *\) *)
+  (* let multiset ps = *)
+  (*   fold (fun (p, _) acc -> *)
+  (*     try  *)
+  (* 	let card = Iso.find acc p in *)
+  (* 	Iso.add acc (card + 1) p; *)
+  (* 	acc  *)
+  (*     with *)
+  (*     | _ -> begin *)
+  (* 	Iso.add acc 1 p; *)
+  (* 	acc *)
+  (*     end) ps (Iso.empty ()) *)
       
-  (* Construct a list of the cardinalities of the ports belonging to
-   the same node. [(1,0);(1,1);(2,0)] -> [1;2] *)
-  let card_list p = 
-    Iso.dom (multiset p)
+  (* (\* Construct a list of the cardinalities of the ports belonging to *)
+  (*  the same node. [(1,0);(1,1);(2,0)] -> [1;2] *\) *)
+  (* let card_list p =  *)
+  (*   Iso.dom (multiset p) *)
 
   (* Construct a list of control strings [AA;BBBB;C]*)
   let types p n =
-    let rec dup s n buff =
-      if n = 0 then buff
-      else dup s (n - 1) (s ^ buff) 
+    let h = Hashtbl.create n.Nodes.size 
     and aux (Ctrl.Ctrl (s, _)) = s in
-    fst (fold (fun (i, _) (acc, marked) ->
-      let s = aux (Nodes.find n i) in
-      if List.mem s marked then (acc, marked)
-      else begin 
-	let card = List.length (Nodes.find_all n s) in
-	((dup s card "") :: acc, s :: marked)
-      end
-    ) p ([], []))
+    iter (fun (i, _) ->
+      Hashtbl.add h i (aux (Nodes.find n i))) p;
+    let l = 
+      fst (Hashtbl.fold (fun i c (acc, marked) ->
+      if List.mem i marked then (acc, marked)
+      else begin
+	let s =
+	  String.concat "" (Hashtbl.find_all h i) in
+	(s :: acc, i :: marked)
+      end) h ([], [])) in
+    List.fast_sort String.compare l
 
   let to_IntSet ps =
     fold (fun p acc -> 

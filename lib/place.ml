@@ -21,7 +21,6 @@ let to_string p =
   let m = Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) in
   sprintf "%d %d %d\n%s\n" p.r p.n p.s (Sparse.to_string m)
 
-
 (* Parse a place graph from a list of strings *)
 let parse r n s lines =
   assert (r >= 0);
@@ -522,6 +521,12 @@ let compat t p t_i p_i =
   (compat_deg (indeg t t_i) (indeg p p_i)) && 
     (compat_deg (outdeg t t_i) (outdeg p p_i))
 
+let block_rows t =
+  let j_t = IntSet.of_int t.n in
+  List.map (fun i ->
+    IntSet.fold (fun j acc ->
+      (i, j) :: acc) j_t [])
+
 (* GPROF *)
 (* Optimisation 1:
    - Do not add a pair if one of the two literals matches nodes of different 
@@ -538,7 +543,7 @@ let compat t p t_i p_i =
 (*if ij then ab or cd or ... de ENCODING = (ic and jd) or ... (id and je)*)
 let match_list t p n_t n_p =
   let h = partition_edges t n_t in
-  Sparse.fold (fun i j (acc, n) ->
+  let (clauses, b, z) = Sparse.fold (fun i j (acc, block, n) ->
     let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
     match (a, b) with 
     | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
@@ -549,9 +554,13 @@ let match_list t p n_t n_p =
 	  if (compat t p i' i) && (compat t p j' j) then
 	    ((i, i'), (j, j')) :: acc
 	  else acc) [] t_edges) n in
-      if z = n then (acc, n)
-      else (clause :: acc, z)
-    end) p.nn ([], 0)
+      if z = n then begin
+	(* No compatible edges found *)
+	(acc, i :: j :: block, n) 
+      end else 
+	(clause :: acc, block, z)
+    end) p.nn ([], [], 0) in
+  (clauses, block_rows t b, z)
 
 (* EQUALITY functions *)
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
@@ -613,37 +622,74 @@ let orphans p =
 let match_leaves t p n_t n_p =
   let l_p = leaves p
   and l_t = leaves t in
-  IntSet.fold (fun i acc ->
-    let c = Nodes.find n_p i in 
-    let clause = IntSet.fold (fun j acc ->
-      (i, j) :: acc) (IntSet.filter (fun j -> 
-	Ctrl.(=) c (Nodes.find n_t j)) l_t) [] in
-    clause :: acc) l_p []
+  let (clauses, b) =
+    IntSet.fold (fun i (acc, block) ->
+      let c = Nodes.find n_p i in
+      let clause = IntSet.fold (fun j acc ->
+	(i, j) :: acc) (IntSet.filter (fun j -> 
+	  Ctrl.(=) c (Nodes.find n_t j)) l_t) [] in
+      (* If clause is empty i is not matchable *)
+      match clause with
+      | [] -> (acc, i :: block)
+      | _ -> (clause :: acc, block)) l_p ([], []) in
+  (clauses, block_rows t b)
 
 (* Dual *)
 let match_orphans t p n_t n_p =
   let o_p = orphans p 
   and o_t = orphans t in
-  IntSet.fold (fun i acc ->
-    let c = Nodes.find n_p i in
-    let clause = IntSet.fold (fun j acc ->
-      (i, j) :: acc) (IntSet.filter (fun j -> 
-	Ctrl.(=) c (Nodes.find n_t j)) o_t) [] in
-    clause :: acc) o_p []
+  let (clauses, b) =
+    IntSet.fold (fun i (acc, block) ->
+      let c = Nodes.find n_p i in
+      let clause = IntSet.fold (fun j acc ->
+	(i, j) :: acc) (IntSet.filter (fun j -> 
+	  Ctrl.(=) c (Nodes.find n_t j)) o_t) [] in
+      match clause with
+      | [] -> (acc, i :: block)
+      | _ -> (clause :: acc, block)) o_p ([], []) in
+  (clauses, block_rows t b)
   
-(* Not needed - only trans and sites roots checks left out 
-(* Add easy blocking pairs, Iso checking of the siblings and partners is left out *)
-let match_sites t p =
-  let n_p =  nodes_site_child p 
-  and n_t = of_int t.n in
-  IntSet.fold (fun i acc ->
-    Iso.union acc (IntSet.fold (fun j acc ->
-      if (IntSet.cardinal (partners t j)) < (IntSet.cardinal (partners p i)) then
-	((*printf "match_sites (%d,%d)\n" i j;*)
-	Iso.add (i,j) acc)
-      else
-	acc) n_t Iso.empty)) n_p Iso.empty
+(* Only ctrl and deg check *)
+let match_sites t p n_t n_p =
+  let (clauses, b) =
+    Sparse.fold (fun i _ (acc, block) -> 
+      let c = 
+	match Nodes.find n_p i with 
+	| Ctrl.Ctrl (c, _) -> c in
+      let js = List.filter (fun j ->
+	(compat_deg (indeg t j) (indeg p i))) (Nodes.find_all n_t c) in
+      match js with
+      | [] -> (acc, i :: block)
+      | _ -> begin
+	let clause = List.map (fun j ->
+	  (i, j)) js in
+	(clause :: acc, block)
+      end) p.ns ([], []) in
+  (clauses, block_rows t b)
+    
+let match_roots t p n_t n_p =
+  let (clauses, b) =
+    Sparse.fold (fun _ i (acc, block) -> 
+      let c = 
+	match Nodes.find n_p i with 
+	| Ctrl.Ctrl (c, _) -> c in
+      let js = List.filter (fun j ->
+	(compat_deg (outdeg t j) (outdeg p i))) (Nodes.find_all n_t c) in
+      match js with
+      | [] -> (acc, i :: block)
+      | _ -> begin
+	let clause = List.map (fun j ->
+	  (i, j)) js in
+	(clause :: acc, block)
+      end) p.rn ([], []) in
+  (clauses, block_rows t b)
 
+(* TO DO 
+   - Sites
+   - Roots
+   - Trans *)
+
+(*
 let match_roots t p =
   let n_p =  nodes_root_par p 
   and n_t = of_int t.n in

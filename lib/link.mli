@@ -187,15 +187,19 @@ val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
 
 (** {6 Misc} *)
 
-(** [close_edges l]  returns a pair [(h, i)] in which [h] is the set of 
+(** [closed_edges l]  returns a pair [(h, i)] in which [h] is the set of 
     closed edges of [l] and [i] is an iso between the indices of [l] and [h]. *)
-val close_edges : Lg.t -> Lg.t
+val closed_edges : Lg.t -> Lg.t
 
-(*val match_edges : Lg.t -> Lg.t -> Base.Iso.t -> ((int * int) * Base.Iso.t) list * (int * int * int * int) list * Base.Iso.t*)
+(* Closed edges in the pattern can be matched only to closed edges in the 
+   target. The output is a list of clauses and a list of blocked rows 
+   (list of negated literals). *)
+val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+                  Cnf.m_var list list * Cnf.m_var list list
 
 (*val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t*)
 
-val match_peers : Lg.t -> Lg.t -> int -> int -> (int * int * int * int) list 
+(* val match_peers : Lg.t -> Lg.t -> int -> int -> (int * int * int * int) list  *)
 
 (*val match_link_pairs : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list*)
 

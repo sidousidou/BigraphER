@@ -132,7 +132,7 @@ let _ =
 		    ];
 	  res = [ ];
 	};
-	(*(* TEST 2 *)
+	(* TEST 2 *)
 	{ target = List.assoc "T2" bgs;
 	  pattern = List.assoc "P3" bgs;
 	  exp_res = [ ];
@@ -372,7 +372,7 @@ let _ =
 	  pattern = List.assoc "P37" bgs;
 	  exp_res = [ ];
 	  res = [ ];
-	};*)
+	};
       ]
     with
       | Not_found -> failwith ("Error loading tests.\n") in

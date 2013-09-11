@@ -406,13 +406,6 @@ let decomp t p i_n i_e i_c i_d =
   let i_e_norm = Iso.empty () in
   Iso.iter (fun a b ->
     Iso.add i_e_norm (Iso.find iso_p a)  (Iso.find iso_t b)) i_e;
-  (* construct equivalence classes on p's faces *)
-  (*and eq_out, eq_in = eq_names p in*) 
-  (*printf "eq_out: {%s}\neq_in: {%s}\n" 
-    (String.concat "," (List.map (fun x -> string_of_face x) (Face_set.elements eq_out)))
-    (String.concat "," (List.map (fun x -> string_of_face x) (Face_set.elements eq_in)));*)
-  (* Powerset construction: transform p -> t into t -> {p} *)
-  (*and h = hash_of_iso (inverse i_e) in*) 
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
   let vect = Array.mapi (fun n e ->
     let p_d = Ports.filter (fun (x, _) -> 
@@ -474,10 +467,44 @@ let levels l ps =
        Face.add (Nam (sprintf "n%d_%d" n p)) acc) lvl Face.empty))
 	  ([], inner l) (List.rev ps))) 
 
-let close_edges l = Lg.filter is_closed l
+let closed_edges l = Lg.filter is_closed l
+
+(* Two edges are compatible if they have the same number of ports with equal
+   control. *)
+let compat_edges e_p e_t n_t n_p =
+  Ports.types e_p.p n_p = Ports.types e_t.p n_t
+
+(* Closed edges in p are matched to closed edges in t. Controls are checked to
+   exclude incompatible pairs. *)
+let match_edges t p n_t n_p =
+  let closed_t = closed_edges t in
+  let (clauses, _, blocked) = 
+    Lg.fold (fun e_p (acc, i, block) ->
+      let clause = 
+	fst (Lg.fold (fun e_t (acc, j) ->
+	  if compat_edges e_p e_t n_t n_p then ((i, j) :: acc, j + 1)
+	  else (acc, j + 1)) closed_t ([], 0)) in
+      match clause with
+      | [] -> (acc, i + 1, i :: block) (* No compatible edges found *)
+      | _ -> (clause :: acc, i + 1, block)) (closed_edges p) ([], 0, []) 
+  and j_t = IntSet.of_int (Lg.cardinal closed_t) in
+  (* Blocking pairs *)
+  let res = 
+    List.map (fun i ->
+      IntSet.fold (fun j acc ->
+	(i, j) :: acc) j_t []) blocked in
+  (clauses, res)
+
+(* Two closed edges can be matched only if their port sets are isomorphic. 
+   Edge pairs are computed by match_edges. 
+   (i, j) <=> (iso_0 or iso_1 or ... or iso_n)
+   iso_i = (ij and ij and ij)
+*)
+
+(* port sets in open edges have to be compatible: peers are preserved. *)
 
 (* does edge e contain ports from node i? *)
-let is_linked_to e i = 
+(*let is_linked_to e i = 
   Ports.exists (fun (x, _) -> x = i) e.p
 
 (* nodes linked via some hyperedge to node i *)
@@ -509,15 +536,12 @@ let match_peers t p m n =
       Quad.add (i, j, a, b) acc) s Quad.empty
   and (v_t, v_p) = (IntSet.of_int m, IntSet.of_int n) in
   let pairs_t = non_peers_pairs t v_t in
-  (*printf "non_peers_pairs in t = {%s}.\n" (String.concat ", " (List.map (fun (a, b) ->
-  sprintf "(%d,%d)" a b) (Iso.elements pairs_t)));*)
-  Quad.elements (IntSet.fold (fun i acc0 ->
+   Quad.elements (IntSet.fold (fun i acc0 ->
     Quad.union acc0 (IntSet.fold (fun j acc1 ->
       if are_peers p i j then
-	((*printf "%d and %d are peers.\n" i j;*)
 	Quad.union acc1 (aux i j  pairs_t))
       else acc1) v_t Quad.empty)) v_p Quad.empty)
-   
+*)   
 (*let open_edges l = Lg.diff l (close_edges l)*)
 (*
 (* generates a list of unmatchable nodes = blocking pairs *)
@@ -640,89 +664,3 @@ let match_link_pairs a b n_a n_b =
 *)   
 (*let is_match_valid t p iso =
   true*)
-
-(* DEBUG *)
-(*let _ =
-  let aux = 
-    List.fold_left (fun s f -> Face_set.add f s) Face_set.empty in
-  let a = aux [parse_face ["a"]; parse_face ["b"]; parse_face ["c"; "d"]]
-  and b = aux [parse_face ["a"; "b" ; "c"]; parse_face ["d"]] in
-  let res1 = equiv_class a b in
-  printf "equiv_class:\n";
-  Face_set.iter (fun f -> printf "%s\n" (string_of_face f)) res1;
-  let c = aux [parse_face ["a"; "b"]; parse_face ["c"]; parse_face ["d"]]
-  and d = aux [parse_face ["a"]; parse_face ["b"; "c"]; parse_face ["d"]] in
-  let res2 = equiv_class c d in
-  printf "equiv_class:\n";
-  Face_set.iter (fun f -> printf "%s\n" (string_of_face f)) res2;
-  let parse =
-   List.fold_left (fun s f -> Lg.add f s) Lg.empty
-  and parse_p =
-   List.fold_left (fun s f -> Ports.add f s) Ports.empty in
-  let a = parse
-    [{o = parse_face ["a";"b";"c"];
-      i = parse_face ["a"];
-      p = parse_p [(0,0);(0,1)]}; 
-     {o = parse_face ["d"];
-      i = parse_face ["b"];
-      p = parse_p [(1,0)]};
-     {o = parse_face [];
-      i = parse_face ["c";"d"];
-      p = parse_p []};
-     {o = parse_face ["e"];
-      p = parse_p [(2,0)];
-      i = parse_face []}]
-  and b  = parse
-    [{i = parse_face ["a"];
-      o = parse_face ["a";"b";"c"];
-      p = parse_p [(0,0)]};
-     {i = parse_face [];
-      o = parse_face ["d"];
-      p = parse_p []};
-     {i = parse_face [];
-      o = parse_face [];
-      p = parse_p [(0,1);(0,2)]} ] in
-  printf "a = \n%s\n" (string_of_lg a);
-  printf "b = \n%s\n" (string_of_lg b);
-  printf "comp:\n%s\n" (string_of_lg (comp a b 3));
-  printf "tens:\n%s\n" (string_of_lg (ppar a b 3));
-  let t = parse 
-    [{o = parse_face ["x"];
-      i = parse_face [];
-      p = parse_p [(0,0);(3,0);(4,0);(5,0)]};
-     {o = parse_face [];
-      i = parse_face [];
-      p = parse_p [(1,0);(7,0)]};
-     {o = parse_face [];
-      i = parse_face [];
-      p = parse_p [(2,0)]};
-     {o = parse_face [];
-      i = parse_face [];
-      p = parse_p [(6,0)]}]
-  and p = parse
-    [{o = parse_face ["x"];
-      i = parse_face [];
-      p = parse_p [(0,0)]}; 
-     {o = parse_face ["y"];
-      i = parse_face [];
-      p = parse_p [(2,0)]}; 
-     {o = parse_face [];
-      i = parse_face ["z"];
-      p = parse_p [(1,0)]};] in
-  printf "t = \n%s\n" (string_of_lg t);
-  printf "p = \n%s\n" (string_of_lg p); 
-  let (c, d, id) =
-    decomp t p (of_list [(0,0);(1,1);(2,4)]) (of_list [(0,3);(1,3);(2,0)])
-      (of_list []) (of_list [(2, 0);(3, 1);(5, 2);(6, 3);(7, 4)]) in
-  printf "c = \n%s\n" (string_of_lg c);
-  printf "d = \n%s\n" (string_of_lg d);
-  printf "id = \n%s\n" (string_of_lg id);
-  printf "re-comp =\n%s\n" (string_of_lg 
-    (comp c (comp (tens id  p 0) d 3) 0));
-  let (w, ls) = levels t
-    [parse_p [(0,0)]; parse_p [(1,0);(2,0)]; parse_p [(3,0);(4,0);(5,0)];
-    parse_p [(6,0);(7,0)]] in
-  printf "wiring = \n%s\n" (string_of_lg w);
-  List.iter (fun l -> printf "level =\n%s\n" (string_of_lg l)) ls;      
-*)   
-  

@@ -173,7 +173,7 @@ sig
   (** [find ns i] gives the control of node [i] in node set [ns]. *)
   val find : t -> int -> Ctrl.t 
 
-  (** [find_all ns g] returns the list of nodes of control [c] in node set [ns]. *)
+  (** [find_all ns c] returns the list of nodes of control [c] in node set [ns]. *)
   val find_all : t -> string -> int list 
 
   (** [tens n0 n1] returns the disjoint union of name sets [n0] and [n1]. *)
@@ -239,8 +239,8 @@ sig
 	(*     the same node. Example: [(1,0);(1,1);(2,0)] -> [1;2] *\) *)
 	(* val card_list : t -> int list *)
 
-	(* (\** Construct a list of control strings.*\) *)
-	(* val types : t -> Nodes.t -> string list *)
+	(** Construct a list of control strings. *)
+	val types : t -> Nodes.t -> string list
 
 	(** [to_IntSet ps] returns a set of node identifiers form a set of ports.*)
 	val to_IntSet : t -> IntSet.t

@@ -64,7 +64,6 @@ let parse lines =
     l = l;
   }
 
-
 let id (Inter (m, i)) =
   { n = Nodes.empty ();
     p = Place.elementary_id m;
@@ -235,7 +234,7 @@ let get_dot b ide =
           sprintf "o%s" n) (Link.Face.elements f)) in
       match ss with
        | [] -> ""
-       | _ -> sprintf "{rank=source; %s};\n" (String.concat "; " ss)
+       | _ -> sprintf "{ rank=source; %s };\n" (String.concat "; " ss)
       else
         let xs =
         (List.map (fun i ->
@@ -244,7 +243,7 @@ let get_dot b ide =
           sprintf "i%s" n) (Link.Face.elements f)) in
         match xs with
          | [] -> ""
-         | _ -> sprintf "{rank=sink; %s};\n" (String.concat "; " xs) in 
+         | _ -> sprintf "{ rank=sink; %s };\n" (String.concat "; " xs) in 
   let (inner_shp, outer_shp, hyp_shp, link_adj) = Link.get_dot b.l
   and (roots_shp, sites_shp, node_ranks, place_adj) = Place.get_dot b.p
   and nodes_shp = Nodes.to_dot b.n
@@ -422,8 +421,16 @@ let iso_iter m iso solver =
   Iso.iter (fun i j -> 
     solver#add_clause [(neg_lit m.(i).(j))]) iso
 
+(* Convert a list of pairs encoding a clause to minisat. *)
+let to_minisat v =
+  List.map (fun (i, j) -> pos_lit v.(i).(j)) 
+
+let block_rows solver v =
+  List.iter (List.iter (fun (i, j) ->
+    solver#add_clause [neg_lit v.(i).(j)]))
+
 let add_c4 t p t_n p_n solver v =
-  let (c4_l, n_z) = Place.match_list t p t_n p_n in
+  let (c4_l, b, n_z) = Place.match_list t p t_n p_n in
   let z = Array.make n_z 0 in
   for i = 0 to n_z - 1 do
     z.(i) <- solver#new_var 
@@ -433,23 +440,37 @@ let add_c4 t p t_n p_n solver v =
       pos_lit z.(i)) z_l);
     List.iter (fun (k, (i, j)) ->
       solver#add_clause [neg_lit z.(k); pos_lit v.(i).(j)]) disjuncts) c4_l;
+  block_rows solver v b;
   z
-
+  
 let add_c5 t p t_n p_n solver v =
-  let to_minisat c =
-    List.map (fun (i, j) -> pos_lit v.(i).(j)) c in
+  let (clauses_l, b_l) = Place.match_leaves t p t_n p_n
+  and (clauses_o, b_o) = Place.match_orphans t p t_n p_n in
   List.iter (fun clause -> 
-    solver#add_clause (to_minisat clause)) 
-    ((Place.match_leaves t p t_n p_n) @ (Place.match_orphans t p t_n p_n))
+    solver#add_clause (to_minisat v clause)) (clauses_l @ clauses_o);
+  block_rows solver v (b_l @ b_o)
 
-(*isos from pattern(col) to target(col)*)
+let add_c6 t p t_n p_n solver v =
+  let (clauses_s, b_s) = Place.match_sites t p t_n p_n
+  and (clauses_r, b_r) = Place.match_roots t p t_n p_n in
+  List.iter (fun clause -> 
+    solver#add_clause (to_minisat v clause)) (clauses_s @ clauses_r);
+  block_rows solver v (b_s @ b_r)
+
+let add_c7 t p t_n p_n solver v =
+  let (clauses, b) = Link.match_edges t p t_n p_n in
+  List.iter (fun clause -> 
+    solver#add_clause (to_minisat v clause)) clauses;
+  block_rows solver v b
+
+(* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =
   let solver = new solver
   and (m, n) = (t.p.Place.n, p.p.Place.n) 
   and (e, f) = 
-    (Link.Lg.cardinal (Link.close_edges p.l),
-     Link.Lg.cardinal (Link.close_edges t.l)) in
-  let t_trans = Sparse.trans (t.p.Place.nn) in 
+    (Link.Lg.cardinal (Link.closed_edges p.l),
+     Link.Lg.cardinal (Link.closed_edges t.l)) in
+  let t_trans = Sparse.trans (t.p.Place.nn) in
   (* Iso between nodes *)
   let v = init_vars n m solver
   (* Iso between closed edges *)
@@ -461,19 +482,26 @@ let aux_match t p  =
   (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
      Return array of auxiliary vars. *)
   let z = add_c4 t.p p.p t.n p.n solver v in
-  (* Add C5: orpahns and leaves matching in the place graphs. *)
+  (* Add C5: orphans and leaves matching in the place graphs. *)
   add_c5 t.p p.p t.n p.n solver v;
-
+  (* Add C6: sites and roots in the place graphs. *)
+  add_c6 t.p p.p t.n p.n solver v;
+  (* Add C7: edges in the pattern are matched to edges in the target. *)
+  add_c7 t.l p.l t.n p.n solver w;
   (*List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
-    ((*(Place.match_list t.p p.p) @ *) (Link.match_peers t.l p.l m n));*)
+    ((*(Place.match_list t.p p.p) @ *) 
+
+ ---> (Link.match_peers t.l p.l m n));*)
 
   (* Add blocking pairs *)
   (*let (iso_ports, constraint_e, block_e_e) = 
-    Link.match_edges t.l p.l block_ctrl
+    
+---> Link.match_edges t.l p.l block_ctrl
   and (block_l_n, block_l_e) = 
-    Link.match_links t.l p.l in*)   
+    
+---> Link.match_links t.l p.l in*)   
 
   (*let blocking_pairs_v = 
     (*Iso.union block_l_n*) block_ctrl in*)
@@ -659,66 +687,3 @@ let compare a b =
       | v -> v 
     end
   | v -> v 
-
-(* DEBUG *)
-(*let _ =
-  let parse =
-    List.fold_left (fun s f -> Link.Lg.add f s) Link.Lg.empty
-  and parse_p =
-    List.fold_left (fun s f -> Ports.add f s) Ports.empty
-  and parse_n  = 
-    List.fold_left (fun s (i,c,a) -> Nodes.add (i, Ctrl(c,a)) s) Nodes.empty in
-  (* Example from page 82 *)
-  let t = {
-    p = {Place.r = 1; Place.n = 8; Place.s = 2; Place.m = Matrix.make 9 10};
-    l = parse [{Link.o = Link.parse_face ["x"];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(0,0);(3,0);(4,0);(5,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(1,0);(7,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(2,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(6,0)]}];
-    n = parse_n [(0, "A", 1); (1, "B", 1); (2, "B", 1);
-                 (3, "A", 1); (4, "A", 1); (5, "A", 1);
-                 (6, "B", 1); (7, "B", 1)];
-    } in
-  t.p.Place.m.Matrix.m.(0).(0) <- true;
-  t.p.Place.m.Matrix.m.(1).(1) <- true;
-  t.p.Place.m.Matrix.m.(1).(2) <- true;
-  t.p.Place.m.Matrix.m.(1).(3) <- true;
-  t.p.Place.m.Matrix.m.(2).(4) <- true;
-  t.p.Place.m.Matrix.m.(3).(5) <- true;
-  t.p.Place.m.Matrix.m.(4).(6) <- true;
-  t.p.Place.m.Matrix.m.(5).(7) <- true;
-  t.p.Place.m.Matrix.m.(6).(7) <- true;
-  t.p.Place.m.Matrix.m.(7).(9) <- true;
-  t.p.Place.m.Matrix.m.(8).(8) <- true;
-  printf "target:\n%s\n" (string_of_bg t);
-  printf "get_dot:\n%s\n" (get_dot t "target");
-  let p = {
-    p = {Place.r = 1; Place.n = 3; Place.s = 2; Place.m = Matrix.make 4 5};
-    l = parse [{Link.o = Link.parse_face ["x"];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(0,0)]};
-               {Link.o = Link.parse_face ["y"];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(2,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face ["z"];
-                Link.p = parse_p [(1,0)]}];
-    n = parse_n [(0, "A", 1); (1, "B", 1); (2, "A", 1)];
-    } in
-  p.p.Place.m.Matrix.m.(0).(0) <- true;
-  p.p.Place.m.Matrix.m.(1).(1) <- true;
-  p.p.Place.m.Matrix.m.(1).(3) <- true;
-  p.p.Place.m.Matrix.m.(2).(2) <- true;
-  p.p.Place.m.Matrix.m.(3).(4) <- true;
-  printf "pattern:\n%s\n" (string_of_bg p);
-  printf "get_dot:\n%s\n" (get_dot p "pattern");
-*)
-
