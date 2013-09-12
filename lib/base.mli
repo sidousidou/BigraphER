@@ -251,6 +251,10 @@ sig
 	(** [sub_multiset a b] returns [true] if [a] is a submultiset of [b]. 
 	    Port identifiers are ignored. *)  
 	val sub_multiset : t -> t -> bool  
+
+	(** Construct a list of possible node assignments starting from two
+	compatible port sets. *)
+	val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.m_var list list  
 end
 
 (* 

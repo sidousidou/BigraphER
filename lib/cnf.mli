@@ -5,3 +5,8 @@ type z_var = int
     Output : (Z1 or Z2 or ... or Zn) and (!Z1 or X1) and (!Z1 or Y1) and ... 
              and (!Zn or Xn) and (!Zn or Yn) *)
 val tseitin : (m_var * m_var) list -> int -> ((z_var list * (z_var * m_var) list) * int)
+
+(** Input :  M <-> ((X0 or X1 or ...) and (Y0 or Y1 or ...) ...)
+    Output : (M or !X0) and (M or !X1) and ... and (M or !Y0) 
+             (!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ... *)
+val iff : m_var -> m_var list list -> ((m_var * m_var) list * m_var list list) 

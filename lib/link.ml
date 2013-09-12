@@ -495,12 +495,18 @@ let match_edges t p n_t n_p =
 	(i, j) :: acc) j_t []) blocked in
   (clauses, res)
 
-(* Two closed edges can be matched only if their port sets are isomorphic. 
-   Edge pairs are computed by match_edges. 
-   (i, j) <=> (iso_0 or iso_1 or ... or iso_n)
-   iso_i = (ij and ij and ij)
-*)
-
+(* Nodes of matched edges are isomorphic *)
+let match_ports t p n_t n_p clauses =
+  let closed_t = Array.of_list (List.map (fun e -> 
+    e.p) (Lg.elements (closed_edges t))) 
+  and closed_p = Array.of_list (List.map (fun e -> 
+    e.p) (Lg.elements (closed_edges p))) in
+  List.fold_left (fun (acc_p, acc_c) (e_i, e_j) ->
+    let formulas = 
+      Ports.compat_list closed_p.(e_i) closed_t.(e_j) n_p n_t in
+    let (ps, cs) = Cnf.iff (e_i, e_j) formulas in
+    (ps @ acc_p, cs @ acc_c)) ([], []) (List.flatten clauses) 
+    
 (* port sets in open edges have to be compatible: peers are preserved. *)
 
 (* does edge e contain ports from node i? *)

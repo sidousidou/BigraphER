@@ -34,7 +34,6 @@ let _write_string s name path verb =
   if verb then printf "%d bytes written\n" (String.length s)
       
 let write_big b n path verb =
-  printf "%s:\n%s\n%s\n" n (string_of_bg b) (get_dot b n); 
   _write_svg (get_dot b n) n path verb
 
 let write_ts ts n path verb =

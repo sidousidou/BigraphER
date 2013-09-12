@@ -4,6 +4,14 @@
    (not z or a) (not z or b) ... *)
 type m_var = int * int   (* variables stored in a matrix *)
 type z_var = int         (* auxiliary variables stored in a vector *)
+
 let tseitin l n =
      List.fold_left (fun ((acc_z, acc), (i : z_var)) ((a : m_var), (b : m_var)) ->
       ((i :: acc_z, (i, a) :: (i, b) :: acc), i + 1)) (([], []), n) l
+
+let iff m clauses =
+  (* a negated *)
+  let pairs = List.map (fun a -> (m, a)) (List.flatten clauses)
+  (* m negated *)
+  and l = List.map (fun c -> m :: c) clauses in
+  (pairs, l)

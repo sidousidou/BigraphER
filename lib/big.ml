@@ -439,7 +439,9 @@ let add_c4 t p t_n p_n solver v =
     solver#add_clause (List.map (fun i ->
       pos_lit z.(i)) z_l);
     List.iter (fun (k, (i, j)) ->
-      solver#add_clause [neg_lit z.(k); pos_lit v.(i).(j)]) disjuncts) c4_l;
+      solver#add_clause [ neg_lit z.(k); 
+			  pos_lit v.(i).(j)
+			]) disjuncts) c4_l;
   block_rows solver v b;
   z
   
@@ -461,7 +463,19 @@ let add_c7 t p t_n p_n solver v =
   let (clauses, b) = Link.match_edges t p t_n p_n in
   List.iter (fun clause -> 
     solver#add_clause (to_minisat v clause)) clauses;
-  block_rows solver v b
+  block_rows solver v b;
+  clauses
+
+let add_c8 t p t_n p_n clauses solver v w =
+  let (pairs, cs) = Link.match_ports t p t_n p_n clauses in
+  List.iter (fun ((e_i, e_j), (i, j)) ->
+    solver#add_clause [ pos_lit w.(e_i).(e_j) ;
+			neg_lit v.(i).(j)
+		      ]) pairs;
+  List.iter (fun c ->
+    let (m_i, m_j) = List.hd c
+    and vars = List.map (fun (i, j) -> pos_lit v.(i).(j)) (List.tl c) in 
+    solver#add_clause ((neg_lit w.(m_i).(m_j)) :: vars)) cs
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =
@@ -487,11 +501,15 @@ let aux_match t p  =
   (* Add C6: sites and roots in the place graphs. *)
   add_c6 t.p p.p t.n p.n solver v;
   (* Add C7: edges in the pattern are matched to edges in the target. *)
-  add_c7 t.l p.l t.n p.n solver w;
+  let clauses = add_c7 t.l p.l t.n p.n solver w in
+  (* Add C8: ports of matched closed edges have to be isomorphic. *)
+  add_c8 t.l p.l t.n p.n clauses solver v w;
+   
   (*List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
     solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
     ((*(Place.match_list t.p p.p) @ *) 
+    
 
  ---> (Link.match_peers t.l p.l m n));*)
 

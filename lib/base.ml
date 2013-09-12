@@ -321,7 +321,7 @@ module Ports = struct
     iter (fun (i, _) ->
       Hashtbl.add h i (aux (Nodes.find n i))) p;
     let l = 
-      fst (Hashtbl.fold (fun i c (acc, marked) ->
+      fst (Hashtbl.fold (fun i _ (acc, marked) ->
       if List.mem i marked then (acc, marked)
       else begin
 	let s =
@@ -352,6 +352,34 @@ module Ports = struct
   let sub_multiset a b =
     subset (norm a) (norm b)
 
+  (* Compute the arities of the nodes within a port set. The output is an iso 
+     node -> arity *)
+  let arities p =
+    let h = Hashtbl.create (cardinal p) in
+    iter (fun (i, p) -> Hashtbl.add h i p) p;
+    let iso = Iso.empty () in 
+    ignore (Hashtbl.fold (fun i _ marked ->
+      if IntSet.mem i marked then marked
+      else begin
+	Iso.add iso i (List.length (Hashtbl.find_all h i));
+	IntSet.add i marked
+      end) h IntSet.empty);
+    iso
+
+  let compat_list a b n_a n_b =
+    let ar_a = arities a
+    and ar_b = arities b
+    and i_a = to_IntSet a 
+    and i_b = to_IntSet b in
+    IntSet.fold (fun i acc ->
+      let ar_i = Iso.find ar_a i
+      and c_i = Nodes.find n_a i in
+      let pairs =
+	List.map (fun j -> (i, j)) (IntSet.elements (IntSet.filter (fun j ->
+	  (ar_i = (Iso.find ar_b j)) && 
+	    (Ctrl.(=) c_i (Nodes.find n_b j))) i_b)) in 
+      pairs :: acc) i_a []
+      
 end   
   
 (*       
