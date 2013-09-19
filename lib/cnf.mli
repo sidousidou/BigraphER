@@ -10,3 +10,6 @@ val tseitin : (m_var * m_var) list -> int -> ((z_var list * (z_var * m_var) list
     Output : (M or !X0) and (M or !X1) and ... and (M or !Y0) 
              (!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ... *)
 val iff : m_var -> m_var list list -> ((m_var * m_var) list * m_var list list) 
+
+(* (\** Commander variable encoding: at most one true *\) *)
+(* val at_most_one: m_var list -> m_var list list *)

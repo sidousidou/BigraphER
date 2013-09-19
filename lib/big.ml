@@ -415,8 +415,9 @@ let (*rec*) filter_loop solver t p v n m w e f t_trans =
 	      filter_loop solver t p v n m w e f t_trans
 	    end*)   
 	end 
-	  
-(* Aux function *)
+
+(*********************************************************************)	  
+(* Aux functions *)
 let iso_iter m iso solver =
   Iso.iter (fun i j -> 
     solver#add_clause [(neg_lit m.(i).(j))]) iso
@@ -428,6 +429,8 @@ let to_minisat v =
 let block_rows solver v =
   List.iter (List.iter (fun (i, j) ->
     solver#add_clause [neg_lit v.(i).(j)]))
+
+(*********************************************************************)
 
 let add_c4 t p t_n p_n solver v =
   let (c4_l, b, n_z) = Place.match_list t p t_n p_n in

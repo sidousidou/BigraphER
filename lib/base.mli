@@ -235,10 +235,6 @@ sig
 	(** [of_nodes ns] transform a set of nodes into a set of ports. *)
 	val of_nodes : Nodes.t -> t
 
-	(* (\** Construct a list of the cardinalities of the ports belonging to *)
-	(*     the same node. Example: [(1,0);(1,1);(2,0)] -> [1;2] *\) *)
-	(* val card_list : t -> int list *)
-
 	(** Construct a list of control strings. *)
 	val types : t -> Nodes.t -> string list
 
@@ -251,6 +247,10 @@ sig
 	(** [sub_multiset a b] returns [true] if [a] is a submultiset of [b]. 
 	    Port identifiers are ignored. *)  
 	val sub_multiset : t -> t -> bool  
+
+	(** Construct an isomorphism from nodes to number of port occurrences
+	    within a port set. *)  
+	val arities : t -> Iso.t
 
 	(** Construct a list of possible node assignments starting from two
 	compatible port sets. *)

@@ -35,23 +35,6 @@ module Lg = Set.Make (struct
   let compare = edg_compare
 end)
 
-module Quad = 
-  Set.Make(struct 
-    type t = (int * int * int * int)
-    let compare = fun (a, b, c, d) (x, y, z, w) ->
-      match a - x with
-      | 0 -> begin
-	match b - y with
-	| 0 -> begin
-	  match c - z with
-	  | 0 -> d - w
-	  | v -> v
-	end
-	| v -> v
-      end
-      | v -> v
-  end)
-
 (* tensor product fails (inner common names, outer common names)*)
 exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
 
@@ -469,6 +452,8 @@ let levels l ps =
 
 let closed_edges l = Lg.filter is_closed l
 
+let open_edges l = Lg.filter (fun e -> not (is_closed e)) l
+
 (* Two edges are compatible if they have the same number of ports with equal
    control. *)
 let compat_edges e_p e_t n_t n_p =
@@ -506,7 +491,83 @@ let match_ports t p n_t n_p clauses =
       Ports.compat_list closed_p.(e_i) closed_t.(e_j) n_p n_t in
     let (ps, cs) = Cnf.iff (e_i, e_j) formulas in
     (ps @ acc_p, cs @ acc_c)) ([], []) (List.flatten clauses) 
+
+(* Is p sub-hyperedge of t? *)
+let sub_edge p t n_t n_p =
+  let types_p = Ports.types p.p n_p
+  and types_t = Ports.types t.p n_t in
+  (* match with the minimum type and remove *)
+  let rec find_min t ps_t acc =
+    match ps_t with
+    | [] -> raise Not_found
+    | t' :: rs -> begin
+      if Str.string_match (Str.regexp_string t) t' 0 then
+	(printf "%s < %s\n" t t';
+	 acc @ rs)
+      else find_min t rs (t' :: acc) 
+    end in
+  (* for each type in p find the minimum matching type in t *)
+  let rec scan_p ps_p ps_t =
+    match ps_p with
+    | [] -> true
+    | t :: rs -> begin
+      try
+	let ps_t' = find_min t ps_t [] in
+	scan_p rs ps_t'
+      with
+      | Not_found -> false 
+    end in
+  scan_p types_p types_t
+
+(* return a list of clauses on row i of matrix t. Cnf.iff will process each
+   element *)
+let compat_clauses e_p i t h_t n_t n_p =
+  let p = Ports.to_IntSet e_p.p 
+  and iso_p = Ports.arities e_p.p in
+  IntSet.fold (fun j acc ->
+    let e_t = Hashtbl.find h_t j in
+    let iso_t = Ports.arities e_t.p in
+    let clauses : Cnf.m_var list list = 
+      IntSet.fold (fun v acc ->
+	let c_v = Nodes.find n_p v 
+	and arity_v = Iso.find iso_p v 
+	and p_t = Ports.to_IntSet e_t.p in	    
+	(* find nodes in e_t that are compatible with v *)
+	let compat_t = 
+	  IntSet.filter (fun u ->
+	    (Ctrl.(=) c_v (Nodes.find n_t u)) &&
+	      (arity_v <= (Iso.find iso_t u))) p_t in
+	let nodes_assign =
+	 IntSet.fold (fun j acc -> (v, j) :: acc) compat_t [] in
+	nodes_assign :: acc) p [] in
+    ((i, j), clauses) :: acc) t []
+
+(* Peers in the pattern are peers in the target. Auxiliary variables are
+   introduced to model open edges matchings. They are stored in matrix t *)
+let match_peers t p n_t n_p =
+  let open_p = Lg.filter (fun e ->
+    not (Ports.is_empty e.p)) (open_edges p)
+  and non_empty_t = Lg.filter (fun e ->
+    not (Ports.is_empty e.p)) t in
+  let h = Hashtbl.create (Lg.cardinal non_empty_t) in
+  ignore (Lg.fold (fun e i ->
+    Hashtbl.add h i e;
+    i + 1) non_empty_t 0);
+  fst (Lg.fold (fun e_p (acc, i) ->
+    (* find compatible edges in the target *)
+    let (_, compat_t) = 
+      Lg.fold (fun e_t (j, acc) -> 
+	if sub_edge e_p e_t n_t n_p then (j + 1, IntSet.add j acc)
+	else (j + 1, acc)) non_empty_t (0, IntSet.empty) in
+    (* generate possible node matches for every edge assignment. *)
+    let clauses = 
+      compat_clauses e_p i compat_t h n_t n_p in
+    (clauses @ acc, i + 1)) open_p ([], 0))
     
+(* Auxiliary variables for matches open_p -> compat_t 
+   Total function: at least one true on every row and 
+                   at most a true on every row *)
+
 (* port sets in open edges have to be compatible: peers are preserved. *)
 
 (* does edge e contain ports from node i? *)
