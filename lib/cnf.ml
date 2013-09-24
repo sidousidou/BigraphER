@@ -96,8 +96,8 @@ let rec _cmd_init t n g j =
 let cmd_init (l : lit list) n g =
   _cmd_init (Leaf l) n g 0
 
-(* Boolean encoding of at least one true. Most common cases are hardcoded *)
-let rec _at_least l acc =
+(* Boolean encoding of at most one TRUE. Most common cases are hardcoded *)
+let rec _at_most l acc =
   match l with
   | [] | [_] -> acc
   | a :: [b] -> acc @ [(a, b)]
@@ -110,7 +110,64 @@ let rec _at_least l acc =
   | a :: b :: c :: d :: e :: [f] -> acc @ [ (a, b); (a, c); (a, d); (a, e); (a, f);
 					    (b, c); (b, d); (b, e); (b, f); (c, d);
 					    (c, e); (c, f); (d, e); (d, f); (e, f) ]
-  | x :: rest -> _at_least rest (acc @ (List.map (fun y -> (x, y)) rest)) 
+  | x :: rest -> _at_most rest (acc @ (List.map (fun y -> (x, y)) rest)) 
 
-let at_least l =
- List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_least l []) 
+let at_most l =
+ List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_most l []) 
+
+(* Scan the tree and produce constraints:
+   1. at most one TRUE in every group
+   2. if commander variable is TRUE then at least one TRUE in its group
+   3. if commander variable is FALSE then no TRUE in its group 
+   4. exactly one commander variable is true. *)
+
+(* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
+let rec _scan1 t acc =
+  match t with 
+  | Leaf g -> acc @ (at_most g)
+  | Node cmd_g -> 
+    let (cmd_vars, sub) = List.split cmd_g in
+    acc @ (at_most cmd_vars) @
+      (List.fold_left (fun acc t ->
+	acc @ (_scan1 t [])) [] sub) 
+
+(* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)		  
+let rec _scan2 t (acc : var list list) : (lit list * var list list) =
+  match t with
+  | Leaf g -> (g, acc)
+  | Node cmd_g ->
+    let cmd_vars = fst (List.split cmd_g)
+    and acc' = List.fold_left (fun res (cmd_v, sub) ->
+      let (g, acc) = _scan2 sub [] in
+      let clause =
+	(N_var cmd_v) :: (List.map (fun l -> P_var l) g) in	
+      res @ (clause :: acc)) [] cmd_g in
+    (cmd_vars, acc @ acc')
+
+(* (C, [X0, X1, X2]) -> [(C or !X0), (C or !X1), (C or !X2)] *)		  
+let rec _scan3 t acc : (lit list * (var * var) list) =
+    match t with
+  | Leaf g -> (g, acc)
+  | Node cmd_g ->
+    let cmd_vars = fst (List.split cmd_g)
+    and acc' = List.fold_left (fun res (cmd_v, sub) ->
+      let (g, acc) = _scan3 sub [] in
+      let clause =
+	List.map (fun l -> (P_var cmd_v, N_var l)) g in	
+      res @ clause @ acc) [] cmd_g in
+    (cmd_vars, acc @ acc')
+
+(* at_most and at least (disjunction of pos) on root*)
+
+let t_debug =
+  Node
+    [(V_lit 7,
+      Node
+	[(V_lit 3, Leaf [M_lit (0, 8); M_lit (0, 7); M_lit (0, 6)]);
+	 (V_lit 4, Leaf [M_lit (0, 5); M_lit (0, 4); M_lit (0, 3)]);
+	 (V_lit 5, Leaf [M_lit (0, 2); M_lit (0, 1); M_lit (0, 0)])]);
+     (V_lit 6,
+      Node
+	[(V_lit 0, Leaf [M_lit (0, 15); M_lit (0, 14)]);
+     (V_lit 1, Leaf [M_lit (0, 13); M_lit (0, 12)]);
+     (V_lit 2, Leaf [M_lit (0, 11); M_lit (0, 10); M_lit (0, 9)])])]
