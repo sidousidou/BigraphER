@@ -525,7 +525,7 @@ let block_rows t =
   let j_t = IntSet.of_int t.n in
   List.map (fun i ->
     IntSet.fold (fun j acc ->
-      (i, j) :: acc) j_t [])
+      (Cnf.N_var (Cnf.M_lit (i, j))) :: acc) j_t [])
 
 (* GPROF *)
 (* Optimisation 1:
@@ -543,24 +543,24 @@ let block_rows t =
 (*if ij then ab or cd or ... de ENCODING = (ic and jd) or ... (id and je)*)
 let match_list t p n_t n_p =
   let h = partition_edges t n_t in
-  let (clauses, b, z) = Sparse.fold (fun i j (acc, block, n) ->
+  let (clauses, b) = Sparse.fold (fun i j (acc, block) ->
     let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
     match (a, b) with 
     | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
       let t_edges = Hashtbl.find_all h (a_string, b_string) in
-      let (clause, z) = 
+      let clause = 
 	Cnf.tseitin (List.fold_left (fun acc (i', j') ->
 	  (* Degree check *)
 	  if (compat t p i' i) && (compat t p j' j) then
-	    ((i, i'), (j, j')) :: acc
-	  else acc) [] t_edges) n in
-      if z = n then begin
+	    (Cnf.P_var (Cnf.M_lit (i, i')), Cnf.P_var (Cnf.M_lit (j, j'))) :: acc
+	  else acc) [] t_edges) in
+      if List.length clause = 0 then begin
 	(* No compatible edges found *)
-	(acc, i :: j :: block, n) 
+	(acc, i :: j :: block) 
       end else 
-	(clause :: acc, block, z)
-    end) p.nn ([], [], 0) in
-  (clauses, block_rows t b, z)
+	(clause :: acc, block)
+    end) p.nn ([], []) in
+  (Cnf.to_matrix clauses, block_rows t b)
 
 (* EQUALITY functions *)
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)

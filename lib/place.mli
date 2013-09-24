@@ -142,27 +142,27 @@ val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 
 (** Compute constraint for matching edges in the DAG. *)
 val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                 ((Cnf.z_var list * (Cnf.z_var * Cnf.m_var) list) list * 
-		     Cnf.m_var list list * int)
+                 ((Cnf.var list * (Cnf.var * Cnf.var) list) list * 
+		     Cnf.var list list)
 
 val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-                   Cnf.m_var list list * Cnf.m_var list list
+                   Cnf.var list list * Cnf.var list list
 
 (** Dual of {!Place.match_leaves}. *)
 val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-                    Cnf.m_var list list * Cnf.m_var list list
+                    Cnf.var list list * Cnf.var list list
 
 val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                       Cnf.m_var list
+                       Cnf.var list
 
 val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                        Cnf.m_var list
+                        Cnf.var list
 
 val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.m_var list list * Cnf.m_var list list
+                  Cnf.var list list * Cnf.var list list
 
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.m_var list list * Cnf.m_var list list
+                  Cnf.var list list * Cnf.var list list
 
 (*
 (** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is

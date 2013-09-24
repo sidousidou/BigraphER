@@ -467,7 +467,8 @@ let match_edges t p n_t n_p =
     Lg.fold (fun e_p (acc, i, block) ->
       let clause = 
 	fst (Lg.fold (fun e_t (acc, j) ->
-	  if compat_edges e_p e_t n_t n_p then ((i, j) :: acc, j + 1)
+	  if compat_edges e_p e_t n_t n_p then 
+	    ((Cnf.P_var (Cnf.M_lit (i, j))) :: acc, j + 1)
 	  else (acc, j + 1)) closed_t ([], 0)) in
       match clause with
       | [] -> (acc, i + 1, i :: block) (* No compatible edges found *)
@@ -477,7 +478,7 @@ let match_edges t p n_t n_p =
   let res = 
     List.map (fun i ->
       IntSet.fold (fun j acc ->
-	(i, j) :: acc) j_t []) blocked in
+	(Cnf.N_var (Cnf.M_lit (i, j))) :: acc) j_t []) blocked in
   (clauses, res)
 
 (* Nodes of matched edges are isomorphic *)

@@ -253,56 +253,6 @@ sig
 	val arities : t -> Iso.t
 
 	(** Construct a list of possible node assignments starting from two
-	compatible port sets. *)
-	val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.m_var list list  
+	    compatible port sets. *)
+	val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.var list list  
 end
-
-(* 
-(** [match_nodes t p] returns an iso from nodes in [p] to nodes in [t] having
-     different controls.*)
-val match_nodes: Nodes.t -> Nodes.t -> Iso.t
-
-(** [multiset_of_ports p] returns an isomrphism with domain the cardinality of
-    the port set of a node and with co-domain the node indexes. *)
-val multiset_of_ports : Ports.t -> Iso.t
-
-(** [set_cart a b] returns the Cartesian product of sets [a] and [b] *)
-val set_cart : IntSet.t -> IntSet.t -> Iso.t
-*)
-(*
-(** {6 Combinatorics} *)
-
-(*
-(** [int_interval start delta end] computes a list of integers with first 
-    element [start], last element [end], and interval between the elements 
-    [delta].*)
-val int_interval : int -> int -> int -> int list
-
-(** [float_interval start delta end] computes a list of [float] with first 
-    element [start], last element [end], and interval between the elements 
-    [delta].*)
-val float_interval : float -> float -> float -> float list
-*)
-(*
-(** [par_comb l] computes all the possible combinations of the elements of [l].
-    For example, [par_comb \[\[1;2\];\[3\];\[5;6;1\]\]] gives [\[\[1; 3; 5\]; 
-    \[1; 3; 6\]; \[1; 3; 1\]; \[2; 3; 5\]; \[2; 3; 6\]; \[2; 3; 1\]\]].*)
-val par_comb : 'a list list -> 'a list list
-*)
-
-(** [sub_multi a b] returns [true] if multiset [b] is a sub-multiset of
-    multiset [a], [false] otherwise. Multisets are represented as ordered list 
-    with duplicates.*)
-val sub_multi : 'a list -> 'a list -> bool 
-
-(** [count l f] returns a list with the sum of rates of each element 
-    in [l]. Function [f] is a comparison function. *)
-val count : ('a * float) list -> ('a -> 'a -> bool) -> ('a * float) list 
-
-(** [cart_of_list l] returns the cartesian product of the elements of [l]. For instance,
-when input is [\[\[\[1\];\[2\]\]; \[\[3\];\[4\]\]\]] the result is 
-    [\[\[1;3\];\[1;4\];\[2;3\];\[2;4\]\]].*)
-val cart_of_list : 'a list list list -> 'a list list
-
-(**/**)
-*)

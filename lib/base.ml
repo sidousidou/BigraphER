@@ -356,77 +356,11 @@ module Ports = struct
       let ar_i = Iso.find ar_a i
       and c_i = Nodes.find n_a i in
       let pairs =
-	List.map (fun j -> (i, j)) (IntSet.elements (IntSet.filter (fun j ->
-	  (ar_i = (Iso.find ar_b j)) && 
-	    (Ctrl.(=) c_i (Nodes.find n_b j))) i_b)) in 
+	List.map (fun j -> 
+	  Cnf.P_var (Cnf.M_lit (i, j))) 
+	  (IntSet.elements (IntSet.filter (fun j ->
+	    (ar_i = (Iso.find ar_b j)) && 
+	      (Ctrl.(=) c_i (Nodes.find n_b j))) i_b)) in 
       pairs :: acc) i_a []
       
 end   
-  
-(*       
-(* sub multi-set *)
-(* inputs are ordered lists with dupicates *)
-(* is b a subset of a? *)
-let sub_multi a b =
-  let rec mem l e = 
-    match l with
-      | x :: xs -> if x = e then xs else mem xs e
-      | [] -> failwith "Not found"
-  in 
-  try
-    match List.fold_left mem a b with
-      | _ -> true
-  with
-  | _ -> false		
-
-let match_nodes t p =
-  Nodes.fold (fun (j, c) acc ->
-    Nodes.fold (fun (i, d) acc ->
-      if ctrl_equals c d then
-        acc
-      else Iso.add (i,j) acc) p acc) t Iso.empty
-
-(* Parameters handling *)
-(* Removes duplicates and add rates. 
-   Example: [(1, 1.5); (2, 0.5); (3, 1.); (2, 0.5); (1, 0.5)]
-         [(3, 1.); (2, 1.); (1, 2.)]  *)
-let count l f =
-  let rec mem (x, rho) xs f acc =
-    match xs with
-      | (r, lambda) :: rs -> (if f x r then mem (x, rho +. lambda) rs f acc
-	else mem (x, rho) rs f ((r, lambda) :: acc))
-      | [] -> ((x, rho), acc)
-  in let rec aux l f acc = 
-       match l with
-       | x :: xs -> (let (v, new_l) = mem x xs f []
-		     in aux new_l f (v :: acc))
-       | [] -> acc
-     in aux l f [] 
-
-(* cartesian product *)
-let rec cart a b res = 
-  match a with
-    | [] -> res 
-    | x  :: xs -> cart xs b (res @ (List.map (fun y -> x @ y) b))
-
-let set_cart a b = 
-  IntSet.fold (fun i acc ->
-    Iso.union acc (IntSet.fold (fun j acc ->
-      Iso.add (i, j) acc) b Iso.empty)) a Iso.empty
-
-(* input is a list of sets. A set is represented as a list of lists *)
-let cart_of_list l =
-  let rec aux l res =
-    match l with
-    | [] -> res
-    | x :: xs -> aux xs (cart res x []) in
-  match l with
-  | [] -> []
-  | x :: [] -> x
-  | x :: xs -> aux xs x 
-
-(* Optimise *)  
-let cart_of_list_iso l = 
-  List.map of_list (cart_of_list (List.map (fun i ->
-    List.map (fun pair -> [pair]) (Iso.elements i)) l))
-*)

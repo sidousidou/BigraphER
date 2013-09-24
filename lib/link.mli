@@ -195,12 +195,12 @@ val closed_edges : Lg.t -> Lg.t
    target. The output is a list of clauses and a list of blocked rows 
    (list of negated literals). *)
 val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.m_var list list * Cnf.m_var list list
+                  Cnf.var list list * Cnf.var list list
 
 (* Ports in matched closed edges have to be isomorphic *)
 val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.m_var list list -> 
-                  ((Cnf.m_var * Cnf.m_var) list * Cnf.m_var list list)
+                  Cnf.var list list -> 
+                  ((Cnf.var * Cnf.var) list * Cnf.var list list)
 
 (*val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t*)
 
