@@ -16,29 +16,30 @@ let to_N v =
   | P_var l -> N_var l
   | N_var _ -> assert false
 
-(* Convert a list of column vectors in a matrix. Each vector becomes a row. *)
+(* Convert a list of column vectors to a list of matrix inidices. Each vector becomes a row. *)
 let to_matrix l =
   fst (List.fold_left (fun (acc, i) row ->
     (acc @ (List.map (fun v -> to_M v i) row), i + 1)) ([], 0) l) 
   
-(* Apply tseitin transformation to a bolean formula. Input is a list of pairs.
+(* Apply tseitin transformation to a boolean formula. Input is a list of pairs.
    Each pair encodes a conjunction. The first element of the output is a 
    disjunction of auxiliary variables. The second is a conjunctions of 
    (not z or a) (not z or b) ... *)
 let tseitin l =
-  fst (List.fold_left (fun ((acc_z, acc), i) ((a : var), (b : var)) ->
+  fst (List.fold_left (fun ((acc_z, acc), i) ((a : lit), (b : lit)) ->
     let z = V_lit i in  
-    (((P_var z) :: acc_z, (N_var z, a) :: (N_var z, b) :: acc),
+    (((P_var z) :: acc_z, (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
      i + 1)) (([], []), 0) l)
 
-let iff m clauses =
+let iff (m : lit) (clauses : lit list list) =
   (* a negated *)
-  let pairs = List.map (fun a -> (m, to_N a)) (List.flatten clauses)
+  let pairs = List.map (fun a -> (P_var m, N_var a)) (List.flatten clauses)
   (* m negated *)
-  and l = List.map (fun c -> (to_N m) :: c) clauses in
+  and l = List.map (fun c -> 
+    (N_var m) :: (List.map (fun v -> P_var v) c)) clauses in
   (pairs, l)
 
-(* Commander variable encoding *)
+(* +++++++++++++++++ Commander variable encoding +++++++++++++++++ *)
 
 type 'a cmd_tree = 
 | Leaf of 'a list
@@ -96,6 +97,16 @@ let rec _cmd_init t n g j =
 let cmd_init (l : lit list) n g =
   _cmd_init (Leaf l) n g 0
 
+(* Number of auxiliary variables *)
+let cmd_size t =
+  match t with
+  | Leaf _ -> 0
+  | Node cmd_g -> begin
+    match fst (List.hd cmd_g) with
+    | V_lit n -> n + 1
+    | _ -> assert false
+  end
+
 (* Boolean encoding of at most one TRUE. Most common cases are hardcoded *)
 let rec _at_most l acc =
   match l with
@@ -112,8 +123,13 @@ let rec _at_most l acc =
 					    (c, e); (c, f); (d, e); (d, f); (e, f) ]
   | x :: rest -> _at_most rest (acc @ (List.map (fun y -> (x, y)) rest)) 
 
+(* Disjuntions (all possible pairs) of negative literals *)
 let at_most l =
  List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_most l []) 
+
+(* Disjunction of positive literals *)
+let at_least l =
+  List.map (fun x -> P_var x) l
 
 (* Scan the tree and produce constraints:
    1. at most one TRUE in every group
@@ -157,7 +173,20 @@ let rec _scan3 t acc : (lit list * (var * var) list) =
       res @ clause @ acc) [] cmd_g in
     (cmd_vars, acc @ acc')
 
-(* at_most and at least (disjunction of pos) on root*)
+let at_most_cmd t =
+  let clauses1 = _scan1 t []
+  and (_, clauses2) = _scan2 t []
+  and (_, clauses3) = _scan3 t [] in
+  (clauses1, clauses2, clauses3)
+
+let at_least_cmd t =
+  match t with
+  | Leaf g -> at_least g
+  | Node cmd_g -> at_least (fst (List.split cmd_g))
+
+let exactly_one_cmd t =
+  let (clauses1, clauses2, clauses3) = at_most_cmd t in
+  (clauses1, clauses2, clauses3, at_least_cmd t)
 
 let t_debug =
   Node
@@ -171,3 +200,41 @@ let t_debug =
 	[(V_lit 0, Leaf [M_lit (0, 15); M_lit (0, 14)]);
      (V_lit 1, Leaf [M_lit (0, 13); M_lit (0, 12)]);
      (V_lit 2, Leaf [M_lit (0, 11); M_lit (0, 10); M_lit (0, 9)])])]
+
+
+(* +++++++++++++++++ Higher level functions +++++++++++++++++ *)
+
+(* n size *)
+let rec _iter f res i n =
+  if i < n then begin
+    let res' = f i res in
+    _iter f res' (i + 1) n
+  end else res
+    
+let iter f res n =
+  _iter f res 0 n
+
+(* Generate constraints for a bijection from n to m. Parameters t and g
+   are used for configure the commander-variable encoding. The function can 
+   be split into two parts:
+    1. exactly one TRUE in every row of the assignements matrix
+    2. at most one TRUE in every column of the assignments matrix.
+   Auxiliary variables are returned. *)
+let bijection n m t g =
+  assert (m > 0);
+  assert (n > 0);
+  (* Rows *)
+  let res_rows =
+    iter (fun i acc ->
+      let row_i = iter (fun j acc ->
+	(M_lit (i, j)) :: acc) [] m in
+      let t = cmd_init row_i t g in
+      (cmd_size t, exactly_one_cmd t) :: acc) [] n
+  (* Columns *)
+  and res_cols =
+    iter (fun j acc ->
+      let col_j = iter (fun i acc ->
+      (M_lit (i, j)) :: acc) [] n in
+      let t = cmd_init col_j t g in
+      (cmd_size t, at_most_cmd t) :: acc) [] m in
+  (List.rev res_rows, List.rev res_cols)
