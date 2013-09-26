@@ -20,13 +20,40 @@ let to_N v =
 let to_matrix l =
   fst (List.fold_left (fun (acc, i) row ->
     (acc @ (List.map (fun v -> to_M v i) row), i + 1)) ([], 0) l) 
+
+(* Conjunction of clauses *)
+exception TSEITIN of var list list 
   
 (* Apply tseitin transformation to a boolean formula. Input is a list of pairs.
+   The encoding is not applied if the input list has lenght less than three.
+   Cases with length three and four are harcoded.
    Each pair encodes a conjunction. The first element of the output is a 
    disjunction of auxiliary variables. The second is a conjunctions of 
    (not z or a) (not z or b) ... *)
 let tseitin l =
-  fst (List.fold_left (fun ((acc_z, acc), i) ((a : lit), (b : lit)) ->
+  match l with
+  | [] -> raise (TSEITIN [ ])
+  | [(x, y)] -> raise (TSEITIN [ [P_var x]; [P_var y] ])
+  | [(x, y); (w, z)] -> raise (TSEITIN [ [P_var x; P_var w]; [P_var x; P_var z];
+				         [P_var y; P_var w]; [P_var y; P_var z] ])
+  | [(x, y); (w, z); (h, k)] -> 
+    begin
+      let (a0, a1, a2) = (V_lit 0, V_lit 1, V_lit 2) in
+      ([ P_var a0; P_var a1; P_var a2 ],
+       [ (N_var a0, P_var x); (N_var a0, P_var y); 
+	 (N_var a1, P_var w); (N_var a1, P_var z); 
+	 (N_var a2, P_var h); (N_var a2, P_var k) ]) 
+    end
+  | [(x, y); (w, z); (h, k); (u, v)] -> 
+    begin
+      let (a0, a1, a2, a3) = (V_lit 0, V_lit 1, V_lit 2, V_lit 3) in
+      ([ P_var a0; P_var a1; P_var a2; P_var a3 ],
+       [ (N_var a0, P_var x); (N_var a0, P_var y); 
+	 (N_var a1, P_var w); (N_var a1, P_var z); 
+	 (N_var a2, P_var h); (N_var a2, P_var k);
+	 (N_var a3, P_var u); (N_var a3, P_var v)]) 
+    end
+  | _ -> fst (List.fold_left (fun ((acc_z, acc), i) ((a : lit), (b : lit)) ->
     let z = V_lit i in  
     (((P_var z) :: acc_z, (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
      i + 1)) (([], []), 0) l)
@@ -39,7 +66,7 @@ let iff (m : lit) (clauses : lit list list) =
     (N_var m) :: (List.map (fun v -> P_var v) c)) clauses in
   (pairs, l)
 
-(* +++++++++++++++++ Commander variable encoding +++++++++++++++++ *)
+(* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
 type 'a cmd_tree = 
 | Leaf of 'a list
@@ -127,7 +154,7 @@ let rec _at_most l acc =
 let at_most l =
  List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_most l []) 
 
-(* Disjunction of positive literals *)
+(* Disjunction (clause) of positive literals *)
 let at_least l =
   List.map (fun x -> P_var x) l
 
@@ -202,7 +229,7 @@ let t_debug =
      (V_lit 2, Leaf [M_lit (0, 11); M_lit (0, 10); M_lit (0, 9)])])]
 
 
-(* +++++++++++++++++ Higher level functions +++++++++++++++++ *)
+(* ++++++++++++++++++++++++ Higher level functions ++++++++++++++++++++++++ *)
 
 (* n size *)
 let rec _iter f res i n =
@@ -214,6 +241,13 @@ let rec _iter f res i n =
 let iter f res n =
   _iter f res 0 n
 
+let _exactly_rows n m t g =
+  List.rev (iter (fun i acc ->
+    let row_i = iter (fun j acc ->
+      (M_lit (i, j)) :: acc) [] m in
+    let t = cmd_init row_i t g in
+    (cmd_size t, exactly_one_cmd t) :: acc) [] n)
+
 (* Generate constraints for a bijection from n to m. Parameters t and g
    are used for configure the commander-variable encoding. The function can 
    be split into two parts:
@@ -223,18 +257,145 @@ let iter f res n =
 let bijection n m t g =
   assert (m > 0);
   assert (n > 0);
-  (* Rows *)
-  let res_rows =
-    iter (fun i acc ->
-      let row_i = iter (fun j acc ->
-	(M_lit (i, j)) :: acc) [] m in
-      let t = cmd_init row_i t g in
-      (cmd_size t, exactly_one_cmd t) :: acc) [] n
-  (* Columns *)
-  and res_cols =
+  let res_cols =
     iter (fun j acc ->
       let col_j = iter (fun i acc ->
-      (M_lit (i, j)) :: acc) [] n in
+	(M_lit (i, j)) :: acc) [] n in
       let t = cmd_init col_j t g in
       (cmd_size t, at_most_cmd t) :: acc) [] m in
-  (List.rev res_rows, List.rev res_cols)
+  (_exactly_rows n m t g, List.rev res_cols)
+    
+(* Generate constraints for a total, non-surjective function n to m. Parameters
+   t and g  are used for configure the commander-variable encoding. The 
+   function constructs the following constraint:
+    -  exactly one TRUE in every row of the assignements matrix
+   Auxiliary variables are returned. *)
+let tot_fun n m t g =
+  assert (m > 0);
+  assert (n > 0);
+  _exactly_rows n m t g
+
+(* +++++++++++++++++++++++ Integration with Minisat +++++++++++++++++++++++ *)
+
+(* Convert variables for Minisat *)
+let convert_m v m =
+  let convert_lit l =
+    match l with
+    | M_lit (i,j) -> m.(i).(j)
+    | _ -> assert false in
+  match v with
+  | P_var l -> Minisat.pos_lit (convert_lit l) 
+  | N_var l -> Minisat.neg_lit (convert_lit l)
+
+let convert_v v vec =
+  let convert_lit l =
+    match l with
+    | V_lit i -> vec.(i)
+    | _ -> assert false in
+  match v with
+  | P_var l -> Minisat.pos_lit (convert_lit l) 
+  | N_var l -> Minisat.neg_lit (convert_lit l)
+
+(* Convert to vector z if V_lit, to matrix m otherwise *)
+let convert v z m =
+  let convert_lit l =
+    match l with
+    | V_lit i -> z.(i)
+    | M_lit (i,j) -> m.(i).(j) in
+  match v with
+  | P_var l -> Minisat.pos_lit (convert_lit l) 
+  | N_var l -> Minisat.neg_lit (convert_lit l)
+
+(* Initialise a vector of (auxiliary) variables. *)
+let init_aux_v n s =
+  let v = Array.make n 0 in
+  for i = 0 to n - 1 do
+    v.(i) < s#new_var
+  done;
+  v
+
+(* Initialise a matrix of variables. *)
+let init_aux_m r c s =
+  let m = Array.make_matrix r c 0 in
+  for i = 0 to r - 1 do
+    for j = 0 to c - 1 do
+      m.(i).(j) < s#new_var
+    done;
+  done;
+  m
+
+(* Post conjunction of clauses to solver. All variables refer to the same
+   vector. *)
+let post_conj_v l s v =
+  List.iter (fun clause ->
+    s#add_clause (List.map (fun x ->
+      convert_v x v) clause)) l
+
+(* To be used also when TSEITIN is raised. All variables refer to the same
+   matrix.*)
+let post_conj_m l s m =
+  List.iter (fun clause ->
+    s#add_clause (List.map (fun x ->
+      convert_m x m) clause)) l
+
+(* Post Tseitin constraints to solver and return array of auxiliary 
+   variables. *)
+let post_tseitin (z_clause, pairs) s m =
+  let z = init_aux_v (List.length z_clause) s in
+  post_conj_v [z_clause] s z;
+  List.iter (fun (a , v) ->
+    s#add_clause [convert_v a z; convert_m b m]) pairs;
+  z
+
+(* Post iff constraints to solver. Left hand-sides are stored in matrix w. *)
+let post_iff (pairs, clauses) s w v =
+  List.iter (fun (m, x) ->
+    s#add_clause [convert_m m w; convert_m x v]) pairs;
+  List.iter (fun clause ->
+    let z = convert_m (List.hd clause) w in
+    s#add_clause (z :: (List.map (fun x ->
+      convert_m x v) (List.tl clause)))) clauses
+
+(* V_lit are for auxiliary variables whereas M_lit are for encoding 
+   variables. *)
+let _post_pairs l s a v = 
+  List.iter (fun (x, y) ->
+    s#add_clause [ (convert x a v); (convert y a v) ]) l
+
+let _post_list l s a v =
+  List.iter (fun clause ->
+  s#add_clause (List.map (fun x ->
+    convert x a v) clause)) l
+
+(* Post bijection constraints to solver and return auxiliary variables. *)
+let post_bij (r_constr, c_constr) s m =
+  (* Lists of vectors *)
+  let aux_r =
+    List.map (fun (n, cl1, cl2, cl3, cl4) ->
+      let z = init_aux_v n s in
+      _post_pairs cl1 s z m;
+      _post_list cl2 s z m;
+      _post_pairs cl3 s z m;
+      _post_list [cl4] s z m;
+      z) r_constr 
+  and aux_c =
+    List.map (fun (n, cl1, cl2, cl3) ->
+      let z = init_aux_v n s in
+      _post_pairs cl1 s z m;
+      _post_list cl2 s z m;
+      _post_pairs cl3 s z m;
+      z) c_constr in
+  (aux_r, aux_c)
+    
+(* Post total non-surjective function to solver and return auxiliary 
+   variables. *)
+let post_tot r_constr s m =
+  (* Lists of vectors *)
+  List.map (fun (n, cl1, cl2, cl3, cl4) ->
+    let z = init_aux_v n s in
+    _post_pairs cl1 s z m;
+    _post_list cl2 s z m;
+    _post_pairs cl3 s z m;
+    _post_list [cl4] s z m;
+    z) r_constr 
+    

@@ -521,8 +521,11 @@ let compat t p t_i p_i =
   (compat_deg (indeg t t_i) (indeg p p_i)) && 
     (compat_deg (outdeg t t_i) (outdeg p p_i))
 
-let block_rows t =
-  let j_t = IntSet.of_int t.n in
+(* Input:  number of nodes in the target and list of incompatible nodes in the
+           pattern. 
+   Output: [!(i, j) and  ...] *)
+let block_rows t_n =
+  let j_t = IntSet.of_int t_n in
   List.map (fun i ->
     IntSet.fold (fun j acc ->
       (Cnf.N_var (Cnf.M_lit (i, j))) :: acc) j_t [])
@@ -541,7 +544,7 @@ let block_rows t =
       2. Avoid "at-least" and "at-most" constraints ()*)
 (*Tseitin*)
 (*if ij then ab or cd or ... de ENCODING = (ic and jd) or ... (id and je)*)
-let match_list t p n_t n_p =
+let match_list t p n_t n_p : (var list * (var * var) list) list * Cnf.var list =
   let h = partition_edges t n_t in
   let (clauses, b) = Sparse.fold (fun i j (acc, block) ->
     let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
@@ -552,15 +555,15 @@ let match_list t p n_t n_p =
 	Cnf.tseitin (List.fold_left (fun acc (i', j') ->
 	  (* Degree check *)
 	  if (compat t p i' i) && (compat t p j' j) then
-	    (Cnf.P_var (Cnf.M_lit (i, i')), Cnf.P_var (Cnf.M_lit (j, j'))) :: acc
+	    (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')) :: acc
 	  else acc) [] t_edges) in
-      if List.length clause = 0 then begin
+      if List.length (fst clause) = 0 then begin
 	(* No compatible edges found *)
 	(acc, i :: j :: block) 
       end else 
 	(clause :: acc, block)
     end) p.nn ([], []) in
-  (Cnf.to_matrix clauses, block_rows t b)
+  (clauses, block_rows t.n b)
 
 (* EQUALITY functions *)
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
