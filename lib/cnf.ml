@@ -1,3 +1,18 @@
+(******************************************************************************)
+(*                                                                            *)
+(*        ______ __                          __     _______ ______            *)
+(*       |   __ \__|.-----.----.---.-.-----.|  |--.|    ___|   __ \           *)
+(*       |   __ <  ||  _  |   _|  _  |  _  ||     ||    ___|      <           *)
+(*       |______/__||___  |__| |___._|   __||__|__||_______|___|__|           *)
+(*                  |_____|          |__|                                     *)
+(*                                                                            *)
+(*       Bigraph Evaluator & Rewriting                                        *)
+(*                                                                            *)
+(*                                                                            *)
+(*     Copyright (c) 2010-2013, Michele Sevegnani - University of Glasgow     *)       
+(*                                                                            *)
+(******************************************************************************)
+
 type lit =
 | M_lit of int * int    (* literal stored in a matrix *)
 | V_lit of int          (* literal stored in a vector *)
@@ -5,6 +20,10 @@ type lit =
 type var = 
 | P_var of lit (* Positive literal *)
 | N_var of lit (* Negative literal *)
+
+type clause = var list
+
+type b_clause = var * var
 
 let to_M v i =
   match v with
@@ -131,7 +150,7 @@ let cmd_size t =
   | Node cmd_g -> begin
     match fst (List.hd cmd_g) with
     | V_lit n -> n + 1
-    | _ -> assert false
+    | M_lit _ -> assert false
   end
 
 (* Boolean encoding of at most one TRUE. Most common cases are hardcoded *)
@@ -215,18 +234,18 @@ let exactly_one_cmd t =
   let (clauses1, clauses2, clauses3) = at_most_cmd t in
   (clauses1, clauses2, clauses3, at_least_cmd t)
 
-let t_debug =
-  Node
-    [(V_lit 7,
-      Node
-	[(V_lit 3, Leaf [M_lit (0, 8); M_lit (0, 7); M_lit (0, 6)]);
-	 (V_lit 4, Leaf [M_lit (0, 5); M_lit (0, 4); M_lit (0, 3)]);
-	 (V_lit 5, Leaf [M_lit (0, 2); M_lit (0, 1); M_lit (0, 0)])]);
-     (V_lit 6,
-      Node
-	[(V_lit 0, Leaf [M_lit (0, 15); M_lit (0, 14)]);
-     (V_lit 1, Leaf [M_lit (0, 13); M_lit (0, 12)]);
-     (V_lit 2, Leaf [M_lit (0, 11); M_lit (0, 10); M_lit (0, 9)])])]
+(* let t_debug = *)
+(*   Node *)
+(*     [(V_lit 7, *)
+(*       Node *)
+(* 	[(V_lit 3, Leaf [M_lit (0, 8); M_lit (0, 7); M_lit (0, 6)]); *)
+(* 	 (V_lit 4, Leaf [M_lit (0, 5); M_lit (0, 4); M_lit (0, 3)]); *)
+(* 	 (V_lit 5, Leaf [M_lit (0, 2); M_lit (0, 1); M_lit (0, 0)])]); *)
+(*      (V_lit 6, *)
+(*       Node *)
+(* 	[(V_lit 0, Leaf [M_lit (0, 15); M_lit (0, 14)]); *)
+(*      (V_lit 1, Leaf [M_lit (0, 13); M_lit (0, 12)]); *)
+(*      (V_lit 2, Leaf [M_lit (0, 11); M_lit (0, 10); M_lit (0, 9)])])] *)
 
 
 (* ++++++++++++++++++++++++ Higher level functions ++++++++++++++++++++++++ *)
@@ -282,7 +301,7 @@ let convert_m v m =
   let convert_lit l =
     match l with
     | M_lit (i,j) -> m.(i).(j)
-    | _ -> assert false in
+    | V_lit _ -> assert false in
   match v with
   | P_var l -> Minisat.pos_lit (convert_lit l) 
   | N_var l -> Minisat.neg_lit (convert_lit l)
@@ -291,7 +310,7 @@ let convert_v v vec =
   let convert_lit l =
     match l with
     | V_lit i -> vec.(i)
-    | _ -> assert false in
+    | M_lit _ -> assert false in
   match v with
   | P_var l -> Minisat.pos_lit (convert_lit l) 
   | N_var l -> Minisat.neg_lit (convert_lit l)
@@ -310,7 +329,7 @@ let convert v z m =
 let init_aux_v n s =
   let v = Array.make n 0 in
   for i = 0 to n - 1 do
-    v.(i) < s#new_var
+    v.(i) <- s#new_var
   done;
   v
 
@@ -319,7 +338,7 @@ let init_aux_m r c s =
   let m = Array.make_matrix r c 0 in
   for i = 0 to r - 1 do
     for j = 0 to c - 1 do
-      m.(i).(j) < s#new_var
+      m.(i).(j) <- s#new_var
     done;
   done;
   m
@@ -344,7 +363,7 @@ let post_tseitin (z_clause, pairs) s m =
   let z = init_aux_v (List.length z_clause) s in
   post_conj_v [z_clause] s z;
   List.iter (fun (a , v) ->
-    s#add_clause [convert_v a z; convert_m b m]) pairs;
+    s#add_clause [convert_v a z; convert_m v m]) pairs;
   z
 
 (* Post iff constraints to solver. Left hand-sides are stored in matrix w. *)
@@ -371,7 +390,7 @@ let _post_list l s a v =
 let post_bij (r_constr, c_constr) s m =
   (* Lists of vectors *)
   let aux_r =
-    List.map (fun (n, cl1, cl2, cl3, cl4) ->
+    List.map (fun (n, (cl1, cl2, cl3, cl4)) ->
       let z = init_aux_v n s in
       _post_pairs cl1 s z m;
       _post_list cl2 s z m;
@@ -379,7 +398,7 @@ let post_bij (r_constr, c_constr) s m =
       _post_list [cl4] s z m;
       z) r_constr 
   and aux_c =
-    List.map (fun (n, cl1, cl2, cl3) ->
+    List.map (fun (n, (cl1, cl2, cl3)) ->
       let z = init_aux_v n s in
       _post_pairs cl1 s z m;
       _post_list cl2 s z m;
@@ -391,7 +410,7 @@ let post_bij (r_constr, c_constr) s m =
    variables. *)
 let post_tot r_constr s m =
   (* Lists of vectors *)
-  List.map (fun (n, cl1, cl2, cl3, cl4) ->
+  List.map (fun (n, (cl1, cl2, cl3, cl4)) ->
     let z = init_aux_v n s in
     _post_pairs cl1 s z m;
     _post_list cl2 s z m;
