@@ -320,43 +320,43 @@ let snf b =
     *)
   
 (* Initialise a matrix of varibles for the SAT solver *)
-let init_vars r c solver =
-  let m = Array.make_matrix r c 0 in
-  for i = 0 to r - 1 do
-    for j = 0 to c - 1 do
-      m.(i).(j) <- solver#new_var 
-    done;
-  done;
-  m
+(* let init_vars r c solver = *)
+(*   let m = Array.make_matrix r c 0 in *)
+(*   for i = 0 to r - 1 do *)
+(*     for j = 0 to c - 1 do *)
+(*       m.(i).(j) <- solver#new_var  *)
+(*     done; *)
+(*   done; *)
+(*   m *)
 
 (* GPROF *)
-let add_bijection v n m solver =
-  (* Add first constraint; TOTAL -- at least a TRUE for every row *)
-  for i = 0 to n - 1 do
-    (*printf "%s\n" (String.concat " V " (Array.to_list (Array.mapi (fun j _ ->
-      sprintf "[%d,%d]" i j) v.(i))));*)
-    solver#add_clause (List.map (fun v ->
-      pos_lit v) (Array.to_list v.(i)))
-  done;
-  (* Add second constraint: INJECTIVE -- at most a TRUE for every row *)
-  for i = 0 to n - 1 do
-    for j = 0 to m - 2 do
-      for k = j + 1 to m - 1 do
-	(*printf "![%d,%d] V ![%d,%d]\n" i j i k;*)
-        solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(i).(k))]
-      done;
-    done;
-  done;
-  (* Add third constraint: SURJECTIVE -- on the codomain, at most a TRUE for
-     every column *)
-  for j = 0 to m - 1 do
-    for i = 0 to n - 2 do
-      for l = i + 1 to n - 1 do
-	(*printf "![%d,%d] V ![%d,%d]\n" i j l j;*)
-        solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(j))]
-      done;
-    done;
-  done           
+(* let add_bijection v n m solver = *)
+(*   (\* Add first constraint; TOTAL -- at least a TRUE for every row *\) *)
+(*   for i = 0 to n - 1 do *)
+(*     (\*printf "%s\n" (String.concat " V " (Array.to_list (Array.mapi (fun j _ -> *)
+(*       sprintf "[%d,%d]" i j) v.(i))));*\) *)
+(*     solver#add_clause (List.map (fun v -> *)
+(*       pos_lit v) (Array.to_list v.(i))) *)
+(*   done; *)
+(*   (\* Add second constraint: INJECTIVE -- at most a TRUE for every row *\) *)
+(*   for i = 0 to n - 1 do *)
+(*     for j = 0 to m - 2 do *)
+(*       for k = j + 1 to m - 1 do *)
+(* 	(\*printf "![%d,%d] V ![%d,%d]\n" i j i k;*\) *)
+(*         solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(i).(k))] *)
+(*       done; *)
+(*     done; *)
+(*   done; *)
+(*   (\* Add third constraint: SURJECTIVE -- on the codomain, at most a TRUE for *)
+(*      every column *\) *)
+(*   for j = 0 to m - 1 do *)
+(*     for i = 0 to n - 2 do *)
+(*       for l = i + 1 to n - 1 do *)
+(* 	(\*printf "![%d,%d] V ![%d,%d]\n" i j l j;*\) *)
+(*         solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(j))] *)
+(*       done; *)
+(*     done; *)
+(*   done            *)
 
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver vars n m = 
@@ -392,7 +392,7 @@ let add_blocking solver v n m w e f =
     !blocking_clause in
   solver#add_clause ((scan_matrix v n m) @ (scan_matrix w e f))
 
-let (*rec*) filter_loop solver t p v n m w e f t_trans = 
+let (*rec*) filter_loop solver t p v n m w e f = 
     solver#simplify;
     match solver#solve with
       | Minisat.UNSAT -> 
@@ -408,7 +408,7 @@ let (*rec*) filter_loop solver t p v n m w e f t_trans =
 	  let iso_v, _ = get_iso solver v n m, get_iso solver w e f in
 	  (*if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
 	    (Link.is_match_valid t.l p.l iso_e)*) then*)
-	    solver, v, n, m, w, e, f, t_trans
+	    (solver, v, n, m, w, e, f)
 	  (*else
 	    begin
 	      add_blocking solver v n m w e f;
@@ -433,80 +433,68 @@ let block_rows solver v =
 (*********************************************************************)
 
 let add_c4 t p t_n p_n solver v =
-  let (c4_l, b, n_z) = Place.match_list t p t_n p_n in
-  let z = Array.make n_z 0 in
-  for i = 0 to n_z - 1 do
-    z.(i) <- solver#new_var 
-  done;
-  List.iter (fun (z_l, disjuncts) ->
-    solver#add_clause (List.map (fun i ->
-      pos_lit z.(i)) z_l);
-    List.iter (fun (k, (i, j)) ->
-      solver#add_clause [ neg_lit z.(k); 
-			  pos_lit v.(i).(j)
-			]) disjuncts) c4_l;
-  block_rows solver v b;
-  z
+  let (t_constraints, block_clauses, exc_clauses) = 
+    Place.match_list t p t_n p_n in
+  Cnf.post_conj_m block_clauses solver v;
+  Cnf.post_conj_m exc_clauses solver v;
+  List.fold_left (fun acc x ->
+    (Cnf.post_tseitin x solver v) :: acc) [] t_constraints
   
 let add_c5 t p t_n p_n solver v =
   let (clauses_l, b_l) = Place.match_leaves t p t_n p_n
   and (clauses_o, b_o) = Place.match_orphans t p t_n p_n in
-  List.iter (fun clause -> 
-    solver#add_clause (to_minisat v clause)) (clauses_l @ clauses_o);
-  block_rows solver v (b_l @ b_o)
+  Cnf.post_conj_m (clauses_l @ b_l @ clauses_o @ b_o) solver v
 
 let add_c6 t p t_n p_n solver v =
   let (clauses_s, b_s) = Place.match_sites t p t_n p_n
   and (clauses_r, b_r) = Place.match_roots t p t_n p_n in
-  List.iter (fun clause -> 
-    solver#add_clause (to_minisat v clause)) (clauses_s @ clauses_r);
-  block_rows solver v (b_s @ b_r)
+  Cnf.post_conj_m (clauses_s @ b_s @ clauses_r @ b_r) solver v
 
-let add_c7 t p t_n p_n solver v =
-  let (clauses, b) = Link.match_edges t p t_n p_n in
-  List.iter (fun clause -> 
-    solver#add_clause (to_minisat v clause)) clauses;
-  block_rows solver v b;
-  clauses
+(* let add_c7 t p t_n p_n solver v = *)
+(*   let (clauses, b) = Link.match_edges t p t_n p_n in *)
+(*   List.iter (fun clause ->  *)
+(*     solver#add_clause (to_minisat v clause)) clauses; *)
+(*   block_rows solver v b; *)
+(*   clauses *)
 
-let add_c8 t p t_n p_n clauses solver v w =
-  let (pairs, cs) = Link.match_ports t p t_n p_n clauses in
-  List.iter (fun ((e_i, e_j), (i, j)) ->
-    solver#add_clause [ pos_lit w.(e_i).(e_j) ;
-			neg_lit v.(i).(j)
-		      ]) pairs;
-  List.iter (fun c ->
-    let (m_i, m_j) = List.hd c
-    and vars = List.map (fun (i, j) -> pos_lit v.(i).(j)) (List.tl c) in 
-    solver#add_clause ((neg_lit w.(m_i).(m_j)) :: vars)) cs
+(* let add_c8 t p t_n p_n clauses solver v w = *)
+(*   let (pairs, cs) = Link.match_ports t p t_n p_n clauses in *)
+(*   List.iter (fun ((e_i, e_j), (i, j)) -> *)
+(*     solver#add_clause [ pos_lit w.(e_i).(e_j) ; *)
+(* 			neg_lit v.(i).(j) *)
+(* 		      ]) pairs; *)
+(*   List.iter (fun c -> *)
+(*     let (m_i, m_j) = List.hd c *)
+(*     and vars = List.map (fun (i, j) -> pos_lit v.(i).(j)) (List.tl c) in  *)
+(*     solver#add_clause ((neg_lit w.(m_i).(m_j)) :: vars)) cs *)
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =
   let solver = new solver
-  and (m, n) = (t.p.Place.n, p.p.Place.n) 
-  and (e, f) = 
-    (Link.Lg.cardinal (Link.closed_edges p.l),
-     Link.Lg.cardinal (Link.closed_edges t.l)) in
-  let t_trans = Sparse.trans (t.p.Place.nn) in
+  and (n, m) = (p.p.Place.n, t.p.Place.n) 
+  and (e, f) = (Link.Lg.cardinal (Link.closed_edges p.l),
+		Link.Lg.cardinal (Link.closed_edges t.l)) in
   (* Iso between nodes *)
-  let v = init_vars n m solver
+  let v = Cnf.init_aux_m n m solver
   (* Iso between closed edges *)
-  and w = init_vars e f solver in
+  and w = Cnf.init_aux_m e f solver in
   (* Add bijection over nodes *)
-  add_bijection v n m solver;
+  let (aux_bij_v_rows, aux_bij_v_cols) =
+    Cnf.post_bij (Cnf.bijection n m 6 3) solver v
   (* Add bijection over closed edges *)
-  add_bijection w e f solver;
+  and (aux_bij_w_rows, aux_bij_w_cols) =
+    Cnf.post_bij (Cnf.bijection e f 6 3) solver w
   (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
-     Return array of auxiliary vars. *)
-  let z = add_c4 t.p p.p t.n p.n solver v in
+     Return list of vectors of auxiliary vars. *)
+  and zs4 = add_c4 t.p p.p t.n p.n solver v in
   (* Add C5: orphans and leaves matching in the place graphs. *)
   add_c5 t.p p.p t.n p.n solver v;
   (* Add C6: sites and roots in the place graphs. *)
   add_c6 t.p p.p t.n p.n solver v;
-  (* Add C7: edges in the pattern are matched to edges in the target. *)
-  let clauses = add_c7 t.l p.l t.n p.n solver w in
-  (* Add C8: ports of matched closed edges have to be isomorphic. *)
-  add_c8 t.l p.l t.n p.n clauses solver v w;
+  (* (\* Add C7: edges in the pattern are matched to edges in the target. *\) *)
+  (* let clauses = add_c7 t.l p.l t.n p.n solver w in *)
+  (* (\* Add C8: ports of matched closed edges have to be isomorphic. *\) *)
+  (* add_c8 t.l p.l t.n p.n clauses solver v w; *)
    
   (*List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
@@ -540,7 +528,7 @@ let aux_match t p  =
     let lits = 
       List.map (fun (i,j) -> pos_lit v.(i).(j)) (Iso.to_list iso) in
     solver#add_clause ((neg_lit w.(e_i).(e_j)) :: lits)) iso_ports;*)
-  filter_loop solver t p v n m w e f t_trans
+  filter_loop solver t p v n m w e f
 
 let occurs t p = 
   try
@@ -556,7 +544,7 @@ let occurrence t p =
   if p.n.Nodes.size = 0 then
     raise NODE_FREE 
   else
-    let (s, v, n, m, w, e, f, _) = aux_match t p in
+    let (s, v, n, m, w, e, f) = aux_match t p in
     (get_iso s v n m, get_iso s w e f)
 
 (* compute non-trivial automorphisms of b *)
@@ -568,11 +556,11 @@ let auto b =
       List.filter (fun (i, e) ->
 	not ((Iso.is_id i) && (Iso.is_id e))) res in
     rem_id (try 
-	      let solver, v, n, m, w, e, f, t_trans = aux_match b b in
+	      let (solver, v, n, m, w, e, f) = aux_match b b in
 	      let rec loop_occur res =
 		add_blocking solver v n m w e f;
 		try 
-		  ignore (filter_loop solver b b v n m w e f t_trans);
+		  ignore (filter_loop solver b b v n m w e f);
 		  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
 		with
 		| NO_MATCH -> res in
@@ -596,7 +584,7 @@ let occurrences t p =
     raise NODE_FREE 
   else
     try 
-      let solver, v, n, m, w, e, f, t_trans = aux_match t p
+      let (solver, v, n, m, w, e, f) = aux_match t p
       (*and autos = auto p in*) and autos = [] in
       let rec loop_occur res =
 	add_blocking solver v n m w e f;
@@ -609,7 +597,7 @@ let occurrences t p =
 	  solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
 	(*********************************************)
 	try 
-	  ignore (filter_loop solver t p v n m w e f t_trans);
+	  ignore (filter_loop solver t p v n m w e f);
 	  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
 	with
 	  | NO_MATCH -> res in
@@ -627,10 +615,14 @@ let occurrences t p =
     
 let equal_SAT a b =
   let solver = new solver in
-  let v_n = init_vars (a.p.Place.n) (b.p.Place.n) solver
-  and v_l = init_vars (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver in 
-  add_bijection v_n (a.p.Place.n) (b.p.Place.n) solver;
-  add_bijection v_l (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver;
+  let (n, m) = (a.p.Place.n, b.p.Place.n)
+  and (h, k) = (Link.Lg.cardinal a.l, Link.Lg.cardinal b.l) in
+  let v_n = Cnf.init_aux_m n m solver
+  and v_l = Cnf.init_aux_m h k solver in 
+  let (aux_bij_n_rows, aux_bij_n_cols) =
+    Cnf.post_bij (Cnf.bijection n m 6 3) solver v_n
+  and (aux_bij_l_rows, aux_bij_l_cols) =
+    Cnf.post_bij (Cnf.bijection h k 6 3) solver v_l in
   (* CTRL *)
   (*iso_iter v_n (match_nodes a.n b.n) solver;*)
   (* DAG EDGES *)

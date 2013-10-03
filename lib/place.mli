@@ -138,37 +138,30 @@ val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
 val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 *)
 
-(** {6 Misc} *)
+(** {6 Matching constraints} *)
 
 (** Compute constraint for matching edges in the DAG. *)
 val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                 ((Cnf.var list * (Cnf.var * Cnf.var) list) list * 
-		     Cnf.var list list)
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Cnf.clause list
 
 val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-                   Cnf.var list list * Cnf.var list list
+  Cnf.clause list * Cnf.clause list
 
 (** Dual of {!Place.match_leaves}. *)
 val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-                    Cnf.var list list * Cnf.var list list
+  Cnf.clause list * Cnf.clause list
 
 val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                       Cnf.var list
+  Cnf.clause list
 
 val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                        Cnf.var list
+  Cnf.clause list
 
 val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.var list list * Cnf.var list list
+  Cnf.clause list * Cnf.clause list
 
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.var list list * Cnf.var list list
-
-(*
-(** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is
-    valid. [t_trans] is the transitive closure of [t]. *)
-val is_match_valid : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
-*)
+  Cnf.clause list * Cnf.clause list
 
 (** Computes the number of edges in the DAG. *)
 val edges : pg -> int

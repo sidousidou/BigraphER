@@ -41,7 +41,7 @@ let to_matrix l =
     (acc @ (List.map (fun v -> to_M v i) row), i + 1)) ([], 0) l) 
 
 (* Conjunction of clauses *)
-exception TSEITIN of var list list 
+exception TSEITIN of clause list 
   
 (* Apply tseitin transformation to a boolean formula. Input is a list of pairs.
    The encoding is not applied if the input list has lenght less than three.

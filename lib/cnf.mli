@@ -36,6 +36,8 @@ val at_most : lit list -> b_clause list
 (** At least a literal in the input list is [true]. *)
 val at_least : lit list -> clause
 
+exception TSEITIN of clause list
+
 (** Apply Tseitin transformation to a boolean formula.
     Input :  [(X1 and Y1) or (X2 and Y2) or ... or (Xn and Yn)] 
     Output : [(Z1 or Z2 or ... or Zn) and (!Z1 or X1) and (!Z1 or Y1) and ... 
