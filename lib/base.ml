@@ -356,11 +356,10 @@ module Ports = struct
       let ar_i = Iso.find ar_a i
       and c_i = Nodes.find n_a i in
       let pairs =
-	List.map (fun j -> 
-	  Cnf.P_var (Cnf.M_lit (i, j))) 
+	List.map (fun j -> Cnf.M_lit (i, j)) 
 	  (IntSet.elements (IntSet.filter (fun j ->
 	    (ar_i = (Iso.find ar_b j)) && 
 	      (Ctrl.(=) c_i (Nodes.find n_b j))) i_b)) in 
       pairs :: acc) i_a []
-      
+
 end   

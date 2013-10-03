@@ -330,16 +330,16 @@ let levels m =
   fix IntSet.empty (IntSet.of_int m.r) []
 
 (* Not exposed *)
-let of_list l r c =
-  let m = make r c in
-  ignore (List.fold_left (fun i row ->
-    ignore (List.fold_left (fun j x ->
-      match x with
-      | 0 -> j + 1
-      | _ -> begin 
-	Hashtbl.add m.r_major i j;
-	Hashtbl.add m.c_major j i;
-	j + 1
-      end) 0 row);
-    i + 1) 0 l);
-  m
+(* let of_list l r c = *)
+(*   let m = make r c in *)
+(*   ignore (List.fold_left (fun i row -> *)
+(*     ignore (List.fold_left (fun j x -> *)
+(*       match x with *)
+(*       | 0 -> j + 1 *)
+(*       | _ -> begin  *)
+(* 	Hashtbl.add m.r_major i j; *)
+(* 	Hashtbl.add m.c_major j i; *)
+(* 	j + 1 *)
+(*       end) 0 row); *)
+(*     i + 1) 0 l); *)
+(*   m *)

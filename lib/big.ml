@@ -435,8 +435,7 @@ let block_rows solver v =
 let add_c4 t p t_n p_n solver v =
   let (t_constraints, block_clauses, exc_clauses) = 
     Place.match_list t p t_n p_n in
-  Cnf.post_conj_m block_clauses solver v;
-  Cnf.post_conj_m exc_clauses solver v;
+  Cnf.post_conj_m (block_clauses @ exc_clauses) solver v;
   List.fold_left (fun acc x ->
     (Cnf.post_tseitin x solver v) :: acc) [] t_constraints
   
@@ -450,23 +449,14 @@ let add_c6 t p t_n p_n solver v =
   and (clauses_r, b_r) = Place.match_roots t p t_n p_n in
   Cnf.post_conj_m (clauses_s @ b_s @ clauses_r @ b_r) solver v
 
-(* let add_c7 t p t_n p_n solver v = *)
-(*   let (clauses, b) = Link.match_edges t p t_n p_n in *)
-(*   List.iter (fun clause ->  *)
-(*     solver#add_clause (to_minisat v clause)) clauses; *)
-(*   block_rows solver v b; *)
-(*   clauses *)
+let add_c7 t p t_n p_n solver v =
+  let (clauses, b) = Link.match_edges t p t_n p_n in
+  Cnf.post_conj_m (clauses @ b) solver v;
+  clauses
 
-(* let add_c8 t p t_n p_n clauses solver v w = *)
-(*   let (pairs, cs) = Link.match_ports t p t_n p_n clauses in *)
-(*   List.iter (fun ((e_i, e_j), (i, j)) -> *)
-(*     solver#add_clause [ pos_lit w.(e_i).(e_j) ; *)
-(* 			neg_lit v.(i).(j) *)
-(* 		      ]) pairs; *)
-(*   List.iter (fun c -> *)
-(*     let (m_i, m_j) = List.hd c *)
-(*     and vars = List.map (fun (i, j) -> pos_lit v.(i).(j)) (List.tl c) in  *)
-(*     solver#add_clause ((neg_lit w.(m_i).(m_j)) :: vars)) cs *)
+let add_c8 t p t_n p_n clauses solver v w =
+  let (pairs, cs) = Link.match_ports t p t_n p_n clauses in
+  Cnf.post_iff (pairs, cs) solver w v 
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =
@@ -491,10 +481,10 @@ let aux_match t p  =
   add_c5 t.p p.p t.n p.n solver v;
   (* Add C6: sites and roots in the place graphs. *)
   add_c6 t.p p.p t.n p.n solver v;
-  (* (\* Add C7: edges in the pattern are matched to edges in the target. *\) *)
-  (* let clauses = add_c7 t.l p.l t.n p.n solver w in *)
-  (* (\* Add C8: ports of matched closed edges have to be isomorphic. *\) *)
-  (* add_c8 t.l p.l t.n p.n clauses solver v w; *)
+  (* Add C7: edges in the pattern are matched to edges in the target. *)
+  let clauses = add_c7 t.l p.l t.n p.n solver w in
+  (* Add C8: ports of matched closed edges have to be isomorphic. *)
+  add_c8 t.l p.l t.n p.n clauses solver v w;
    
   (*List.iter (fun (i, l, j, k) ->
     (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)

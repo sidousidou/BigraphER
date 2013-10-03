@@ -185,7 +185,7 @@ val decomp : Lg.t -> Lg.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.
     identities.*)
 val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
 
-(** {6 Misc} *)
+(** {6 Matching constraints} *)
 
 (** [closed_edges l]  returns a pair [(h, i)] in which [h] is the set of 
     closed edges of [l] and [i] is an iso between the indices of [l] and [h]. *)
@@ -195,12 +195,11 @@ val closed_edges : Lg.t -> Lg.t
    target. The output is a list of clauses and a list of blocked rows 
    (list of negated literals). *)
 val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.var list list * Cnf.var list list
+  Cnf.clause list * Cnf.clause list
 
 (* Ports in matched closed edges have to be isomorphic *)
 val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-                  Cnf.var list list -> 
-                  ((Cnf.var * Cnf.var) list * Cnf.var list list)
+  Cnf.clause list -> Cnf.b_clause list * Cnf.clause list
 
 (*val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t*)
 

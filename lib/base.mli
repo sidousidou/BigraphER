@@ -254,5 +254,5 @@ sig
 
 	(** Construct a list of possible node assignments starting from two
 	    compatible port sets. *)
-	val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.var list list  
+	val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.lit list list  
 end

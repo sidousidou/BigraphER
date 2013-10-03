@@ -468,7 +468,7 @@ let match_edges t p n_t n_p =
       let clause = 
 	fst (Lg.fold (fun e_t (acc, j) ->
 	  if compat_edges e_p e_t n_t n_p then 
-	    ((Cnf.P_var (Cnf.M_lit (i, j))) :: acc, j + 1)
+	    (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j + 1)
 	  else (acc, j + 1)) closed_t ([], 0)) in
       match clause with
       | [] -> (acc, i + 1, i :: block) (* No compatible edges found *)
@@ -476,9 +476,9 @@ let match_edges t p n_t n_p =
   and j_t = IntSet.of_int (Lg.cardinal closed_t) in
   (* Blocking pairs *)
   let res = 
-    List.map (fun i ->
+    List.fold_left (fun acc i ->
       IntSet.fold (fun j acc ->
-	(Cnf.N_var (Cnf.M_lit (i, j))) :: acc) j_t []) blocked in
+	[Cnf.N_var (Cnf.M_lit (i, j))] :: acc) j_t acc) [] blocked in
   (clauses, res)
 
 (* Nodes of matched edges are isomorphic *)
@@ -490,7 +490,7 @@ let match_ports t p n_t n_p clauses =
   List.fold_left (fun (acc_p, acc_c) (e_i, e_j) ->
     let formulas = 
       Ports.compat_list closed_p.(e_i) closed_t.(e_j) n_p n_t in
-    let (ps, cs) = Cnf.iff (e_i, e_j) formulas in
+    let (ps, cs) = Cnf.iff (Cnf.M_lit (e_i, e_j)) formulas in
     (ps @ acc_p, cs @ acc_c)) ([], []) (List.flatten clauses) 
 
 (* Is p sub-hyperedge of t? *)
@@ -528,7 +528,7 @@ let compat_clauses e_p i t h_t n_t n_p =
   IntSet.fold (fun j acc ->
     let e_t = Hashtbl.find h_t j in
     let iso_t = Ports.arities e_t.p in
-    let clauses : Cnf.m_var list list = 
+    let clauses : Cnf.var list list = 
       IntSet.fold (fun v acc ->
 	let c_v = Nodes.find n_p v 
 	and arity_v = Iso.find iso_p v 

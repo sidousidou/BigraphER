@@ -48,7 +48,7 @@ val tseitin : (lit * lit) list -> clause * b_clause list
     Input :  [M <-> ((X0 or X1 or ...) and (Y0 or Y1 or ...) ...)]
     Output : [(M or !X0) and (M or !X1) and ... and (M or !Y0) 
              (!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ...] *)
-val iff : lit -> lit list list -> (b_clause list * clause list) 
+val iff : lit -> lit list list -> b_clause list * clause list 
 
 (** {6 Commander-variable Encoding} *)
 

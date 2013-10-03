@@ -25,20 +25,20 @@ type clause = var list
 
 type b_clause = var * var
 
-let to_M v i =
-  match v with
-  | V_lit j -> M_lit (i, j)
-  | M_lit _ -> assert false
+(* let to_M v i = *)
+(*   match v with *)
+(*   | V_lit j -> M_lit (i, j) *)
+(*   | M_lit _ -> assert false *)
 
-let to_N v =
-  match v with
-  | P_var l -> N_var l
-  | N_var _ -> assert false
+(* let to_N v = *)
+(*   match v with *)
+(*   | P_var l -> N_var l *)
+(*   | N_var _ -> assert false *)
 
-(* Convert a list of column vectors to a list of matrix inidices. Each vector becomes a row. *)
-let to_matrix l =
-  fst (List.fold_left (fun (acc, i) row ->
-    (acc @ (List.map (fun v -> to_M v i) row), i + 1)) ([], 0) l) 
+(* (\* Convert a list of column vectors to a list of matrix inidices. Each vector becomes a row. *\) *)
+(* let to_matrix l = *)
+(*   fst (List.fold_left (fun (acc, i) row -> *)
+(*     (acc @ (List.map (fun v -> to_M v i) row), i + 1)) ([], 0) l)  *)
 
 (* Conjunction of clauses *)
 exception TSEITIN of clause list 
