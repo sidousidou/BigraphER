@@ -25,20 +25,15 @@ type clause = var list
 
 type b_clause = var * var
 
-(* let to_M v i = *)
-(*   match v with *)
-(*   | V_lit j -> M_lit (i, j) *)
-(*   | M_lit _ -> assert false *)
-
-(* let to_N v = *)
-(*   match v with *)
-(*   | P_var l -> N_var l *)
-(*   | N_var _ -> assert false *)
-
-(* (\* Convert a list of column vectors to a list of matrix inidices. Each vector becomes a row. *\) *)
-(* let to_matrix l = *)
-(*   fst (List.fold_left (fun (acc, i) row -> *)
-(*     (acc @ (List.map (fun v -> to_M v i) row), i + 1)) ([], 0) l)  *)
+(* Only positive variables *)
+let to_ij v =
+  match v with
+  | P_var l ->
+    begin match l with
+    | M_lit (i, j) -> (i, j)
+    | V_lit _ -> assert false
+    end
+  | N_var _ -> assert false
 
 (* Conjunction of clauses *)
 exception TSEITIN of clause list 
@@ -274,8 +269,8 @@ let _exactly_rows n m t g =
     2. at most one TRUE in every column of the assignments matrix.
    Auxiliary variables are returned. *)
 let bijection n m t g =
-  assert (m > 0);
-  assert (n > 0);
+  assert (m >= 0);
+  assert (n >= 0);
   let res_cols =
     iter (fun j acc ->
       let col_j = iter (fun i acc ->
@@ -290,8 +285,8 @@ let bijection n m t g =
     -  exactly one TRUE in every row of the assignements matrix
    Auxiliary variables are returned. *)
 let tot_fun n m t g =
-  assert (m > 0);
-  assert (n > 0);
+  assert (m >= 0);
+  assert (n >= 0);
   _exactly_rows n m t g
 
 (* +++++++++++++++++++++++ Integration with Minisat +++++++++++++++++++++++ *)

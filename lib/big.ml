@@ -455,8 +455,9 @@ let add_c7 t p t_n p_n solver v =
   clauses
 
 let add_c8 t p t_n p_n clauses solver v w =
-  let (pairs, cs) = Link.match_ports t p t_n p_n clauses in
-  Cnf.post_iff (pairs, cs) solver w v 
+  let constraints = Link.match_ports t p t_n p_n clauses in
+  List.iter (fun x ->
+    Cnf.post_iff x solver w v) constraints 
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =

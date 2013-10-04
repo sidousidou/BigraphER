@@ -24,6 +24,9 @@ type var =
 | P_var of lit (** Positive literal *)
 | N_var of lit (** Negative literal *)
 
+(** Unbox a variable stored in a matrix. *)
+val to_ij : var -> int * int
+
 (** A disjunction of variables *)
 type clause = var list
 

@@ -482,16 +482,17 @@ let match_edges t p n_t n_p =
   (clauses, res)
 
 (* Nodes of matched edges are isomorphic *)
-let match_ports t p n_t n_p clauses =
+let match_ports t p n_t n_p clauses : (Cnf.b_clause list * Cnf.clause list) list=
   let closed_t = Array.of_list (List.map (fun e -> 
     e.p) (Lg.elements (closed_edges t))) 
   and closed_p = Array.of_list (List.map (fun e -> 
     e.p) (Lg.elements (closed_edges p))) in
-  List.fold_left (fun (acc_p, acc_c) (e_i, e_j) ->
+  List.fold_left (fun acc e_match ->
+    let (e_i, e_j) = Cnf.to_ij e_match in
     let formulas = 
       Ports.compat_list closed_p.(e_i) closed_t.(e_j) n_p n_t in
-    let (ps, cs) = Cnf.iff (Cnf.M_lit (e_i, e_j)) formulas in
-    (ps @ acc_p, cs @ acc_c)) ([], []) (List.flatten clauses) 
+    let res = Cnf.iff (Cnf.M_lit (e_i, e_j)) formulas in
+    res :: acc) [] (List.flatten clauses) 
 
 (* Is p sub-hyperedge of t? *)
 let sub_edge p t n_t n_p =
@@ -528,7 +529,7 @@ let compat_clauses e_p i t h_t n_t n_p =
   IntSet.fold (fun j acc ->
     let e_t = Hashtbl.find h_t j in
     let iso_t = Ports.arities e_t.p in
-    let clauses : Cnf.var list list = 
+    let clauses : Cnf.lit list list = 
       IntSet.fold (fun v acc ->
 	let c_v = Nodes.find n_p v 
 	and arity_v = Iso.find iso_p v 
@@ -539,13 +540,13 @@ let compat_clauses e_p i t h_t n_t n_p =
 	    (Ctrl.(=) c_v (Nodes.find n_t u)) &&
 	      (arity_v <= (Iso.find iso_t u))) p_t in
 	let nodes_assign =
-	 IntSet.fold (fun j acc -> (v, j) :: acc) compat_t [] in
+	 IntSet.fold (fun j acc -> Cnf.M_lit (v, j) :: acc) compat_t [] in
 	nodes_assign :: acc) p [] in
-    ((i, j), clauses) :: acc) t []
+    (Cnf.M_lit (i, j), clauses) :: acc) t []
 
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
-let match_peers t p n_t n_p =
+let match_peers t p n_t n_p :  (Cnf.b_clause list * Cnf.clause list) list =
   let open_p = Lg.filter (fun e ->
     not (Ports.is_empty e.p)) (open_edges p)
   and non_empty_t = Lg.filter (fun e ->
@@ -562,7 +563,8 @@ let match_peers t p n_t n_p =
 	else (j + 1, acc)) non_empty_t (0, IntSet.empty) in
     (* generate possible node matches for every edge assignment. *)
     let clauses = 
-      compat_clauses e_p i compat_t h n_t n_p in
+      List.map (fun (l, r) ->
+	Cnf.iff l r) (compat_clauses e_p i compat_t h n_t n_p) in
     (clauses @ acc, i + 1)) open_p ([], 0))
     
 (* Auxiliary variables for matches open_p -> compat_t 
