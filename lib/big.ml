@@ -457,8 +457,18 @@ let add_c7 t p t_n p_n solver v =
 let add_c8 t p t_n p_n clauses solver v w =
   let constraints = Link.match_ports t p t_n p_n clauses in
   List.iter (fun x ->
-    Cnf.post_iff x solver w v) constraints 
+    Cnf.post_impl x solver w v) constraints
 
+(* To be fixed *)
+(*let add_c9 t p t_n p_n solver v =
+  let (r, c, constraints) = Link.match_peers t p t_n p_n in
+  let w = Cnf.init_aux_m r c solver in
+  (* List.iter (fun x -> *)
+  (*   Cnf.post_iff x solver w v) constraints; *)
+  (* let aux_bij_w_rows =  *)
+  (*   Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in *)
+  (w, aux_bij_w_rows)*)
+    
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =
   let solver = new solver
@@ -486,39 +496,10 @@ let aux_match t p  =
   let clauses = add_c7 t.l p.l t.n p.n solver w in
   (* Add C8: ports of matched closed edges have to be isomorphic. *)
   add_c8 t.l p.l t.n p.n clauses solver v w;
-   
-  (*List.iter (fun (i, l, j, k) ->
-    (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
-    solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
-    ((*(Place.match_list t.p p.p) @ *) 
-    
-
- ---> (Link.match_peers t.l p.l m n));*)
-
-  (* Add blocking pairs *)
-  (*let (iso_ports, constraint_e, block_e_e) = 
-    
----> Link.match_edges t.l p.l block_ctrl
-  and (block_l_n, block_l_e) = 
-    
----> Link.match_links t.l p.l in*)   
-
-  (*let blocking_pairs_v = 
-    (*Iso.union block_l_n*) block_ctrl in*)
-  (*printf "Adding blocking pairs v\n";*)
-  (*iso_iter v blocking_pairs_v solver;*)
-  (*printf "Adding blocking pairs e\n";*)
-  (*iso_iter w (Iso.union block_e_e block_l_e) solver;*) 
-  (*printf "Adding constraint e\n";*)
-  (*List.iter (fun (e_i, e_j, i, j) ->
-    (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
-    solver#add_clause [(neg_lit w.(e_i).(e_j)); (neg_lit v.(i).(j))])
-    constraint_e;*)
-  (*printf "Adding %d clauses for iso ports\n" (List.length iso_ports);*)
-  (*List.iter (fun ((e_i, e_j), iso) ->
-    let lits = 
-      List.map (fun (i,j) -> pos_lit v.(i).(j)) (Iso.to_list iso) in
-    solver#add_clause ((neg_lit w.(e_i).(e_j)) :: lits)) iso_ports;*)
+  (* Add C9: ports of matched open edges have to be isomorphic. 
+     Return matrix from open edges in the pattern to non-empty edges in the
+     target. *)
+  (*let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in*)
   filter_loop solver t p v n m w e f
 
 let occurs t p = 

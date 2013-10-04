@@ -47,11 +47,16 @@ exception TSEITIN of clause list
              and (!Zn or Xn) and (!Zn or Yn)] *)
 val tseitin : (lit * lit) list -> clause * b_clause list
 
+(** CNF encoding of  boolean implications.
+    Input :  [M -> ((X0 or X1 or ...) and (Y0 or Y1 or ...) ...)]
+    Output : [(!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ...] *)
+val impl : lit -> lit list list -> clause list 
+
 (** CNF encoding of [if and only if] boolean formulae.
     Input :  [M <-> ((X0 or X1 or ...) and (Y0 or Y1 or ...) ...)]
     Output : [(M or !X0) and (M or !X1) and ... and (M or !Y0) 
              (!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ...] *)
-val iff : lit -> lit list list -> b_clause list * clause list 
+val equiv : lit -> lit list list -> b_clause list * clause list 
 
 (** {6 Commander-variable Encoding} *)
 
@@ -110,8 +115,12 @@ val post_conj_m : clause list -> Minisat.solver -> Minisat.var array array -> un
 val post_tseitin : clause * b_clause list -> Minisat.solver -> Minisat.var array array ->
   Minisat.var array
 
-(** Post iff constraints to solver. Left hand-sides are stored in matrix w. *)
-val post_iff : b_clause list * clause list -> Minisat.solver ->
+(** Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
+val post_impl : clause list -> Minisat.solver ->
+  Minisat.var array array -> Minisat.var array array -> unit
+
+(** Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
+val post_equiv : b_clause list * clause list -> Minisat.solver ->
   Minisat.var array array -> Minisat.var array array -> unit
 
 (** Post bijection constraints to solver and return auxiliary variables. *)

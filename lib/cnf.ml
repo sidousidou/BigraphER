@@ -72,13 +72,18 @@ let tseitin l =
     (((P_var z) :: acc_z, (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
      i + 1)) (([], []), 0) l)
 
-let iff (m : lit) (clauses : lit list list) =
+let equiv (m : lit) (clauses : lit list list) =
   (* a negated *)
   let pairs = List.map (fun a -> (P_var m, N_var a)) (List.flatten clauses)
   (* m negated *)
   and l = List.map (fun c -> 
     (N_var m) :: (List.map (fun v -> P_var v) c)) clauses in
   (pairs, l)
+
+let impl (m : lit) (clauses : lit list list) =
+  (* m negated *)
+  List.map (fun c -> 
+    (N_var m) :: (List.map (fun v -> P_var v) c)) clauses
 
 (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
@@ -361,10 +366,17 @@ let post_tseitin (z_clause, pairs) s m =
     s#add_clause [convert_v a z; convert_m v m]) pairs;
   z
 
-(* Post iff constraints to solver. Left hand-sides are stored in matrix w. *)
-let post_iff (pairs, clauses) s w v =
+(* Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
+let post_equiv (pairs, clauses) s w v =
   List.iter (fun (m, x) ->
     s#add_clause [convert_m m w; convert_m x v]) pairs;
+  List.iter (fun clause ->
+    let z = convert_m (List.hd clause) w in
+    s#add_clause (z :: (List.map (fun x ->
+      convert_m x v) (List.tl clause)))) clauses
+
+(* Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
+let post_impl clauses s w v =
   List.iter (fun clause ->
     let z = convert_m (List.hd clause) w in
     s#add_clause (z :: (List.map (fun x ->

@@ -199,12 +199,12 @@ val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
 
 (* Ports in matched closed edges have to be isomorphic *)
 val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list -> (Cnf.b_clause list * Cnf.clause list) list
+  Cnf.clause list -> Cnf.clause list list
 
 (*val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t*)
 
 val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  (Cnf.b_clause list * Cnf.clause list) list
+  int * int * (Cnf.b_clause list * Cnf.clause list) list
 
 (*val match_link_pairs : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list*)
 
