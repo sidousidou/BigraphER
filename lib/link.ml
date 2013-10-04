@@ -504,8 +504,7 @@ let sub_edge p t n_t n_p =
     | [] -> raise Not_found
     | t' :: rs -> begin
       if Str.string_match (Str.regexp_string t) t' 0 then
-	(printf "%s < %s\n" t t';
-	 acc @ rs)
+	acc @ rs
       else find_min t rs (t' :: acc) 
     end in
   (* for each type in p find the minimum matching type in t *)
@@ -546,7 +545,7 @@ let compat_clauses e_p i t h_t n_t n_p =
 
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
-let match_peers t p n_t n_p :  int * int * (Cnf.b_clause list * Cnf.clause list) list =
+let match_peers t p n_t n_p :  int * int * (Cnf.b_clause list * Cnf.clause list) list * Cnf.clause list =
   let open_p = Lg.filter (fun e ->
     not (Ports.is_empty e.p)) (open_edges p)
   and non_empty_t = Lg.filter (fun e ->
@@ -555,18 +554,29 @@ let match_peers t p n_t n_p :  int * int * (Cnf.b_clause list * Cnf.clause list)
   ignore (Lg.fold (fun e i ->
     Hashtbl.add h i e;
     i + 1) non_empty_t 0);
-  (Lg.cardinal open_p, Lg.cardinal non_empty_t, 
-   fst (Lg.fold (fun e_p (acc, i) ->
+  let r = Lg.cardinal open_p
+  and c = Lg.cardinal non_empty_t in
+  let (f, b, _) = Lg.fold (fun e_p (acc, block, i) ->
     (* find compatible edges in the target *)
     let (_, compat_t) = 
       Lg.fold (fun e_t (j, acc) -> 
 	if sub_edge e_p e_t n_t n_p then (j + 1, IntSet.add j acc)
 	else (j + 1, acc)) non_empty_t (0, IntSet.empty) in
-    (* generate possible node matches for every edge assignment. *)
-    let clauses = 
-      List.map (fun (l, r) ->
-	Cnf.equiv l r) (compat_clauses e_p i compat_t h n_t n_p) in
-    (clauses @ acc, i + 1)) open_p ([], 0)))
+    (* if no compatible edges block e_p *)
+    if IntSet.is_empty compat_t then begin
+      let res =
+	IntSet.fold (fun j acc ->
+	  [Cnf.N_var (Cnf.M_lit (i, j))] :: acc) (IntSet.of_int c) block in
+      (acc, res, i + 1)
+    end else begin
+      (* generate possible node matches for every edge assignment. *)
+      let clauses = 
+	List.map (fun (l, r) ->
+	  Cnf.equiv l r) (compat_clauses e_p i compat_t h n_t n_p) in
+      (clauses @ acc, block, i + 1)
+    end) open_p ([], [], 0) in
+  (r, c, f, b)
+
     
 (* Auxiliary variables for matches open_p -> compat_t 
    Total function: at least one true on every row and 

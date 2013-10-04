@@ -263,6 +263,7 @@ let decomp t p i_v i_e =
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty () })
+
 (*
 (* List of bigraphs. First one is the top level. *)
 let levels b =
@@ -319,45 +320,6 @@ let snf b =
   | _ -> ""
     *)
   
-(* Initialise a matrix of varibles for the SAT solver *)
-(* let init_vars r c solver = *)
-(*   let m = Array.make_matrix r c 0 in *)
-(*   for i = 0 to r - 1 do *)
-(*     for j = 0 to c - 1 do *)
-(*       m.(i).(j) <- solver#new_var  *)
-(*     done; *)
-(*   done; *)
-(*   m *)
-
-(* GPROF *)
-(* let add_bijection v n m solver = *)
-(*   (\* Add first constraint; TOTAL -- at least a TRUE for every row *\) *)
-(*   for i = 0 to n - 1 do *)
-(*     (\*printf "%s\n" (String.concat " V " (Array.to_list (Array.mapi (fun j _ -> *)
-(*       sprintf "[%d,%d]" i j) v.(i))));*\) *)
-(*     solver#add_clause (List.map (fun v -> *)
-(*       pos_lit v) (Array.to_list v.(i))) *)
-(*   done; *)
-(*   (\* Add second constraint: INJECTIVE -- at most a TRUE for every row *\) *)
-(*   for i = 0 to n - 1 do *)
-(*     for j = 0 to m - 2 do *)
-(*       for k = j + 1 to m - 1 do *)
-(* 	(\*printf "![%d,%d] V ![%d,%d]\n" i j i k;*\) *)
-(*         solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(i).(k))] *)
-(*       done; *)
-(*     done; *)
-(*   done; *)
-(*   (\* Add third constraint: SURJECTIVE -- on the codomain, at most a TRUE for *)
-(*      every column *\) *)
-(*   for j = 0 to m - 1 do *)
-(*     for i = 0 to n - 2 do *)
-(*       for l = i + 1 to n - 1 do *)
-(* 	(\*printf "![%d,%d] V ![%d,%d]\n" i j l j;*\) *)
-(*         solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(j))] *)
-(*       done; *)
-(*     done; *)
-(*   done            *)
-
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver vars n m = 
   let res = ref [] in
@@ -459,15 +421,16 @@ let add_c8 t p t_n p_n clauses solver v w =
   List.iter (fun x ->
     Cnf.post_impl x solver w v) constraints
 
-(* To be fixed *)
-(*let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints) = Link.match_peers t p t_n p_n in
+(* Fix *)
+let add_c9 t p t_n p_n solver v =
+  let (r, c, constraints, b) = Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
+  Cnf.post_conj_m b solver w;
   (* List.iter (fun x -> *)
-  (*   Cnf.post_iff x solver w v) constraints; *)
-  (* let aux_bij_w_rows =  *)
-  (*   Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in *)
-  (w, aux_bij_w_rows)*)
+  (*   Cnf.post_equiv x solver w v) constraints; *)
+  let aux_bij_w_rows =
+    Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
+  (w, aux_bij_w_rows)
     
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p  =
@@ -499,7 +462,7 @@ let aux_match t p  =
   (* Add C9: ports of matched open edges have to be isomorphic. 
      Return matrix from open edges in the pattern to non-empty edges in the
      target. *)
-  (*let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in*)
+  let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in
   filter_loop solver t p v n m w e f
 
 let occurs t p = 
