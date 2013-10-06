@@ -696,9 +696,9 @@ let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
   (clauses, block_rows t.n b)
 
 let check_sites t p iso =
-  let v_p' = IntSet.of_list (Iso.codom iso) in
+  let v_p' = IntSet.of_list (Iso.codom iso) in (* SHARE *)
   (* Set of children not in a match. *)
-  let c_set =
+  let c_set = (* SHARE *)
     IntSet.fold (fun j acc ->
       let children = IntSet.diff 
 	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
@@ -720,7 +720,7 @@ let check_sites t p iso =
 
 (* Dual *)
 let check_roots t p iso =
-  let v_p' = IntSet.of_list (Iso.codom iso) in
+  let v_p' = IntSet.of_list (Iso.codom iso) in (* SHARE *)
   let p_set = 
     IntSet.fold (fun j acc ->
       let parents = IntSet.diff 
@@ -740,18 +740,20 @@ let check_roots t p iso =
       ) (IntSet.of_int p.r) IntSet.empty in
     (* Equality test *)
     IntSet.equal candidate chl_p) p_set
-   
-(*   (\* check TRANS *\) *)
-(*   let check_trans t t_trans iso = *)
-(*    (\* check if there is a node child of co-domain, outside co-domain, such that *)
-(*       one of its children in trans is in co-domain *\) *)
-(*     not (IntSet.exists (fun c -> *)
-(*       IntSet.exists (fun t ->  *)
-(* 	IntSet.mem t (codom iso)) (chl t_trans c)) *)
-(* 	   (IntSet.diff (IntSet.fold (fun x acc -> *)
-(* 	     IntSet.union acc (IntSet.filter (fun j ->  *)
-(* 	       j < t.n) (chl t.m x))) (off t.r (codom iso)) IntSet.empty) *)
-(* 	      (codom iso))) *)
+    
+(* check TRANS *)
+let check_trans t t_trans iso = (* Full transitive closure is not needed. Just closure of c_set. *)
+  let v_p' = IntSet.of_list (Iso.codom iso) in (* SHARE *)
+  let c_set = (* SHARE *)
+    IntSet.fold (fun j acc ->
+      let children = IntSet.diff 
+	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
+      IntSet.union acc children) v_p' IntSet.empty in
+  (* check if there is a node child of co-domain, outside co-domain, such that
+     one of its children in trans is in co-domain *)
+  not (IntSet.exists (fun c ->
+    List.exists (fun t ->
+      IntSet.mem t v_p') (Sparse.chl t_trans c)) c_set)
     
 (* check if iso i : p -> t is valid *)
 (* let is_match_valid t p t_trans iso =  *)

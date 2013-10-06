@@ -363,7 +363,9 @@ let rec filter_loop solver t p v n m w e f =
 	  let iso_v = get_iso solver v n m
 	  and iso_e = get_iso solver w e f in
 	  if (Place.check_sites t.p p.p iso_v) && 
-	    (Place.check_roots t.p p.p iso_v) then (solver, v, n, m, w, e, f)
+	    (Place.check_roots t.p p.p iso_v) &&
+	    (Place.check_trans t.p (Sparse.trans t.p.Place.nn) iso_v) then 
+	    (solver, v, n, m, w, e, f)
 	  else begin
 	    add_blocking solver v n m w e f;
 	    filter_loop solver t p v n m w e f

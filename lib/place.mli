@@ -170,4 +170,6 @@ val check_sites : pg -> pg -> Base.Iso.t -> bool
 
 val check_roots : pg -> pg -> Base.Iso.t -> bool
 
+val check_trans : pg -> Sparse.bmatrix -> Base.Iso.t -> bool
+
 (**/**)
