@@ -498,6 +498,8 @@ let match_ports t p n_t n_p clauses : Cnf.clause list list =
 let sub_edge p t n_t n_p =
   let types_p = Ports.types p.p n_p
   and types_t = Ports.types t.p n_t in
+  (* printf "types p: [%s]\ttypes t:[%s]\n" *)
+  (*   (String.concat ";" types_p) (String.concat "," types_t); *)
   (* match with the minimum type and remove *)
   let rec find_min t ps_t acc =
     match ps_t with
@@ -545,7 +547,7 @@ let compat_clauses e_p i t h_t n_t n_p =
 
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
-let match_peers t p n_t n_p :  int * int * (Cnf.b_clause list * Cnf.clause list) list * Cnf.clause list =
+let match_peers t p n_t n_p :  int * int * Cnf.clause list list * Cnf.clause list =
   let open_p = Lg.filter (fun e ->
     not (Ports.is_empty e.p)) (open_edges p)
   and non_empty_t = Lg.filter (fun e ->
@@ -572,7 +574,7 @@ let match_peers t p n_t n_p :  int * int * (Cnf.b_clause list * Cnf.clause list)
       (* generate possible node matches for every edge assignment. *)
       let clauses = 
 	List.map (fun (l, r) ->
-	  Cnf.equiv l r) (compat_clauses e_p i compat_t h n_t n_p) in
+	  Cnf.impl l r) (compat_clauses e_p i compat_t h n_t n_p) in
       (clauses @ acc, block, i + 1)
     end) open_p ([], [], 0) in
   (r, c, f, b)

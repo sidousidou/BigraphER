@@ -530,7 +530,6 @@ let block_rows t_n : int list -> Cnf.clause list =
     IntSet.fold (fun j acc ->
       [Cnf.N_var (Cnf.M_lit (i, j))] :: acc) j_t acc) []
     
-(* GPROF *)
 (* Optimisation 1:
    - Do not add a pair if one of the two literals matches nodes of different 
      controls.
@@ -696,78 +695,65 @@ let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
       end) p.rn ([], []) in
   (clauses, block_rows t.n b)
 
-(* TO DO 
-   - Sites
-   - Roots
-   - Trans *)
+let check_sites t p iso =
+  let v_p' = IntSet.of_list (Iso.codom iso) in
+  (* Set of children not in a match. *)
+  let c_set =
+    IntSet.fold (fun j acc ->
+      let children = IntSet.diff 
+	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
+      IntSet.union acc children) v_p' IntSet.empty in
+  (* Is there a set of sites with the same parent set? *)
+  IntSet.for_all (fun c ->
+    let prn_c = IntSet.inter 
+      v_p' (IntSet.of_list (Sparse.prn t.nn c)) in
+    (* Construct a candidate set of sites *)
+    let candidate =
+      IntSet.fold (fun s acc ->
+	let prn_s = IntSet.apply 
+	  (IntSet.of_list (Sparse.prn p.ns s)) iso in
+	if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
+	else acc
+      ) (IntSet.of_int p.s) IntSet.empty in
+    (* Equality test *)
+    IntSet.equal candidate prn_c) c_set
 
-(*
-let match_roots t p =
-  let n_p =  nodes_root_par p 
-  and n_t = of_int t.n in
-  IntSet.fold (fun i acc ->
-    Iso.union acc (IntSet.fold (fun j acc ->
-      if (IntSet.cardinal (siblings t j)) < (IntSet.cardinal (siblings p i)) then
-	((*printf "match_sites (%d,%d)\n" i j;*)
-	Iso.add (i,j) acc)
-      else
-	acc) n_t Iso.empty)) n_p Iso.empty
-
+(* Dual *)
+let check_roots t p iso =
+  let v_p' = IntSet.of_list (Iso.codom iso) in
+  let p_set = 
+    IntSet.fold (fun j acc ->
+      let parents = IntSet.diff 
+	(IntSet.of_list (Sparse.prn t.nn j)) v_p' in
+      IntSet.union acc parents) v_p' IntSet.empty in
+  (* Is there a set of roots with the same children set? *)
+  IntSet.for_all (fun x ->
+    let chl_p = IntSet.inter 
+      v_p' (IntSet.of_list (Sparse.chl t.nn x)) in
+    (* Construct a candidate set of roots *)
+    let candidate =
+      IntSet.fold (fun r acc ->
+	let chl_r = IntSet.apply 
+	  (IntSet.of_list (Sparse.chl p.rn r)) iso in
+	if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
+	else acc
+      ) (IntSet.of_int p.r) IntSet.empty in
+    (* Equality test *)
+    IntSet.equal candidate chl_p) p_set
+   
+(*   (\* check TRANS *\) *)
+(*   let check_trans t t_trans iso = *)
+(*    (\* check if there is a node child of co-domain, outside co-domain, such that *)
+(*       one of its children in trans is in co-domain *\) *)
+(*     not (IntSet.exists (fun c -> *)
+(*       IntSet.exists (fun t ->  *)
+(* 	IntSet.mem t (codom iso)) (chl t_trans c)) *)
+(* 	   (IntSet.diff (IntSet.fold (fun x acc -> *)
+(* 	     IntSet.union acc (IntSet.filter (fun j ->  *)
+(* 	       j < t.n) (chl t.m x))) (off t.r (codom iso)) IntSet.empty) *)
+(* 	      (codom iso))) *)
+    
 (* check if iso i : p -> t is valid *)
-let is_match_valid t p t_trans iso = 
-  (* check SITES *)
-  let check_sites t p iso =
-    let n_t_sites = 
-      IntSet.fold (fun j acc ->
-	IntSet.union acc (chl t.m j)) (* diff sites t ??? NO *) 
-	(off t.r (codom iso)) IntSet.empty in
-    IntSet.for_all (fun c -> 
-      (* is there a set of sites with the same parent set? *)
-      let prn_c = 
-	IntSet.inter (codom iso) (off (-t.r) (prn t.m c)) in
-      (* construct a candidate set of sites *)
-      let candidate = 
-	IntSet.fold (fun s acc ->
-	  let prn_s =
-	    apply (IntSet.filter (fun x ->
-	      x >= 0) (off (-p.r) (prn p.m s))) iso in
-	  if IntSet.subset prn_s prn_c then
-	    IntSet.union prn_s acc
-	  else
-	    acc) (off (p.n) (of_int p.s)) IntSet.empty in
-      IntSet.equal candidate prn_c)
-      (IntSet.diff n_t_sites (codom iso)) (* diff codom iso ??? YES *)
-  (* check ROOTS (dual) *)
-  and check_roots t p iso =
-    let n_t_roots = (* rows *)
-      IntSet.fold (fun j acc ->
-	IntSet.union acc (prn t.m j)) (* diff roots t ??? NO *) 
-	(codom iso) IntSet.empty in
-    IntSet.for_all (fun _p -> 
-      (* is there a set of roots with the same child set? *)
-      let chl_p = (* cols *)
-	IntSet.inter (codom iso) (chl t.m _p) in
-      (* construct a candidate set of roots *)
-      let candidate = (* cols *)
-	IntSet.fold (fun r acc ->
-	  let chl_r = 
-	    apply (IntSet.filter (fun x ->  x < p.n) (chl p.m r)) iso in
-	  if IntSet.subset chl_r chl_p then
-	    IntSet.union chl_r acc
-	  else
-	    acc) (of_int p.r) IntSet.empty in
-      IntSet.equal candidate chl_p)
-      (IntSet.diff n_t_roots (off t.r (codom iso))) (* diff codom iso ??? YES *)
-  (* check TRANS *)
-  and check_trans t t_trans iso =
-   (* check if there is a node child of co-domain, outside co-domain, such that
-      one of its children in trans is in co-domain *)
-    not (IntSet.exists (fun c ->
-      IntSet.exists (fun t -> 
-	IntSet.mem t (codom iso)) (chl t_trans c))
-	   (IntSet.diff (IntSet.fold (fun x acc ->
-	     IntSet.union acc (IntSet.filter (fun j -> 
-	       j < t.n) (chl t.m x))) (off t.r (codom iso)) IntSet.empty)
-	      (codom iso))) in
-  (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso)
-*)
+(* let is_match_valid t p t_trans iso =  *)
+(*   (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso) *)
+

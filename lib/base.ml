@@ -181,7 +181,7 @@ module IntSet = struct
     of_int (cardinal s)
 
   let apply s iso =
-    assert (Iso.cardinal iso = cardinal s);
+    assert (Iso.cardinal iso >= cardinal s);
     fold (fun i acc ->
       add (Iso.find iso i) acc) s empty
 

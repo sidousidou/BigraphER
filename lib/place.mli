@@ -27,6 +27,9 @@ exception COMP_ERROR of (int * int)
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : pg -> string
 
+(** Compute the number of edges in the DAG. *)
+val edges : pg -> int
+
 (** [parse r n s lines] builds a place graph with [r] roots, [n] nodes and [s]
     sites. Each element in [lines] is a string in the same format of the output
     of {!Place.to_string}.*)
@@ -163,7 +166,8 @@ val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list
 
-(** Computes the number of edges in the DAG. *)
-val edges : pg -> int
+val check_sites : pg -> pg -> Base.Iso.t -> bool
+
+val check_roots : pg -> pg -> Base.Iso.t -> bool
 
 (**/**)

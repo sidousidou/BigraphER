@@ -354,30 +354,22 @@ let add_blocking solver v n m w e f =
     !blocking_clause in
   solver#add_clause ((scan_matrix v n m) @ (scan_matrix w e f))
 
-let (*rec*) filter_loop solver t p v n m w e f = 
+let rec filter_loop solver t p v n m w e f = 
     solver#simplify;
     match solver#solve with
-      | Minisat.UNSAT -> 
-	begin
-	 (* printf "NO_MATCH\n";*)
-	 (* solver#print_stats;*)
-	  raise NO_MATCH
-	end
+      | Minisat.UNSAT -> raise NO_MATCH
       | Minisat.SAT ->
 	begin
-	  (* printf "MATCH\n"; *)
-	  (* solver#print_stats; *)
-	  let iso_v, _ = get_iso solver v n m, get_iso solver w e f in
-	  (*if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
-	    (Link.is_match_valid t.l p.l iso_e)*) then*)
-	    (solver, v, n, m, w, e, f)
-	  (*else
-	    begin
-	      add_blocking solver v n m w e f;
-	      filter_loop solver t p v n m w e f t_trans
-	    end*)   
+	  let iso_v = get_iso solver v n m
+	  and iso_e = get_iso solver w e f in
+	  if (Place.check_sites t.p p.p iso_v) && 
+	    (Place.check_roots t.p p.p iso_v) then (solver, v, n, m, w, e, f)
+	  else begin
+	    add_blocking solver v n m w e f;
+	    filter_loop solver t p v n m w e f
+	  end   
 	end 
-
+	  
 (*********************************************************************)	  
 (* Aux functions *)
 let iso_iter m iso solver =
@@ -426,8 +418,8 @@ let add_c9 t p t_n p_n solver v =
   let (r, c, constraints, b) = Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   Cnf.post_conj_m b solver w;
-  (* List.iter (fun x -> *)
-  (*   Cnf.post_equiv x solver w v) constraints; *)
+  List.iter (fun x ->
+    Cnf.post_impl x solver w v) constraints;
   let aux_bij_w_rows =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   (w, aux_bij_w_rows)
