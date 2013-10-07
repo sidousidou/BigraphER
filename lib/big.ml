@@ -326,7 +326,7 @@ let get_iso solver vars n m =
   for i = 0 to n - 1 do
     for j = 0 to m - 1 do
       match solver#value_of vars.(i).(j) with
-	| Minisat.True -> res := (i,j)::!res
+	| Minisat.True -> res := (i,j) :: !res
 	| Minisat.False -> ()
 	| Minisat.Unknown -> ()
     done;
@@ -344,17 +344,17 @@ let add_blocking solver v n m w e f =
 	match solver#value_of m.(i).(j) with
 	  | Minisat.True -> 
 	    ((*printf "!m[%d,%d] V " i j;*)
-	     blocking_clause := (neg_lit m.(i).(j))::!blocking_clause)
+	     blocking_clause := (neg_lit m.(i).(j)) :: !blocking_clause)
 	  | Minisat.False -> 
 	    ((*printf "m[%d,%d] V " i j;*)
-	     blocking_clause := (pos_lit m.(i).(j))::!blocking_clause)
+	     blocking_clause := (pos_lit m.(i).(j)) :: !blocking_clause)
 	  | Minisat.Unknown -> ()
       done;
     done;
     !blocking_clause in
   solver#add_clause ((scan_matrix v n m) @ (scan_matrix w e f))
 
-let rec filter_loop solver t p v n m w e f = 
+let rec filter_loop solver t p v n m w e f t_trans = 
     solver#simplify;
     match solver#solve with
       | Minisat.UNSAT -> raise NO_MATCH
@@ -362,13 +362,11 @@ let rec filter_loop solver t p v n m w e f =
 	begin
 	  let iso_v = get_iso solver v n m
 	  and iso_e = get_iso solver w e f in
-	  if (Place.check_sites t.p p.p iso_v) && 
-	    (Place.check_roots t.p p.p iso_v) &&
-	    (Place.check_trans t.p (Sparse.trans t.p.Place.nn) iso_v) then 
+	  if (Place.check_match t.p p.p t_trans iso_v) then 
 	    (solver, v, n, m, w, e, f)
 	  else begin
 	    add_blocking solver v n m w e f;
-	    filter_loop solver t p v n m w e f
+	    filter_loop solver t p v n m w e f t_trans
 	  end   
 	end 
 	  
@@ -427,7 +425,7 @@ let add_c9 t p t_n p_n solver v =
   (w, aux_bij_w_rows)
     
 (* Compute isos from nodes in the pattern to nodes in the target *)
-let aux_match t p  =
+let aux_match t p t_trans =
   let solver = new solver
   and (n, m) = (p.p.Place.n, t.p.Place.n) 
   and (e, f) = (Link.Lg.cardinal (Link.closed_edges p.l),
@@ -457,39 +455,40 @@ let aux_match t p  =
      Return matrix from open edges in the pattern to non-empty edges in the
      target. *)
   let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in
-  filter_loop solver t p v n m w e f
+  filter_loop solver t p v n m w e f t_trans
 
 let occurs t p = 
   try
-    if p.n.Nodes.size = 0 then
+    if p.n.Nodes.size = 0 then true
+    else begin
+      let t_trans = Sparse.trans t.p.Place.nn in
+      ignore (aux_match t p t_trans);
       true
-    else
-      (ignore (aux_match t p);
-       true)
+    end
   with
     | NO_MATCH -> false
     
 let occurrence t p =
-  if p.n.Nodes.size = 0 then
-    raise NODE_FREE 
-  else
-    let (s, v, n, m, w, e, f) = aux_match t p in
-    (get_iso s v n m, get_iso s w e f)
+  if p.n.Nodes.size = 0 then raise NODE_FREE 
+  else 
+    let t_trans = Sparse.trans t.p.Place.nn in
+    let (s, v, n, m, w, e, f) = aux_match t p t_trans in
+       (get_iso s v n m, get_iso s w e f)
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
-  if b.n.Nodes.size = 0 then
-    raise NODE_FREE 
+  if b.n.Nodes.size = 0 then raise NODE_FREE 
   else begin
-    let rem_id res = 
+    let b_trans = Sparse.trans b.p.Place.nn
+    and rem_id res = 
       List.filter (fun (i, e) ->
 	not ((Iso.is_id i) && (Iso.is_id e))) res in
     rem_id (try 
-	      let (solver, v, n, m, w, e, f) = aux_match b b in
+	      let (solver, v, n, m, w, e, f) = aux_match b b b_trans in
 	      let rec loop_occur res =
 		add_blocking solver v n m w e f;
 		try 
-		  ignore (filter_loop solver b b v n m w e f);
+		  ignore (filter_loop solver b b v n m w e f b_trans);
 		  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
 		with
 		| NO_MATCH -> res in
@@ -509,12 +508,12 @@ let clause_of_iso iso m r c =
   !clause
 
 let occurrences t p =
-  if p.n.Nodes.size = 0 then
-    raise NODE_FREE 
+  if p.n.Nodes.size = 0 then raise NODE_FREE 
   else
     try 
-      let (solver, v, n, m, w, e, f) = aux_match t p
-      (*and autos = auto p in*) and autos = [] in
+      let t_trans = Sparse.trans t.p.Place.nn in
+      let (solver, v, n, m, w, e, f) = aux_match t p t_trans
+      and autos = auto p in
       let rec loop_occur res =
 	add_blocking solver v n m w e f;
 	(****************AUTOMORPHISMS****************)
@@ -526,21 +525,13 @@ let occurrences t p =
 	  solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
 	(*********************************************)
 	try 
-	  ignore (filter_loop solver t p v n m w e f);
+	  ignore (filter_loop solver t p v n m w e f t_trans);
 	  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
 	with
 	  | NO_MATCH -> res in
       loop_occur [(get_iso solver v n m, get_iso solver w e f)]
     with
       | NO_MATCH -> []
-
-(*let add_roots_sites v n solver = 
-  for i = 0 to n - 1 do
-    for j = 0 to n - 1 do
-      if i = j then solver#add_clause [(pos_lit v.(i).(j))]
-      else solver#add_clause [(neg_lit v.(i).(j))]
-    done;
-  done*)
     
 let equal_SAT a b =
   let solver = new solver in

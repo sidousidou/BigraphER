@@ -166,10 +166,6 @@ val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list
 
-val check_sites : pg -> pg -> Base.Iso.t -> bool
-
-val check_roots : pg -> pg -> Base.Iso.t -> bool
-
-val check_trans : pg -> Sparse.bmatrix -> Base.Iso.t -> bool
+val check_match : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
 
 (**/**)

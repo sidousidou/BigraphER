@@ -695,16 +695,14 @@ let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
       end) p.rn ([], []) in
   (clauses, block_rows t.n b)
 
-let check_sites t p iso =
-  let v_p' = IntSet.of_list (Iso.codom iso) in (* SHARE *)
-  (* Set of children not in a match. *)
-  let c_set = (* SHARE *)
+let check_sites t p v_p' c_set iso =
+  let s_set =
     IntSet.fold (fun j acc ->
-      let children = IntSet.diff 
-	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
+      let children = IntSet.of_list (Sparse.chl t.ns j) in
       IntSet.union acc children) v_p' IntSet.empty in
   (* Is there a set of sites with the same parent set? *)
-  IntSet.for_all (fun c ->
+  (* Nodes *)
+  (IntSet.for_all (fun c ->
     let prn_c = IntSet.inter 
       v_p' (IntSet.of_list (Sparse.prn t.nn c)) in
     (* Construct a candidate set of sites *)
@@ -716,18 +714,36 @@ let check_sites t p iso =
 	else acc
       ) (IntSet.of_int p.s) IntSet.empty in
     (* Equality test *)
-    IntSet.equal candidate prn_c) c_set
+    IntSet.equal candidate prn_c) c_set) &&
+    (* Sites *)
+    (IntSet.for_all (fun s ->
+      let prn_s = IntSet.inter 
+	v_p' (IntSet.of_list (Sparse.prn t.ns s)) in
+    (* Construct a candidate set of sites *)
+    let candidate =
+      IntSet.fold (fun s acc ->
+	let prn_s' = IntSet.apply 
+	  (IntSet.of_list (Sparse.prn p.ns s)) iso in
+	if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
+	else acc
+      ) (IntSet.of_int p.s) IntSet.empty in
+    (* Equality test *)
+    IntSet.equal candidate prn_s) s_set)
 
 (* Dual *)
-let check_roots t p iso =
-  let v_p' = IntSet.of_list (Iso.codom iso) in (* SHARE *)
+let check_roots t p v_p' iso =
   let p_set = 
     IntSet.fold (fun j acc ->
       let parents = IntSet.diff 
 	(IntSet.of_list (Sparse.prn t.nn j)) v_p' in
+      IntSet.union acc parents) v_p' IntSet.empty
+  and r_set = 
+    IntSet.fold (fun j acc ->
+      let parents = IntSet.of_list (Sparse.prn t.rn j) in
       IntSet.union acc parents) v_p' IntSet.empty in
   (* Is there a set of roots with the same children set? *)
-  IntSet.for_all (fun x ->
+  (* Nodes *)
+  (IntSet.for_all (fun x ->
     let chl_p = IntSet.inter 
       v_p' (IntSet.of_list (Sparse.chl t.nn x)) in
     (* Construct a candidate set of roots *)
@@ -739,23 +755,38 @@ let check_roots t p iso =
 	else acc
       ) (IntSet.of_int p.r) IntSet.empty in
     (* Equality test *)
-    IntSet.equal candidate chl_p) p_set
+    IntSet.equal candidate chl_p) p_set) &&
+    (* Roots *)
+    (IntSet.for_all (fun x ->
+      let chl_r = IntSet.inter 
+	v_p' (IntSet.of_list (Sparse.chl t.rn x)) in
+    (* Construct a candidate set of roots *)
+      let candidate =
+	IntSet.fold (fun r acc ->
+	let chl_r' = IntSet.apply 
+	  (IntSet.of_list (Sparse.chl p.rn r)) iso in
+	if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
+	else acc
+	) (IntSet.of_int p.r) IntSet.empty in
+      (* Equality test *)
+      IntSet.equal candidate chl_r) r_set)
     
 (* check TRANS *)
-let check_trans t t_trans iso = (* Full transitive closure is not needed. Just closure of c_set. *)
-  let v_p' = IntSet.of_list (Iso.codom iso) in (* SHARE *)
-  let c_set = (* SHARE *)
-    IntSet.fold (fun j acc ->
-      let children = IntSet.diff 
-	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
-      IntSet.union acc children) v_p' IntSet.empty in
+let check_trans t t_trans v_p' c_set iso = 
   (* check if there is a node child of co-domain, outside co-domain, such that
      one of its children in trans is in co-domain *)
   not (IntSet.exists (fun c ->
     List.exists (fun t ->
       IntSet.mem t v_p') (Sparse.chl t_trans c)) c_set)
     
-(* check if iso i : p -> t is valid *)
-(* let is_match_valid t p t_trans iso =  *)
-(*   (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso) *)
-
+(* Check if iso i : p -> t is valid *)
+let check_match t p t_trans iso =  
+  let v_p' = IntSet.of_list (Iso.codom iso) in
+  let c_set =
+    IntSet.fold (fun j acc ->
+      let children = IntSet.diff 
+	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
+      IntSet.union acc children) v_p' IntSet.empty in
+  (check_sites t p v_p' c_set iso) && (check_roots t p v_p' iso) && 
+    (check_trans t t_trans v_p' c_set iso)
+    
