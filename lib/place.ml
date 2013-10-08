@@ -695,6 +695,25 @@ let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
       end) p.rn ([], []) in
   (clauses, block_rows t.n b)
 
+(* Block unconnected pairs of nodes with sites and nodes with roots. *)
+let match_trans t p : Cnf.clause list =
+  let n_s = Sparse.dom p.ns (* index i *)
+  and n_r = Sparse.codom p.rn in (* index j *)
+  let (n_s', n_r') = 
+    IntSet.fold (fun i (acc_s, acc_r) ->
+      let x = IntSet.inter (IntSet.of_list (Sparse.chl p.nn i)) n_r in
+      if IntSet.cardinal x = 0 then (acc_s, acc_r)
+      else (IntSet.remove i acc_s, IntSet.diff acc_r x)
+    ) n_s (n_s, n_r) in
+  (* For every edge (i', j') in t, block any ii' and jj' *)
+  Sparse.fold (fun i' j' acc ->
+    let blocks = IntSet.fold (fun i acc ->
+      IntSet.fold (fun j acc ->
+	[Cnf.N_var (Cnf.M_lit (i, i')); Cnf.N_var (Cnf.M_lit (j, j'))] :: acc
+      ) n_r' acc
+    ) n_s' [] in
+    blocks @ acc) t.nn [] 
+
 let check_sites t p v_p' c_set iso =
   let s_set =
     IntSet.fold (fun j acc ->
@@ -772,7 +791,7 @@ let check_roots t p v_p' iso =
       IntSet.equal candidate chl_r) r_set)
     
 (* check TRANS *)
-let check_trans t t_trans v_p' c_set iso = 
+let check_trans t_trans v_p' c_set = 
   (* check if there is a node child of co-domain, outside co-domain, such that
      one of its children in trans is in co-domain *)
   not (IntSet.exists (fun c ->
@@ -788,5 +807,5 @@ let check_match t p t_trans iso =
 	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
       IntSet.union acc children) v_p' IntSet.empty in
   (check_sites t p v_p' c_set iso) && (check_roots t p v_p' iso) && 
-    (check_trans t t_trans v_p' c_set iso)
+    (check_trans t_trans v_p' c_set)
     

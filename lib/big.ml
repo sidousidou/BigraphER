@@ -370,22 +370,6 @@ let rec filter_loop solver t p v n m w e f t_trans =
 	  end   
 	end 
 	  
-(*********************************************************************)	  
-(* Aux functions *)
-let iso_iter m iso solver =
-  Iso.iter (fun i j -> 
-    solver#add_clause [(neg_lit m.(i).(j))]) iso
-
-(* Convert a list of pairs encoding a clause to minisat. *)
-let to_minisat v =
-  List.map (fun (i, j) -> pos_lit v.(i).(j)) 
-
-let block_rows solver v =
-  List.iter (List.iter (fun (i, j) ->
-    solver#add_clause [neg_lit v.(i).(j)]))
-
-(*********************************************************************)
-
 let add_c4 t p t_n p_n solver v =
   let (t_constraints, block_clauses, exc_clauses) = 
     Place.match_list t p t_n p_n in
@@ -412,6 +396,9 @@ let add_c8 t p t_n p_n clauses solver v w =
   let constraints = Link.match_ports t p t_n p_n clauses in
   List.iter (fun x ->
     Cnf.post_impl x solver w v) constraints
+
+let add_c10 t p solver v =
+  Cnf.post_conj_m (Place.match_trans t p) solver v
 
 (* Fix *)
 let add_c9 t p t_n p_n solver v =
@@ -455,6 +442,9 @@ let aux_match t p t_trans =
      Return matrix from open edges in the pattern to non-empty edges in the
      target. *)
   let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in
+  (* Add C10: block edges between unconnected nodes with sites and nodes with
+     roots. *)
+  add_c10 t.p p.p solver v;
   filter_loop solver t p v n m w e f t_trans
 
 let occurs t p = 
