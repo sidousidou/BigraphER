@@ -437,14 +437,14 @@ let get_dot p =
   let root_shapes =  
     IntSet.fold (fun i buff ->
       sprintf "%sr%d [ label=\"%d\", style=\"dashed\", shape=box, width=.28,\
-                       height=.18, fontname=\"serif\" ];\n" buff i i)
+                       height=.18, fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
       (IntSet.of_int p.r) ""
   (* Site shapes *)
   and site_shapes = 
     IntSet.fold (fun i buff ->
       sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", shape=box,\
                        fillcolor=\"gray\", width=.28, height=.18,\
-                       fontname=\"serif\" ];\n" buff i i)
+                       fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
       (IntSet.of_int p.s) ""
   (* Ranks *)
   and ranks = 

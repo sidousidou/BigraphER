@@ -452,8 +452,8 @@ let string_of_stats_sim (t, t_sim, s, r, o) =
 let to_dot ctmc =
   let states =
     String.concat "\n" (List.map (fun (i, _) -> 
-      sprintf "%d [label=\"%d\", URL=\"./%d.svg\", fontsize=11.0, \
-               fontnames=\"ps\"];" i i i) (V.elements ctmc.v))
+      sprintf "%d [label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+               fontname=\"monospace\"];" i i i) (V.elements ctmc.v))
   and edges =
     Hashtbl.fold (fun v (u, rho) buff -> 
       sprintf "%s%d -> %d [label=\"%g\", arrowhead=\"vee\", \

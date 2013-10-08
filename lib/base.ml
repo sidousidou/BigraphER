@@ -236,10 +236,11 @@ module Nodes = struct
       
   let to_dot s =
     String.concat "\n" 
-      (fold (fun i c acc ->
+      (fold (fun i (Ctrl.Ctrl (n, _)) acc ->
 	acc @ [sprintf "v%d [ label=\"%s\", shape=ellipse,\
-                              fontname=\"sans-serif\" ];" 
-		  i (Ctrl.to_string c)]) s [])
+                              fontname=\"sans-serif\", fontsize=9.0,\
+                              fixedsize=true, width=%f, height=.35 ];" 
+		  i n (0.1 *. (float (String.length n)) +. 0.2)]) s [])
 
   let tens a b =
     fold (fun i c acc ->

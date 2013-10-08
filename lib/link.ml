@@ -310,22 +310,22 @@ let get_dot l =
       let flag = is_hyp e in
       ((* Edge index *)
 	i + 1,
-      (* Inner names *)
+       (* Inner names *)
        Face.fold (fun n buff ->
 	 sprintf "%si%s [ shape=plaintext, label=\"%s\", width=.18,\
-                          height=.18, fontname=\"serif\" ];\n"
+                          height=.18, fontname=\"serif\", fontsize=9.0 ];\n"
            buff (string_of_name n) (string_of_name n)) e.i buff_i,
-      (* Outer names *)  
+       (* Outer names *)  
        Face.fold (fun n buff ->
 	 sprintf "%so%s [ shape=plaintext, label=\"%s\", width=.18,\
-                          height=.18, fontname=\"serif\" ];\n"
+                          height=.18, fontname=\"serif\", fontsize=9.0 ];\n"
            buff (string_of_name n) (string_of_name n)) e.o buff_o,
-      (* Hyperedges *)   
+       (* Hyperedges *)   
        (if flag then sprintf
-	   "%se%d [ shape=point, label=\"\", width=.0, height=.0, style=filled, color=green ];\n"
+	   "%se%d [ shape=point, label=\"\", width=.0, height=.0, style=invis, color=green ];\n"
 	   buff_h i    
 	else buff_h),
-      (* Adjacency *)
+       (* Adjacency *)
        (if flag then
 	   (buff_adj ^
               (Face.fold (fun n buff ->
@@ -334,37 +334,37 @@ let get_dot l =
 		sprintf "%so%s -> e%d;\n" buff (string_of_name n) i) e.o "") ^
               (if (Ports.cardinal e.p) = 1 && (Face.is_empty e.i) &&
 		 (Face.is_empty e.o) then
-            (* closure from a port *)
-		  sprintf "e%d -> v%d [ dir=back, arrowtail=tee, weight=5 ];\n"
+		  (* closure from a port *)
+		  sprintf "e%d -> v%d [ dir=both, arrowhead=dot, arrowtail=tee, weight=5 ];\n"
 		    i (fst (Ports.choose e.p))
                else Ports.fold (fun (v, _) buff ->
-		 sprintf "%se%d -> v%d;\n" buff i v) e.p ""))  
+		 sprintf "%se%d -> v%d [dir=both, arrowhead=dot, arrowtail=none ];\n" buff i v) e.p ""))  
 	else
-        (* idle name *)
+           (* idle name *)
            if is_idle e then buff_adj
 	   else   
-        (* edge between two points *)
+             (* edge between two points *)
              (if Ports.is_empty e.p then
-          (* name -> name *)
+		 (* name -> name *)
 		 sprintf "%si%s -> o%s;\n" buff_adj (string_of_name (Face.choose e.i))
 		   (string_of_name (Face.choose e.o))
               else if Face.is_empty e.o then
 		if Face.is_empty e.i then
-           (* port -> port *)
-		  sprintf "%sv%d -> v%d;\n" buff_adj (fst (Ports.min_elt e.p))
-		    (fst (Ports.max_elt e.p))
+		  (* port -> port *)
+		  sprintf "%sv%d -> v%d [ dir=both, arrowtail=dot, arrowhead=dot ];\n" 
+		    buff_adj (fst (Ports.min_elt e.p)) (fst (Ports.max_elt e.p))
 		else   
-           (* inner name -> port *)
-		  sprintf "%si%s -> v%d;\n" buff_adj (string_of_name (Face.choose e.i))
-		    (fst (Ports.choose e.p))
+		  (* inner name -> port *)
+		  sprintf "%si%s -> v%d [ arrowhead=dot ];\n" 
+		    buff_adj (string_of_name (Face.choose e.i)) (fst (Ports.choose e.p))
               else    
-         (* port -> outer name *)
-		sprintf "%sv%d -> o%s;\n" buff_adj (fst (Ports.choose e.p))
-		  (string_of_name (Face.choose e.o)))    
+		(* port -> outer name *)
+		sprintf "%sv%d -> o%s [ dir=back, arrowtail=dot ];\n" 
+		  buff_adj (fst (Ports.choose e.p)) (string_of_name (Face.choose e.o)))    
        )       
       )
-    ) l (0, "", "", "", "edge [ color=green, arrowhead=none ];\n") with
-    | (_, a, b, c, d) -> (a, b , c, d)
+    ) l (0, "", "", "", "edge [ color=green, arrowhead=none, arrowsize=0.5 ];\n") with
+    | (_, a, b, c, d) -> (a, b, c, d)
   
 (* decompose t. p is assumed epi and mono. Ports are normalised.
    i_c and i_d are isos from t to c and d.*)

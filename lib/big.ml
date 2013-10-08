@@ -322,19 +322,15 @@ let snf b =
   
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver vars n m = 
-  let res = ref [] in
+  let iso = Iso.empty () in
   for i = 0 to n - 1 do
     for j = 0 to m - 1 do
       match solver#value_of vars.(i).(j) with
-	| Minisat.True -> res := (i,j) :: !res
-	| Minisat.False -> ()
-	| Minisat.Unknown -> ()
+	| Minisat.True -> Iso.add iso i j
+	| Minisat.False | Minisat.Unknown -> ()
     done;
   done;
-  let out = Base.Iso.empty () in
-  List.iter (fun (i, j) ->
-    Base.Iso.add out i j) !res;
-  out 
+  iso
 
 let add_blocking solver v n m w e f =
   let scan_matrix m r c =
@@ -343,11 +339,9 @@ let add_blocking solver v n m w e f =
       for j = 0 to c - 1 do
 	match solver#value_of m.(i).(j) with
 	  | Minisat.True -> 
-	    ((*printf "!m[%d,%d] V " i j;*)
-	     blocking_clause := (neg_lit m.(i).(j)) :: !blocking_clause)
+	     blocking_clause := (neg_lit m.(i).(j)) :: !blocking_clause
 	  | Minisat.False -> 
-	    ((*printf "m[%d,%d] V " i j;*)
-	     blocking_clause := (pos_lit m.(i).(j)) :: !blocking_clause)
+	     blocking_clause := (pos_lit m.(i).(j)) :: !blocking_clause
 	  | Minisat.Unknown -> ()
       done;
     done;
@@ -361,10 +355,12 @@ let rec filter_loop solver t p v n m w e f t_trans =
       | Minisat.SAT ->
 	begin
 	  let iso_v = get_iso solver v n m
-	  and iso_e = get_iso solver w e f in
+	  (* and iso_e = get_iso solver w e f *) in
 	  if (Place.check_match t.p p.p t_trans iso_v) then 
 	    (solver, v, n, m, w, e, f)
 	  else begin
+	    eprintf "Warning: invalid match not discarded by SAT. \
+                     Removing it ...\n";
 	    add_blocking solver v n m w e f;
 	    filter_loop solver t p v n m w e f t_trans
 	  end   
