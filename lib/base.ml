@@ -200,8 +200,8 @@ module Nodes = struct
 	     size : int;
 	   }
   
-  let empty () = { ctrl = Hashtbl.create 50;
-		   sort = Hashtbl.create 50;
+  let empty () = { ctrl = Hashtbl.create 20;
+		   sort = Hashtbl.create 20;
 		   size = 0;
 		 } 
   
@@ -239,14 +239,16 @@ module Nodes = struct
       (fold (fun i (Ctrl.Ctrl (n, _)) acc ->
 	acc @ [sprintf "v%d [ label=\"%s\", shape=ellipse,\
                               fontname=\"sans-serif\", fontsize=9.0,\
-                              fixedsize=true, width=%f, height=.35 ];" 
+                              fixedsize=true, width=%f, height=.30 ];" 
 		  i n (0.1 *. (float (String.length n)) +. 0.2)]) s [])
 
   let tens a b =
-    fold (fun i c acc ->
-      add acc (i + b.size) c) b (fold (fun i c acc ->
-	add acc i c) a (empty ()))
-
+    let a' = { ctrl = Hashtbl.copy a.ctrl;
+	       sort = Hashtbl.copy a.sort;
+	       size = a.size } in
+    Hashtbl.fold (fun i c res ->
+      add res (i + a.size) c) b.ctrl a'
+      
   (* is an ordered list of controls with duplicates *)
   let abs s = 
     List.fast_sort Ctrl.compare
@@ -254,10 +256,19 @@ module Nodes = struct
 	c :: acc) s [])
 
   let apply_iso s iso =
-    assert (Iso.cardinal iso = s.size);
+    assert (Iso.cardinal iso >= s.size);
     fold (fun i c acc ->
       add acc (Iso.find iso i) c) s (empty ())
   
+  (* Only nodes in the domain of the isomorphism are transformed. Other nodes are discarded. *)    
+  let filter_apply_iso s iso =    
+    Iso.fold (fun i j acc ->
+      try 
+	let c = Hashtbl.find s.ctrl i in
+	add acc j c
+      with
+      | Not_found -> acc) iso (empty ())
+
   let parse s h =
     let tokens = Str.split (Str.regexp_string " ") s in
     fst (List.fold_left (fun (acc, i) t ->

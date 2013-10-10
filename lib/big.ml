@@ -259,7 +259,9 @@ let decomp t p i_v i_e =
   let (l_c, l_d, l_id) = 
     Link.decomp t.l p.l i_v i_e i_c i_d
   and (n_c, n_d) = 
-    (Nodes.apply_iso t.n i_c, Nodes.apply_iso t.n i_d) in
+    printf "t.n=%s\ni_c=%s\n" (Nodes.to_string t.n) (Base.Iso.to_string i_c);
+    printf "t.n=%s\ti_d=%s\n%!" (Nodes.to_string t.n) (Base.Iso.to_string i_d);
+    (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty () })

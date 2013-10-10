@@ -1,6 +1,6 @@
 open Base
 open Big
-open Format
+open Printf
 
 let r_p = 
   comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one
@@ -65,27 +65,28 @@ let _ =
 	Sys.argv.(1) 
     with
       | Unix.Unix_error (err, _, arg) -> 
-	(eprintf "@[Error: cannot acccess %s: %s@]@." 
+	(eprintf "Error: cannot acccess %s: %s.\n" 
 	   arg (Unix.error_message err); exit 1)
-      | _ -> (eprintf "@[Usage: test_brs PATH [v]@]@."; exit 1) in 
+      | _ -> (eprintf "Usage: test_brs PATH [v]\n"; exit 1) in 
   Random.self_init ();
+  printf "s =\n%s\nr =\n%s\n" (string_of_bg s) (string_of_bg r);
   if Brs.is_valid_p_l reacts then begin
     let (ts, stats) = Brs.bfs s reacts 1000 50 verb in
-    printf "@[%s@]@." (Brs.string_of_stats stats);
+    printf "%s\n%!" (Brs.string_of_stats stats);
     Export.write_ts ts "ts" path verb;
     Brs.V.iter (fun (i, s) ->
       let name = sprintf "%d" i in
       Export.write_big s name path verb) ts.Brs.v;
     let (_, stats) = Brs.sim s reacts 1000 50 verb in
-    printf "@[%s@]@." (Brs.string_of_stats stats)
-  end else eprintf "@[Error: Invalid reactions.@]@.";
+    printf "%s\n%!" (Brs.string_of_stats stats)
+  end else eprintf "Error: Invalid reactions.\n";
   if Sbrs.is_valid_p_l sreacts then begin
     let (ctmc, stats) = Sbrs.bfs s sreacts 1000 50 verb in
-    printf "@[%s@]@." (Sbrs.string_of_stats stats);
+    printf "%s\n%!" (Sbrs.string_of_stats stats);
     Export.write_ctmc ctmc "ctmc" path verb;
     let (_, stats) = Sbrs.sim s sreacts 5000.0 50 verb in
-    printf "@[%s@]@." (Sbrs.string_of_stats_sim stats)
-  end else eprintf "@[Error: Invalid stochastic reactions.@]@.";
-  Export.wait_before_exit verb;
-  Gc.full_major ();
+    printf "%s\n%!" (Sbrs.string_of_stats_sim stats)
+  end else eprintf "Error: Invalid stochastic reactions.\n";
+  (* Export.wait_before_exit verb; *)
+  (* Gc.full_major (); *)
     

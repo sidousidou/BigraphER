@@ -193,6 +193,9 @@ sig
   (** Apply an isomorphism *)
   val apply_iso : t -> Iso.t -> t
 
+  (** Apply an isomorphism only to nodes in the domain of the isomorphism. Other nodes are discarded. *)
+  val filter_apply_iso : t -> Iso.t -> t
+
 end
 
 (** {6 Ports} *)

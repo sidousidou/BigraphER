@@ -41,7 +41,7 @@ let sort_res =
 
 let print_res res =
   sprintf "{\n%s\n}\n" (String.concat "\n" (List.map (fun (i,j) ->
-    sprintf "%s --  %s" (Base.Iso.to_string i) (Base.Iso.to_string j)) (sort_res res)))
+    sprintf "%s -- %s" (Base.Iso.to_string i) (Base.Iso.to_string j)) (sort_res res)))
 
 let check_res res exp_res  = 
   if (List.length res) != (List.length exp_res) then
