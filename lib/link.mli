@@ -191,31 +191,23 @@ val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
     closed edges of [l] and [i] is an iso between the indices of [l] and [h]. *)
 val closed_edges : Lg.t -> Lg.t
 
-(* Closed edges in the pattern can be matched only to closed edges in the 
-   target. The output is a list of clauses and a list of blocked rows 
-   (list of negated literals). *)
+(** Closed edges in the pattern can be matched only to closed edges in the 
+    target. The output is a list of clauses and a list of blocked rows 
+    (list of negated literals). *)
 val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list
 
-(* Ports in matched closed edges have to be isomorphic *)
+(** Ports in matched closed edges have to be isomorphic *)
 val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
-
-(*val match_links : Lg.t -> Lg.t -> Base.Iso.t * Base.Iso.t*)
 
 val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   int * int * Cnf.clause list list * Cnf.clause list
 
-(*val match_link_pairs : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t -> (int * int) list*)
+val match_list_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+  Cnf.clause list * Cnf.clause list
 
-(*val is_match_valid : Lg.t -> Lg.t -> Base.Iso.t -> bool*) 
-
-(*(** Returns the pairs of nodes that can't be matched.*)
- val match_open : Lg.t -> Lg.t -> Base.Iso.t*)
-
-(** Returns a par of isos and a list of clauses: nodes and close edges that can't be 
-    matched, respectively. A clause is a list of pairs.*)
-(*val match_close : Lg.t -> Lg.t -> 
-  (int * int * int * int) list * Base.Iso.t * (int * int) list list*)
+val match_ports_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+  Cnf.clause list -> Cnf.clause list list
 
 (**/**)

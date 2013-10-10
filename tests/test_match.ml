@@ -377,7 +377,7 @@ let _ =
     with
       | Not_found -> failwith ("Error loading tests.\n") in
   do_tests tests;
-(*  do_equality_tests bgs tests;*)
+  do_equality_tests bgs tests;
   Gc.full_major ();
 (*  wait_before_exit true*)
 (* can compile with -noassert *)

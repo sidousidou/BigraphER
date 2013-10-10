@@ -170,4 +170,11 @@ val match_trans : pg -> pg -> Cnf.clause list
 
 val check_match : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
 
+val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> Cnf.clause list
+
+val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> Cnf.clause list
+
+val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Cnf.clause list
+
 (**/**)

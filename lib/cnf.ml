@@ -85,6 +85,15 @@ let impl (m : lit) (clauses : lit list list) =
   List.map (fun c -> 
     (N_var m) :: (List.map (fun v -> P_var v) c)) clauses
 
+let block_rows rows c =
+  assert (c >= 0);
+  let rec block_row i j acc =
+    match j with
+    | 0 -> [N_var (M_lit (i, 0))] :: acc
+    | _ -> block_row i (j - 1) ([N_var (M_lit (i, j))] :: acc) in
+  List.fold_left (fun acc i ->
+    block_row i (c - 1) acc) [] rows
+
 (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
 type 'a cmd_tree = 

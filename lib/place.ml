@@ -521,14 +521,8 @@ let compat t p t_i p_i =
   (compat_deg (indeg t t_i) (indeg p p_i)) && 
     (compat_deg (outdeg t t_i) (outdeg p p_i))
 
-(* Input:  number of nodes in the target and list of incompatible nodes in the
-           pattern. 
-   Output: [!(i, j) and  ...] *)
-let block_rows t_n : int list -> Cnf.clause list =
-  let j_t = IntSet.of_int t_n in
-  List.fold_left (fun acc i ->
-    IntSet.fold (fun j acc ->
-      [Cnf.N_var (Cnf.M_lit (i, j))] :: acc) j_t acc) []
+let eq t p t_i p_i =
+  ((indeg t t_i) = (indeg p p_i)) && ((outdeg t t_i) = (outdeg p p_i))
     
 (* Optimisation 1:
    - Do not add a pair if one of the two literals matches nodes of different 
@@ -569,52 +563,7 @@ let match_list t p n_t n_p :
 	| [] -> (acc, block, exc)
 	| _ -> (acc, block, clauses @ exc)
     end) p.nn ([], [], []) in
-  (clauses, block_rows t.n b, clauses_exc)
-
-(* EQUALITY functions *)
-(* out clauses = (ij1 or ij2 or ij ...) :: ... *)
-let match_root_nodes a b n_a n_b : Cnf.clause list =
-  Sparse.fold (fun r i acc ->
-    let c = Nodes.find n_a i in 
-    let children = 
-      List.filter (fun i -> 
-	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.chl b.rn r) in
-    (List.map (fun j -> 
-      Cnf.P_var (Cnf.M_lit (i, j))) children) :: acc) a.rn []
-
-(*Dual*)
-let match_nodes_sites a b n_a n_b : Cnf.clause list =
-  Sparse.fold (fun i s acc ->
-    let c = Nodes.find n_a i in 
-    let parents = 
-      List.filter (fun i -> 
-	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.prn b.ns s) in
-    (List.map (fun j -> 
-      Cnf.P_var (Cnf.M_lit (i, j))) parents) :: acc) a.ns []
-    
-(* Not needed. Just Sparse.compare a.rs b.rs *)
-(* let compare_roots_sites a b = *)
-(*   let (_, a_s, _, _) = split a.m a.r a.n *)
-(*   and (_, b_s, _, _) = split b.m b.r b.n in *)
-(*   compare a_s b_s *)
-
-(* Not needed. Just Sparse.(=) a.rs b.rs *)
-(* let match_roots_sites a b =  *)
-(*   (compare_roots_sites a b) = 0 *)
-  
-(* Not needed. Just Sparse.dom b.ns *)
-(* Returns the set of nodes (columns) having at least one site child *)
-(* let nodes_site_child b =  *)
-(*   IntSet.filter (fun j -> *)
-(*     not (IntSet.is_empty (IntSet.filter (fun j -> *)
-(* 	     j >= b.n) (chl b.m (j + b.r))))) (of_int b.n) *)
-
-(* Dual *)
-(* Not needed. Just Sparse.codom b.rn *)
-(* let nodes_root_par b =  *)
-(*   IntSet.filter (fun j -> *)
-(*     not (IntSet.is_empty (IntSet.filter (fun i -> *)
-(* 	     i < b.n) (prn b.m j)))) (of_int b.n) *)
+  (clauses, Cnf.block_rows b t.n, clauses_exc)
 
 (* Nodes with no children (both nodes and sites). *)
 let leaves p =
@@ -643,7 +592,7 @@ let match_leaves t p n_t n_p : Cnf.clause list * Cnf.clause list =
       match clause with
       | [] -> (acc, i :: block)
       | _ -> (clause :: acc, block)) l_p ([], []) in
-  (clauses, block_rows t.n b)
+  (clauses, Cnf.block_rows b t.n)
 
 (* Dual *)
 let match_orphans t p n_t n_p : Cnf.clause list * Cnf.clause list =
@@ -658,7 +607,7 @@ let match_orphans t p n_t n_p : Cnf.clause list * Cnf.clause list =
       match clause with
       | [] -> (acc, i :: block)
       | _ -> (clause :: acc, block)) o_p ([], []) in
-  (clauses, block_rows t.n b)
+  (clauses, Cnf.block_rows b t.n)
   
 (* Only ctrl and deg check *)
 let match_sites t p n_t n_p : Cnf.clause list * Cnf.clause list =
@@ -676,7 +625,7 @@ let match_sites t p n_t n_p : Cnf.clause list * Cnf.clause list =
 	  Cnf.P_var (Cnf.M_lit (i, j))) js in
 	(clause :: acc, block)
       end) p.ns ([], []) in
-  (clauses, block_rows t.n b)
+  (clauses, Cnf.block_rows b t.n)
     
 let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
   let (clauses, b) =
@@ -693,7 +642,7 @@ let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
 	  Cnf.P_var (Cnf.M_lit (i, j))) js in
 	(clause :: acc, block)
       end) p.rn ([], []) in
-  (clauses, block_rows t.n b)
+  (clauses, Cnf.block_rows b t.n)
 
 (* Block unconnected pairs of nodes with sites and nodes with roots. *)
 let match_trans t p : Cnf.clause list =
@@ -809,3 +758,52 @@ let check_match t p t_trans iso =
   (check_sites t p v_p' c_set iso) && (check_roots t p v_p' iso) && 
     (check_trans t_trans v_p' c_set)
     
+(* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)
+
+let match_list_eq t p n_t n_p : 
+    (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list  * Cnf.clause list =
+  let h = partition_edges t n_t in
+  let (clauses, b, clauses_exc) = Sparse.fold (fun i j (acc, block, exc) ->
+    let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
+    match (a, b) with 
+    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
+      let t_edges = Hashtbl.find_all h (a_string, b_string) in
+      try
+	let (clause, pairs) = 
+	  Cnf.tseitin (List.fold_left (fun acc (i', j') ->
+	    (* Degree equality *)
+	    if (eq t p i' i) && (eq t p j' j) then
+	      (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')) :: acc
+	    else acc) [] t_edges) in
+	if List.length clause = 0 then begin
+	  (* No compatible edges found *)
+	  (acc, i :: j :: block, exc) 
+	end else 
+	  ((clause, pairs) :: acc, block, exc)
+      with
+      | Cnf.TSEITIN clauses ->
+	match clauses with
+	| [] -> (acc, block, exc)
+	| _ -> (acc, block, clauses @ exc)
+    end) p.nn ([], [], []) in
+  (clauses, Cnf.block_rows b t.n, clauses_exc)
+
+(* out clauses = (ij1 or ij2 or ij ...) :: ... *)
+let match_root_nodes a b n_a n_b : Cnf.clause list =
+  Sparse.fold (fun r i acc ->
+    let c = Nodes.find n_a i in 
+    let children = 
+      List.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.chl b.rn r) in
+    (List.map (fun j -> 
+      Cnf.P_var (Cnf.M_lit (i, j))) children) :: acc) a.rn []
+
+(*Dual*)
+let match_nodes_sites a b n_a n_b : Cnf.clause list =
+  Sparse.fold (fun i s acc ->
+    let c = Nodes.find n_a i in 
+    let parents = 
+      List.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.prn b.ns s) in
+    (List.map (fun j -> 
+      Cnf.P_var (Cnf.M_lit (i, j))) parents) :: acc) a.ns []

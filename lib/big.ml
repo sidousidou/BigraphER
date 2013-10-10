@@ -529,27 +529,20 @@ let equal_SAT a b =
     Cnf.post_bij (Cnf.bijection n m 6 3) solver v_n
   and (aux_bij_l_rows, aux_bij_l_cols) =
     Cnf.post_bij (Cnf.bijection h k 6 3) solver v_l in
-  (* CTRL *)
-  (*iso_iter v_n (match_nodes a.n b.n) solver;*)
-  (* DAG EDGES *)
-  (* N x N *)
-  (*List.iter (fun (i, l, j, k) ->
-    solver#add_clause [(neg_lit v_n.(i).(j)); (neg_lit v_n.(l).(k))])
-    (Place.match_list a.p b.p);*)
-  (* N x S *)
-  (*List.iter (fun (i, j) -> 
-    solver#add_clause [neg_lit v_n.(i).(j)]) 
-    (Place.match_nodes_sites a.p b.p);*)
-  (* R x N *)
-  (*List.iter (fun (l, k) -> 
-    solver#add_clause [neg_lit v_n.(l).(k)]) 
-    (Place.match_root_nodes a.p b.p);*)
-  (* HYPERGRAPH *)
-  (*List.iter (fun (i, j) -> 
-    solver#add_clause [neg_lit v_l.(i).(j)]) 
-    (Link.match_link_pairs a.l b.l a.n b.n);*)
-  (* Ports *)
-  (* a var matrix ports X ports for every hyperedge (not already negated)*)
+  (* Place graph *)
+  let (t_constraints, block_clauses, exc_clauses) = 
+    Place.match_list_eq a.p b.p a.n b.n in
+  Cnf.post_conj_m (block_clauses @ exc_clauses) solver v_n;
+  let zs = List.fold_left (fun acc x ->
+    (Cnf.post_tseitin x solver v_n) :: acc) [] t_constraints in
+  Cnf.post_conj_m ((Place.match_root_nodes a.p b.p a.n b.n) @ 
+		      (Place.match_nodes_sites a.p b.p a.n b.n)) solver v_n;
+  (* Link graph *)
+  let (clauses, b_pairs) = Link.match_list_eq a.l b.l a.n b.n in
+  Cnf.post_conj_m (clauses @ b_pairs) solver v_l;
+  let l_constraints = Link.match_ports_eq a.l b.l a.n b.n clauses in
+  List.iter (fun x ->
+    Cnf.post_impl x solver v_l v_n) l_constraints;
   solver#simplify;
   match solver#solve with
   | Minisat.UNSAT -> false
