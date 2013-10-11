@@ -401,7 +401,7 @@ let do_equality_tests l ts v_flag =
     
 (* The first argument is the path of the directory containing the tests. The
    second optional argument is the path for the svg output. *)
- let main path_tests ?(path_out="") v_flag =
+ let main path_tests ?(path_out="") mask v_flag =
    if v_flag then printf "Loading input files in %s\n" path_tests;
    let bg_strings = parse_all path_tests in
    let bgs = 
@@ -412,5 +412,5 @@ let do_equality_tests l ts v_flag =
      List.iter (fun (n, b) ->
        write_big b n path_out v_flag) bgs;
    let ts = tests bgs in
-   do_tests ts v_flag;
-   do_equality_tests bgs ts v_flag
+   if (mask land 0b10) > 0 then do_tests ts v_flag;
+   if (mask land 0b01) > 0 then do_equality_tests bgs ts v_flag

@@ -4,13 +4,30 @@ open Global
 let verbose = ref false
 let match_path = ref ""
 let out_path = ref ""
+let match_mask = ref 0b11
+let brs_mask = ref 0b1111
 
-let usage = "Usage: test TESTS-PATH [-o OUT-PATH] [-v]"
+let usage = "Usage: test TESTS-PATH [-o OUT-PATH] [-v] [-m MASK]\n"
 
+let parse_mask mask =
+  try
+    let split = (String.sub mask 0 1) ^ " " ^ 
+      (String.sub mask 1 ((String.length mask) - 1)) in
+    let (m, b) = Scanf.sscanf split "%d %d" (fun x y -> 
+      if (x <= 0b11) && (x >= 0) && 
+	(y >= 0) && (y <= 0b1111) then (x, y)
+      else 
+	raise (Arg.Bad (sprintf "Error: invalid mask %s" mask))) in
+    match_mask := m;
+    brs_mask := b
+  with
+  | _ -> raise (Arg.Bad (sprintf "Error: invalid mask %s" mask))
+ 
 let speclist =
-  [ ("-v", Arg.Unit (fun () -> verbose := true ), " Verbose output");
-    ("TEST-PATH", Arg.String (fun s -> match_path := s), " Path to the directory containing the tests");
+  [ ("TEST-PATH", Arg.String (fun s -> match_path := s), " Path to the directory containing the tests");
+    ("-m", Arg.String (fun s -> parse_mask s), "MASK Binary mask to exclude/include tests");
     ("-o", Arg.String (fun s -> out_path := s), "OUT-PATH Path to the output directory");
+    ("-v", Arg.Unit (fun () -> verbose := true ), " Verbose output");
   ]
     
 let print_header () =
@@ -35,11 +52,12 @@ let _ =
 	Unix.access !out_path [Unix.W_OK; Unix.F_OK]; 
 	Export.check_graphviz ();
 	print_header ();
-	Test_match.main !match_path ~path_out:!out_path !verbose;
-	Test_brs.main !out_path !verbose
+	Test_match.main !match_path ~path_out:!out_path !match_mask !verbose;
+	Test_brs.main ~path:!out_path !brs_mask !verbose
       end else begin
 	print_header ();
-	Test_match.main !match_path !verbose
+	Test_match.main !match_path !match_mask !verbose;
+	Test_brs.main !brs_mask !verbose
       end 
     end else 
       raise (Arg.Bad ("Error: Argument missing.\n" ^ usage))
