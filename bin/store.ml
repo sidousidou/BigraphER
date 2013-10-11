@@ -235,7 +235,7 @@ let get_ctrl_fun ide acts p env =
     | Store_ctrl_fun (ar, forms) -> 
       (let f_l = List.length forms
       and a_l = List.length acts in
-       if f_l != a_l then args_err ide f_l a_l p
+       if f_l <> a_l then args_err ide f_l a_l p
        else let acts_s = String.concat "," (List.map (fun exp ->
 	 try
 	   sprintf "%d" (eval_int_m exp env) (* MUTE *)

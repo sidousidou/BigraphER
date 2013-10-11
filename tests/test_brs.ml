@@ -1,6 +1,7 @@
 open Base
 open Big
 open Printf
+open Global
 
 let r_p = 
   comp (ion (Link.parse_face (["x"])) (Ctrl.Ctrl ("B", 1))) one
@@ -52,41 +53,47 @@ let sreacts =
 		 ]
   ]
   
-let _ =
-  Export.check_graphviz ();
-  let verb = 
-    try match Sys.argv.(2) with
-      | "v" -> true
-      | a -> raise (Invalid_argument a) 
-    with
-    | _ -> false
-  and path = 
-    try Unix.access Sys.argv.(1) [Unix.W_OK; Unix.F_OK];
-	Sys.argv.(1) 
-    with
-      | Unix.Unix_error (err, _, arg) -> 
-	(eprintf "Error: cannot acccess %s: %s.\n" 
-	   arg (Unix.error_message err); exit 1)
-      | _ -> (eprintf "Usage: test_brs PATH [v]\n"; exit 1) in 
+let main path v_flag =
   Random.self_init ();
-  printf "s =\n%s\nr =\n%s\n" (string_of_bg s) (string_of_bg r);
   if Brs.is_valid_p_l reacts then begin
-    let (ts, stats) = Brs.bfs s reacts 1000 50 verb in
-    printf "%s\n%!" (Brs.string_of_stats stats);
-    Export.write_ts ts "ts" path verb;
-    Brs.V.iter (fun (i, s) ->
-      let name = sprintf "%d" i in
-      Export.write_big s name path verb) ts.Brs.v;
-    let (_, stats) = Brs.sim s reacts 1000 50 verb in
-    printf "%s\n%!" (Brs.string_of_stats stats)
-  end else eprintf "Error: Invalid reactions.\n";
+    printf "%s\n\n%!" (colorise `bold "Test for BRS");
+    (try
+       let (ts, stats) = Brs.bfs s reacts 1000 50 v_flag in
+       printf "%s\n%!" (Brs.string_of_stats stats);
+       Export.write_ts ts "ts" path v_flag;
+       Brs.V.iter (fun (i, s) ->
+	 let name = sprintf "%d" i in
+	 Export.write_big s name path v_flag) ts.Brs.v;
+     with
+     | e -> (printf "%s" (colorise `red "Error: ");
+	     printf "%s\n" (Printexc.to_string e))); 
+    printf "----------------------------------------\n\n";
+    printf "%s\n\n%!" (colorise `bold "Test for BRS simulation");
+    (try
+       let (_, stats) = Brs.sim s reacts 1000 50 v_flag in
+       printf "%s\n%!" (Brs.string_of_stats stats);
+     with
+     | e -> (printf "%s" (colorise `red "Error: ");
+	     printf "%s\n" (Printexc.to_string e))); 
+    printf "----------------------------------------\n\n";
+  end else assert false;
   if Sbrs.is_valid_p_l sreacts then begin
-    let (ctmc, stats) = Sbrs.bfs s sreacts 1000 50 verb in
-    printf "%s\n%!" (Sbrs.string_of_stats stats);
-    Export.write_ctmc ctmc "ctmc" path verb;
-    let (_, stats) = Sbrs.sim s sreacts 5000.0 50 verb in
-    printf "%s\n%!" (Sbrs.string_of_stats_sim stats)
-  end else eprintf "Error: Invalid stochastic reactions.\n";
-  (* Export.wait_before_exit verb; *)
-  (* Gc.full_major (); *)
+    printf "%s\n\n%!" (colorise `bold "Test for SBRS");
+    (try
+       let (ctmc, stats) = Sbrs.bfs s sreacts 1000 50 v_flag in
+       printf "%s\n%!" (Sbrs.string_of_stats stats);
+       Export.write_ctmc ctmc "ctmc" path v_flag;
+     with
+     | e -> (printf "%s" (colorise `red "Error: ");
+	     printf "%s\n" (Printexc.to_string e))); 
+    printf "----------------------------------------\n\n";
+    printf "%s\n\n%!" (colorise `bold "Test for SBRS simulation");
+    (try
+       let (_, stats) = Sbrs.sim s sreacts 5000.0 50 v_flag in
+       printf "%s\n%!" (Sbrs.string_of_stats_sim stats);
+     with
+     | e -> (printf "%s" (colorise `red "Error: ");
+	     printf "%s\n" (Printexc.to_string e)));    
+    printf "----------------------------------------\n\n";
+  end else assert false;
     
