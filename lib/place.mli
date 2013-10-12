@@ -7,25 +7,33 @@
 (******************************************************************************)
 
 (** This module provides operations on place graphs.
-@author Michele Sevegnani *)
+    @author Michele Sevegnani *)
 
 (** The type of place graphs.*)
 type pg = {
   r : int; (** Number of roots *)
   n : int; (** Number of nodes *)
   s : int; (** Number of sites *)
-  m : Matrix.bmatrix; (** Boolean adjacency matrix of size [r+n] x [n+s] *)
+  rn : Sparse.bmatrix; (** Boolean adjacency matrix roots X nodes *)
+  rs : Sparse.bmatrix; (** Boolean adjacency matrix roots X sites *)
+  nn : Sparse.bmatrix; (** Boolean adjacency matrix nodes X nodes *)
+  ns : Sparse.bmatrix; (** Boolean adjacency matrix nodes X sites *)
  }
 	
 (** Raised when a composition between two incompatible place graphs is 
     attempted. *)
 exception COMP_ERROR of (int * int)
 
-(** [string_of_pg p] returns a string representation of place graph [p]. *)
-val string_of_pg : pg -> string
+(** [to_string p] returns a string representation of place graph [p]. *)
+val to_string : pg -> string
 
-(** [snf_of_placing p] returns the normal form of  a placing. *)
-val snf_of_placing :  pg -> string
+(** Compute the number of edges in the DAG. *)
+val edges : pg -> int
+
+(** [parse r n s lines] builds a place graph with [r] roots, [n] nodes and [s]
+    sites. Each element in [lines] is a string in the same format of the output
+    of {!Place.to_string}.*)
+val parse : int -> int -> int -> string list -> pg
 
 (** [get_dot p] returns three strings expressing place graph [p] in dot format.
     The first two elements encode roots and sites shapes, the third
@@ -74,8 +82,9 @@ val elementary_sym : int -> int -> pg
 (** [elementary_ion] creates a ion.*)
 val elementary_ion : pg
 
+(*
 (** [elementary_ions n] creates [n] ions in parallel. *)
-val elementary_ions: int -> pg
+val elementary_ions: int -> pg *)
 
 (** {6 Comparison} *)
 
@@ -124,42 +133,48 @@ val is_guard : pg -> bool
     in [c] and [d] expressed as rows of [t]. *)
 val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
 
+(*
 (** [levels p] returns the levels of place graph [p]. The first component is the
     top placing, while the second is a list of triples. The first element is
     a set of ions, the second component is the size of the level's identity,
-    and the third is the level's placing.
-    *)
-val levels : pg -> pg * (Base.Int_set.t * int * pg) list
+    and the third is the level's placing. *)
+val levels : pg -> pg * (Base.IntSet.t * int * pg) list
+*)
 
-(** {6 Misc} *)
+(** {6 Matching constraints} *)
 
-(** [match_leaves t p] computes all the pairs of nodes [(i,j)] where [i] is a leaf
-    in [p] and [j] is not a leaf in [t].*)
-val match_leaves : pg -> pg -> Base.Iso.t
+(** Compute constraint for matching edges in the DAG. *)
+val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Cnf.clause list
+
+val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+  Cnf.clause list * Cnf.clause list
 
 (** Dual of {!Place.match_leaves}. *)
-val match_orphans : pg -> pg -> Base.Iso.t
+val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+  Cnf.clause list * Cnf.clause list
 
-(** [match_sites t p] computes all the pairs of nodes [(i,j)] where [i] and [j]
-    have a different number of siblings. *)
-val match_sites : pg -> pg -> Base.Iso.t
+val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  Cnf.clause list
 
-(** Dual of {!Place.match_sites}.*)
-val match_roots : pg -> pg -> Base.Iso.t
+val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  Cnf.clause list
 
-val match_root_nodes : pg -> pg -> (int * int) list
+val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  Cnf.clause list * Cnf.clause list
 
-val match_nodes_sites : pg -> pg -> (int * int) list
+val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  Cnf.clause list * Cnf.clause list
 
-val match_roots_sites : pg -> pg -> bool
+val match_trans : pg -> pg -> Cnf.clause list
 
-val compare_roots_sites : pg -> pg -> int
+val check_match : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
 
-(** [is_match_valid t p t_trans i] check if iso [i] from pattern [p] to target [t] is
-    valid. [t_trans] is the transitive closure of [t]. *)
-val is_match_valid : pg -> pg -> Matrix.bmatrix -> Base.Iso.t -> bool
+val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> Cnf.clause list
 
-(** Computes the number of edges in the DAG. *)
-val edges : pg -> int
+val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> Cnf.clause list
+
+val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Cnf.clause list
 
 (**/**)

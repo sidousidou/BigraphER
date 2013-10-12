@@ -15,7 +15,7 @@ type store_val =
 | Store_float_fun of num_exp * string list
 | Store_big of Big.bg
 | Store_big_fun of bexp * string list
-| Store_ctrl of Base.ctrl
+| Store_ctrl of Base.Ctrl.t
 | Store_ctrl_fun of int * string list
 | Store_react of Brs.react
 | Store_react_fun of bexp * bexp * string list
@@ -235,13 +235,13 @@ let get_ctrl_fun ide acts p env =
     | Store_ctrl_fun (ar, forms) -> 
       (let f_l = List.length forms
       and a_l = List.length acts in
-       if f_l != a_l then args_err ide f_l a_l p
+       if f_l <> a_l then args_err ide f_l a_l p
        else let acts_s = String.concat "," (List.map (fun exp ->
 	 try
 	   sprintf "%d" (eval_int_m exp env) (* MUTE *)
 	 with
 	 | WRONG_TYPE -> sprintf "%g" (eval_float exp env)) acts) in
-	    Base.Ctrl (sprintf "%s(%s)" ide acts_s, ar))
+	    Base.Ctrl.Ctrl (sprintf "%s(%s)" ide acts_s, ar))
     | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
     | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_react _ 
     | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
@@ -264,7 +264,7 @@ let eval_ion c names p  =
   | Big.CTRL_ERROR (n, _) -> 
     (print_err (sprintf "Error: ctrl %s has arity %d\n\t\
                          but is here used with %d name(s)"
-		  (Base.name_of_ctrl c) n (List.length names)) p; 
+		  (Base.Ctrl.name c) n (List.length names)) p; 
      raise INVALID_VAL)
  
 let rec eval_big exp env =
@@ -393,7 +393,7 @@ let store_decs decs env =
   List.iter (fun d ->
     match d with
   | Ctrl_dec (ide, ar, _) ->
-    Hashtbl.add env ide (Store_ctrl (Base.Ctrl (ide, ar)))
+    Hashtbl.add env ide (Store_ctrl (Base.Ctrl.Ctrl (ide, ar)))
   | Ctrl_dec_f (ide, forms, ar, _) ->
     Hashtbl.add env ide (Store_ctrl_fun (ar, forms))
   | Int_dec (ide, exp, _) ->

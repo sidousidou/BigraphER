@@ -1,53 +1,107 @@
 open Printf
 open Base
-open Matrix
 
 (* Type for concrete place graphs. The elements are roots, nodes, sites and
-   adjacency matrix *)
-type pg = {r: int; n: int; s: int; m: bmatrix}
+   for adjacency matrices: roots to nodes, roots to sites, nodes to nodes and
+   nodes to sites. *)
+type pg = { r: int; 
+	    n: int; 
+	    s: int; 
+	    rn: Sparse.bmatrix; 
+	    rs: Sparse.bmatrix; 
+	    nn: Sparse.bmatrix;
+	    ns: Sparse.bmatrix;
+	  }
 
 (* Raised by comp. The elements are (sites, roots) *)
 exception COMP_ERROR of (int * int) 
 
-(* Not exposed *)
-(*exception EPI of bool
-exception MONO of bool*)
-
 (* String representation *)
-let string_of_pg p =
-  sprintf "%d %d %d\n%s\n" p.r p.n p.s (to_string p.m)
+let to_string p =
+  let m = Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) in
+  sprintf "%d %d %d\n%s\n" p.r p.n p.s (Sparse.to_string m)
 
-(* Representation for match *)
-(*let match_string p = (p.r, p.s, to_string p.m)*)
+(* Parse a place graph from a list of strings *)
+let parse r n s lines =
+  assert (r >= 0);
+  assert (n >= 0);
+  assert (s >= 0);
+  assert (List.length lines = r + n);
+  assert (List.for_all (fun l -> String.length l = n + s) lines);
+  let rn = Sparse.make r n
+  and rs = Sparse.make r s
+  and nn = Sparse.make n n
+  and ns = Sparse.make n s in
+  ignore (List.fold_left (fun i line ->
+    if i < r then begin
+      (* roots - nodes *)
+      for j = 0 to n - 1 do
+	if line.[j] = '1' then Sparse.add rn i j
+      done;
+      (* roots - sites *)
+      for j = n to n + s - 1 do
+	if line.[j] = '1' then Sparse.add rs i (j - n)
+      done
+    end else begin
+      (* nodes - nodes *)
+      for j = 0 to n - 1 do
+	if line.[j] = '1' then Sparse.add nn (i - r) j
+      done;
+      (* nodes - sites *)
+      for j = n to n + s - 1 do
+	if line.[j] = '1' then Sparse.add ns (i -r) (j - n)
+      done
+    end;
+    i + 1) 0 lines);
+  { r = r;
+    n = n;
+    s = s;
+    rn = rn;
+    rs = rs;
+    nn = nn;
+    ns = ns;
+  }
 
 (* Apply isomorphism *)  
 let apply_iso i p =
-  { r = p.r;
-    n = p.n;
-    s = p.s;
-    m = Matrix.apply_iso i p.m p.r
+  { p with 
+    rn = Sparse.apply_iso_cols i p.rn;
+    nn = Sparse.apply_iso i p.nn;
+    ns = Sparse.apply_iso_rows i p.ns;
   }
 
 (* Elementary place graphs *)
 let elementary_id n =
+  assert (n >= 0);
   { r = n;
     n = 0;
     s = n;
-    m = diag n
+    rn = Sparse.make n 0;
+    rs = Sparse.diag n; 
+    nn = Sparse.make 0 0;
+    ns = Sparse.make 0 n;
   }
     
 let elementary_merge n =
+  assert (n >= 0);
   { r = 1;
     n = 0;
     s = n;
-    m = row_1 n
+    rn = Sparse.make 1 0;
+    rs = Sparse.row_1 n; 
+    nn = Sparse.make 0 0;
+    ns = Sparse.make 0 n;
   }
     
 let elementary_split n =
+  assert (n >= 0);
   { r = n;
     n = 0;
     s = 1;
-    m = col_1 n
+    rn = Sparse.make n 0;
+    rs = Sparse.col_1 n; 
+    nn = Sparse.make 0 0;
+    ns = Sparse.make 0 1;
   }
 
 let id0 = elementary_id 0
@@ -57,585 +111,725 @@ let one = elementary_merge 0
 let zero = elementary_split 0
 
 let elementary_sym m n =
+  assert (m >= 0);
+  assert (n >= 0);
   { r = m + n;
     n = 0;
     s = m + n;
-    m = stack (append (make_0 n m) (diag n)) (append (diag m) (make_0 m n))
+    rn = Sparse.make (m + n) 0;
+    rs = Sparse.stack 
+      (Sparse.append (Sparse.make n m) (Sparse.diag n)) 
+      (Sparse.append (Sparse.diag m) (Sparse.make m n)); 
+    nn = Sparse.make 0 0;
+    ns = Sparse.make 0 (m + n);
   }
     
 let elementary_ion =
   { r = 1;
     n = 1;
     s = 1;
-    m = diag 2
+    rn = Sparse.row_1 1;
+    rs = Sparse.make 1 1;
+    nn = Sparse.make 1 1;
+    ns = Sparse.row_1 1;
   }
 
 (* Parse a placing *)
 let parse_placing l r =
-  let v = parse_vector l r in
-  {r = r;
-   n = 0; 
-   s = List.length l;
-   m = v}
+  assert (r >= 0);
+  { r = r;
+    n = 0; 
+    s = List.length l;
+    rn = Sparse.make r 0;
+    rs = Sparse.parse_vector l r;
+    nn = Sparse.make 0 0;      
+    ns = Sparse.make 0 (List.length l);
+  }
 
 (* placing equality *)
 let equal_placing a b =
-  (a.r = b.r) && (a.s = b.s) && (a.m = b.m)
+  assert (a.n = 0);  
+  assert (b.n = 0);
+  (a.r = b.r) && (a.s = b.s) && (Sparse.(=) a.rs b.rs)
 
 (* placing compare *)  
 let compare_placing a b =
+  assert (a.n = 0);
+  assert (b.n = 0);
   let x = a.r - b.r in
   match x with
     | 0 -> (let x = a.s - b.s in
 	    match x with
-	      | 0 -> compare a.m b.m
+	      | 0 -> Sparse.compare a.rs b.rs
 	      | _ -> x)
     | _ -> x
-    
-(* Tensor product: A x B (indices in the right handside are increased) *)
+
+(* Tensor product: A x B (indices in the right hand-side are increased) *)
 let tens a b =
-  let (m_s, m_n, m_v, m_r) = split a.m a.r a.n
-  and (n_s, n_n, n_v, n_r) = split b.m b.r b.n in
-  let res = 
-    stack
-      (append m_s (append (make_0 a.r b.n) (append m_n (make_0 a.r b.s))))
-      (stack
-	 (append (make_0 b.r a.n) (append n_s (append (make_0 b.r a.s) n_n)))
-	 (stack
-            (append m_v (append (make_0 a.n b.n) (append m_r (make_0 a.n b.s))))
-            (append (make_0 b.n a.n) (append n_v 
-					(append (make_0 b.n a.s) n_r))))) in
   { r = a.r + b.r;
     n = a.n + b.n;
     s = a.s + b.s;
-    m = res
+    rn = Sparse.tens a.rn b.rn;
+    rs = Sparse.tens a.rs b.rs;
+    nn = Sparse.tens a.nn b.nn;
+    ns = Sparse.tens a.ns b.ns;
   }
     
-(* Composition: G o F (indices in the right handside are increased) *)
+(* Composition: G o F (indices in the right hand-side are increased) *)
 let comp g f =
-  (*printf "COMP\na:\n%s\nb:\n%s\n" (string_of_pg g) (string_of_pg f);*)
-  if g.s = f.r then
-    let (a, b, _, _) = split g.m (g.r + g.n) g.n
-    and (c, _, d, _) = split f.m f.r (f.n + f.s) in
-    let res =
-      stack (append a (mul b c)) (append (make_0 f.n g.n) d) in
-    (*printf "res:\n%s\n" (to_string res);*)
+  if g.s = f.r then 
     { r = g.r;
       n = g.n + f.n;
       s = f.s;
-      m = res
+      rn = Sparse.append g.rn (Sparse.mul g.rs f.rn);
+      rs = Sparse.mul g.rs f.rs;
+      nn = Sparse.stack 
+	(Sparse.append g.nn (Sparse.mul g.ns f.rn)) 
+	(Sparse.append (Sparse.make f.n g.n) f.nn);
+      ns = Sparse.stack (Sparse.mul g.ns f.rs) f.ns;
     }
   else raise (COMP_ERROR (g.s, f.r))
-
+    
 (* Is p an identity? *)
 let is_id p =
   match p with
-  | {r = x; n = 0; _} -> p.m = diag x
+  | { r = x; n = 0; _ } -> p.rs = Sparse.diag x
   | _ -> false
 
-let is_plc p = p.n = 0
+let is_plc p = 
+  p.n = 0
   
 (* Is p monomorphic?: no two sites are siblings and no site is an orphan *)
 let is_mono p =
-  (* Orphan sites? *)  
-  not (Int_set.exists (fun j ->
-    prn p.m j = Int_set.empty) (off p.n (of_int p.s)))
-  &&
-    (* Roots or nodes with more than one site? *)
-    not (Int_set.exists (fun i ->
-      (Int_set.cardinal (Int_set.filter (fun j ->
-	j > p.n) (chl p.m i))) > 1) (of_int (p.r + p.n)))
+  let slice = Sparse.stack p.rs p.ns in
+  if IntSet.is_empty (Sparse.orphans slice) then Sparse.siblings_chk slice
+  else false
     
 (* Is p epimorphic: no root is idle and no two roots are partners *)
 let is_epi p =
-  (* Idle roots? *)  
-  not (Int_set.exists (fun i -> chl p.m i = Int_set.empty) (of_int p.r))
-  &&
-    (* Sites or nodes with more than one root? *)
-    not (Int_set.exists (fun j ->
-      (Int_set.cardinal (Int_set.filter (fun i ->
-	i < p.r) (prn p.m j))) > 1) (of_int (p.n + p.s)))
-
+  let slice = Sparse.append p.rn p.rs in
+  if IntSet.is_empty (Sparse.leaves slice) then Sparse.partners_chk slice
+  else false
+    
 (* Is p guarded: no root has sites as children *)
-let is_guard p =
-  Int_set.for_all (fun i ->
-    Int_set.is_empty (Int_set.filter (fun j ->
-      j > p.n) (chl p.m i))) (of_int p.r)
-
-(* Get the set of ancestors (rows) of a set of columns.
-   Not exposed. 
-   raise Assert_failure   *)
-let anc p cs =
-  let rec aux acc cols =
-    let prn_set = Int_set.fold (fun j acc ->
-      Int_set.union (prn p.m j) acc) cols Int_set.empty   
-    in
-    if prn_set = Int_set.empty then acc
-    else aux (Int_set.union prn_set acc) (Int_set.filter (fun i ->
-      i >= 0) (off (-p.r) prn_set))
-  in aux Int_set.empty cs
-
-(* Get the set of siblings (nodes) of a node (column)
-   Not exposed. *)
-let siblings p j = 
-  let par = Int_set.filter (fun i -> i >= p.r) (prn p.m j) in
-  Int_set.remove j (Int_set.fold (fun i acc ->
-    Int_set.union acc (Int_set.filter (fun j -> 
-      j < p.n) (chl p.m i))) par Int_set.empty)
-
-(* Dual *)
-let partners p j =
-  let  chi = Int_set.filter (fun j -> j < p.n) (chl p.m (j + p.r)) in
-  Int_set.remove j (Int_set.fold (fun j acc ->
-    Int_set.union acc (Int_set.filter (fun j -> 
-      j >= 0) (off (-p.r) (prn p.m j)))) chi Int_set.empty)
-
+let is_guard p = 
+  (Sparse.entries p.rs) = 0
+ 
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d 
    expressed as rows of t. Pattern p is mono and epi.
    See page 76, proposition 4.2.4. *)
 let decomp t p iso =
-  (*printf "Place.decomp iso p -> t : %s\n" (string_of_iso iso);*)
-  (* Nodes (rows) of target *)
-  let v_t = off t.r (of_int t.n) in
-  (* Nodes (rows) of target used for p' *)
-  let v_p = off t.r (codom iso) in
-  (* Nodes (rows) of target used for context c *)
+  let trans_t_nn = Sparse.trans t.nn (* memoisation *)
+  and iso' = Iso.inverse iso 
+  and v_p' = IntSet.of_list (Iso.codom iso) in 
+  (* ancestors of v_p' not in v_p' *)
   let v_c = 
-    Int_set.filter (fun i ->
-      i >= t.r) (Int_set.diff (anc t (codom iso)) v_p) in
-  (* Nodes (rows) of target used for argument d *) 
-  let v_d = Int_set.diff v_t (Int_set.union v_c v_p) in
-  (* Iso from nodes or roots (rows) of target to indices from 0.
-     Domain is the set of elements being in c and having a child
-     in d. Codomain is the set of sites. *)
-  let (iso_id, _) =
-    Int_set.fold (fun i (iso, k) ->
-      Int_set.fold (fun j (acc, k) ->
-        if (j >= t.n) || Int_set.mem (j + t.r) v_d
-        then (Iso.add (i, k) acc, k + 1) 
-        else (acc, k)) (chl t.m i) (iso, k)) 
-      (Int_set.union v_c (of_int t.r)) (Iso.empty, 0) in
-   (* Interface id *)
-  let j = Iso.cardinal iso_id in
+    IntSet.diff 
+      (IntSet.fold (fun i acc ->
+	IntSet.union acc (IntSet.of_list (Sparse.prn trans_t_nn i)))
+	 v_p' IntSet.empty) v_p' in
+  (* all the other nodes *)
+  let v_d = IntSet.diff (IntSet.of_int t.n) (IntSet.union v_c v_p') in
+  (* fix numbering of nodes in c and d : t -> c and t -> d *)
+  let iso_v_c = IntSet.fix v_c 
+  and iso_v_d = IntSet.fix v_d 
+  (* IntSet of target's roots *)
+  and tr_set = IntSet.of_int t.r in
+  (************************** Identity **************************)
+  (* c roots to d nodes *)
+  let (edg_c_rs0, edg_d_rn0, s0) = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun (acc_c, acc_d, j) c ->
+	if IntSet.mem c v_d then 
+	  ((r, j + p.r) :: acc_c, 
+	   (j + p.s, Iso.find iso_v_d c) :: acc_d, 
+	   j + 1)
+	else (acc_c, acc_d, j)
+      ) acc (Sparse.chl t.rn r)
+    ) tr_set ([], [], 0) in
+  (* c roots to d sites *)
+  let (edg_c_rs1, edg_d_rs0, s1) = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun (acc_c, acc_d, s) c ->
+	((r, s + p.r + s0) :: acc_c, 
+	 (s + p.s + s0, c) :: acc_d, 
+	 s + 1)
+      ) acc (Sparse.chl t.rs r)
+    ) tr_set ([], [], 0) in
+  (* c nodes to d nodes *)
+  let (edg_c_ns0, edg_d_rn1, s2) = 
+    IntSet.fold (fun i acc ->
+      List.fold_left (fun (acc_c, acc_d, j) c ->
+	if IntSet.mem c v_d then 
+	  ((Iso.find iso_v_c i, j + p.r + s0 + s1) :: acc_c, 
+	   (j + p.s + s0 + s1, Iso.find iso_v_d c) :: acc_d, 
+	   j + 1)
+	else (acc_c, acc_d, j)
+      ) acc (Sparse.chl t.nn i)
+    ) v_c ([], [], 0) in
+  (* c nodes to d sites *)
+  let (edg_c_ns1, edg_d_rs1, s3) = 
+    IntSet.fold (fun i acc ->
+      List.fold_left (fun (acc_c, acc_d, s) c ->
+	((Iso.find iso_v_c i, s + p.r + s0 + s1 + s2) :: acc_c, 
+	 (s + p.s + s0 + s1 + s2, c) :: acc_d, 
+	 s + 1)
+      ) acc (Sparse.chl t.ns i)
+    ) v_c ([], [], 0)
+  (************************** Context **************************)
+  (* c roots to p nodes *)
+  and edg_c_rp = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun acc c ->
+	if IntSet.mem c v_p' then 
+	  let s = List.hd (Sparse.prn p.rn (Iso.find iso' c)) in (* check c's siblings *) 
+	  (r, s) :: acc
+	else acc
+      ) acc (Sparse.chl t.rn r)
+    ) tr_set []
+  (* c nodes to p nodes *)
+  and edg_c_np = 
+    IntSet.fold (fun r acc ->
+      List.fold_left (fun acc c ->
+	if IntSet.mem c v_p' then 
+	  let s = List.hd (Sparse.prn p.rn (Iso.find iso' c)) in 
+	  (Iso.find iso_v_c r, s) :: acc
+	else acc
+      ) acc (Sparse.chl t.nn r)
+    ) v_c []
+  (************************** Parameter **************************)
+  (* p nodes to d nodes *)
+  and edg_d_nn = 
+    IntSet.fold (fun n acc ->
+      List.fold_left (fun acc c ->
+	if IntSet.mem c v_d then 
+	  let s = List.hd (Sparse.chl p.ns (Iso.find iso' n)) in 
+	  (s, Iso.find iso_v_d c) :: acc
+	else acc
+      ) acc (Sparse.chl t.nn n)
+    ) v_p' []
+  (* p nodes to d sites *)
+  and edg_d_ns = 
+    IntSet.fold (fun n acc ->
+      List.fold_left (fun acc c ->
+	let s = List.hd (Sparse.chl p.ns (Iso.find iso' n)) in 
+	(s, c) :: acc
+      ) acc (Sparse.chl t.ns n)
+    ) v_p' [] in 
+  (* size of id *)
+  let j = s0 + s1 + s2 + s3 in
   (* Context c *)      
-  let (r_c, n_c, s_c) = (t.r, Int_set.cardinal v_c, p.r + j) in
-   (* Parameter d *)
-  let (r_d, n_d, s_d) = (p.s + j, Int_set.cardinal v_d, t.s) in
-   (* Context c matrix *)
-  let m_c = make_0 (r_c + n_c) (n_c + s_c)
-  (* Iso from columns in c to rows in t *)
-  and iso_c = inverse (fix_num v_c) in
-  for i = 0 to r_c + n_c - 1 do
-    let new_i =
-      if i < r_c then i else get_i (i - r_c) iso_c in
-    for j = 0 to n_c + p.r - 1 do
-      if j < n_c then
-        (* Node *)
-	let new_j = (get_i j iso_c) - t.r in
-	m_c.{i, j} <- t.m.{new_i, new_j}	  
-      else if j < (n_c + p.r) then begin
-        (* Site to pattern *)
-	(* Sites are excluded. This control shouldn't be necessary
-	   since p is always solid, i.e. roots don't have site children. *)
-	let chl_r =
-	  Int_set.filter (fun x -> x < p.n) (chl p.m (j - n_c))
-	(* Children of i in t that map to p. *)
-	and chl_i =
-	  Int_set.inter (chl t.m new_i) (codom iso) in
-	(*printf "(%d,%d)\tchl_r = %s\tchl_i = %s\n" i j 
-	  (string_of_Int_set chl_r) (string_of_Int_set chl_i);*)
-	if Int_set.subset (apply chl_r iso) chl_i then m_c.{i, j} <- 1
-      end
-    done
-  done;
-  (* Sites to id *)
-  Iso.iter (fun (i, j) ->
-    let new_i = if i < r_c then i else (get_inv_i i iso_c) + r_c in 
-    m_c.{new_i, j + n_c + p.r} <- 1) iso_id;
-  (* Parameter d matrix*)
-   let m_d = make_0 (r_d + n_d) (n_d + s_d)
-  (* Iso from columns in d to columns in t *)
-  and iso_d =  inverse (fix_num (off (-t.r) v_d)) in
-   for i = 0 to r_d + n_d - 1 do
-    let new_i =
-      if i < p.s then
-        (* Root to pattern *)
-        (*NOT TRUE!! p mono -> Sites in p have one parent *)
-	(* CHECK *)
-        (get_i ((Int_set.choose (prn p.m (i + p.n))) - p.r) iso) + t.r
-      else if i < r_d then
-        (* Root to id *)
-        get_inv_i (i - p.s) iso_id
-      else  
-        (* Node *)
-        (get_i (i - r_d) iso_d) + t.r in
-    for j = 0 to n_d + s_d - 1 do
-      let new_j = 
-	if j < n_d then
-          (* Node *)
-          get_i j iso_d
-	else
-          (* Site *)  
-          (j - n_d) + t.n  in
-      m_d.{i,j} <- t.m.{new_i,new_j}
-    done
-  done;  
-   (*printf "v_c =%s\nc =\n%s\n\nt =\n%s\n\np =\n%s\n\n" (string_of_Int_set v_c) (to_string m_c) (to_string t.m)
-     (to_string p.m);*)
-   ({r = r_c; n = n_c; s = s_c; m = m_c},
-   elementary_id j,
-   {r = r_d; n = n_d; s = s_d; m = m_d},
-   Iso.fold (fun (x, y) acc ->
-     Iso.add (y - t.r, x) acc) iso_c Iso.empty, inverse iso_d)
+  let c =
+    let n = IntSet.cardinal v_c 
+    and s = p.r + j in
+    { r = t.r;
+      n = n;
+      s = s;
+      rn = Sparse.make t.r n;
+      rs = Sparse.make t.r s;
+      nn = Sparse.make n n;
+      ns = Sparse.make n s;
+    }
+  (* Parameter d *)
+  and d =
+    let n = IntSet.cardinal v_d
+    and r = p.s + j in
+    { r = r;
+      n = n;
+      s = t.s;
+      rn = Sparse.make r n;
+      rs = Sparse.make r t.s;
+      nn = Sparse.make n n;
+      ns = Sparse.make n t.s;
+    } in
+  (* Add old edges *)
+  Sparse.iter (fun i j ->
+    if IntSet.mem j v_c then Sparse.add c.rn i (Iso.find iso_v_c j)
+  ) t.rn;
+  Sparse.iter (fun  i j ->
+  if (IntSet.mem i v_c) && (IntSet.mem j v_c) then
+    Sparse.add c.nn (Iso.find iso_v_c i) (Iso.find iso_v_c j)
+  else if (IntSet.mem i v_d) && (IntSet.mem j v_d) then
+    Sparse.add d.nn (Iso.find iso_v_d i) (Iso.find iso_v_d j)
+  ) t.nn;
+  Sparse.iter (fun i j ->
+    if IntSet.mem i v_d then Sparse.add d.ns (Iso.find iso_v_d i) j
+  ) t.ns;
+  (* Add new edges *)
+  Sparse.add_list c.rs (edg_c_rs0 @  edg_c_rs1 @ edg_c_rp);
+  Sparse.add_list c.ns (edg_c_ns0 @  edg_c_ns1 @ edg_c_np);
+  Sparse.add_list d.rn (edg_d_rn0 @  edg_d_rn1 @ edg_d_nn);
+  Sparse.add_list d.rs (edg_d_rs0 @  edg_d_rs1 @ edg_d_ns); 
+  (c, d, elementary_id j, iso_v_c, iso_v_d)
 
-(* Parallel composition of n ions *)
-let elementary_ions n =
-  Int_set.fold (fun _ acc -> tens elementary_ion acc) (of_int n) id0
+(*
+exception PLACING of bg
 
-(* Construct the placing for a level. Firts two arguments are columns while
-   last two are rows. *)
-let build_phi sites sites_id roots roots_id p =
-  (* Generate an map with an offset in the codomain *) 
-  let fix_off target offset =
-    Array.to_list (Array.mapi (fun index i ->
-      (i, index + offset)) (Array.of_list target)) in
-  (* Iso from inputs to phi indices *) 
-  let iso_roots = fix_num roots
-  and map_roots_id = fix_off roots_id (Int_set.cardinal roots) in
-  (* Apply isos to parent sets *)
-  let map_par (s : Int_set.t) = 
-    fst (Int_set.fold (fun j (acc, map) ->
-      (* parents in roots and in roots_id *) 
-      let p_r, p_s =
-	Int_set.partition (fun i -> Int_set.mem i roots) (prn p.m j) in
-      (* map p_s to p_s0 and update map_roots_id *)
-      let p_s0, new_map =
-        Int_set.fold (fun i (acc, m) ->
-          ((try (List.assoc i m) :: acc with _ -> acc),
-           List.remove_assoc i m)) p_s ([], map) in
-      (acc @ [(Int_set.elements (apply p_r iso_roots)) @ p_s0], new_map)
-    ) s ([], map_roots_id)) in
-  (* parents of sites *)  
-  let (prn_sites : int list list) = 
-       map_par sites  
-  (* parents of sites_id *)  
-  and (prn_id : int list list) = 
-       map_par sites_id in   
-  parse_placing (prn_sites @ prn_id)
-    ((Int_set.cardinal roots) + (List.length roots_id))  
+(*  given a place graph p it returns a place graph p' a list of ions, the size
+    of an identity and a placing. Return p if it does not contain any ions. The
+    following invariant holds p = p' ((K x K x K x id) phi). An isomorphism to
+    restore the original numbering of p is also computed: p' -> p  *)
+let split_leaves p =
+  if is_plc p then raise (PLACING p)
+  else begin
+    let ions = IntSet.of_list (Sparse.leaves p.nn) in
+    (* p -> ions *)
+    let ions_iso = IntSet.fix ions 
+    and n_ions = IntSet.cardinal ions in
+    let nodes_s = IntSet.diff (IntSet.of_list (Sparse.dom p.ns)) ions
+    and roots_s = IntSet.of_list (Sparse.dom p.rs) in
+    let ns_iso = IntSet.fix nodes_s 
+    and rs_iso = IntSet.fix roots_s 
+    and j = (IntSet.cardinal nodes_s) + (IntSet.cardinal roots_s) 
+    and n_p' = IntSet.diff (IntSet.of_int p.n) ions in
+    (* p -> p'*) 
+    let p'_iso = IntSet.fix n_p' in
+    let phi = 
+      { r = n_ions + j;
+	n = 0;
+	s = p.s;
+	rn = Sparse.make (n_ions + j) 0;
+	rs = Sparse.make (n_ions + j) p.s; (* fill *)
+	nn = Sparse.make 0 0;
+	ns = Sparse.make 0 p.s;
+      }	in
+    (* edges from ions to sites *)
+    IntSet.iter (fun i -> 
+      let cs = Sparse.chl p.ns i in
+      List.iter (fun j -> 
+	Sparse.add phi.rs (Iso.find ions_iso i) j) cs) ions;
+    (* edges from id_nodes to sites *)
+    IntSet.iter (fun i -> 
+      let cs = Sparse.chl p.ns i in
+      List.iter (fun j -> 
+	Sparse.add phi.rs ((Iso.find ns_iso i) + n_ions) j) cs) nodes_s;
+    (* edges from id_roots to sites *)
+    IntSet.iter (fun i -> 
+      let cs = Sparse.chl p.rs i in
+      List.iter (fun j -> 
+	Sparse.add phi.rs 
+	  ((Iso.find rs_iso i) + n_ions + (IntSet.cardinal nodes_s)) j)
+	cs) roots_s;
+    let p' =
+      { r = p.r;
+	n = p.n - n_ions;
+	s = n_ions + j;
+	rn = Sparse.make p.r (p.n - n_ions);
+	rs = Sparse.make p.r (n_ions + j);
+	nn = Sparse.make (p.n - n_ions) (p.n - n_ions);
+	ns = Sparse.make (p.n - n_ions) (n_ions + j);
+      } in
+    (* edges from nodes to nodes/sites(ions) *)
+    IntSet.iter (fun i ->
+      let cs = Sparse.chl p.nn i in
+      List.iter (fun j ->
+	if IntSet.mem j ions then
+	  Sparse.add p'.ns (Iso.find p'_iso i) (Iso.find ions_iso j)
+	else Sparse.add p'.nn (Iso.find p'_iso i) (Iso.find p'_iso j))
+	cs) n_p';
+    (* edges from nodes to sites *)
+    Iso.iter (fun i j ->
+      Sparse.add p'.ns (Iso.find p'_iso i) (j + n_ions)) ns_iso;
+    (* edges from roots to nodes/sites(ions) *)
+    Sparse.iter (fun i j ->
+      if IntSet.mem j ions then
+	Sparse.add p'.rs r (Iso.find ions_iso j)
+      else Sparse.add p'.rn r (Iso.find p'_iso j)) p.rn;
+    (* edges from roots to sites *)
+    Iso.iter (fun i j ->
+      Sparse.add p'.rs r (j + n_ions + (IntSet.cardinal nodes_s))) rs_iso;
+    (p', ions, j, phi, Iso.inverse p'_iso)
+  end
 
-(* Compute the levels of p. Indeces are columns. *)
+(* recursively apply split leaves until a placing is returned. At each step the
+   isos are converted to isos to p *)
+(* INCOMPLETE *)
 let levels p =
-  (* leaves = columns already in a level*) 
-  let rec loop p sites sites_id res leaves leaves_init =
-    let roots, roots_id, prop =
-      Int_set.fold (fun j (acc, l, s) ->
-        (* Partition the set of parents of a site *)
-        let keep, discard =
-          Int_set.partition (fun i ->
-            Int_set.subset (chl p.m i) leaves) (prn p.m j) in
-	(* Keep only new roots *)    
-        let new_keep = Int_set.filter (fun i ->
-          not (Int_set.mem (i - p.r) leaves)) keep in
-	 if Int_set.is_empty discard then
-          (Int_set.union new_keep acc, (Int_set.elements discard) @ l, s)
-        else
-          (Int_set.union new_keep acc, (Int_set.elements discard) @ l,
-           Int_set.add j s)
-      ) (Int_set.union sites sites_id) (leaves_init, [], Int_set.empty) in
-    (* If no nodes in parents *)         
-    if Int_set.is_empty
-      (Int_set.filter (fun i ->
-	i >= p.r) (Int_set.union roots (set_of_list roots_id)))
-    then
-      (* Build topmost placing and return levels *)
-      (build_phi sites sites_id (of_int p.r) [] p, res)
-    else
-      (* build current level and iterate loop *)
-      (* placing *)
-      let phi = build_phi sites sites_id roots roots_id p
-      (* nodes (columns) not in leaves *)
-      and ions = Int_set.fold (fun i acc ->
-          if (i >= p.r) && not (Int_set.mem (i - p.r) leaves) then
-            Int_set.add (i - p.r) acc
-          else acc) roots Int_set.empty in  
-      loop p ions prop ((ions, Int_set.cardinal prop, phi) :: res)
-	(Int_set.union ions leaves) Int_set.empty in    
-  let sites = off p.n (of_int p.s) 
-  and leaves = zero_rows p.m in
-  loop p sites Int_set.empty [] sites leaves	 
-
-(* Compute three strings to build a dot representation.*)
-(* USE CSS *)
-let get_dot p =
-  (
-    (* Root shapes *)
-    Int_set.fold (fun i buff ->
-      buff ^ (sprintf "r%d [label=\"%d\", style=dashed, shape=box, width=.28, height=.18];\n" i i)
-    ) (of_int p.r) "",
-  (* Site shapes *)
-    Int_set.fold (fun i buff ->
-      buff ^ (sprintf
-		"s%d [label=\"%d\", style=\"filled,dashed\", shape=box, fillcolor=gray, width=.28, height=.18];\n"
-		i i)) (of_int p.s) "",
-  (* ranks *)
-    String.concat "" (List.map (fun (s, _, _) ->
-      sprintf "{rank=same; %s};\n"
-	(String.concat "; " (List.map (fun i ->
-	  sprintf "v%d" i) (Int_set.elements s)))) (snd (levels p))),  
-  (* Adjacency matrix *) 
-  let out = ref "" in
-  for i = 0 to p.r + p.n - 1 do
-    for j = 0 to p.n + p.s - 1 do
-      if p.m.{i,j} = 1 then
-        let new_i = 
-          if i < p.r then
-            (* Root *)
-            sprintf "r%d" i
-          else
-            (* Node *)
-            sprintf "v%d" (i - p.r)
-        and new_j = 
-          if j < p.n then
-            (* Node *)
-            sprintf "v%d" j
-          else
-            (* Site *)
-            sprintf "s%d" (j - p.n) in             
-        out := !out ^ (sprintf "%s -> %s [arrowhead=\"vee\" arrowsize=0.5];\n" new_i new_j)
-      else ()
-    done
-  done;
-  !out)
-
-(* Returns a string representation of a placing. *)
-let snf_of_placing p =
-  let out = ref [] in
-  for j = p.s - 1 downto 0 do
-    let parents = ref [] in
-    for i = p.r - 1 downto 0 do
-      if p.m.{i,j} = 1 then
-        parents := (sprintf "%d" i) :: !parents
-      else ()
-    done;
-    out := (sprintf "{%s}" (String.concat "," !parents)) :: !out
-  done;
-  sprintf "([%s],%d)" (String.concat "," !out) p.r  
-
-(* Counts the number of edges in the DAG *)
-let edges p =
-  let e = ref 0 in
-  for i = 0 to p.r + p.n - 1 do
-    for j = 0 to p.n + p.s - 1 do
-      e := p.m.{i,j} + !e
-    done
-  done;
-  !e
-
-(* GPROF *)
-(* Returns a list of pairs of non-iso nodes. Every node is expressed as a 
-   pair of indices. *) (* USE ISO instead*)
-let match_list t p =
-  let res = ref [] in
-  for i = p.r to p.r + p.n - 1 do
-    for l = 0 to p.n - 1 do
-      for j = t.r to t.r + t.n - 1 do
-        for k = 0 to t.n - 1 do
-          if p.m.{i,l} <> t.m.{j,k} then
-            res := (i - p.r, l, j - t.r, k) :: !res
-          else ()
-        done
-      done
-    done
-  done;
-  !res          
-
-let match_root_nodes a b =
-  let res = ref [] in
-  for i = 0 to a.r - 1 do
-    for l = 0 to a.n - 1 do
-      for k = 0 to b.n - 1 do
-        if a.m.{i,l} <> b.m.{i,k} then
-          res := (l, k) :: !res
-        else ()
-      done
-    done
-  done;
-  !res          
-
-let match_nodes_sites a b =
-  let res = ref [] in
-  for i = a.r to a.r + a.n - 1 do
-    for j = b.r to b.r + b.n - 1 do
-      for k = a.n to a.n + a.s - 1 do
-        if a.m.{i,k} <> b.m.{j,k} then
-          res := (i - a.r, j - b.r) :: !res
-        else ()
-      done
-    done
-  done;
-  !res          
-
-let compare_roots_sites a b =
-  let (_, a_s, _, _) = split a.m a.r a.n
-  and (_, b_s, _, _) = split b.m b.r b.n in
-  compare a_s b_s
-
-let match_roots_sites a b = 
-  (compare_roots_sites a b) = 0
-  
-(* Returns the set of nodes (columns) having at least one site child *)
-let nodes_site_child b = 
-  Int_set.filter (fun j ->
-    not (Int_set.is_empty (Int_set.filter (fun j ->
-	     j >= b.n) (chl b.m (j + b.r))))) (of_int b.n)
-
-(* Dual *)
-let nodes_root_par b = 
-  Int_set.filter (fun j ->
-    not (Int_set.is_empty (Int_set.filter (fun i ->
-	     i < b.n) (prn b.m j)))) (of_int b.n)
-
-let match_leaves t p =
-  (* forbid pairs (0,n>0) children *)
-  let leaves_p =  Int_set.filter (fun x -> x >= 0) (off (-p.r) (zero_rows p.m)) 
-  and non_leaves_t = Int_set.diff (of_int t.n) (Int_set.filter (fun x ->
-    x >= 0) (off (-t.r) (zero_rows t.m))) in
-  Int_set.fold (fun i acc ->
-    Iso.union acc (Int_set.fold (fun j acc ->
-      Iso.add (i,j) acc) non_leaves_t Iso.empty)) leaves_p Iso.empty
-
-let match_orphans t p =
-  (*forbid pairs (0,n>0) roots *)
-  let orphans_p = Int_set.filter (fun x -> x < p.n) (zero_cols p.m) 
-  and non_orphans_t = Int_set.diff (of_int t.n) (Int_set.filter (fun x ->
-    x < t.n) (zero_cols t.m)) in
-  Int_set.fold (fun i acc ->
-    Iso.union acc (Int_set.fold (fun j acc ->
-      Iso.add (i,j) acc) non_orphans_t Iso.empty)) orphans_p Iso.empty 
-
-(* Add easy blocking pairs, Iso checking of the siblings and partners is left out *)
-let match_sites t p =
-  let n_p =  nodes_site_child p 
-  and n_t = of_int t.n in
-  Int_set.fold (fun i acc ->
-    Iso.union acc (Int_set.fold (fun j acc ->
-      if (Int_set.cardinal (partners t j)) < (Int_set.cardinal (partners p i)) then
-	((*printf "match_sites (%d,%d)\n" i j;*)
-	Iso.add (i,j) acc)
-      else
-	acc) n_t Iso.empty)) n_p Iso.empty
-
-let match_roots t p =
-  let n_p =  nodes_root_par p 
-  and n_t = of_int t.n in
-  Int_set.fold (fun i acc ->
-    Iso.union acc (Int_set.fold (fun j acc ->
-      if (Int_set.cardinal (siblings t j)) < (Int_set.cardinal (siblings p i)) then
-	((*printf "match_sites (%d,%d)\n" i j;*)
-	Iso.add (i,j) acc)
-      else
-	acc) n_t Iso.empty)) n_p Iso.empty
-
-(* check if iso i : p -> t is valid *)
-let is_match_valid t p t_trans iso = 
-  (* check SITES *)
-  let check_sites t p iso =
-    let n_t_sites = 
-      Int_set.fold (fun j acc ->
-	Int_set.union acc (chl t.m j)) (* diff sites t ??? NO *) 
-	(off t.r (codom iso)) Int_set.empty in
-    Int_set.for_all (fun c -> 
-      (* is there a set of sites with the same parent set? *)
-      let prn_c = 
-	Int_set.inter (codom iso) (off (-t.r) (prn t.m c)) in
-      (* construct a candidate set of sites *)
-      let candidate = 
-	Int_set.fold (fun s acc ->
-	  let prn_s =
-	    apply (Int_set.filter (fun x ->
-	      x >= 0) (off (-p.r) (prn p.m s))) iso in
-	  if Int_set.subset prn_s prn_c then
-	    Int_set.union prn_s acc
-	  else
-	    acc) (off (p.n) (of_int p.s)) Int_set.empty in
-      Int_set.equal candidate prn_c)
-      (Int_set.diff n_t_sites (codom iso)) (* diff codom iso ??? YES *)
-  (* check ROOTS (dual) *)
-  and check_roots t p iso =
-    let n_t_roots = (* rows *)
-      Int_set.fold (fun j acc ->
-	Int_set.union acc (prn t.m j)) (* diff roots t ??? NO *) 
-	(codom iso) Int_set.empty in
-    Int_set.for_all (fun _p -> 
-      (* is there a set of roots with the same child set? *)
-      let chl_p = (* cols *)
-	Int_set.inter (codom iso) (chl t.m _p) in
-      (* construct a candidate set of roots *)
-      let candidate = (* cols *)
-	Int_set.fold (fun r acc ->
-	  let chl_r = 
-	    apply (Int_set.filter (fun x ->  x < p.n) (chl p.m r)) iso in
-	  if Int_set.subset chl_r chl_p then
-	    Int_set.union chl_r acc
-	  else
-	    acc) (of_int p.r) Int_set.empty in
-      Int_set.equal candidate chl_p)
-      (Int_set.diff n_t_roots (off t.r (codom iso))) (* diff codom iso ??? YES *)
-  (* check TRANS *)
-  and check_trans t t_trans iso =
-   (* check if there is a node child of codomain, outside codomain, such that
-      one of its children in trans is in codomain *)
-    not (Int_set.exists (fun c ->
-      Int_set.exists (fun t -> 
-	Int_set.mem t (codom iso)) (chl t_trans c))
-	   (Int_set.diff (Int_set.fold (fun x acc ->
-	     Int_set.union acc (Int_set.filter (fun j -> 
-	       j < t.n) (chl t.m x))) (off t.r (codom iso)) Int_set.empty)
-	      (codom iso))) in
-  (check_sites t p iso) && (check_roots t p iso) && (check_trans t t_trans iso)
-
-(*let match_trans t p t_trans blocks =
-  let n_t = of_int t.n 
-  (* pairs in t_trans *)
-  and pairs_t = to_iso t_trans in
-  (* pairs s_p x n_t *)
-  let pairs_s_t = set_cart (nodes_site_child p) n_t
-  (* pairs r_p x n_t *)
-  and pairs_r_t = set_cart (nodes_root_par p) n_t in
-  
-  (* blocking pairs are (s,i(s)), (r, i(r)) if (i(s), i(r)) in t_trans *)
-  
+  let rec fix p acc iso =
+    try
+      let (p', ions, j, phi, iso') = split_leaves p in
+      fix p' ((iso ions, j, phi) :: acc) (iso iso')
+    with
+    | PLACING phi -> (phi, acc) in
+  let id_p = 
+    Iso.of_list (List.combine (IntSet.of_int p.n) (IntSet.of_int p.n)) in
+  fix p [] id_p  
 *)
 
-(* DEBUG *)
-(*let _ = 
-  (* Example from page 82 *)
-  let p = {r = 1; n = 3; s = 2; m = make 4 5} 
-  and t = {r = 1; n = 8; s = 2; m = make 9 10} in
-  p.m.Matrix.m.(0).(0) <- true;
-  p.m.Matrix.m.(1).(1) <- true;
-  p.m.Matrix.m.(1).(3) <- true;
-  p.m.Matrix.m.(2).(2) <- true;
-  p.m.Matrix.m.(3).(4) <- true;
-  t.m.Matrix.m.(0).(0) <- true;
-  t.m.Matrix.m.(1).(1) <- true;
-  t.m.Matrix.m.(1).(2) <- true;
-[6~  t.m.Matrix.m.(1).(3) <- true;
-  t.m.Matrix.m.(2).(4) <- true;
-  t.m.Matrix.m.(3).(5) <- true;
-  t.m.Matrix.m.(4).(6) <- true;
-  t.m.Matrix.m.(5).(7) <- true;
-  t.m.Matrix.m.(6).(7) <- true;
-  t.m.Matrix.m.(7).(9) <- true;
-  t.m.Matrix.m.(8).(8) <- true;
-  printf "pattern:\n%starget:\n%s" (string_of_pg p) (string_of_pg t);
-  List.iter (fun (a, b, c, d) ->
-    printf "(%d,%d,%d,%d) " a b c d)(match_list t p);
-  printf "\n";
-  let psi = parse_placing [[0;2]; [1;2]; []; [1]] 3 in
-  printf "placing: %s\n" (snf_of_placing psi)
-*) 
+(* Compute three strings to build a dot representation.*)
+let get_dot p =
+  (* Root shapes *)
+  let root_shapes =  
+    IntSet.fold (fun i buff ->
+      sprintf "%sr%d [ label=\"%d\", style=\"dashed\", shape=box, width=.28,\
+                       height=.18, fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
+      (IntSet.of_int p.r) ""
+  (* Site shapes *)
+  and site_shapes = 
+    IntSet.fold (fun i buff ->
+      sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", shape=box,\
+                       fillcolor=\"gray\", width=.28, height=.18,\
+                       fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
+      (IntSet.of_int p.s) ""
+  (* Ranks *)
+  and ranks = 
+    List.fold_left (fun buff ns ->
+      sprintf "%s{ rank=same; %s };\n" buff 
+	(String.concat "; " (IntSet.fold (fun i acc ->
+	  (sprintf "v%d" i) :: acc) ns []))) "" (Sparse.levels p.nn)
+  (* Adjacency matrix *) 
+  and m_rn = 
+    Sparse.fold (fun i j buff ->
+      sprintf "%sr%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.rn ""
+  and m_rs =
+    Sparse.fold (fun i j buff ->
+      sprintf "%sr%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.rs ""
+  and m_nn =
+    Sparse.fold (fun i j buff ->
+      sprintf "%sv%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.nn ""
+  and m_ns =
+    Sparse.fold (fun i j buff ->
+      sprintf "%sv%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	buff i j) p.ns "" in
+  (root_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
 
-	
+(* Number of edges in the DAG *)
+let edges p =
+  (Sparse.entries p.rn) + (Sparse.entries p.rs) + 
+    (Sparse.entries p.nn) + (Sparse.entries p.ns)
+
+(* given an edge of control A -> B, find all the edges with the same type.
+   return a hash table (string * string) -> (int * int) *)
+let partition_edges p n =
+  let h = Hashtbl.create (Sparse.entries p.nn) in
+  Sparse.iter (fun i j ->
+    let (a, b) = (Nodes.find n i, Nodes.find n j) in
+    match (a, b) with 
+    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+      Hashtbl.add h (a_string, b_string) (i, j)) p.nn;
+  h
+
+type deg =
+| V of int (* only vertices *)
+| S of int (* with sites or roots *)
+
+let indeg p i =
+  assert (i >= 0);
+  let d = List.length (Sparse.prn p.nn i) in
+  match Sparse.prn p.rn i with
+  | [] -> V d
+  | _ -> S d
+
+let outdeg p i =
+  assert (i >= 0);
+  let d = List.length (Sparse.chl p.nn i) in
+  match Sparse.chl p.ns i with
+  | [] -> V d
+  | _ -> S d
+
+(* true if the degrees are compatible *)
+let compat_deg t p =
+  match p with
+  | V d -> begin match t with
+    | V d' -> d = d' 
+    | S _ -> false
+    end
+  | S d -> begin match t with
+    | V d' -> d' >= d
+    | S d' -> d' >= d
+  end
+
+let compat t p t_i p_i =
+  (compat_deg (indeg t t_i) (indeg p p_i)) && 
+    (compat_deg (outdeg t t_i) (outdeg p p_i))
+
+let eq t p t_i p_i =
+  ((indeg t t_i) = (indeg p p_i)) && ((outdeg t t_i) = (outdeg p p_i))
+    
+(* Optimisation 1:
+   - Do not add a pair if one of the two literals matches nodes of different 
+     controls.
+   - Check degrees
+   Optimisation 2 - match edges instead of enumerate non matching pairs: 
+   - An edge in the pattern is matched exactly to one edge in the target. 
+     Algorithm:
+      0. (optional) Create an hashmap (ctrl,ctrl) -> (i,j) to partition t edges 
+      1. Iterate over the edges in p and for every (i, j) enforce exactly one
+         match with one of the edges in t of equal control.
+      2. Avoid "at-least" and "at-most" constraints ()*)
+(*Tseitin*)
+(*if ij then ab or cd or ... de ENCODING = (ic and jd) or ... (id and je)*)
+let match_list t p n_t n_p : 
+    (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list  * Cnf.clause list =
+  let h = partition_edges t n_t in
+  let (clauses, b, clauses_exc) = Sparse.fold (fun i j (acc, block, exc) ->
+    let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
+    match (a, b) with 
+    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
+      let t_edges = Hashtbl.find_all h (a_string, b_string) in
+      try
+	let (clause, pairs) = 
+	  Cnf.tseitin (List.fold_left (fun acc (i', j') ->
+	    (* Degree check *)
+	    if (compat t p i' i) && (compat t p j' j) then
+	      (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')) :: acc
+	    else acc) [] t_edges) in
+	if List.length clause = 0 then begin
+	  (* No compatible edges found *)
+	  (acc, i :: j :: block, exc) 
+	end else 
+	  ((clause, pairs) :: acc, block, exc)
+      with
+      | Cnf.TSEITIN clauses ->
+	match clauses with
+	| [] -> (acc, block, exc)
+	| _ -> (acc, block, clauses @ exc)
+    end) p.nn ([], [], []) in
+  (clauses, Cnf.block_rows b t.n, clauses_exc)
+
+(* Nodes with no children (both nodes and sites). *)
+let leaves p =
+  let l_n = Sparse.leaves p.nn
+  and l_s = Sparse.leaves p.ns in
+  IntSet.inter l_n l_s
+
+(* Dual *)
+let orphans p =
+  let o_r = Sparse.orphans p.rn
+  and o_n = Sparse.orphans p.nn in
+  IntSet.inter o_r o_n
+
+(* leves (orphans) in p are matched to leaves (orphans) in t.
+   C5: ij0 or ij1 or ..... *)
+let match_leaves t p n_t n_p : Cnf.clause list * Cnf.clause list =
+  let l_p = leaves p
+  and l_t = leaves t in
+  let (clauses, b) =
+    IntSet.fold (fun i (acc, block) ->
+      let c = Nodes.find n_p i in
+      let clause = IntSet.fold (fun j acc ->
+	Cnf.P_var (Cnf.M_lit (i, j)) :: acc) (IntSet.filter (fun j -> 
+	  Ctrl.(=) c (Nodes.find n_t j)) l_t) [] in
+      (* If clause is empty i is not matchable *)
+      match clause with
+      | [] -> (acc, i :: block)
+      | _ -> (clause :: acc, block)) l_p ([], []) in
+  (clauses, Cnf.block_rows b t.n)
+
+(* Dual *)
+let match_orphans t p n_t n_p : Cnf.clause list * Cnf.clause list =
+  let o_p = orphans p 
+  and o_t = orphans t in
+  let (clauses, b) =
+    IntSet.fold (fun i (acc, block) ->
+      let c = Nodes.find n_p i in
+      let clause = IntSet.fold (fun j acc ->
+	Cnf.P_var (Cnf.M_lit (i, j)) :: acc) (IntSet.filter (fun j -> 
+	  Ctrl.(=) c (Nodes.find n_t j)) o_t) [] in
+      match clause with
+      | [] -> (acc, i :: block)
+      | _ -> (clause :: acc, block)) o_p ([], []) in
+  (clauses, Cnf.block_rows b t.n)
+  
+(* Only ctrl and deg check *)
+let match_sites t p n_t n_p : Cnf.clause list * Cnf.clause list =
+  let (clauses, b) =
+    Sparse.fold (fun i _ (acc, block) -> 
+      let c = 
+	match Nodes.find n_p i with 
+	| Ctrl.Ctrl (c, _) -> c in
+      let js = List.filter (fun j ->
+	(compat_deg (indeg t j) (indeg p i))) (Nodes.find_all n_t c) in
+      match js with
+      | [] -> (acc, i :: block)
+      | _ -> begin
+	let clause = List.map (fun j ->
+	  Cnf.P_var (Cnf.M_lit (i, j))) js in
+	(clause :: acc, block)
+      end) p.ns ([], []) in
+  (clauses, Cnf.block_rows b t.n)
+    
+let match_roots t p n_t n_p : Cnf.clause list * Cnf.clause list =
+  let (clauses, b) =
+    Sparse.fold (fun _ i (acc, block) -> 
+      let c = 
+	match Nodes.find n_p i with 
+	| Ctrl.Ctrl (c, _) -> c in
+      let js = List.filter (fun j ->
+	(compat_deg (outdeg t j) (outdeg p i))) (Nodes.find_all n_t c) in
+      match js with
+      | [] -> (acc, i :: block)
+      | _ -> begin
+	let clause = List.map (fun j ->
+	  Cnf.P_var (Cnf.M_lit (i, j))) js in
+	(clause :: acc, block)
+      end) p.rn ([], []) in
+  (clauses, Cnf.block_rows b t.n)
+
+(* Block unconnected pairs of nodes with sites and nodes with roots. *)
+let match_trans t p : Cnf.clause list =
+  let n_s = Sparse.dom p.ns (* index i *)
+  and n_r = Sparse.codom p.rn in (* index j *)
+  let (n_s', n_r') = 
+    IntSet.fold (fun i (acc_s, acc_r) ->
+      let x = IntSet.inter (IntSet.of_list (Sparse.chl p.nn i)) n_r in
+      if IntSet.cardinal x = 0 then (acc_s, acc_r)
+      else (IntSet.remove i acc_s, IntSet.diff acc_r x)
+    ) n_s (n_s, n_r) in
+  (* For every edge (i', j') in t, block any ii' and jj' *)
+  Sparse.fold (fun i' j' acc ->
+    let blocks = IntSet.fold (fun i acc ->
+      IntSet.fold (fun j acc ->
+	[Cnf.N_var (Cnf.M_lit (i, i')); Cnf.N_var (Cnf.M_lit (j, j'))] :: acc
+      ) n_r' acc
+    ) n_s' [] in
+    blocks @ acc) t.nn [] 
+
+let check_sites t p v_p' c_set iso =
+  let s_set =
+    IntSet.fold (fun j acc ->
+      let children = IntSet.of_list (Sparse.chl t.ns j) in
+      IntSet.union acc children) v_p' IntSet.empty in
+  (* Is there a set of sites with the same parent set? *)
+  (* Nodes *)
+  (IntSet.for_all (fun c ->
+    let prn_c = IntSet.inter 
+      v_p' (IntSet.of_list (Sparse.prn t.nn c)) in
+    (* Construct a candidate set of sites *)
+    let candidate =
+      IntSet.fold (fun s acc ->
+	let prn_s = IntSet.apply 
+	  (IntSet.of_list (Sparse.prn p.ns s)) iso in
+	if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
+	else acc
+      ) (IntSet.of_int p.s) IntSet.empty in
+    (* Equality test *)
+    IntSet.equal candidate prn_c) c_set) &&
+    (* Sites *)
+    (IntSet.for_all (fun s ->
+      let prn_s = IntSet.inter 
+	v_p' (IntSet.of_list (Sparse.prn t.ns s)) in
+    (* Construct a candidate set of sites *)
+    let candidate =
+      IntSet.fold (fun s acc ->
+	let prn_s' = IntSet.apply 
+	  (IntSet.of_list (Sparse.prn p.ns s)) iso in
+	if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
+	else acc
+      ) (IntSet.of_int p.s) IntSet.empty in
+    (* Equality test *)
+    IntSet.equal candidate prn_s) s_set)
+
+(* Dual *)
+let check_roots t p v_p' iso =
+  let p_set = 
+    IntSet.fold (fun j acc ->
+      let parents = IntSet.diff 
+	(IntSet.of_list (Sparse.prn t.nn j)) v_p' in
+      IntSet.union acc parents) v_p' IntSet.empty
+  and r_set = 
+    IntSet.fold (fun j acc ->
+      let parents = IntSet.of_list (Sparse.prn t.rn j) in
+      IntSet.union acc parents) v_p' IntSet.empty in
+  (* Is there a set of roots with the same children set? *)
+  (* Nodes *)
+  (IntSet.for_all (fun x ->
+    let chl_p = IntSet.inter 
+      v_p' (IntSet.of_list (Sparse.chl t.nn x)) in
+    (* Construct a candidate set of roots *)
+    let candidate =
+      IntSet.fold (fun r acc ->
+	let chl_r = IntSet.apply 
+	  (IntSet.of_list (Sparse.chl p.rn r)) iso in
+	if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
+	else acc
+      ) (IntSet.of_int p.r) IntSet.empty in
+    (* Equality test *)
+    IntSet.equal candidate chl_p) p_set) &&
+    (* Roots *)
+    (IntSet.for_all (fun x ->
+      let chl_r = IntSet.inter 
+	v_p' (IntSet.of_list (Sparse.chl t.rn x)) in
+    (* Construct a candidate set of roots *)
+      let candidate =
+	IntSet.fold (fun r acc ->
+	let chl_r' = IntSet.apply 
+	  (IntSet.of_list (Sparse.chl p.rn r)) iso in
+	if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
+	else acc
+	) (IntSet.of_int p.r) IntSet.empty in
+      (* Equality test *)
+      IntSet.equal candidate chl_r) r_set)
+    
+(* check TRANS *)
+let check_trans t_trans v_p' c_set = 
+  (* check if there is a node child of co-domain, outside co-domain, such that
+     one of its children in trans is in co-domain *)
+  not (IntSet.exists (fun c ->
+    List.exists (fun t ->
+      IntSet.mem t v_p') (Sparse.chl t_trans c)) c_set)
+    
+(* Check if iso i : p -> t is valid *)
+let check_match t p t_trans iso =  
+  let v_p' = IntSet.of_list (Iso.codom iso) in
+  let c_set =
+    IntSet.fold (fun j acc ->
+      let children = IntSet.diff 
+	(IntSet.of_list (Sparse.chl t.nn j)) v_p' in
+      IntSet.union acc children) v_p' IntSet.empty in
+  (check_sites t p v_p' c_set iso) && (check_roots t p v_p' iso) && 
+    (check_trans t_trans v_p' c_set)
+    
+(* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)
+
+let match_list_eq t p n_t n_p : 
+    (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list  * Cnf.clause list =
+  let h = partition_edges t n_t in
+  let (clauses, b, clauses_exc) = Sparse.fold (fun i j (acc, block, exc) ->
+    let (a, b) = (Nodes.find n_p i, Nodes.find n_p j) in
+    match (a, b) with 
+    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> begin
+      let t_edges = Hashtbl.find_all h (a_string, b_string) in
+      try
+	let (clause, pairs) = 
+	  Cnf.tseitin (List.fold_left (fun acc (i', j') ->
+	    (* Degree equality *)
+	    if (eq t p i' i) && (eq t p j' j) then
+	      (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')) :: acc
+	    else acc) [] t_edges) in
+	if List.length clause = 0 then begin
+	  (* No compatible edges found *)
+	  (acc, i :: j :: block, exc) 
+	end else 
+	  ((clause, pairs) :: acc, block, exc)
+      with
+      | Cnf.TSEITIN clauses ->
+	match clauses with
+	| [] -> (acc, block, exc)
+	| _ -> (acc, block, clauses @ exc)
+    end) p.nn ([], [], []) in
+  (clauses, Cnf.block_rows b t.n, clauses_exc)
+
+(* out clauses = (ij1 or ij2 or ij ...) :: ... *)
+let match_root_nodes a b n_a n_b : Cnf.clause list =
+  Sparse.fold (fun r i acc ->
+    let c = Nodes.find n_a i in 
+    let children = 
+      List.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.chl b.rn r) in
+    (List.map (fun j -> 
+      Cnf.P_var (Cnf.M_lit (i, j))) children) :: acc) a.rn []
+
+(*Dual*)
+let match_nodes_sites a b n_a n_b : Cnf.clause list =
+  Sparse.fold (fun i s acc ->
+    let c = Nodes.find n_a i in 
+    let parents = 
+      List.filter (fun i -> 
+	Ctrl.(=) c (Nodes.find n_b i)) (Sparse.prn b.ns s) in
+    (List.map (fun j -> 
+      Cnf.P_var (Cnf.M_lit (i, j))) parents) :: acc) a.ns []

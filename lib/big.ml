@@ -8,7 +8,7 @@ type bg = {
   n : Base.Nodes.t; (** Set of nodes *)
 }
 
-type inter = | Inter of int * Link.Face.t
+type inter = Inter of int * Link.Face.t
 
 exception SHARING_ERROR
 exception CTRL_ERROR of int * Link.Face.t
@@ -38,64 +38,87 @@ let string_of_inter (Inter (n, f)) =
   sprintf "<%d, %s>" n (Link.string_of_face f)
 
 let string_of_bg b =
-  sprintf "%s\n%s%s" (string_of_nodes b.n) (Place.string_of_pg b.p)
-    (Link.string_of_lg b.l)    
+  sprintf "%s\n%s%s" (Nodes.to_string b.n) (Place.to_string b.p)
+    (Link.to_string b.l)    
+
+let parse lines =
+  let (r, n, s, e) =
+    let a = 
+      Array.of_list (Str.split (Str.regexp_string " ") (List.hd lines)) in
+    (int_of_string a.(0), int_of_string a.(1), 
+     int_of_string a.(2), int_of_string a.(3)) in
+  let (s_n, lines_p, lines_l, _) =
+    List.fold_left (fun (s_n, acc_p, acc_l, i) l ->
+      match i with
+      | 0 -> (s_n, acc_p, acc_l, 1)
+      | 1 -> (l, acc_p, acc_l, 2)
+      | _ -> begin
+	if i < 2 + r + n then (s_n, acc_p @ [l], acc_l, i + 1)
+	else if i < 2 + r + n + e then (s_n, acc_p, acc_l @ [l], i + 1)
+	else (s_n, acc_p, acc_l, i + 1)
+      end) ("", [], [], 0) lines in
+  assert (List.length lines_l = e);
+  let (l, h) = Link.parse lines_l in
+  { n = Nodes.parse s_n h;
+    p = Place.parse r n s lines_p;
+    l = l;
+  }
 
 let id (Inter (m, i)) =
-  {n = Nodes.empty;
-   p = Place.elementary_id m;
-   l = Link.elementary_id i;
+  { n = Nodes.empty ();
+    p = Place.elementary_id m;
+    l = Link.elementary_id i;
   }   
   
 let id_eps = 
-  {n = Nodes.empty;
-   p = Place.id0;
-   l = Link.id_empty;
+  { n = Nodes.empty ();
+    p = Place.id0;
+    l = Link.id_empty;
   } 
   
 let merge n =
-  {n = Nodes.empty;
-   p = Place.elementary_merge n;
-   l = Link.id_empty;
+  { n = Nodes.empty ();
+    p = Place.elementary_merge n;
+    l = Link.id_empty;
   }
   
 let split n =
-  {n = Nodes.empty;
-   p = Place.elementary_split n;
-   l = Link.id_empty;
+  { n = Nodes.empty ();
+    p = Place.elementary_split n;
+    l = Link.id_empty;
   }
   
 let one =
-  {n = Nodes.empty;
-   p = Place.one;
-   l = Link.id_empty;
+  { n = Nodes.empty ();
+    p = Place.one;
+    l = Link.id_empty;
   }
   
 let zero =
-  {n = Nodes.empty;
-   p = Place.zero;
-   l = Link.id_empty;
+  { n = Nodes.empty ();
+    p = Place.zero;
+    l = Link.id_empty;
   }
   
 let sym (Inter (m, i)) (Inter (n, j)) =
-  {n = Nodes.empty;
-   p = Place.elementary_sym m n;
-   l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
+  { n = Nodes.empty ();
+    p = Place.elementary_sym m n;
+    l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
   }
   
 let ion f c =
-  if (arity c) <> (Link.Face.cardinal f) then
-    raise (CTRL_ERROR (arity c, f))
+  if (Ctrl.arity c) <> (Link.Face.cardinal f) then
+    raise (CTRL_ERROR (Ctrl.arity c, f))
   else
-    {n = Nodes.singleton (0, c);
-     p = Place.elementary_ion;
-     l = Link.elementary_ion f;
+    { n = Nodes.add (Nodes.empty ()) 0 c;
+      p = Place.elementary_ion;
+      l = Link.elementary_ion f;
     } 
 
 let sub i o =
-  {n = Nodes.empty;
-   p = Place.id0;
-   l = Link.elementary_sub i o;
+  { n = Nodes.empty ();
+    p = Place.id0;
+    l = Link.elementary_sub i o;
   }
   
 let closure i = sub i Link.Face.empty
@@ -104,40 +127,40 @@ let intro o = sub Link.Face.empty o
 
 (* (l list of parents for each site) r roots *)  
 let placing l r f =
-  {n = Nodes.empty;
-   p = Place.parse_placing l r;
-   l = Link.elementary_id f;
+  { n = Nodes.empty ();
+    p = Place.parse_placing l r;
+    l = Link.elementary_id f;
   }
   
 (* Empty link graph and no nodes in the place graph. *)
 let is_plc b =
   (Link.Lg.equal b.l Link.id_empty) &&
-  (Nodes.cardinal b.n = 0) &&
-  (Place.is_plc b.p)
+    (b.n.Nodes.size = 0) &&
+    (Place.is_plc b.p)
   
 (* Empty place graph and no nodes in the link graph. *)
 let is_wir b =
-  (b.p = Place.id0) && (Nodes.cardinal b.n = 0)
+  (b.p = Place.id0) && (b.n.Nodes.size = 0)
   
 let is_id b =
   (Nodes.is_empty b.n) && (Place.is_id b.p) && (Link.is_id b.l)
   
 let tens a b =
-  {n = uplus a.n b.n;
-   p = Place.tens a.p b.p;
-   l = Link.tens a.l b.l (Nodes.cardinal a.n);
+  { n = Nodes.tens a.n b.n;
+    p = Place.tens a.p b.p;
+    l = Link.tens a.l b.l a.n.Nodes.size;
   }
 
 let comp a b =
-  {n = uplus a.n b.n;
-   p = Place.comp a.p b.p;
-   l = Link.comp a.l b.l (Nodes.cardinal a.n);
+  { n = Nodes.tens a.n b.n;
+    p = Place.comp a.p b.p;
+    l = Link.comp a.l b.l a.n.Nodes.size;
   }
  
 let ppar a b =
-  {n = uplus a.n b.n;
-   p = Place.tens a.p b.p;
-   l = Link.ppar a.l b.l (Nodes.cardinal a.n);
+  { n = Nodes.tens a.n b.n;
+    p = Place.tens a.p b.p;
+    l = Link.ppar a.l b.l a.n.Nodes.size;
   }
   
 let ppar_of_list bs =
@@ -190,11 +213,11 @@ let is_solid b =
 (*let latex_of_big = function | Bg (ns, p, l) -> "latex representation"*)
   
 let apply_iso i b =
-  let (x, y) = ((Iso.cardinal i), (Nodes.cardinal b.n)) in
+  let (x, y) = ((Iso.cardinal i), b.n.Nodes.size) in
   if x = y then
-    {n = apply_nodes b.n i;
-     p = Place.apply_iso i b.p;
-     l = Link.apply_iso i b.l;
+    { n = Nodes.apply_iso b.n i;
+      p = Place.apply_iso i b.p;
+      l = Link.apply_iso i b.l;
     }
   else raise (ISO_ERROR (y, x))
 
@@ -206,57 +229,58 @@ let get_dot b ide =
     else if flag then
       let ss =
         (List.map (fun i ->
-          sprintf "r%d" i) (Int_set.elements (of_int ord))) @
+          sprintf "r%d" i) (IntSet.elements (IntSet.of_int ord))) @
         (List.map (fun (Link.Nam n) ->
           sprintf "o%s" n) (Link.Face.elements f)) in
       match ss with
        | [] -> ""
-       | _ -> sprintf "{rank=source; %s};\n" (String.concat "; " ss)
+       | _ -> sprintf "{ rank=source; %s };\n" (String.concat "; " ss)
       else
         let xs =
         (List.map (fun i ->
-          sprintf "s%d" i) (Int_set.elements (of_int ord))) @
+          sprintf "s%d" i) (IntSet.elements (IntSet.of_int ord))) @
         (List.map (fun (Link.Nam n) ->
           sprintf "i%s" n) (Link.Face.elements f)) in
         match xs with
          | [] -> ""
-         | _ -> sprintf "{rank=sink; %s};\n" (String.concat "; " xs) in 
-  let inner_shp, outer_shp, hyp_shp, link_adj = Link.get_dot b.l
-  and roots_shp, sites_shp, node_ranks, place_adj = Place.get_dot b.p
-  and nodes_shp = get_dot b.n
+         | _ -> sprintf "{ rank=sink; %s };\n" (String.concat "; " xs) in 
+  let (inner_shp, outer_shp, hyp_shp, link_adj) = Link.get_dot b.l
+  and (roots_shp, sites_shp, node_ranks, place_adj) = Place.get_dot b.p
+  and nodes_shp = Nodes.to_dot b.n
   and rank_out = build_rank (outer b) true
   and rank_in = build_rank (inner b) false in
-  sprintf "digraph \"%s\"{\n%s%s%s%s%s%s%s%s%s%s%s}"
+  sprintf "digraph \"%s\"{\n%s%s%s%s%s\n%s%s%s%s%s%s}"
       ide roots_shp outer_shp rank_out hyp_shp nodes_shp sites_shp
       node_ranks inner_shp rank_in place_adj link_adj
 
 let decomp t p i_v i_e =
-  let (p_c, p_id, p_d, i_c, i_d) = 
+  let (p_c, p_d, p_id, i_c, i_d) = 
     Place.decomp t.p p.p i_v in
   let (l_c, l_d, l_id) = 
     Link.decomp t.l p.l i_v i_e i_c i_d
   and (n_c, n_d) = 
-    apply_nodes t.n i_c, apply_nodes t.n i_d in
+    (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
-   { p = p_id; l = l_id; n = Nodes.empty })
+   { p = p_id; l = l_id; n = Nodes.empty () })
 
+(*
 (* List of bigraphs. First one is the top level. *)
 let levels b =
-  let phi, ls = Place.levels b.p in
-  let w, ids = Link.levels b.l (List.map (fun (ps, _, _) ->
-    ports_of_nodes (Nodes.filter (fun (i, _) ->
-      Int_set.mem i ps) b.n)) ls) in
+  let (phi, ls) = Place.levels b.p in
+  let (w, ids) = Link.levels b.l (List.map (fun (ps, _, _) ->
+    Ports.of_nodes (Nodes.filter (fun (i, _) ->
+      IntSet.mem i ps) b.n)) ls) in
   (tens {p = phi; n = Nodes.empty; l = Link.id_empty;}(* no need for tens *)
         {p = Place.id0; l = w; n = Nodes.empty;}) ::
     (List.map2 (fun (ions, n, psi) l ->
-      tens (comp (tens (ppar_of_list (Int_set.fold (fun j acc ->
+      tens (comp (tens (ppar_of_list (IntSet.fold (fun j acc ->
             (* find j in the node set *)
             let n_j = (* Not_found? *)
               snd (Nodes.choose (Nodes.filter (fun (i, _) ->
                 i = j) b.n)) in
             let f = 
-              Int_set.fold (fun i acc ->
+              IntSet.fold (fun i acc ->
                 (sprintf "n%d_%d" j i) :: acc) (of_int (arity n_j)) [] in    
             (ion (Link.parse_face f) n_j) :: acc) ions []))
           {p = Place.elementary_id n; l = Link.id_empty; n = Nodes.empty;})
@@ -294,63 +318,19 @@ let snf b =
     ((sprintf "%s || %s" (Place.snf_of_placing h.p) (Link.snf_of_linking h.l)) :: 
 	(List.map snf_of_level tl))
   | _ -> ""
-
+    *)
   
-(* Initialise a matrix of varibles for the SAT solver *)
-let init_vars r c solver =
-  let m = Array.make_matrix r c 0 in
-  for i = 0 to r - 1 do
-    for j = 0 to c - 1 do
-      m.(i).(j) <- solver#new_var 
-    done;
-  done;
- (* print_endline (String.concat "\n" (Array.to_list (Array.map (fun row ->
-    sprintf "|%s|" (String.concat " " (Array.to_list (Array.map (fun x ->
-      sprintf "%8d" x) row)))) m)));*)
-  m
-
-(* GPROF *)
-let add_bijection v n m solver =
-  (* Add first constraint; TOTAL -- at least a TRUE for every row *)
-  for i = 0 to n - 1 do
-    (*printf "%s\n" (String.concat " V " (Array.to_list (Array.mapi (fun j _ ->
-      sprintf "[%d,%d]" i j) v.(i))));*)
-    solver#add_clause (List.map (fun v ->
-      pos_lit v) (Array.to_list v.(i)))
-  done;
-  (* Add second constraint: INJECTIVE -- at most a TRUE for every row *)
-  for i = 0 to n - 1 do
-    for j = 0 to m - 2 do
-      for k = j + 1 to m - 1 do
-	(*printf "![%d,%d] V ![%d,%d]\n" i j i k;*)
-        solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(i).(k))]
-      done;
-    done;
-  done;
-  (* Add third constraint: SURJECTIVE -- on the codomain, at most a TRUE for
-     every column *)
-  for j = 0 to m - 1 do
-    for i = 0 to n - 2 do
-      for l = i + 1 to n - 1 do
-	(*printf "![%d,%d] V ![%d,%d]\n" i j l j;*)
-        solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(j))]
-      done;
-    done;
-  done           
-
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver vars n m = 
-  let res = ref [] in
+  let iso = Iso.empty () in
   for i = 0 to n - 1 do
     for j = 0 to m - 1 do
       match solver#value_of vars.(i).(j) with
-	| Minisat.True -> res := (i,j)::!res
-	| Minisat.False -> ()
-	| Minisat.Unknown -> ()
+	| Minisat.True -> Iso.add iso i j
+	| Minisat.False | Minisat.Unknown -> ()
     done;
   done;
-  List.fold_left (fun acc x ->
-    Base.Iso.add x acc) Base.Iso.empty !res 
+  iso
 
 let add_blocking solver v n m w e f =
   let scan_matrix m r c =
@@ -359,11 +339,9 @@ let add_blocking solver v n m w e f =
       for j = 0 to c - 1 do
 	match solver#value_of m.(i).(j) with
 	  | Minisat.True -> 
-	    ((*printf "!m[%d,%d] V " i j;*)
-	     blocking_clause := (neg_lit m.(i).(j))::!blocking_clause)
+	     blocking_clause := (neg_lit m.(i).(j)) :: !blocking_clause
 	  | Minisat.False -> 
-	    ((*printf "m[%d,%d] V " i j;*)
-	     blocking_clause := (pos_lit m.(i).(j))::!blocking_clause)
+	     blocking_clause := (pos_lit m.(i).(j)) :: !blocking_clause
 	  | Minisat.Unknown -> ()
       done;
     done;
@@ -373,216 +351,227 @@ let add_blocking solver v n m w e f =
 let rec filter_loop solver t p v n m w e f t_trans = 
     solver#simplify;
     match solver#solve with
-      | Minisat.UNSAT -> 
-	begin
-	 (* printf "NO_MATCH\n";*)
-	 (* solver#print_stats;*)
-	  raise NO_MATCH
-	end
+      | Minisat.UNSAT -> raise NO_MATCH
       | Minisat.SAT ->
 	begin
-	  (* printf "MATCH\n"; *)
-	  (* solver#print_stats; *)
-	  let iso_v, _ = get_iso solver v n m, get_iso solver w e f in
-	  if (Place.is_match_valid t.p p.p t_trans iso_v) (*&& 
-	    (Link.is_match_valid t.l p.l iso_e)*) then
-	    solver, v, n, m, w, e, f, t_trans
-	  else
-	    begin
-	      add_blocking solver v n m w e f;
-	      filter_loop solver t p v n m w e f t_trans
-	    end   
+	  let iso_v = get_iso solver v n m
+	  (* and iso_e = get_iso solver w e f *) in
+	  if (Place.check_match t.p p.p t_trans iso_v) then 
+	    (solver, v, n, m, w, e, f)
+	  else begin
+	    eprintf "Warning: invalid match not discarded by SAT. \
+                     Removing it ...\n";
+	    add_blocking solver v n m w e f;
+	    filter_loop solver t p v n m w e f t_trans
+	  end   
 	end 
 	  
-(* Aux function *)
-let iso_iter m iso solver =
-  Iso.iter (fun (i, j) -> 
-    solver#add_clause [(neg_lit m.(i).(j))]) iso
+let add_c4 t p t_n p_n solver v =
+  let (t_constraints, block_clauses, exc_clauses) = 
+    Place.match_list t p t_n p_n in
+  Cnf.post_conj_m (block_clauses @ exc_clauses) solver v;
+  List.fold_left (fun acc x ->
+    (Cnf.post_tseitin x solver v) :: acc) [] t_constraints
+  
+let add_c5 t p t_n p_n solver v =
+  let (clauses_l, b_l) = Place.match_leaves t p t_n p_n
+  and (clauses_o, b_o) = Place.match_orphans t p t_n p_n in
+  Cnf.post_conj_m (clauses_l @ b_l @ clauses_o @ b_o) solver v
 
-(*isos from pattern(col) to target(col)*)
-let aux_match t p  =
+let add_c6 t p t_n p_n solver v =
+  let (clauses_s, b_s) = Place.match_sites t p t_n p_n
+  and (clauses_r, b_r) = Place.match_roots t p t_n p_n in
+  Cnf.post_conj_m (clauses_s @ b_s @ clauses_r @ b_r) solver v
+
+let add_c7 t p t_n p_n solver v =
+  let (clauses, b) = Link.match_edges t p t_n p_n in
+  Cnf.post_conj_m (clauses @ b) solver v;
+  clauses
+
+let add_c8 t p t_n p_n clauses solver v w =
+  let constraints = Link.match_ports t p t_n p_n clauses in
+  List.iter (fun x ->
+    Cnf.post_impl x solver w v) constraints
+
+let add_c10 t p solver v =
+  Cnf.post_conj_m (Place.match_trans t p) solver v
+
+(* Fix *)
+let add_c9 t p t_n p_n solver v =
+  let (r, c, constraints, b) = Link.match_peers t p t_n p_n in
+  let w = Cnf.init_aux_m r c solver in
+  Cnf.post_conj_m b solver w;
+  List.iter (fun x ->
+    Cnf.post_impl x solver w v) constraints;
+  let aux_bij_w_rows =
+    Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
+  (w, aux_bij_w_rows)
+    
+(* Compute isos from nodes in the pattern to nodes in the target *)
+let aux_match t p t_trans =
   let solver = new solver
-  and m, n = t.p.Place.n, p.p.Place.n 
-  and e , f = Link.Lg.cardinal (Link.close_edges p.l),
-    Link.Lg.cardinal (Link.close_edges t.l) in
-  let _,_,v,_ = Matrix.split t.p.Place.m t.p.Place.r t.p.Place.n in
-  let t_trans = Matrix.trans v in 
+  and (n, m) = (p.p.Place.n, t.p.Place.n) 
+  and closed_p = Link.closed_edges p.l
+  and closed_t = Link.closed_edges t.l in
+  let (e, f) = (Link.Lg.cardinal closed_p,
+		Link.Lg.cardinal closed_t) in
   (* Iso between nodes *)
-  let v = init_vars n m solver
+  let v = Cnf.init_aux_m n m solver
   (* Iso between closed edges *)
-  and w = init_vars e f solver in
+  and w = Cnf.init_aux_m e f solver in
   (* Add bijection over nodes *)
-  (*printf "add_bijection v\n";*)
-  add_bijection v n m solver;
+  let (aux_bij_v_rows, aux_bij_v_cols) =
+    Cnf.post_bij (Cnf.bijection n m 6 3) solver v
   (* Add bijection over closed edges *)
-  (*printf "add_bijection w\n";*)
-  add_bijection w e f solver;
-  let block_ctrl = union_list
-    [ (* CONTROLS *)
-      match_nodes t.n p.n;
-      (* LEAVES *)
-      Place.match_leaves t.p p.p;
-      (* ORPHANS *)
-      Place.match_orphans t.p p.p;
-      (* SITES *)
-      Place.match_sites t.p p.p;
-      (* ROOTS *)
-      Place.match_roots t.p p.p;
-    ]  in
-  (* Add fourth constraint: EDGES in the place graph and
-                            HYPEREDGES in the link graph *)
-  (*printf "Adding C4\n";*)
-  List.iter (fun (i, l, j, k) ->
-    (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
-    solver#add_clause [(neg_lit v.(i).(j)); (neg_lit v.(l).(k))])
-    ((Place.match_list t.p p.p) @ (Link.match_peers t.l p.l m n));
-  (* Add blocking pairs *)
-  let iso_ports, constraint_e, block_e_e = Link.match_edges t.l p.l block_ctrl
-  and block_l_n, block_l_e = Link.match_links t.l p.l in   
-  let blocking_pairs_v = Iso.union block_l_n block_ctrl in
-  (*printf "Adding blocking pairs v\n";*)
-  iso_iter v blocking_pairs_v solver;
-  (*printf "Adding blocking pairs e\n";*)
-  iso_iter w (Iso.union block_e_e block_l_e) solver; 
-  (*printf "Adding constraint e\n";*)
-  List.iter (fun (e_i, e_j, i, j) ->
-    (*printf "!v[%d,%d] V !v[%d,%d]\n" i j l k;*)
-    solver#add_clause [(neg_lit w.(e_i).(e_j)); (neg_lit v.(i).(j))])
-    constraint_e;
-  (*printf "Adding %d clauses for iso ports\n" (List.length iso_ports);*)
-  List.iter (fun ((e_i, e_j), iso) ->
-    let lits = 
-      List.map (fun (i,j) -> pos_lit v.(i).(j)) (Iso.elements iso) in
-    solver#add_clause ((neg_lit w.(e_i).(e_j)) :: lits)) iso_ports;
+  and (aux_bij_w_rows, aux_bij_w_cols) =
+    Cnf.post_bij (Cnf.bijection e f 6 3) solver w
+  (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
+     Return list of vectors of auxiliary vars. *)
+  and zs4 = add_c4 t.p p.p t.n p.n solver v in
+  (* Add C5: orphans and leaves matching in the place graphs. *)
+  add_c5 t.p p.p t.n p.n solver v;
+  (* Add C6: sites and roots in the place graphs. *)
+  add_c6 t.p p.p t.n p.n solver v;
+  (* Add C7: edges in the pattern are matched to edges in the target. *)
+  let clauses = add_c7 closed_t closed_p t.n p.n solver w in
+  (* Add C8: ports of matched closed edges have to be isomorphic. *)
+  add_c8 closed_t closed_p t.n p.n clauses solver v w;
+  (* Add C9: ports of matched open edges have to be isomorphic. 
+     Return matrix from open edges in the pattern to non-empty edges in the
+     target. *)
+  let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in
+  (* Add C10: block edges between unconnected nodes with sites and nodes with
+     roots. *)
+  add_c10 t.p p.p solver v;
   filter_loop solver t p v n m w e f t_trans
+
+(* true when p is not a match *)
+let quick_unsat t p =
+  (p.n.Nodes.size > t.n.Nodes.size) ||
+    (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn) ||
+    (Nodes.not_sub p.n t.n) ||
+    false
 
 let occurs t p = 
   try
-    if Nodes.cardinal p.n = 0 then
-      true
-    else
-      (ignore (aux_match t p);
-       true)
+    if p.n.Nodes.size = 0 then true
+    else (if quick_unsat t p then false
+      else (let t_trans = Sparse.trans t.p.Place.nn in
+	    ignore (aux_match t p t_trans);
+	    true))
   with
     | NO_MATCH -> false
     
 let occurrence t p =
-  if Nodes.cardinal p.n = 0 then
-    raise NODE_FREE 
-  else
-    let s, v, n, m, w, e, f, _ = aux_match t p in
-    (get_iso s v n m, get_iso s w e f)
+  if p.n.Nodes.size = 0 then raise NODE_FREE 
+  else (if quick_unsat t p then raise NO_MATCH
+    else (let t_trans = Sparse.trans t.p.Place.nn in
+	  let (s, v, n, m, w, e, f) = aux_match t p t_trans in
+	  (get_iso s v n m, get_iso s w e f)))
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
-  if Nodes.cardinal b.n = 0 then
-    raise NODE_FREE 
-  else
-    let rem_id res = 
+  if b.n.Nodes.size = 0 then raise NODE_FREE 
+  else begin
+    let b_trans = Sparse.trans b.p.Place.nn
+    and rem_id res = 
       List.filter (fun (i, e) ->
-	not ((Base.is_id i) && (Base.is_id e))) res in
+	not ((Iso.is_id i) && (Iso.is_id e))) res in
     rem_id (try 
-	      let solver, v, n, m, w, e, f, t_trans = aux_match b b in
+	      let (solver, v, n, m, w, e, f) = aux_match b b b_trans in
 	      let rec loop_occur res =
 		add_blocking solver v n m w e f;
 		try 
-		  ignore (filter_loop solver b b v n m w e f t_trans);
+		  ignore (filter_loop solver b b v n m w e f b_trans);
 		  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
 		with
 		| NO_MATCH -> res in
 	      loop_occur [(get_iso solver v n m, get_iso solver w e f)]
       with
       | NO_MATCH -> [])
+  end
       
 let clause_of_iso iso m r c = 
   let clause = ref [] in
   for i = 0 to r - 1 do
     for j = 0 to c - 1 do
-      if Iso.mem (i, j) iso then clause := ((neg_lit m.(i).(j)) :: !clause)
+      if Iso.mem iso i j then clause := ((neg_lit m.(i).(j)) :: !clause)
       else clause := ((pos_lit m.(i).(j)) :: !clause)
     done;
   done;
   !clause
 
 let occurrences t p =
-  if Nodes.cardinal p.n = 0 then
-    raise NODE_FREE 
+  if p.n.Nodes.size = 0 then raise NODE_FREE 
   else
-    try 
-      let solver, v, n, m, w, e, f, t_trans = aux_match t p
-      and autos = auto p in
-      let rec loop_occur res =
-	add_blocking solver v n m w e f;
-	(****************AUTOMORPHISMS****************)
-	let gen = 
-	  gen_isos (get_iso solver v n m, get_iso solver w e f) autos in
-	List.iter (fun (iso_i, iso_e) ->
-	  solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
-	(*********************************************)
-	try 
-	  ignore (filter_loop solver t p v n m w e f t_trans);
-	  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
-	with
-	  | NO_MATCH -> res in
-      loop_occur [(get_iso solver v n m, get_iso solver w e f)]
-    with
-      | NO_MATCH -> []
-
-(*let add_roots_sites v n solver = 
-  for i = 0 to n - 1 do
-    for j = 0 to n - 1 do
-      if i = j then solver#add_clause [(pos_lit v.(i).(j))]
-      else solver#add_clause [(neg_lit v.(i).(j))]
-    done;
-  done*)
+    if quick_unsat t p then []
+    else (try 
+	    let t_trans = Sparse.trans t.p.Place.nn in
+	    let (solver, v, n, m, w, e, f) = aux_match t p t_trans
+	    and autos = auto p in
+	    let rec loop_occur res =
+	      add_blocking solver v n m w e f;
+	      (****************AUTOMORPHISMS****************)
+	      let gen = 
+		List.combine
+		  (Iso.gen_isos (get_iso solver v n m) (List.map fst autos)) 
+		  (Iso.gen_isos (get_iso solver w e f) (List.map snd autos))  in
+	      List.iter (fun (iso_i, iso_e) ->
+		solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
+	      (*********************************************)
+	      try 
+		ignore (filter_loop solver t p v n m w e f t_trans);
+		loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
+	      with
+	      | NO_MATCH -> res in
+	    loop_occur [(get_iso solver v n m, get_iso solver w e f)]
+      with
+      | NO_MATCH -> [])
     
 let equal_SAT a b =
   let solver = new solver in
-  let v_n = init_vars (a.p.Place.n) (b.p.Place.n) solver
-  and v_l = init_vars (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver in 
-  add_bijection v_n (a.p.Place.n) (b.p.Place.n) solver;
-  add_bijection v_l (Link.Lg.cardinal a.l) (Link.Lg.cardinal b.l) solver;
-  (* CTRL *)
-  iso_iter v_n (match_nodes a.n b.n) solver;
-  (* DAG EDGES *)
-  (* N x N *)
-  List.iter (fun (i, l, j, k) ->
-    solver#add_clause [(neg_lit v_n.(i).(j)); (neg_lit v_n.(l).(k))])
-    (Place.match_list a.p b.p);
-  (* N x S *)
-  List.iter (fun (i, j) -> 
-    solver#add_clause [neg_lit v_n.(i).(j)]) 
-    (Place.match_nodes_sites a.p b.p);
-  (* R x N *)
-  List.iter (fun (l, k) -> 
-    solver#add_clause [neg_lit v_n.(l).(k)]) 
-    (Place.match_root_nodes a.p b.p);
-  (* HYPERGRAPH *)
-  List.iter (fun (i, j) -> 
-    solver#add_clause [neg_lit v_l.(i).(j)]) 
-    (Link.match_link_pairs a.l b.l a.n b.n);
-  (* Ports *)
-  (* a var matrix ports X ports for every hyperedge (not already negated)*)
+  let (n, m) = (a.p.Place.n, b.p.Place.n)
+  and (h, k) = (Link.Lg.cardinal a.l, Link.Lg.cardinal b.l) in
+  let v_n = Cnf.init_aux_m n m solver
+  and v_l = Cnf.init_aux_m h k solver in 
+  let (aux_bij_n_rows, aux_bij_n_cols) =
+    Cnf.post_bij (Cnf.bijection n m 6 3) solver v_n
+  and (aux_bij_l_rows, aux_bij_l_cols) =
+    Cnf.post_bij (Cnf.bijection h k 6 3) solver v_l in
+  (* Place graph *)
+  let (t_constraints, block_clauses, exc_clauses) = 
+    Place.match_list_eq a.p b.p a.n b.n in
+  Cnf.post_conj_m (block_clauses @ exc_clauses) solver v_n;
+  let zs = List.fold_left (fun acc x ->
+    (Cnf.post_tseitin x solver v_n) :: acc) [] t_constraints in
+  Cnf.post_conj_m ((Place.match_root_nodes a.p b.p a.n b.n) @ 
+		      (Place.match_nodes_sites a.p b.p a.n b.n)) solver v_n;
+  (* Link graph *)
+  let (clauses, b_pairs) = Link.match_list_eq a.l b.l a.n b.n in
+  Cnf.post_conj_m (clauses @ b_pairs) solver v_l;
+  let l_constraints = Link.match_ports_eq a.l b.l a.n b.n clauses in
+  List.iter (fun x ->
+    Cnf.post_impl x solver v_l v_n) l_constraints;
   solver#simplify;
   match solver#solve with
   | Minisat.UNSAT -> false
   | Minisat.SAT -> true
 
 let equal a b =
-  (Nodes.cardinal a.n = Nodes.cardinal b.n) &&
+  (a.n.Nodes.size = b.n.Nodes.size) &&
     (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l) &&
     (inter_equal (inner a) (inner b)) && 
     (inter_equal (outer a) (outer b)) &&
     (Place.edges a.p = Place.edges b.p) &&
-    (Place.match_roots_sites a.p b.p) &&
+    (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
     (*placing or wiring *)
-    if Nodes.cardinal b.n = 0 then
+    if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
       equal_SAT a b
 
 let compare a b =
-  match (Nodes.cardinal a.n) - (Nodes.cardinal b.n) with
+  match (a.n.Nodes.size) - (b.n.Nodes.size) with
   | 0 -> 
     begin
       match (Link.Lg.cardinal a.l) - (Link.Lg.cardinal b.l) with
@@ -597,11 +586,11 @@ let compare a b =
 		  match (Place.edges a.p) - (Place.edges b.p) with
 		  | 0 -> 
 		    begin
-		      match Place.compare_roots_sites a.p b.p with
+		      match Sparse.compare a.p.Place.rs b.p.Place.rs with
 		      | 0 ->
 			begin
 			  (*placing or wiring *)
-			  if Nodes.cardinal b.n = 0 then
+			  if b.n.Nodes.size = 0 then
 			    match Place.compare_placing a.p b.p with
 			    | 0 -> Link.Lg.compare a.l b.l
 			    | v -> v
@@ -619,66 +608,3 @@ let compare a b =
       | v -> v 
     end
   | v -> v 
-
-(* DEBUG *)
-(*let _ =
-  let parse =
-    List.fold_left (fun s f -> Link.Lg.add f s) Link.Lg.empty
-  and parse_p =
-    List.fold_left (fun s f -> Ports.add f s) Ports.empty
-  and parse_n  = 
-    List.fold_left (fun s (i,c,a) -> Nodes.add (i, Ctrl(c,a)) s) Nodes.empty in
-  (* Example from page 82 *)
-  let t = {
-    p = {Place.r = 1; Place.n = 8; Place.s = 2; Place.m = Matrix.make 9 10};
-    l = parse [{Link.o = Link.parse_face ["x"];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(0,0);(3,0);(4,0);(5,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(1,0);(7,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(2,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(6,0)]}];
-    n = parse_n [(0, "A", 1); (1, "B", 1); (2, "B", 1);
-                 (3, "A", 1); (4, "A", 1); (5, "A", 1);
-                 (6, "B", 1); (7, "B", 1)];
-    } in
-  t.p.Place.m.Matrix.m.(0).(0) <- true;
-  t.p.Place.m.Matrix.m.(1).(1) <- true;
-  t.p.Place.m.Matrix.m.(1).(2) <- true;
-  t.p.Place.m.Matrix.m.(1).(3) <- true;
-  t.p.Place.m.Matrix.m.(2).(4) <- true;
-  t.p.Place.m.Matrix.m.(3).(5) <- true;
-  t.p.Place.m.Matrix.m.(4).(6) <- true;
-  t.p.Place.m.Matrix.m.(5).(7) <- true;
-  t.p.Place.m.Matrix.m.(6).(7) <- true;
-  t.p.Place.m.Matrix.m.(7).(9) <- true;
-  t.p.Place.m.Matrix.m.(8).(8) <- true;
-  printf "target:\n%s\n" (string_of_bg t);
-  printf "get_dot:\n%s\n" (get_dot t "target");
-  let p = {
-    p = {Place.r = 1; Place.n = 3; Place.s = 2; Place.m = Matrix.make 4 5};
-    l = parse [{Link.o = Link.parse_face ["x"];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(0,0)]};
-               {Link.o = Link.parse_face ["y"];
-                Link.i = Link.parse_face [];
-                Link.p = parse_p [(2,0)]};
-               {Link.o = Link.parse_face [];
-                Link.i = Link.parse_face ["z"];
-                Link.p = parse_p [(1,0)]}];
-    n = parse_n [(0, "A", 1); (1, "B", 1); (2, "A", 1)];
-    } in
-  p.p.Place.m.Matrix.m.(0).(0) <- true;
-  p.p.Place.m.Matrix.m.(1).(1) <- true;
-  p.p.Place.m.Matrix.m.(1).(3) <- true;
-  p.p.Place.m.Matrix.m.(2).(2) <- true;
-  p.p.Place.m.Matrix.m.(3).(4) <- true;
-  printf "pattern:\n%s\n" (string_of_bg p);
-  printf "get_dot:\n%s\n" (get_dot p "pattern");
-*)
-

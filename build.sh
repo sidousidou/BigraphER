@@ -20,7 +20,7 @@ fi
 
 
 OCAMLBUILD=ocamlbuild
-OCBFLAGS="-use-ocamlfind -j 0 -verbose 1 -yaccflags -v"
+OCBFLAGS="-use-ocamlfind -j 4 -verbose 0 -yaccflags -v"
 OCAMLFIND=ocamlfind
 
 DLLPATH=`ocamlfind query minisat`
@@ -53,6 +53,7 @@ ocb() {
 	$OCAMLBUILD $OCBFLAGS $*
 }
 
+#set CAML_LD_LIBRARY_PATH=/usr/lib/ocaml/site-lib/minisat/ in cygwin 
 lib_install_rule() {
     printf 'Installing library.\n'
     MLI=`ls lib/_build/*.mli` || true 
@@ -156,6 +157,7 @@ install_rule(){
 
 emacs_rule(){
     #install -m 755 ./big-mode/big-mode.el /usr/share/emacs/site-lisp/
+    printf ""
 }
 
 rule() {
