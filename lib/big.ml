@@ -254,13 +254,11 @@ let get_dot b ide =
       node_ranks inner_shp rank_in place_adj link_adj
 
 let decomp t p i_v i_e =
-  let (p_c, p_id, p_d, i_c, i_d) = 
+  let (p_c, p_d, p_id, i_c, i_d) = 
     Place.decomp t.p p.p i_v in
   let (l_c, l_d, l_id) = 
     Link.decomp t.l p.l i_v i_e i_c i_d
   and (n_c, n_d) = 
-    printf "t.n=%s\ni_c=%s\n" (Nodes.to_string t.n) (Base.Iso.to_string i_c);
-    printf "t.n=%s\ti_d=%s\n%!" (Nodes.to_string t.n) (Base.Iso.to_string i_d);
     (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
