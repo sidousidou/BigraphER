@@ -331,11 +331,13 @@ let string_of_stats (t, s, r, o) =
 let to_dot ts =
   let states =
     String.concat "\n" (List.map (fun (i, _) -> 
-      sprintf "%d [label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-               fontname=\"monospace\"];" i i i) (V.elements ts.v))
+      sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];" 
+	i i i
+    ) (V.elements ts.v))
   and edges =
     Hashtbl.fold (fun v u buff -> 
-      sprintf "%s%d -> %d [arrowhead=\"vee\", arrowsize=0.5];\n"
+      sprintf "%s%d -> %d [ arrowhead=\"vee\", arrowsize=0.5, weight=0.5 ];\n"
 	buff v u) ts.e "" in
   sprintf "digraph ts {\n%s\n%s}" states edges
 
