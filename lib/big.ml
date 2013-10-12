@@ -413,8 +413,10 @@ let add_c9 t p t_n p_n solver v =
 let aux_match t p t_trans =
   let solver = new solver
   and (n, m) = (p.p.Place.n, t.p.Place.n) 
-  and (e, f) = (Link.Lg.cardinal (Link.closed_edges p.l),
-		Link.Lg.cardinal (Link.closed_edges t.l)) in
+  and closed_p = Link.closed_edges p.l
+  and closed_t = Link.closed_edges t.l in
+  let (e, f) = (Link.Lg.cardinal closed_p,
+		Link.Lg.cardinal closed_t) in
   (* Iso between nodes *)
   let v = Cnf.init_aux_m n m solver
   (* Iso between closed edges *)
@@ -433,9 +435,9 @@ let aux_match t p t_trans =
   (* Add C6: sites and roots in the place graphs. *)
   add_c6 t.p p.p t.n p.n solver v;
   (* Add C7: edges in the pattern are matched to edges in the target. *)
-  let clauses = add_c7 t.l p.l t.n p.n solver w in
+  let clauses = add_c7 closed_t closed_p t.n p.n solver w in
   (* Add C8: ports of matched closed edges have to be isomorphic. *)
-  add_c8 t.l p.l t.n p.n clauses solver v w;
+  add_c8 closed_t closed_p t.n p.n clauses solver v w;
   (* Add C9: ports of matched open edges have to be isomorphic. 
      Return matrix from open edges in the pattern to non-empty edges in the
      target. *)

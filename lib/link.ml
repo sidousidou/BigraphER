@@ -462,34 +462,34 @@ let compat_edges e_p e_t n_t n_p =
 (* Closed edges in p are matched to closed edges in t. Controls are checked to
    exclude incompatible pairs. *)
 let match_edges t p n_t n_p =
-  let closed_t = closed_edges t in
   let (clauses, _, blocked) = 
     Lg.fold (fun e_p (acc, i, block) ->
       let clause = 
 	fst (Lg.fold (fun e_t (acc, j) ->
 	  if compat_edges e_p e_t n_t n_p then 
 	    (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j + 1)
-	  else (acc, j + 1)) closed_t ([], 0)) in
+	  else (acc, j + 1)) t ([], 0)) in
       match clause with
       | [] -> (acc, i + 1, i :: block) (* No compatible edges found *)
-      | _ -> (clause :: acc, i + 1, block)) (closed_edges p) ([], 0, [])  in
-  (clauses, Cnf.block_rows blocked (Lg.cardinal closed_t))
+      | _ -> (clause :: acc, i + 1, block)) p ([], 0, [])  in
+  (clauses, Cnf.block_rows blocked (Lg.cardinal t))
 
 let _match_ports t p n_t n_p clauses : Cnf.clause list list =
   List.fold_left (fun acc e_match ->
     let (e_i, e_j) = Cnf.to_ij e_match in
-    let formulas = 
-      Ports.compat_list t.(e_i) p.(e_j) n_p n_t in
+    let formulas =
+      Ports.compat_list p.(e_i) t.(e_j) n_p n_t in
     let res = Cnf.impl (Cnf.M_lit (e_i, e_j)) formulas in
     res :: acc) [] (List.flatten clauses) 
 
-(* Nodes of matched edges are isomorphic *)
+(* Nodes of matched edges are isomorphic. Indexes in clauses are for closed
+   edges. *)
 let match_ports t p n_t n_p clauses : Cnf.clause list list =
-  let closed_t = Array.of_list (List.map (fun e -> 
-    e.p) (Lg.elements (closed_edges t))) 
-  and closed_p = Array.of_list (List.map (fun e -> 
-    e.p) (Lg.elements (closed_edges p))) in
-  _match_ports closed_t closed_p n_t n_p clauses
+  let a_t = Array.of_list (List.map (fun e -> 
+    e.p) (Lg.elements t)) 
+  and a_p = Array.of_list (List.map (fun e -> 
+    e.p) (Lg.elements p)) in
+  _match_ports a_t a_p n_t n_p clauses
 
 (* Is p sub-hyperedge of t? *)
 let sub_edge p t n_t n_p =

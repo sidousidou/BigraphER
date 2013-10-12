@@ -20,7 +20,7 @@ fi
 
 
 OCAMLBUILD=ocamlbuild
-OCBFLAGS="-use-ocamlfind -j 0 -verbose 1 -yaccflags -v"
+OCBFLAGS="-use-ocamlfind -j 4 -verbose 0 -yaccflags -v"
 OCAMLFIND=ocamlfind
 
 DLLPATH=`ocamlfind query minisat`

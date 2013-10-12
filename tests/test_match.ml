@@ -12,16 +12,18 @@ let parse path =
   let file = open_in path in
   let rec read_lines out =
     try read_lines ((input_line file) :: out)
-    with | End_of_file -> (close_in file; List.rev out)
+    with 
+    | End_of_file -> (close_in file; List.rev out)
   in read_lines []
   
 (* parse all the bigraphs in one dir *)
 let parse_all dir =
   let files = Array.to_list (Sys.readdir dir)
   in
-    List.map
-      (fun x -> ((Filename.chop_extension x), (parse (Filename.concat dir x))))
-      (List.filter (fun x -> Filename.check_suffix x ".big") files)
+    List.map (fun x -> 
+      ((Filename.chop_extension x), (parse (Filename.concat dir x)))
+    ) (List.filter (fun x -> 
+      Filename.check_suffix x ".big") files)
   
 type test =
   { target : Big.bg; pattern : Big.bg;
@@ -32,8 +34,10 @@ type test =
 let sort_res =
   List.fast_sort
     (fun (iv0, ie0) (iv1, ie1) ->
-       let x = Base.Iso.compare iv0 iv1
-       in match x with | 0 -> Base.Iso.compare ie0 ie1 | _ -> x)
+      let x = Base.Iso.compare iv0 iv1
+      in match x with 
+      | 0 -> Base.Iso.compare ie0 ie1 
+      | _ -> x)
   
 let print_res res =
   sprintf "{\n%s\n}\n"
@@ -49,8 +53,8 @@ let check_res res exp_res =
   else
     List.for_all
       (fun ((i0, j0), (i1, j1)) ->
-         (Base.Iso.equal i0 i1) & (Base.Iso.equal j0 j1))
-      (List.combine (sort_res res) (sort_res exp_res))
+         (Base.Iso.equal i0 i1) && (Base.Iso.equal j0 j1)
+      ) (List.combine (sort_res res) (sort_res exp_res))
   
 let print_test (t, (c, n)) =
   (printf "Finished in %s seconds.\n"
@@ -124,14 +128,14 @@ let do_equality_tests l ts v_flag =
           try
             if Big.equal b b
             then
-              (if v_flag then printf "Test %s=%s passed.\n" n n else (); x + 1)
+              (if v_flag then printf "Test %3s=%3s passed.\n" n n else (); x + 1)
             else
               (printf "%s\n"
-                 (colorise `red (sprintf "Test %s=%s failed.\n" n n));
+                 (colorise `red (sprintf "Test %3s=%3s failed.\n" n n));
                x)
           with
           | e ->
-              (printf "%s" (colorise `red (sprintf "Test %s=%s failed: " n n));
+              (printf "%s" (colorise `red (sprintf "Test %3s=%3s failed: " n n));
                printf "%s\n" (Printexc.to_string e);
                x))
        0 (List.sort (fun (x, _) (y, _) -> String.compare x y) l)
@@ -142,14 +146,14 @@ let do_equality_tests l ts v_flag =
              try
                if (equal t.target t.pattern) && (i <> 27)
                then
-                 (printf "%s\n" (colorise `red (sprintf "Test %3d failed." i));
+                 (printf "%s\n" (colorise `red (sprintf "Test %2d failed." i));
                   ((i + 1), x))
                else
-                 (if v_flag then printf "Test %3d passed.\n" i else ();
+                 (if v_flag then printf "Test %2d passed.\n" i else ();
                   ((i + 1), (x + 1)))
              with
              | e ->
-                 (printf "%s" (colorise `red (sprintf "Test %3d failed: " i));
+                 (printf "%s" (colorise `red (sprintf "Test %2d failed: " i));
                   printf "%s\n" (Printexc.to_string e);
                   ((i + 1), x)))
           (1, 0) ts) in
