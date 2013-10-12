@@ -195,6 +195,8 @@ sig
 
   (** Apply an isomorphism only to nodes in the domain of the isomorphism. Other nodes are discarded. *)
   val filter_apply_iso : t -> Iso.t -> t
+  
+  val not_sub : t -> t -> bool
 
 end
 

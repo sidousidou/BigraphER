@@ -279,7 +279,19 @@ module Nodes = struct
 	| Not_found -> 0 in
       let c = Ctrl.Ctrl (t, ar) in
       (add acc i c, i + 1)) (empty (), 0) tokens)
+  
+  exception FOUND
       
+  (* true when a contains a control that is not present in b *)
+  let not_sub a b =
+    try 
+      Hashtbl.iter (fun c _ -> 
+	if Hashtbl.mem b.sort c then ()
+	else raise FOUND) a.sort;
+      false
+    with
+    | FOUND -> true
+ 
 end
 
 module Ports = struct

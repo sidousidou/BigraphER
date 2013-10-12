@@ -447,23 +447,29 @@ let aux_match t p t_trans =
   add_c10 t.p p.p solver v;
   filter_loop solver t p v n m w e f t_trans
 
+(* true when p is not a match *)
+let quick_unsat t p =
+  (p.n.Nodes.size > t.n.Nodes.size) ||
+    (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn) ||
+    (Nodes.not_sub p.n t.n) ||
+    false
+
 let occurs t p = 
   try
     if p.n.Nodes.size = 0 then true
-    else begin
-      let t_trans = Sparse.trans t.p.Place.nn in
-      ignore (aux_match t p t_trans);
-      true
-    end
+    else (if quick_unsat t p then false
+      else (let t_trans = Sparse.trans t.p.Place.nn in
+	    ignore (aux_match t p t_trans);
+	    true))
   with
     | NO_MATCH -> false
     
 let occurrence t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
-  else 
-    let t_trans = Sparse.trans t.p.Place.nn in
-    let (s, v, n, m, w, e, f) = aux_match t p t_trans in
-       (get_iso s v n m, get_iso s w e f)
+  else (if quick_unsat t p then raise NO_MATCH
+    else (let t_trans = Sparse.trans t.p.Place.nn in
+	  let (s, v, n, m, w, e, f) = aux_match t p t_trans in
+	  (get_iso s v n m, get_iso s w e f)))
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
@@ -500,28 +506,29 @@ let clause_of_iso iso m r c =
 let occurrences t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else
-    try 
-      let t_trans = Sparse.trans t.p.Place.nn in
-      let (solver, v, n, m, w, e, f) = aux_match t p t_trans
-      and autos = auto p in
-      let rec loop_occur res =
-	add_blocking solver v n m w e f;
-	(****************AUTOMORPHISMS****************)
-	let gen = 
-	  List.combine
-	    (Iso.gen_isos (get_iso solver v n m) (List.map fst autos)) 
-	    (Iso.gen_isos (get_iso solver w e f) (List.map snd autos))  in
-	List.iter (fun (iso_i, iso_e) ->
-	  solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
-	(*********************************************)
-	try 
-	  ignore (filter_loop solver t p v n m w e f t_trans);
-	  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
-	with
-	  | NO_MATCH -> res in
-      loop_occur [(get_iso solver v n m, get_iso solver w e f)]
-    with
-      | NO_MATCH -> []
+    if quick_unsat t p then []
+    else (try 
+	    let t_trans = Sparse.trans t.p.Place.nn in
+	    let (solver, v, n, m, w, e, f) = aux_match t p t_trans
+	    and autos = auto p in
+	    let rec loop_occur res =
+	      add_blocking solver v n m w e f;
+	      (****************AUTOMORPHISMS****************)
+	      let gen = 
+		List.combine
+		  (Iso.gen_isos (get_iso solver v n m) (List.map fst autos)) 
+		  (Iso.gen_isos (get_iso solver w e f) (List.map snd autos))  in
+	      List.iter (fun (iso_i, iso_e) ->
+		solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
+	      (*********************************************)
+	      try 
+		ignore (filter_loop solver t p v n m w e f t_trans);
+		loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
+	      with
+	      | NO_MATCH -> res in
+	    loop_occur [(get_iso solver v n m, get_iso solver w e f)]
+      with
+      | NO_MATCH -> [])
     
 let equal_SAT a b =
   let solver = new solver in
