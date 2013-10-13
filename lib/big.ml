@@ -447,10 +447,13 @@ let aux_match t p t_trans =
 
 (* true when p is not a match *)
 let quick_unsat t p =
-  (p.n.Nodes.size > t.n.Nodes.size) ||
+  (p.n.Nodes.size > t.n.Nodes.size) || 
     (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn) ||
     (Nodes.not_sub p.n t.n) ||
-    false
+    (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p)) ||
+    (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p)) ||
+    (Link.Lg.cardinal (Link.closed_edges p.l) > Link.Lg.cardinal (Link.closed_edges t.l)) ||
+    (Link.max_ports p.l > Link.max_ports t.l)
 
 let occurs t p = 
   try
