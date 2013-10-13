@@ -7,17 +7,8 @@ type sreact = {
   rate : float; (** Rate *)
 }
 
-module V = Set.Make
-  (struct 
-    type t = int * bg
-    let compare (v, a) (u, b) =
-      match v - u with
-	| 0 -> Big.compare a b
-	| x -> x  
-     end)
-
 type ctmc = {
-  v : V.t;
+  v : (bg_key, (int * bg)) Hashtbl.t;
   (* p : (int, Bilog) Hashtbl.t Predicates *)
   e : (int, (int * float)) Hashtbl.t;
   l : (int, int) Hashtbl.t;  
@@ -43,7 +34,7 @@ exception LIMIT_SIM of ctmc * (float * float * int * int * int)
 exception DEAD of int
 
 let init_ctmc n = 
-  { v = V.empty;
+  { v = Hashtbl.create n;
     e = Hashtbl.create n;
     l = Hashtbl.create n;
   }
@@ -103,10 +94,7 @@ let rec is_class_enabled b rs =
 
 let aux_apply (i_n, i_e) b r0 r1 =
   let (c, d, id) = decomp b r0 i_n i_e in
-  (*printf "c:\n%s\nd:\n%s\n\n" (string_of_bg c) (string_of_bg d);*)
   comp c (comp (tens r1 id) d)
-  (* debug *)
-  (*if occurs out r1 then out else failwith "BIG_INTERNAL_ERROR"*) 
 
 let step s srules =
   let filter_iso l =
@@ -170,12 +158,15 @@ let fix s srules =
   _fix s srules 0
 
 let is_new b v =
-  try
-    let old = V.choose (V.filter (fun (_, old_b) ->
-      Big.equal old_b b) v) in
-    raise (OLD (fst old))
+  let k = Big.key b in
+  let k_buket = 
+    Hashtbl.find_all v k in
+  try 
+    let (old, _) = List.find (fun (_, b') ->
+      Big.equal b b') k_buket in
+    raise (OLD old)
   with
-    | Not_found -> true
+  | Not_found -> true
 
 (* Scan the piority classes and reduce a state. Stop when no more
    rules can be applied or when a non reducing piority class is
@@ -276,51 +267,44 @@ let rec _bfs ctmc q i m (scan_f, p_classes, t0, limit, verb) =
     if i > limit then begin
       let t = (Unix.gettimeofday ()) -. t0 in 
       if verb then printf " in %f seconds.\n%!" t;
-      raise (LIMIT (ctmc, (t, V.cardinal ctmc.v, Hashtbl.length ctmc.e, m)))
+      raise (LIMIT (ctmc, (t, Hashtbl.length ctmc.v, Hashtbl.length ctmc.e, m)))
     end else begin 
       let (v, curr) = Queue.pop q in
       let ((new_s, old_s, i'), m') = 
 	scan_f curr m ctmc i verb p_classes p_classes in
       (* Add new states to v *)
       let new_s' = fst (List.split new_s) in
-      let ctmc' =
-	{ v = List.fold_left (fun acc s -> V.add s acc) ctmc.v new_s';
-	  e = ctmc.e;
-	  l = ctmc.l; 
-	} in
+      List.iter (fun (i, b) -> 
+	Hashtbl.add ctmc.v (Big.key b) (i, b)) new_s';
       (* Add new states to q *)
       List.iter (fun s -> Queue.push s q) new_s';
       (* Add labels for new states *)
       (* TO DO *)
       (* Add edges from v to new states *)
       List.iter (fun ((u, _), rho) -> 
-	Hashtbl.add ctmc'.e v (u, rho)) new_s;
+	Hashtbl.add ctmc.e v (u, rho)) new_s;
       (* Add edges from v to old states *)
-      List.iter (fun (u, rho) -> Hashtbl.add ctmc'.e v (u, rho)) old_s;
+      List.iter (fun (u, rho) -> Hashtbl.add ctmc.e v (u, rho)) old_s;
       (* recursive call *)
-      _bfs ctmc' q i' m' (scan_f, p_classes, t0, limit, verb)
+      _bfs ctmc q i' m' (scan_f, p_classes, t0, limit, verb)
     end 
   else begin
     let t = (Unix.gettimeofday ()) -. t0 in 
     if verb then printf " in %f seconds.\n%!" t;
-    (ctmc, (t, V.cardinal ctmc.v, Hashtbl.length ctmc.e, m))
+    (ctmc, (t, Hashtbl.length ctmc.v, Hashtbl.length ctmc.e, m))
   end 
 
 let _init_bfs s0 rewrite _scan srules limit ctmc_size verb =
   let consts = 
     (_scan, srules, Unix.gettimeofday (), limit, verb)
   and q = Queue.create () in
-  (* apply rewriting to s0 *)
-   let (s0', m) = rewrite s0 srules 0
+   (* apply rewriting to s0 *)
+  let (s0', m) = rewrite s0 srules 0
   and ctmc = init_ctmc ctmc_size in
-   Queue.push (0, s0') q;
+  Queue.push (0, s0') q;
   (* add initial state *)
-  let ctmc' = 
-    { v = V.add (0, s0') ctmc.v;
-      e = ctmc.e;
-      l = ctmc.l;
-    } in
-  (ctmc', q, m, consts)
+  Hashtbl.add ctmc.v (Big.key s0') (0, s0');
+  (ctmc, q, m, consts)
 
 let bfs s0 srules limit ctmc_size verb =
   if verb then (printf "Starting execution of SBRS ...\n1 state found");
@@ -342,12 +326,8 @@ let _init_sim s0 rewrite _scan srules t_max ctmc_size verb =
   let (s0', m) = rewrite s0 srules 0
   and ctmc = init_ctmc ctmc_size in
   (* add initial state *)
-  let ctmc' = 
-    { v = V.add (0, s0') ctmc.v;
-      e = ctmc.e;
-      l = ctmc.l;
-    } in
-  (ctmc', s0', m, consts)
+  Hashtbl.add ctmc.v (Big.key s0') (0, s0');
+  (ctmc, s0', m, consts)
 
 let rec _scan_sim (s : Big.bg) (m : int) verb pl pl_const = 
   match pl with
@@ -394,25 +374,21 @@ let rec _sim ctmc s t i m (scan_f, srules, t0, t_max, verb) =
    try
      let ((s', tau), m') = 
        scan_f s m verb srules srules in
-     let ctmc' =
-       { v = V.add (i + 1, s') ctmc.v;
-	 e = ctmc.e;
-	 l = ctmc.l;
-       } in
-     Hashtbl.add ctmc'.e i (i + 1, tau);
-     _sim ctmc' s' (t +. tau) (i + 1) m' (scan_f, srules, t0, t_max, verb)
+     Hashtbl.add ctmc.v (Big.key s') (i + 1, s');
+     Hashtbl.add ctmc.e i (i + 1, tau);
+     _sim ctmc s' (t +. tau) (i + 1) m' (scan_f, srules, t0, t_max, verb)
    with
    | DEAD m -> 
      begin
        let sim_t = (Unix.gettimeofday ()) -. t0 in 
        if verb then printf " in %f seconds.\n\
                             Deadlock at time %g.\n%!" sim_t t;
-       (ctmc, (sim_t, t, V.cardinal ctmc.v, Hashtbl.length ctmc.e, m))
+       (ctmc, (sim_t, t, Hashtbl.length ctmc.v, Hashtbl.length ctmc.e, m))
      end
  end else begin
    let sim_t = (Unix.gettimeofday ()) -. t0 in 
    if verb then printf " in %f seconds.\n%!" sim_t;
-   raise (LIMIT_SIM (ctmc, (sim_t, t, V.cardinal ctmc.v, Hashtbl.length ctmc.e, m)))   
+   raise (LIMIT_SIM (ctmc, (sim_t, t, Hashtbl.length ctmc.v, Hashtbl.length ctmc.e, m)))   
  end
 
 let sim s0 srules t_max ctmc_size verb =
@@ -451,15 +427,15 @@ let string_of_stats_sim (t, t_sim, s, r, o) =
 
 let to_dot ctmc =
   let states =
-    String.concat "\n" (List.map (fun (i, _) -> 
-      if i = 0 then sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+    Hashtbl.fold (fun _ (i, _) buff -> 
+      if i = 0 then sprintf "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
                     fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
-                    style=\"bold\" ];" 
-	i i i
-      else sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];" 
-	i i i
-    ) (V.elements ctmc.v))
+                    style=\"bold\" ];\n" 
+	buff i i i
+      else sprintf "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
+	buff i i i
+    ) ctmc.v ""
   and edges =
     Hashtbl.fold (fun v (u, rho) buff -> 
       sprintf "%s%d -> %d [ label=\" %.3g\", fontname=\"monospace\", fontsize=7.0,\
@@ -470,6 +446,9 @@ let to_dot ctmc =
 
 let to_prism ctmc =
   let dims = 
-    sprintf "%d %d\n" (V.cardinal ctmc.v) (Hashtbl.length ctmc.e) in
+    sprintf "%d %d\n" (Hashtbl.length ctmc.v) (Hashtbl.length ctmc.e) in
   Hashtbl.fold (fun v (u, rho) buff ->
     sprintf "%s%d %d %f\n" buff v u rho) ctmc.e dims
+
+let iter_states f ctmc =
+  Hashtbl.iter (fun _ (i, b) -> f i b) ctmc.v

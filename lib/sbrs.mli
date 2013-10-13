@@ -16,18 +16,10 @@ type sreact = {
   rct : Big.bg; (** Reactum *)
   rate : float; (** Rate *)
 }
-
-(** Module for nodes of a CTMC. *)
-module V :
-sig
-  type elt = int * Big.bg
-  type t
-  val iter : (elt -> unit) -> t -> unit
-end
   
 (** The type of Continuous Time Markov Chains. *)
 type ctmc = {
-  v : V.t; (** States *)
+  v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
   e : (int, (int * float)) Hashtbl.t; (** Transition relation *)
   l : (int, int) Hashtbl.t; (** Labelling function *) 
 }
@@ -97,11 +89,6 @@ val select_sreact : Big.bg -> sreact list -> int -> (Big.bg * float) * int
     performed are returned otherwise. *)   
 val fix : Big.bg -> sreact list -> Big.bg * int
 
-(** Check if a bigraph is already a present in the set of states. 
-    @ raise OLD [i] when the bigraph is already present. [i] is the index of
-    the isomorphic state.*)
-val is_new : Big.bg -> V.t -> bool
-
 (** Scan priority classes and reduce a state. Stop when no more rules can be
     applied or when a non reducing priority class is enabled. The output integer
     is the number of rewriting steps performed in the loop. *)
@@ -144,5 +131,7 @@ val to_prism : ctmc -> string
 
 (** Compute the string representation in [dot] format of a transition system. *)
 val to_dot : ctmc -> string
+
+val iter_states : (int -> Big.bg -> unit) -> ctmc -> unit
 
 (**/**)

@@ -163,9 +163,9 @@ let _ =
 	    ctmc in
 	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
-	    Sbrs.V.iter (fun (i, s) ->
+	    Sbrs.iter_states (fun i s ->
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
-		!verbose_bool) ctmc.Sbrs.v;
+		!verbose_bool) ctmc;
 	  Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool
 	end;
 	if !export_trans_str <> "" then
