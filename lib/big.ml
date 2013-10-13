@@ -560,6 +560,11 @@ let equal_SAT a b =
   | Minisat.UNSAT -> false
   | Minisat.SAT -> true
 
+type bg_key = int * int * int * int * int
+
+let key b = 
+  (b.p.Place.r, b.p.Place.n, b.p.Place.s, Place.edges b.p, Link.Lg.cardinal b.l)
+
 let equal a b =
   (a.n.Nodes.size = b.n.Nodes.size) &&
     (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l) &&

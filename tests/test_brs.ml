@@ -71,11 +71,11 @@ let main ?(path = "") mask v_flag =
              if path <> ""
              then
                (Export.write_ts ts "ts" path v_flag;
-                Brs.V.iter
-                  (fun (i, s) ->
+                Brs.iter_states
+                  (fun i s ->
                     let name = sprintf "%d" i
                     in Export.write_big s name path v_flag)
-                  ts.Brs.v)
+                  ts)
              else ()
           with
           | e ->

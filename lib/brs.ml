@@ -5,18 +5,9 @@ type react = {
     rdx : bg;   (* Redex *)
     rct : bg;   (* Reactum *)
   }
-
-module V = Set.Make
-  (struct 
-    type t = int * bg
-    let compare (v, a) (u, b) =
-      match v - u with
-	| 0 -> Big.compare a b
-	| x -> x  
-     end)
   
 type ts = {
-  v : V.t;
+  v : (bg_key, (int * bg)) Hashtbl.t;
   (* p : (int, Bilog) Hashtbl.t Predicates *)
   e : (int, int) Hashtbl.t;
   l : (int, int) Hashtbl.t;  
@@ -37,7 +28,7 @@ exception OLD of int
 exception LIMIT of ts
 
 let init_ts n = 
-  { v = V.empty;
+  { v = Hashtbl.create n;
     e = Hashtbl.create n;
     l = Hashtbl.create n;
   }
@@ -133,10 +124,13 @@ let fix s rules =
   _fix s rules 0
 
 let is_new b v =
-  try
-    let old = V.choose (V.filter (fun (_, old_b) ->
-      Big.equal old_b b) v) in
-    raise (OLD (fst old))
+  let k = Big.key b in
+  let k_buket = 
+    Hashtbl.find_all v k in
+  try 
+    let (old, _) = List.find (fun (_, b') ->
+      Big.equal b b') k_buket in
+    raise (OLD old)
   with
   | Not_found -> true
 
@@ -248,26 +242,23 @@ let rec _bfs ts q i m (scan_f, step_f, p_classes, t0, limit, ts_size, verb) =
       let ((new_s, old_s, i'), m') = 
 	scan_f step_f curr m ts i verb p_classes p_classes in
       (* Add new states to v *)
-      let ts' =
-	{ v = List.fold_left (fun acc s -> V.add s acc) ts.v new_s;
-	  e = ts.e;
-	  l = ts.l; 
-	} in
+      List.iter (fun (i, b) -> 
+	Hashtbl.add ts.v (Big.key b) (i, b)) new_s;
       (* Add new states to q *)
       List.iter (fun s -> Queue.push s q) new_s;
       (* Add labels for new states *)
       (* TO DO *)
       (* Add edges from v to new states *)
-      List.iter (fun (u, _) -> Hashtbl.add ts'.e v u) new_s;
+      List.iter (fun (u, _) -> Hashtbl.add ts.e v u) new_s;
       (* Add edges from v to old states *)
-      List.iter (fun u -> Hashtbl.add ts'.e v u) old_s;
+      List.iter (fun u -> Hashtbl.add ts.e v u) old_s;
       (* recursive call *)
-      _bfs ts' q i' m' (scan_f, step_f, p_classes, t0, limit, ts_size, verb)
+      _bfs ts q i' m' (scan_f, step_f, p_classes, t0, limit, ts_size, verb)
     end
   else begin
     let t = (Unix.gettimeofday ()) -. t0 in 
     if verb then printf " in %f seconds.\n%!" t;
-    (ts, (t, V.cardinal ts.v, Hashtbl.length ts.e, m))
+    (ts, (t, Hashtbl.length ts.v, Hashtbl.length ts.e, m))
   end 
 
 let _init_bfs s0 rewrite _scan step rules limit ts_size verb =
@@ -279,12 +270,8 @@ let _init_bfs s0 rewrite _scan step rules limit ts_size verb =
   and ts = init_ts ts_size in
   Queue.push (0, s0') q;
   (* add initial state *)
-  let ts' = 
-    { v = V.add (0, s0') ts.v;
-      e = ts.e;
-      l = ts.l;
-    } in
-  (ts', q, m, consts)
+  Hashtbl.add ts.v (Big.key s0') (0, s0');
+  (ts, q, m, consts)
  
 let bfs s0 rules limit ts_size verb =
   if verb then (printf "Starting execution of BRS ...\n1 state found");
@@ -330,15 +317,15 @@ let string_of_stats (t, s, r, o) =
 
 let to_dot ts =
   let states =
-    String.concat "\n" (List.map (fun (i, _) ->
-      if i = 0 then sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+    Hashtbl.fold (fun _ (i, _) buff -> 
+      if i = 0 then sprintf "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
                     fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
-                    style=\"bold\" ];" 
-	i i i
-      else sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];" 
-	i i i
-    ) (V.elements ts.v))
+                    style=\"bold\" ];\n" 
+	buff i i i
+      else sprintf "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
+	buff i i i
+    ) ts.v ""
   and edges =
     Hashtbl.fold (fun v u buff -> 
       sprintf "%s%d -> %d [ arrowhead=\"vee\", arrowsize=0.5, minlen=0.5 ];\n"
@@ -347,7 +334,9 @@ let to_dot ts =
 
 let to_prism ts =
   let dims = 
-    sprintf "%d %d\n" (V.cardinal ts.v) (Hashtbl.length ts.e) in
+    sprintf "%d %d\n" (Hashtbl.length ts.v) (Hashtbl.length ts.e) in
   Hashtbl.fold (fun v u buff -> 
     sprintf "%s%d %d\n" buff v u) ts.e dims
   
+let iter_states f ts =
+  Hashtbl.iter (fun _ (i, b) -> f i b) ts.v
