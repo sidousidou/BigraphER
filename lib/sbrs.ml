@@ -452,14 +452,18 @@ let string_of_stats_sim (t, t_sim, s, r, o) =
 let to_dot ctmc =
   let states =
     String.concat "\n" (List.map (fun (i, _) -> 
-      sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+      if i = 0 then sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
+                    style=\"bold\" ];" 
+	i i i
+      else sprintf "%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
                     fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];" 
 	i i i
     ) (V.elements ctmc.v))
   and edges =
     Hashtbl.fold (fun v (u, rho) buff -> 
-      sprintf "%s%d -> %d [ label=\"%g\", labelfontname=\"monospace\", labelfontsize=7.0,\
-                            arrowhead=\"vee\", arrowsize=0.5, weight=0.5 ];\n" 
+      sprintf "%s%d -> %d [ label=\" %.3g\", fontname=\"monospace\", fontsize=7.0,\
+                            arrowhead=\"vee\", arrowsize=0.5, minlen=0.5 ];\n" 
 	buff v u rho
     ) ctmc.e "" in
   sprintf "digraph ctmc {\n%s\n%s}" states edges
