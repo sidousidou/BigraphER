@@ -170,6 +170,10 @@ val is_epi: Lg.t -> bool
     outer names. *)
 val is_guard: Lg.t -> bool    
 
+val max_ports : Lg.t -> int
+
+val closed_edges : Lg.t -> Lg.t
+
 (** {6 Decompositions} *)
 
 (** [decomp t p i_v i_e i_c i_d] builds the decomposition of target [t] given 
@@ -186,10 +190,6 @@ val decomp : Lg.t -> Lg.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.
 val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
 
 (** {6 Matching constraints} *)
-
-(** [closed_edges l]  returns a pair [(h, i)] in which [h] is the set of 
-    closed edges of [l] and [i] is an iso between the indices of [l] and [h]. *)
-val closed_edges : Lg.t -> Lg.t
 
 (** Closed edges in the pattern can be matched only to closed edges in the 
     target. The output is a list of clauses and a list of blocked rows 

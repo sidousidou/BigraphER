@@ -92,6 +92,11 @@ let print_stats_store env stoch t0 =
           Bindings: %d\n\n\
           --------------------------------------------------------------------------------\n\n%!" 
     ty (Hashtbl.length env)
+
+let print_loop v_flag i _ = 
+  if v_flag then printf "\r%3d states found%!" (i + 1)
+  else () 
+
 let _ =
   try
     Export.check_graphviz ();
@@ -103,6 +108,7 @@ let _ =
       else raise (Arg.Bad ("Bad argument: " ^ filename))) usage;
     if !version_bool then print_version ()
     else begin 
+      let iter_f = print_loop true in
       print_header ();
       let (decs, brs) =
 	if !model_str = "" then 
@@ -132,15 +138,15 @@ let _ =
 	and get_f = Store.get_react p env in
 	let (ts, stats) = 
 	  if !sim_bool then
-	    Brs.sim_ide s0 brs_p_classes get_f !s_max n true
+	    Brs.sim_ide s0 brs_p_classes get_f !s_max n iter_f
 	  else
-	    Brs.bfs_ide s0 brs_p_classes get_f !s_max n true in
-	printf "\n%s\n" (Sbrs.string_of_stats stats);
+	    Brs.bfs_ide s0 brs_p_classes get_f !s_max n iter_f in
+	printf "\n%s\n" (Brs.string_of_stats stats);
 	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
-	    Brs.V.iter (fun (i, s) ->
+	    Brs.iter_states (fun i s ->
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
-		!verbose_bool) ts.Brs.v;
+		!verbose_bool) ts;
 	  Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool
 	end;
 	if !export_trans_str <> "" then 
@@ -150,22 +156,17 @@ let _ =
       end else begin
 	let sbrs_p_classes = List.map Store.p_to_sbrs p_classes 
 	and get_f = Store.get_sreact p env in
-	let ctmc = 
+	let (ctmc, stats) = 
 	  if !sim_bool then
-	    let (ctmc, stats) = 
-	      Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n true in
-	    printf "\n%s\n" (Sbrs.string_of_stats_sim stats);
-	    ctmc
+	    Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n iter_f
 	  else
-	    let (ctmc, stats) = 
-	      Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n true in
-	    printf "\n%s\n" (Sbrs.string_of_stats stats);
-	    ctmc in
+	    Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n iter_f in
+	printf "\n%s\n" (Sbrs.string_of_stats stats);
 	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
-	    Sbrs.V.iter (fun (i, s) ->
+	    Sbrs.iter_states (fun i s ->
 	      Export.write_big s (string_of_int i) !export_trans_dot_str
-		!verbose_bool) ctmc.Sbrs.v;
+		!verbose_bool) ctmc;
 	  Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool
 	end;
 	if !export_trans_str <> "" then

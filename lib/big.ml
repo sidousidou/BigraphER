@@ -447,10 +447,13 @@ let aux_match t p t_trans =
 
 (* true when p is not a match *)
 let quick_unsat t p =
-  (p.n.Nodes.size > t.n.Nodes.size) ||
+  (p.n.Nodes.size > t.n.Nodes.size) || 
     (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn) ||
     (Nodes.not_sub p.n t.n) ||
-    false
+    (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p)) ||
+    (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p)) ||
+    (Link.Lg.cardinal (Link.closed_edges p.l) > Link.Lg.cardinal (Link.closed_edges t.l)) ||
+    (Link.max_ports p.l > Link.max_ports t.l)
 
 let occurs t p = 
   try
@@ -556,6 +559,11 @@ let equal_SAT a b =
   match solver#solve with
   | Minisat.UNSAT -> false
   | Minisat.SAT -> true
+
+type bg_key = int * int * int * int * int
+
+let key b = 
+  (b.p.Place.r, b.p.Place.n, b.p.Place.s, Place.edges b.p, Link.Lg.cardinal b.l)
 
 let equal a b =
   (a.n.Nodes.size = b.n.Nodes.size) &&

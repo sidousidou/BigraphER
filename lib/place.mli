@@ -40,10 +40,10 @@ val parse : int -> int -> int -> string list -> pg
     encodes the node ranks and the fourth represents the adjacency matrix. *)
 val get_dot : pg -> string * string * string * string
 
-(** [match_list t p] returns a list of non isomorphic nodes. Every element
-    takes the form [(i,l,j,k)] with [i] and [l] nodes of [p] and [j] and [k]
-    nodes of [t]. All indices are columns.*)
-val match_list : pg -> pg -> (int * int * int * int) list
+(* (\** [match_list t p] returns a list of non isomorphic nodes. Every element *)
+(*     takes the form [(i,l,j,k)] with [i] and [l] nodes of [p] and [j] and [k] *)
+(*     nodes of [t]. All indices are columns.*\) *)
+(* val match_list : pg -> pg -> (int * int * int * int) list *)
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying 
     isomorphism [i] to [p].*)
@@ -52,6 +52,10 @@ val apply_iso : Base.Iso.t -> pg -> pg
 (** [parse_placing l r] returns the placing with [r] roots defined by list
     [l] in which each element is a site's parent set.*)
 val parse_placing : int list list -> int -> pg
+
+val leaves : pg -> Base.IntSet.t
+
+val orphans : pg -> Base.IntSet.t
 
 (** {6 Elementary place graphs} *)
 
@@ -154,11 +158,11 @@ val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
   Cnf.clause list * Cnf.clause list
 
-val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list
+(* val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> *)
+(*   Cnf.clause list *)
 
-val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list
+(* val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> *)
+(*   Cnf.clause list *)
 
 val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list

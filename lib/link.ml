@@ -450,6 +450,12 @@ let levels l ps =
        Face.add (Nam (sprintf "n%d_%d" n p)) acc) lvl Face.empty))
 	  ([], inner l) (List.rev ps))) 
 
+let max_ports l = 
+  Lg.fold (fun e max -> 
+    let max' = Ports.cardinal e.p in
+    if max' > max then max' else max 
+  ) l 0 
+    
 let closed_edges l = Lg.filter is_closed l
 
 let open_edges l = Lg.filter (fun e -> not (is_closed e)) l
