@@ -13,6 +13,14 @@ type ts = {
   l : (int, int) Hashtbl.t;  
 }
 
+
+type stats = {
+  t : float;  (** Execution time *)
+  s : int;    (** Number of states *)
+  r : int;    (** Number of reaction *)
+  o : int;    (** Number of occurrences *)
+}
+
 type p_class = 
 | P_class of react list 
 | P_rclass of react list
@@ -25,7 +33,7 @@ type p_class_ide =
 exception OLD of int
 
 (* raised when the size of the ts reaches the limit *)
-exception LIMIT of ts
+exception LIMIT of ts * stats
 
 let init_ts n = 
   { v = Hashtbl.create n;
@@ -34,7 +42,7 @@ let init_ts n =
   }
 
 let string_of_react r =
-  Printf.sprintf "%s\n---->\n%s" 
+  sprintf "%s\n---->\n%s" 
     (string_of_bg r.rdx) (string_of_bg r.rct) 
 
 let is_valid_react r =
@@ -172,19 +180,20 @@ let rec rewrite_ide get_react s classes m =
       end
 
 (* Partition a list of bigraphs into new and old states *)
-let _partition_aux ts i verb =
+let _partition_aux ts i f_iter =
   List.fold_left (fun (new_acc, old_acc, i) b ->
     try 
       ignore (is_new b ts.v);
       let i' = i + 1 in
-      if verb then (printf "\r%d states found%!" (i' + 1));
+      (* if iter_f then (printf "\r%6d states found%!" (i' + 1)); *)
+      f_iter i' b;
       ((i', b) :: new_acc, old_acc, i')
     with
       | OLD x -> (new_acc, x :: old_acc, i)
   ) ([], [], i)
     
 (* Iterate over priority classes *)
-let rec _scan step_f curr m ts i verb (pl : p_class list) pl_const =
+let rec _scan step_f curr m ts i iter_f (pl : p_class list) pl_const =
   match pl with
     | [] -> (([], [], i), m)
     | c :: cs ->
@@ -193,21 +202,21 @@ let rec _scan step_f curr m ts i verb (pl : p_class list) pl_const =
 	  | P_class rr ->
 	    begin
 	      let (ss, l) = step_f curr rr in
-	      if l = 0 then _scan step_f curr m ts i verb cs pl_const 
+	      if l = 0 then _scan step_f curr m ts i iter_f cs pl_const 
 	      else 
 		(* apply rewriting *)
 		let (ss', l') = 
 		  List.fold_left (fun (ss,  l) s -> 
 		    let (s', l') = rewrite s pl_const l in
 		    (s' :: ss, l')) ([], l) ss in
-		(_partition_aux ts i verb ss', m + l')
+		(_partition_aux ts i iter_f ss', m + l')
 	    end
 	  | P_rclass _ -> (* skip *)
-	    _scan step_f curr m ts i verb cs pl_const
+	    _scan step_f curr m ts i iter_f cs pl_const
       end 
 
 (* Iterate over priority classes *)
-let rec _scan_ide get_react step_f curr m ts i verb pl pl_const =
+let rec _scan_ide get_react step_f curr m ts i iter_f pl pl_const =
   match pl with
     | [] -> (([], [], i), m)
   | c :: cs ->
@@ -217,30 +226,34 @@ let rec _scan_ide get_react step_f curr m ts i verb pl pl_const =
 	begin
 	  let (ss, l) = step_f curr (List.map get_react rr) in
 	  if l = 0 then 
-	    _scan_ide get_react step_f curr m ts i verb cs pl_const 
+	    _scan_ide get_react step_f curr m ts i iter_f cs pl_const 
 	  else 
 	    (* apply rewriting *)
 	    let (ss', l') = 
 	      List.fold_left (fun (ss,  l) s -> 
 		let (s', l') = rewrite_ide get_react s pl_const l in
 		(s' :: ss, l')) ([], l) ss in
-	    (_partition_aux ts i verb ss', m + l')
+	    (_partition_aux ts i iter_f ss', m + l')
 	end
       | P_rclass_ide _ -> (* skip *)
-	_scan_ide get_react step_f curr m ts i verb cs pl_const
+	_scan_ide get_react step_f curr m ts i iter_f cs pl_const
     end 
 
 (* queue contains already a state *) 
-let rec _bfs ts q i m (scan_f, step_f, p_classes, t0, limit, ts_size, verb) =
-  if not (Queue.is_empty q) then
-    if i > limit then begin 
-      if verb then printf " in %f seconds.\n%!" ((Unix.gettimeofday ()) -. t0);
-      raise (LIMIT ts)
-    end
+let rec _bfs ts q i m (scan_f, step_f, p_classes, t0, limit, ts_size, iter_f) =
+  if not (Queue.is_empty q) then 
+    if i > limit 
+    then (let stats = 
+	    { t = (Unix.gettimeofday ()) -. t0;
+	      s = Hashtbl.length ts.v; 
+	      r = Hashtbl.length ts.e;
+	      o = m
+	    } in
+	  raise (LIMIT (ts, stats)))
     else begin 
       let (v, curr) = Queue.pop q in
       let ((new_s, old_s, i'), m') = 
-	scan_f step_f curr m ts i verb p_classes p_classes in
+	scan_f step_f curr m ts i iter_f p_classes p_classes in
       (* Add new states to v *)
       List.iter (fun (i, b) -> 
 	Hashtbl.add ts.v (Big.key b) (i, b)) new_s;
@@ -253,17 +266,19 @@ let rec _bfs ts q i m (scan_f, step_f, p_classes, t0, limit, ts_size, verb) =
       (* Add edges from v to old states *)
       List.iter (fun u -> Hashtbl.add ts.e v u) old_s;
       (* recursive call *)
-      _bfs ts q i' m' (scan_f, step_f, p_classes, t0, limit, ts_size, verb)
+      _bfs ts q i' m' (scan_f, step_f, p_classes, t0, limit, ts_size, iter_f)
     end
-  else begin
-    let t = (Unix.gettimeofday ()) -. t0 in 
-    if verb then printf " in %f seconds.\n%!" t;
-    (ts, (t, Hashtbl.length ts.v, Hashtbl.length ts.e, m))
-  end 
+  else let stats = 
+	 { t = (Unix.gettimeofday ()) -. t0;
+	   s = Hashtbl.length ts.v; 
+	   r = Hashtbl.length ts.e;
+	   o = m;
+	 } in
+       (ts, stats)
 
-let _init_bfs s0 rewrite _scan step rules limit ts_size verb =
+let _init_bfs s0 rewrite _scan step rules limit ts_size iter_f =
   let consts = 
-    (_scan, step, rules, Unix.gettimeofday (), limit, ts_size, verb)
+    (_scan, step, rules, Unix.gettimeofday (), limit, ts_size, iter_f)
   and q = Queue.create () in
   (* apply rewriting to s0 *)
   let (s0', m) = rewrite s0 rules 0
@@ -271,18 +286,20 @@ let _init_bfs s0 rewrite _scan step rules limit ts_size verb =
   Queue.push (0, s0') q;
   (* add initial state *)
   Hashtbl.add ts.v (Big.key s0') (0, s0');
-  (ts, q, m, consts)
+  (ts, s0', q, m, consts)
  
-let bfs s0 rules limit ts_size verb =
-  if verb then (printf "Starting execution of BRS ...\n1 state found");
-  let (ts, q, m, consts) = 
-    _init_bfs s0 rewrite _scan step rules limit ts_size verb in
+let bfs s0 rules limit ts_size iter_f =
+  let (ts, s0', q, m, consts) = 
+    _init_bfs s0 rewrite _scan step rules limit ts_size iter_f in
+  iter_f 0 s0';
   _bfs ts q 0 m consts    
 
-let bfs_ide s0 p_classes get_react limit ts_size verb =
-  if verb then (printf "Starting execution of BRS ...\n1 state found");
-  let (ts, q, m, consts) =
-    _init_bfs s0 (rewrite_ide get_react) (_scan_ide get_react) step p_classes limit ts_size verb in
+let bfs_ide s0 p_classes get_react limit ts_size iter_f =
+  let (ts, s0', q, m, consts) =
+    _init_bfs 
+      s0 (rewrite_ide get_react) (_scan_ide get_react) 
+      step p_classes limit ts_size iter_f in
+  iter_f 0 s0';
   _bfs ts q 0 m consts 
 
 let _sim_step x y =
@@ -292,38 +309,43 @@ let _sim_step x y =
   with
   | NO_MATCH -> ([], 0)
 
-let sim s0 rules limit ts_size verb =
-  if verb then (printf "Starting simulation of BRS ...\n1 state found");
-  let (ts, q, m, consts) =
-    _init_bfs s0 rewrite _scan _sim_step rules limit ts_size verb in
+let sim s0 rules limit ts_size iter_f =
+  let (ts, s0', q, m, consts) =
+    _init_bfs 
+      s0 rewrite _scan _sim_step rules limit ts_size iter_f in
+  iter_f 0 s0';
   _bfs ts q 0 m consts 
 
-let sim_ide s0 p_classes get_react limit ts_size verb =
-  if verb then (printf "Starting simulation of BRS ...\n1 state found");
-  let (ts, q, m, consts) =
-    _init_bfs s0 (rewrite_ide get_react) (_scan_ide get_react) _sim_step
-      p_classes limit ts_size verb in
+let sim_ide s0 p_classes get_react limit ts_size iter_f =
+  let (ts, s0', q, m, consts) =
+    _init_bfs s0 
+      (rewrite_ide get_react) (_scan_ide get_react) _sim_step
+      p_classes limit ts_size iter_f in
+  iter_f 0 s0';
   _bfs ts q 0 m consts 
 
-let string_of_stats (t, s, r, o) = 
+let string_of_stats s = 
   sprintf
-"\n===============================[ BRS Statistics ]===============================\n\
-   |  Execution time (s)   : %-8.3g                                             |\n\
-   |  States               : %-8d                                             |\n\
-   |  Reactions            : %-8d                                             |\n\
-   |  Occurrences          : %-8d                                             |\n\
-   ================================================================================\n"
-     t s r o
+    "\n\
+     ===============================[ BRS Statistics ]===============================\n\
+     |  Execution time (s)   : %-8.3g                                             |\n\
+     |  States               : %-8d                                             |\n\
+     |  Reactions            : %-8d                                             |\n\
+     |  Occurrences          : %-8d                                             |\n\
+     ================================================================================\n"
+    s.t s.s s.r s.o
 
 let to_dot ts =
   let states =
     Hashtbl.fold (fun _ (i, _) buff -> 
-      if i = 0 then sprintf "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
-                    style=\"bold\" ];\n" 
+      if i = 0 then sprintf 
+	"%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+                fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
+                style=\"bold\" ];\n" 
 	buff i i i
-      else sprintf "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-                    fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
+      else sprintf 
+	"%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+                fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
 	buff i i i
     ) ts.v ""
   and edges =

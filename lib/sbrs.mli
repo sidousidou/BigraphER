@@ -24,6 +24,14 @@ type ctmc = {
   l : (int, int) Hashtbl.t; (** Labelling function *) 
 }
 
+type stats = {
+  t : float;    (** Execution time *)
+  sim : float;  (** Simulation time *)
+  s : int;      (** Number of states *)
+  r : int;      (** Number of reaction *)
+  o : int;      (** Number of occurrences *)
+}
+
 (** The type of priority classes: lists of stochastic reaction rules. *)
 type p_class = 
 | P_class of sreact list  (** Priority class *)
@@ -35,10 +43,7 @@ type p_class_ide =
 | P_rclass_ide of string list (** Reducable priority class *)
 
 (** Raised when the size of the transition system reaches the limit. *)
-exception LIMIT of ctmc * (float * int * int * int)
-
-(** Raised when the time of the simulation is reached. *)
-exception LIMIT_SIM of ctmc * (float * float * int * int * int)
+exception LIMIT of ctmc * stats
 
 (** String representation of a reaction. *)
 val string_of_sreact : sreact -> string
@@ -97,33 +102,32 @@ val rewrite : Big.bg -> p_class list -> int -> Big.bg * int
 (** Same as {Sbrs.rewrite} but priority classes are of type {Sbrs.p_class_ide}. *)
 val rewrite_ide : (string -> sreact) -> Big.bg -> p_class_ide list -> int -> Big.bg * int
 
-(** [bfs s p l n v] computes the transition system of the SBRS specified by
+(** [bfs s p l n f] computes the transition system of the SBRS specified by
     initial state [s] and priority classes [p]. [l] is the maximum number of
     states of the transition system. [n] is the initialisation size for the
-    edges and [v] is a verbosity flag. Priority classes are assumed to
-    be sorted by priority, i.e. the first element in the list is the class with
-    the highest priority.
+    edges and [f] is function to be applied whenever a new state is discovered. 
+    Priority classes are assumed to be sorted by priority, i.e. the first element 
+    in the list is the class with the highest priority.
     @raise Sbrs.LIMIT when the maximum number of states is reached.*)
-val bfs : Big.bg -> p_class list -> int -> int -> bool -> ctmc * (float * int * int * int) 
+val bfs : Big.bg -> p_class list -> int -> int -> 
+  (int -> Big.bg -> unit) -> ctmc * stats
 
 (** Same as {!Sbrs.bfs} but priority classes are of type {!Sbrs.p_class_ide}.*)
-val bfs_ide : Big.bg -> p_class_ide list -> (string -> sreact) -> int -> int -> bool -> ctmc * (float * int * int * int) 
+val bfs_ide : Big.bg -> p_class_ide list -> (string -> sreact) -> int -> int -> 
+  (int -> Big.bg -> unit) -> ctmc * stats 
 
 (** Similar to {!Sbrs.bfs} but only one simulation path is computed. 
-    @raise Sbrs.LIMIT_SIM when the simulation reaches the time limit. *)
-val sim : Big.bg -> p_class list -> float -> int -> bool -> ctmc * (float * float * int
-    * int * int) 
+    @raise Sbrs.LIMIT when the simulation reaches the time limit. *)
+val sim : Big.bg -> p_class list -> float -> int -> 
+  (int -> Big.bg -> unit) -> ctmc * stats 
 
 (** Same as {!Sbrs.sim} but priority classes are of type {!Sbrs.p_class_ide}.
     @raise Sbrs.LIMIT_SIM when the simulation reaches the time limit. *)
 val sim_ide: Big.bg -> p_class_ide list -> (string -> sreact) -> float -> int ->
-    bool -> ctmc * (float * float * int * int * int) 
+    (int -> Big.bg -> unit) -> ctmc * stats
 
 (** String representation of SBRS execution statistics. *)
-val string_of_stats : float * int* int * int -> string
-
-(** String representation of SBRS simulation statistics. *)
-val string_of_stats_sim : float * float * int* int * int -> string
+val string_of_stats : stats -> string
 
 (** Textual representation of a ctmc. The format is compatible with PRISM input 
     format. *)

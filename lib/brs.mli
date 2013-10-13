@@ -19,8 +19,15 @@ type react = {
 (** The type of transition systems. *)
 type ts = {
   v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
-  e : (int, int) Hashtbl.t; (** Transition relation *)
-  l : (int, int) Hashtbl.t; (** Labelling function *) 
+  e : (int, int) Hashtbl.t;                   (** Transition relation *)
+  l : (int, int) Hashtbl.t;                   (** Labelling function *) 
+}
+
+type stats = {
+  t : float;  (** Execution time *)
+  s : int;    (** Number of states *)
+  r : int;    (** Number of reaction *)
+  o : int;    (** Number of occurrences *)
 }
 
 (** The type of priority classes: lists of reaction rules. *)
@@ -34,7 +41,7 @@ type p_class_ide =
 | P_rclass_ide of string list (** Educable priority class *)
 
 (** Raised when the size of the transition system reaches the limit. *)
-exception LIMIT of ts
+exception LIMIT of ts * stats
 
 (** String representation of a reaction. *)
 val string_of_react : react -> string
@@ -86,27 +93,31 @@ val rewrite : Big.bg -> p_class list -> int -> Big.bg * int
 (** Same as {Brs.rewrite} but priority classes are of type {Brs.p_class_ide}. *)
 val rewrite_ide : (string -> react) -> Big.bg -> p_class_ide list -> int -> Big.bg * int
 
-(** [bfs s p l n v] computes the transition system of the BRS specified by
+(** [bfs s p l n f] computes the transition system of the BRS specified by
     initial state [s] and priority classes [p]. [l] is the maximum number of
     states of the transition system. [n] is the initialisation size for the
-    edges and [v] is a verbosity flag. Priority classes are assumed to
-    be sorted by priority, i.e. the first element in the list is the class with
-    the highest priority.
+    edges and [f] is a function that is applied at every loop. Priority classes 
+    are assumed to be sorted by priority, i.e. the first element in the list is
+    the class with the highest priority.
     @raise Brs.LIMIT when the maximum number of states is reached.*)
-val bfs : Big.bg -> p_class list -> int -> int -> bool -> ts * (float * int * int * int) 
+val bfs : Big.bg -> p_class list -> int -> int ->
+  (int -> Big.bg -> unit) -> ts * stats
 
 (** Same as {!Brs.bfs} but priority classes are of type {!Brs.p_class_ide}.*)
-val bfs_ide : Big.bg -> p_class_ide list -> (string -> react) -> int -> int -> bool -> ts * (float * int * int * int)
+val bfs_ide : Big.bg -> p_class_ide list -> (string -> react) -> int -> int -> 
+  (int -> Big.bg -> unit) -> ts * stats
 
 (** Similar to {!Brs.bfs} but only one simulation path is computed. In this
     case, parameter [l] indicates the maximum number of simulation steps. *)
-val sim : Big.bg -> p_class list -> int -> int -> bool -> ts * (float * int * int * int)
+val sim : Big.bg -> p_class list -> int -> int ->
+  (int -> Big.bg -> unit) -> ts * stats
 
 (** Same as {!Brs.sim} but priority classes are of type {!Brs.p_class_ide}. *)
-val sim_ide: Big.bg -> p_class_ide list -> (string -> react) -> int -> int -> bool -> ts * (float * int * int * int)
+val sim_ide: Big.bg -> p_class_ide list -> (string -> react) -> int -> int ->
+  (int -> Big.bg -> unit) -> ts * stats
 
 (** String representation of BRS execution statistics. *)
-val string_of_stats : float * int* int * int -> string
+val string_of_stats : stats -> string
 
 (** Textual representation of a transition system. The format is compatible
     with PRISM input format. *)

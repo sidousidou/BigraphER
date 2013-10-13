@@ -12,7 +12,7 @@ let match_mask = ref 0b11
   
 let brs_mask = ref 0b1111
   
-let usage = "Usage: test TESTS-PATH [-o OUT-PATH] [-v] [-m MASK]\n"
+let usage = "Usage: test TESTS-PATH [-o OUT-PATH] [-v] [-m MASK]"
   
 let parse_mask mask =
   try
