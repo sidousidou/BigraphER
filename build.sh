@@ -10,17 +10,18 @@ BINNAME=bigrapher
 
 LIB=lib.otarget
 TEST=test.otarget
-BIN=bigrapher.byte
 
 if [ "$DEBUG" = "false" ]; then
     BINOPT=bigrapher.native
+    BIN=bigrapher.byte
 else
     BINOPT=bigrapher.p.native
+    BIN=bigrapher.p.byte
 fi
 
 
 OCAMLBUILD=ocamlbuild
-OCBFLAGS="-use-ocamlfind -j 4 -verbose 0 -yaccflags -v"
+OCBFLAGS="-use-ocamlfind -j 4 -verbose 2 -yaccflags -v"
 OCAMLFIND=ocamlfind
 
 DLLPATH=`ocamlfind query minisat`
@@ -39,15 +40,17 @@ DISTTEST="$DISTTEST tests/files/rts_cts.big `ls tests/files/match/*.big`"
 DISTSRC="build.sh INSTALL LICENSE README"
 DISTSRC="$DISTBIG $DISTLIB $DISTTEST $DISTSRC"
 
-ERRMSG="Error: Unknown action $1\nUsage: build OPTION\nThe options are as follows:\n\
-clean\t\tRemove outputs of previous compilations\n\
-lib\t\tCompile library\n\
-test\t\tCompile tests\n\
-bin\t\tCompile bigrapher\n\
-all\t\tCompile library and bigrapher\n\
-dist\t\tProduce an archive for distribution\n\
-install\t\tInstall library and bigrapher\n\
-uninstall\tRemove library and bigrapher\n"
+ERRMSG="Error: Unknown action \"$1\"\n\
+Usage: build [option]\n\n\
+The options are as follows:\n\
+  clean             Remove outputs of previous compilations\n\
+  lib               Compile library\n\
+  test              Compile tests\n\
+  bin               Compile bigrapher\n\
+  all               Compile library and bigrapher\n\
+  dist              Produce an archive for distribution\n\
+  install           Install library and bigrapher\n\
+  uninstall         Remove library and bigrapher\n"
 
 ocb() {
 	$OCAMLBUILD $OCBFLAGS $*
@@ -59,9 +62,10 @@ lib_install_rule() {
     MLI=`ls lib/_build/*.mli` || true 
     CMI=`ls lib/_build/*.cmi` || true
     DLL=`ls lib/_build/*a` || true
-    #check if the files are there
+    #check if all the files were compiled
     if [ "$MLI$CMI$DLL" = "" ]; then
-	printf 'Error: Library not compiled.\nTry running ./build lib first.\n' 2> /dev/null
+	printf 'Error: Library not compiled.\n\
+                Try running ./build lib first.\n' 2> /dev/null
 	exit 1
     else
 	INSTALLFILES="lib/META $MLI $CMI $DLL"
@@ -80,7 +84,8 @@ bin_install_rule() {
 	    install -m 755 bin/_build/$BINOPT $INSTDIR$BINNAME
  	fi
     else
-	printf 'Error: bigrapher not compiled.\nTry running ./build bin first.\n' 2> /dev/null
+	printf 'Error: bigrapher not compiled.\n\
+                Try running ./build bin first.\n' 2> /dev/null
 	exit 1
     fi
 }
@@ -109,6 +114,8 @@ dist() {
 
 lib_rule() {
     cd lib
+    # remove compilation files
+    rm -f *.*a || true
     ocb $LIB
     cd ..
 }

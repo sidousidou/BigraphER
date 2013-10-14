@@ -340,7 +340,7 @@ module Ports = struct
       IntSet.add (fst p) acc) ps IntSet.empty
 
   let apply s iso =
-    assert (Iso.cardinal iso = cardinal s);
+    assert (Iso.cardinal iso >= cardinal s);
     fold (fun (i, p) acc ->
       add (Iso.find iso i, p) acc) s empty
 

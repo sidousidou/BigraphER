@@ -180,11 +180,39 @@ let _ =
   | Arg.Bad m -> 
     prerr_endline m; exit 1 
   | Utils.PARSE_ERROR ->
-    prerr_endline "Parsing unsuccesful"; exit 1
+    prerr_endline "Parsing unsuccesful"; 
+    exit 1
   | Parsing.Parse_error ->
-    prerr_endline "Parsing unsuccesful"; exit 1
+    prerr_endline "Parsing unsuccesful"; 
+    exit 1
   | Store.INVALID_CONSTS | Store.INVALID_VAL | Store.WRONG_TYPE 
   | Store.NO_IDE | Store.INVALID_PRI -> 
+    exit 1
+  | Link.FACES_MISMATCH (inner, outer) ->
+    eprintf "Error: Impossible to compose over faces:\n\
+            \       %s\n\
+            \       %s\n" 
+      (Link.string_of_face inner) (Link.string_of_face outer); 
+    exit 1
+  | Link.NAMES_ALREADY_DEFINED (inner, outer) ->
+    eprintf "Error: Duplicate inner names: %s\n\
+            \       Duplicate outer names: %s\n"
+      (Link.string_of_face inner) (Link.string_of_face outer); 
+    exit 1
+  | Place.COMP_ERROR (sites, roots) ->
+    eprintf "Error: Impossible to compose with %d sites and %d regions\n"
+      sites roots;
+    exit 1
+  | Big.SHARING_ERROR -> 
+    eprintf "Error: Invalid sharing expression\n"; 
+    exit 1
+  | Big.CTRL_ERROR (n, face) ->
+    eprintf "Error: Impossible to use face %s with a control of arity %d\n" 
+      (Link.string_of_face face) n;
+    exit 1
+  | Big.ISO_ERROR (n, n_dom) ->
+    eprintf "Error: Isomorphism is not total: (%d < %d)\n"
+      n_dom n;
     exit 1
   | e -> 
     prerr_endline (Printexc.to_string e); exit 1
