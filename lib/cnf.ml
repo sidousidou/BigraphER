@@ -94,6 +94,11 @@ let block_rows rows c =
   List.fold_left (fun acc i ->
     block_row i (c - 1) acc) [] rows
 
+(* Input is a list of root commander variables *)
+let block_cmd : int list -> clause list =
+  List.map (fun i_z ->
+    [N_Var (V_lit i_z)])
+
 (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
 type 'a cmd_tree = 
@@ -126,29 +131,28 @@ let group l n g =
    and add a level of variables. *)
 let rec _cmd_init t n g j =
   match t with
-  | Node cmd_l -> begin 
-    try 
-      let cmd_l' = group cmd_l n g  in
-      let (j', t') = 
-	List.fold_left (fun (j, acc) g -> 
-	  (j + 1, (V_lit j, Node g) :: acc)) (j, []) cmd_l' in
-      _cmd_init (Node t') n g j'
-    with
+  | Node cmd_l -> 
+    (try 
+       let cmd_l' = group cmd_l n g  in
+       let (j', t') = 
+	 List.fold_left (fun (j, acc) g -> 
+	   (j + 1, (V_lit j, Node g) :: acc)) (j, []) cmd_l' in
+       _cmd_init (Node t') n g j'
+     with
     (* Do not add an additional level of commander variables *)
-    | NO_GROUP -> t
-  end
-  | Leaf vars -> begin
-    try 
-      let cmd_l = group vars n g  in
-      let (j', t') = 
-	List.fold_left (fun (j, acc) g -> 
-	  (j + 1, (V_lit j, Leaf g) :: acc)) (j, []) cmd_l in 
-      _cmd_init (Node t') n g j'
-    with
+     | NO_GROUP -> t)
+  | Leaf vars -> 
+    (try 
+       let cmd_l = group vars n g  in
+       let (j', t') = 
+	 List.fold_left (fun (j, acc) g -> 
+	   (j + 1, (V_lit j, Leaf g) :: acc)) (j, []) cmd_l in 
+       _cmd_init (Node t') n g j'
+     with
     (* Do not add an additional level of commander variables *)
-    | NO_GROUP -> t
-  end
+     | NO_GROUP -> t)
 
+(* M_lit elements *)
 let cmd_init (l : lit list) n g =
   _cmd_init (Leaf l) n g 0
 
@@ -156,11 +160,20 @@ let cmd_init (l : lit list) n g =
 let cmd_size t =
   match t with
   | Leaf _ -> 0
-  | Node cmd_g -> begin
-    match fst (List.hd cmd_g) with
+  | Node cmd_g -> 
+    (match fst (List.hd cmd_g) with
     | V_lit n -> n + 1
-    | M_lit _ -> assert false
-  end
+    | M_lit _ -> assert false)
+    
+let cmd_roots t =
+  match t with
+  | Leaf _ -> []
+  | Node cmd_g ->
+    List.map (fun (root, _) ->
+      match root with
+      | V_lit i -> i
+      | M_lit _ -> assert false
+    ) cmd_g
 
 (* Boolean encoding of at most one TRUE. Most common cases are hardcoded *)
 let rec _at_most l acc =
@@ -228,11 +241,15 @@ let rec _scan3 t acc : (lit list * (var * var) list) =
       res @ clause @ acc) [] cmd_g in
     (cmd_vars, acc @ acc')
 
+type cmd_constraint =
+| Cmd_at_most of b_clause list * clause list * b_clause list
+| Cmd_exactly of b_clause list * clause list * b_clause list * clause
+
 let at_most_cmd t =
   let clauses1 = _scan1 t []
   and (_, clauses2) = _scan2 t []
   and (_, clauses3) = _scan3 t [] in
-  (clauses1, clauses2, clauses3)
+  Cmd_at_most (clauses1, clauses2, clauses3)
 
 let at_least_cmd t =
   match t with
@@ -241,7 +258,7 @@ let at_least_cmd t =
 
 let exactly_one_cmd t =
   let (clauses1, clauses2, clauses3) = at_most_cmd t in
-  (clauses1, clauses2, clauses3, at_least_cmd t)
+  Cmd_exactly (clauses1, clauses2, clauses3, at_least_cmd t)
 
 (* let t_debug = *)
 (*   Node *)
@@ -259,22 +276,40 @@ let exactly_one_cmd t =
 
 (* ++++++++++++++++++++++++ Higher level functions ++++++++++++++++++++++++ *)
 
-(* n size *)
+(* n size *) (* reverse *)
 let rec _iter f res i n =
-  if i < n then begin
+  if i < n  then (
     let res' = f i res in
-    _iter f res' (i + 1) n
-  end else res
+		  _iter f res' (i + 1) n
+  ) else res
+
+let rec _downto f res i =
+  if i >= 0  then (
+    let res' = f i res in
+    _iter f res' (i + 1)
+  ) else res
     
-let iter f res n =
-  _iter f res 0 n
+let iter f acc n =
+  _downto f acc n
+
+type cmd = {
+  length : int;           (** Number of auxiliary commander variables *)
+  roots : int list;       (** Root commander variables *)
+  cmd : cmd_constraint;   (** Constraints *) 
+}
 
 let _exactly_rows n m t g =
-  List.rev (iter (fun i acc ->
-    let row_i = iter (fun j acc ->
-      (M_lit (i, j)) :: acc) [] m in
-    let t = cmd_init row_i t g in
-    (cmd_size t, exactly_one_cmd t) :: acc) [] n)
+  let l = ref 0
+  and r = ref [] in
+  Array.of_list (
+    iter (fun i acc ->
+      let row_i = iter (fun j acc ->
+	(M_lit (i, j)) :: acc) [] (m - 1) in
+      let t = cmd_init row_i t g in
+      if i = 0 then (
+	l := ();
+	r := ());
+      (exactly_one_cmd t) :: acc) [] (n - 1))
 
 (* Generate constraints for a bijection from n to m. Parameters t and g
    are used for configure the commander-variable encoding. The function can 
@@ -286,12 +321,13 @@ let bijection n m t g =
   assert (m >= 0);
   assert (n >= 0);
   let res_cols =
-    iter (fun j acc ->
-      let col_j = iter (fun i acc ->
-	(M_lit (i, j)) :: acc) [] n in
-      let t = cmd_init col_j t g in
-      (cmd_size t, at_most_cmd t) :: acc) [] m in
-  (_exactly_rows n m t g, List.rev res_cols)
+    Array.of_list (
+      iter (fun j acc ->
+	let col_j = iter (fun i acc ->
+	  (M_lit (i, j)) :: acc) [] (n - 1) in
+	let t = cmd_init col_j t g in
+	(cmd_size t, at_most_cmd t) :: acc) [] (m - 1)) in
+  (_exactly_rows n m t g, res_cols)
     
 (* Generate constraints for a total, non-surjective function n to m. Parameters
    t and g  are used for configure the commander-variable encoding. The 

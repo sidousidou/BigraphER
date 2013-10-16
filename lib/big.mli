@@ -64,8 +64,8 @@ val face_of_inter : inter -> Link.Face.t
 
 (** {6 Funtions on bigraphs}*)
 
-(** [string_of_bg b] returns a string representation of bigraph [b]. *)
-val string_of_bg: bg -> string
+(** [to_string b] returns a string representation of bigraph [b]. *)
+val to_string: bg -> string
 
 (** Parse a bigraph. *)
 val parse : string list -> bg

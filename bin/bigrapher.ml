@@ -99,6 +99,7 @@ let print_loop v_flag i _ =
 
 let _ =
   try
+    Printexc.record_backtrace true;
     Export.check_graphviz ();
     Arg.parse (Arg.align speclist) (fun filename ->
       if Filename.check_suffix filename "big" then 
@@ -215,4 +216,4 @@ let _ =
       n_dom n;
     exit 1
   | e -> 
-    prerr_endline (Printexc.to_string e); exit 1
+    eprintf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ()); exit 1

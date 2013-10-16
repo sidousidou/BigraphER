@@ -43,7 +43,7 @@ let init_ts n =
 
 let string_of_react r =
   sprintf "%s\n---->\n%s" 
-    (string_of_bg r.rdx) (string_of_bg r.rct) 
+    (to_string r.rdx) (to_string r.rct) 
 
 let is_valid_react r =
   (inter_equal (inner r.rdx)  (inner r.rct)) 

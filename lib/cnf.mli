@@ -68,21 +68,31 @@ type 'a cmd_tree =
 | Leaf of 'a list
 | Node of ('a * 'a cmd_tree) list 
 
+
+type cmd_constraint =
+| Cmd_at_most of b_clause list * clause list * b_clause list
+| Cmd_exactly of b_clause list * clause list * b_clause list * clause
+
 (** Initialisation of a tree of auxiliary variables. The two [int] arguments
     specify the recursion threshold and the maximum group size, respectively. *)
 val cmd_init : lit list -> int -> int -> lit cmd_tree
 
 (** At most a literal in the input list is [true]. *)
-val at_most_cmd : lit cmd_tree -> b_clause list * clause list * b_clause list
+val at_most_cmd : lit cmd_tree -> cmd_constraint
 
 (** At least a literal in the input list is [true]. *)
 val at_least_cmd : lit cmd_tree -> clause
 
 (** Axactly one literal in the input list is [true]. *)
-val exactly_one_cmd : lit cmd_tree -> 
-  b_clause list * clause list * b_clause list * clause
+val exactly_one_cmd : lit cmd_tree -> cmd_constraint
 
 (** {6 Higher level functions} *)
+
+type cmd = {
+  length : int;           (** Number of auxiliary commander variables *)
+  roots : int list;       (** Root commander variables *)
+  cmd : cmd_constraint;   (** Constraints *) 
+}
 
 (** Generate constraints for a bijection from n to m. Parameters t and g
     are used for configure the commander-variable encoding. Auxiliary variables

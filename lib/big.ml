@@ -37,7 +37,7 @@ let face_of_inter (Inter (_, f)) = f
 let string_of_inter (Inter (n, f)) =
   sprintf "<%d, %s>" n (Link.string_of_face f)
 
-let string_of_bg b =
+let to_string b =
   sprintf "%s\n%s%s" (Nodes.to_string b.n) (Place.to_string b.p)
     (Link.to_string b.l)    
 
@@ -319,50 +319,96 @@ let snf b =
 	(List.map snf_of_level tl))
   | _ -> ""
     *)
-  
+
 (* Generates an iso from a matrix of assignments *)
-let get_iso solver vars n m = 
-  let iso = Iso.empty () in
-  for i = 0 to n - 1 do
-    for j = 0 to m - 1 do
-      match solver#value_of vars.(i).(j) with
-	| Minisat.True -> Iso.add iso i j
-	| Minisat.False | Minisat.Unknown -> ()
-    done;
-  done;
+let get_iso solver m =
+  let iso = Iso.empty () in 
+  Array.iteri (fun i r ->
+    Array.iteri (fun j x ->
+      match solver#value_of x with
+      | Minisat.True -> Iso.add iso i j
+      | Minisat.False | Minisat.Unknown -> ()
+    ) r) m;
   iso
 
-let add_blocking solver v n m w e f =
-  let scan_matrix m r c =
-    let blocking_clause = ref [] in
-    for i = 0 to r - 1 do
-      for j = 0 to c - 1 do
-	match solver#value_of m.(i).(j) with
-	  | Minisat.True -> 
-	     blocking_clause := (neg_lit m.(i).(j)) :: !blocking_clause
-	  | Minisat.False -> 
-	     blocking_clause := (pos_lit m.(i).(j)) :: !blocking_clause
-	  | Minisat.Unknown -> ()
-      done;
-    done;
-    !blocking_clause in
-  solver#add_clause ((scan_matrix v n m) @ (scan_matrix w e f))
+(************************** DEBUG *************************)
+let string_of_SAT solver m =
+  Iso.to_string (get_iso solver m)
 
-let rec filter_loop solver t p v n m w e f t_trans = 
+type sat_vars = {
+  iso_nodes : Minisat.var array array;
+  z0_rows : Minisat.var array list;
+  z0_cols : Minisat.var array list;
+  iso_edges : Minisat.var array array;
+  z1_rows : Minisat.var array list;
+  z1_cols : Minisat.var array list;
+  z2 : Minisat.var array list;
+  iso_hyp : Minisat.var array array;
+  z3 : Minisat.var array list;
+}
+
+let print_dump solver v =
+  printf "------ ISO NODES\n\
+          %s\n\
+          ------ Z0 ROWS\n\
+          %s\n\
+          ------ Z0 COLUMNS\n\
+          %s\n\
+          ------ ISO EDGES\n\
+          %s\n\
+          ------ Z1 ROWS\n\
+          %s\n\
+          ------ Z1 COLUMNS\n\
+          %s\n\
+          ------ Z2\n\
+          %s\n\
+          ------ ISO HYPER\n\
+          %s\n\
+          ------ Z3\n\
+          %s\n"
+    (string_of_SAT solver v.iso_nodes) 
+    (string_of_SAT solver (Array.of_list v.z0_rows))
+    (string_of_SAT solver (Array.of_list v.z0_cols)) 
+    (string_of_SAT solver v.iso_edges)
+    (string_of_SAT solver (Array.of_list v.z1_rows))
+    (string_of_SAT solver (Array.of_list v.z1_cols))
+    (string_of_SAT solver (Array.of_list v.z2))
+    (string_of_SAT solver v.iso_hyp)
+    (string_of_SAT solver (Array.of_list v.z3))
+  
+(**********************************************************)
+   
+let add_blocking solver v w =
+  let scan_matrix m =
+    snd
+      (Array.fold_left (fun (i, acc) r ->
+	(i + 1, 
+	 snd 
+	   (Array.fold_left (fun (j, acc) x ->
+	     match solver#value_of x with
+	     | Minisat.True -> (j + i, neg_lit x :: acc)
+	     | Minisat.False -> (j + 1, pos_lit x :: acc) (* Check if this is really necessary*)
+	     | Minisat.Unknown -> assert false) (0, acc) r
+	   )
+	)
+       ) (0, []) m) in
+  solver#add_clause ((scan_matrix v) @ (scan_matrix w))
+
+let rec filter_loop solver t p vars t_trans = 
     solver#simplify;
     match solver#solve with
       | Minisat.UNSAT -> raise NO_MATCH
       | Minisat.SAT ->
 	begin
-	  let iso_v = get_iso solver v n m
+	  let iso_v = get_iso solver vars.iso_nodes
 	  (* and iso_e = get_iso solver w e f *) in
 	  if (Place.check_match t.p p.p t_trans iso_v) then 
-	    (solver, v, n, m, w, e, f)
+	    (solver, vars)
 	  else begin
 	    eprintf "Warning: invalid match not discarded by SAT. \
                      Removing it ...\n";
-	    add_blocking solver v n m w e f;
-	    filter_loop solver t p v n m w e f t_trans
+	    add_blocking solver vars.iso_nodes vars.iso_edges;
+	    filter_loop solver t p vars t_trans
 	  end   
 	end 
 	  
@@ -406,7 +452,7 @@ let add_c9 t p t_n p_n solver v =
   let aux_bij_w_rows =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   (w, aux_bij_w_rows)
-    
+
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p t_trans =
   let solver = new solver
@@ -443,7 +489,18 @@ let aux_match t p t_trans =
   (* Add C10: block edges between unconnected nodes with sites and nodes with
      roots. *)
   add_c10 t.p p.p solver v;
-  filter_loop solver t p v n m w e f t_trans
+  let vars = {
+    iso_nodes = v;
+    z0_rows = aux_bij_v_rows;
+    z0_cols = aux_bij_v_cols;
+    iso_edges = w;
+    z1_rows = aux_bij_w_rows;
+    z1_cols = aux_bij_w_cols;
+    z2 = zs4;
+    iso_hyp = w';
+    z3 = aux_bij_w'_rows;
+  } in
+  filter_loop solver t p vars t_trans
 
 (* true when p is not a match *)
 let quick_unsat t p =
@@ -469,8 +526,8 @@ let occurrence t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else (if quick_unsat t p then raise NO_MATCH
     else (let t_trans = Sparse.trans t.p.Place.nn in
-	  let (s, v, n, m, w, e, f) = aux_match t p t_trans in
-	  (get_iso s v n m, get_iso s w e f)))
+	  let (s, vars) = aux_match t p t_trans in
+	  (get_iso s vars.iso_nodes, get_iso s vars.iso_edges)))
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
@@ -481,53 +538,62 @@ let auto b =
       List.filter (fun (i, e) ->
 	not ((Iso.is_id i) && (Iso.is_id e))) res in
     rem_id (try 
-	      let (solver, v, n, m, w, e, f) = aux_match b b b_trans in
+	      let (s, vars) = aux_match b b b_trans in
 	      let rec loop_occur res =
-		add_blocking solver v n m w e f;
+		add_blocking s vars.iso_nodes vars.iso_edges;
 		try 
-		  ignore (filter_loop solver b b v n m w e f b_trans);
-		  loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
+		  ignore (filter_loop s b b vars b_trans);
+		  loop_occur (res @ [(get_iso s vars.iso_nodes), (get_iso s vars.iso_edges)])
 		with
 		| NO_MATCH -> res in
-	      loop_occur [(get_iso solver v n m, get_iso solver w e f)]
+	      loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
       with
       | NO_MATCH -> [])
   end
       
-let clause_of_iso iso m r c = 
-  let clause = ref [] in
-  for i = 0 to r - 1 do
-    for j = 0 to c - 1 do
-      if Iso.mem iso i j then clause := ((neg_lit m.(i).(j)) :: !clause)
-      else clause := ((pos_lit m.(i).(j)) :: !clause)
-    done;
-  done;
-  !clause
+let clause_of_iso iso m =
+  snd 
+    (Array.fold_left (fun (i, acc) r ->
+      (i + 1, snd 
+	(Array.fold_left (fun (j, acc) x ->
+	  if Iso.mem iso i j then (j + 1, neg_lit x :: acc)
+	  else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
+	 ) (0, acc) r))
+     ) (0, []) m)
 
 let occurrences t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else
     if quick_unsat t p then []
-    else (try 
+    else (try
+	    (************************** DEBUG *************************)
+	    printf "------- TARGET:\n%!\
+                    %s\n\
+                    ------- PATTERN:\n%!\
+                    %s\n" (to_string t) (to_string p);
+	    (**********************************************************)
 	    let t_trans = Sparse.trans t.p.Place.nn in
-	    let (solver, v, n, m, w, e, f) = aux_match t p t_trans
-	    and autos = auto p in
+	    let (s, vars) = aux_match t p t_trans in
+	    print_dump s vars;
+	    let autos = auto p in
 	    let rec loop_occur res =
-	      add_blocking solver v n m w e f;
+	      add_blocking s vars.iso_nodes vars.iso_edges;
 	      (****************AUTOMORPHISMS****************)
 	      let gen = 
 		List.combine
-		  (Iso.gen_isos (get_iso solver v n m) (List.map fst autos)) 
-		  (Iso.gen_isos (get_iso solver w e f) (List.map snd autos))  in
+		  (Iso.gen_isos (get_iso s vars.iso_nodes) (List.map fst autos)) 
+		  (Iso.gen_isos (get_iso s vars.iso_edges) (List.map snd autos))  in
 	      List.iter (fun (iso_i, iso_e) ->
-		solver#add_clause ((clause_of_iso iso_i v n m) @ (clause_of_iso iso_e w e f))) gen;
+		s#add_clause ((clause_of_iso iso_i vars.iso_nodes) @ 
+				 (clause_of_iso iso_e vars.iso_edges))) gen;
 	      (*********************************************)
 	      try 
-		ignore (filter_loop solver t p v n m w e f t_trans);
-		loop_occur ( res @ [(get_iso solver v n m), (get_iso solver w e f)] )
+		ignore (filter_loop s t p vars t_trans);
+		loop_occur (res @ 
+			      [(get_iso s vars.iso_nodes), (get_iso s vars.iso_edges)])
 	      with
 	      | NO_MATCH -> res in
-	    loop_occur [(get_iso solver v n m, get_iso solver w e f)]
+	    loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
       with
       | NO_MATCH -> [])
     
