@@ -206,8 +206,8 @@ val levels : bg -> bg list*)
 (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise.*)
 val equal : bg -> bg -> bool
 
-(** [compare] function for bigraphs. *)
-val compare : bg -> bg -> int
+(* (\** [compare] function for bigraphs. *\) *)
+(* val compare : bg -> bg -> int *)
 
 (** {6 Matching} *)
 

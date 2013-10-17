@@ -39,8 +39,8 @@ let to_ij v =
 exception TSEITIN of clause list 
   
 (* Apply tseitin transformation to a boolean formula. Input is a list of pairs.
-   The encoding is not applied if the input list has lenght less than three.
-   Cases with length three and four are harcoded.
+   The encoding is not applied if the input list has length less than three.
+   Cases with length three and four are hard-coded.
    Each pair encodes a conjunction. The first element of the output is a 
    disjunction of auxiliary variables. The second is a conjunctions of 
    (not z or a) (not z or b) ... *)
@@ -97,7 +97,7 @@ let block_rows rows c =
 (* Input is a list of root commander variables *)
 let block_cmd : int list -> clause list =
   List.map (fun i_z ->
-    [N_Var (V_lit i_z)])
+    [N_var (V_lit i_z)])
 
 (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
@@ -175,7 +175,7 @@ let cmd_roots t =
       | M_lit _ -> assert false
     ) cmd_g
 
-(* Boolean encoding of at most one TRUE. Most common cases are hardcoded *)
+(* Boolean encoding of at most one TRUE. Most common cases are hard-coded *)
 let rec _at_most l acc =
   match l with
   | [] | [_] -> acc
@@ -191,7 +191,7 @@ let rec _at_most l acc =
 					    (c, e); (c, f); (d, e); (d, f); (e, f) ]
   | x :: rest -> _at_most rest (acc @ (List.map (fun y -> (x, y)) rest)) 
 
-(* Disjuntions (all possible pairs) of negative literals *)
+(* Disjunctions (all possible pairs) of negative literals *)
 let at_most l =
  List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_most l []) 
 
@@ -257,8 +257,10 @@ let at_least_cmd t =
   | Node cmd_g -> at_least (fst (List.split cmd_g))
 
 let exactly_one_cmd t =
-  let (clauses1, clauses2, clauses3) = at_most_cmd t in
-  Cmd_exactly (clauses1, clauses2, clauses3, at_least_cmd t)
+  match at_most_cmd t with
+  | Cmd_at_most (cl1, cl2, cl3) ->
+    Cmd_exactly (cl1, cl2, cl3, at_least_cmd t)
+  | Cmd_exactly _ -> assert false
 
 (* let t_debug = *)
 (*   Node *)
@@ -283,56 +285,67 @@ let rec _iter f res i n =
 		  _iter f res' (i + 1) n
   ) else res
 
-let rec _downto f res i =
+let rec _downto f acc i =
   if i >= 0  then (
-    let res' = f i res in
-    _iter f res' (i + 1)
-  ) else res
+    let acc' = f i acc in
+    _downto f acc' (i - 1)
+  ) else acc
     
 let iter f acc n =
   _downto f acc n
 
 type cmd = {
-  length : int;           (** Number of auxiliary commander variables *)
-  roots : int list;       (** Root commander variables *)
-  cmd : cmd_constraint;   (** Constraints *) 
+  length : int;                 (** Number of auxiliary commander variables *)
+  roots : int list;             (** Root commander variables *)
+  cmd : cmd_constraint array;   (** Constraints *) 
 }
 
 let _exactly_rows n m t g =
   let l = ref 0
   and r = ref [] in
+  let c =
   Array.of_list (
     iter (fun i acc ->
       let row_i = iter (fun j acc ->
 	(M_lit (i, j)) :: acc) [] (m - 1) in
       let t = cmd_init row_i t g in
       if i = 0 then (
-	l := ();
-	r := ());
-      (exactly_one_cmd t) :: acc) [] (n - 1))
+	l := cmd_size t;
+	r := cmd_roots t);
+      (exactly_one_cmd t) :: acc) [] (n - 1)) in
+  {length = !l; roots = !r; cmd = c}
 
 (* Generate constraints for a bijection from n to m. Parameters t and g
    are used for configure the commander-variable encoding. The function can 
    be split into two parts:
-    1. exactly one TRUE in every row of the assignements matrix
+    1. exactly one TRUE in every row of the assignments matrix
     2. at most one TRUE in every column of the assignments matrix.
    Auxiliary variables are returned. *)
 let bijection n m t g =
   assert (m >= 0);
   assert (n >= 0);
+  let l = ref 0
+  and r = ref [] in
   let res_cols =
     Array.of_list (
       iter (fun j acc ->
 	let col_j = iter (fun i acc ->
 	  (M_lit (i, j)) :: acc) [] (n - 1) in
 	let t = cmd_init col_j t g in
-	(cmd_size t, at_most_cmd t) :: acc) [] (m - 1)) in
-  (_exactly_rows n m t g, res_cols)
+	if j = 0 then (
+	  l := cmd_size t;
+	  r := cmd_roots t);
+	(at_most_cmd t) :: acc) [] (m - 1)) in
+  (_exactly_rows n m t g, {
+    length = !l;
+    roots = !r;
+    cmd = res_cols}
+  )
     
 (* Generate constraints for a total, non-surjective function n to m. Parameters
    t and g  are used for configure the commander-variable encoding. The 
    function constructs the following constraint:
-    -  exactly one TRUE in every row of the assignements matrix
+    -  exactly one TRUE in every row of the assignments matrix
    Auxiliary variables are returned. *)
 let tot_fun n m t g =
   assert (m >= 0);
@@ -438,35 +451,48 @@ let _post_list l s a v =
   s#add_clause (List.map (fun x ->
     convert x a v) clause)) l
 
-(* Post bijection constraints to solver and return auxiliary variables. *)
-let post_bij (r_constr, c_constr) s m =
-  (* Lists of vectors *)
+(* Post bijection constraints to solver and return two matrices of auxiliary
+   variables. Root indices are the same for every row of the matrix. *)
+let post_bij (r_cmd, c_cmd) s m =
   let aux_r =
-    List.map (fun (n, (cl1, cl2, cl3, cl4)) ->
-      let z = init_aux_v n s in
-      _post_pairs cl1 s z m;
-      _post_list cl2 s z m;
-      _post_pairs cl3 s z m;
-      _post_list [cl4] s z m;
-      z) r_constr 
+    (Array.map (fun c ->
+      match c with
+      | Cmd_exactly (cl1, cl2, cl3, cl4) -> (
+	let z = init_aux_v r_cmd.length s in
+	_post_pairs cl1 s z m;
+	_post_list cl2 s z m;
+	_post_pairs cl3 s z m;
+	_post_list [cl4] s z m;
+	z)
+      | Cmd_at_most _ -> assert false
+     ) r_cmd.cmd,
+     r_cmd.roots) 
   and aux_c =
-    List.map (fun (n, (cl1, cl2, cl3)) ->
-      let z = init_aux_v n s in
-      _post_pairs cl1 s z m;
-      _post_list cl2 s z m;
-      _post_pairs cl3 s z m;
-      z) c_constr in
+    (Array.map (fun c ->
+      match c with
+      | Cmd_at_most (cl1, cl2, cl3) -> (
+	let z = init_aux_v c_cmd.length s in
+	_post_pairs cl1 s z m;
+	_post_list cl2 s z m;
+	_post_pairs cl3 s z m;
+	z)
+      | Cmd_exactly _ -> assert false
+     ) c_cmd.cmd,
+     c_cmd.roots) in
   (aux_r, aux_c)
     
 (* Post total non-surjective function to solver and return auxiliary 
    variables. *)
-let post_tot r_constr s m =
-  (* Lists of vectors *)
-  List.map (fun (n, (cl1, cl2, cl3, cl4)) ->
-    let z = init_aux_v n s in
-    _post_pairs cl1 s z m;
-    _post_list cl2 s z m;
-    _post_pairs cl3 s z m;
-    _post_list [cl4] s z m;
-    z) r_constr 
-    
+let post_tot r_cmd s m =
+  (Array.map (fun c ->
+    match c with
+    | Cmd_exactly (cl1, cl2, cl3, cl4) -> (
+      let z = init_aux_v r_cmd.length s in
+      _post_pairs cl1 s z m;
+      _post_list cl2 s z m;
+      _post_pairs cl3 s z m;
+      _post_list [cl4] s z m;
+      z)
+    | Cmd_at_most _ -> assert false
+   ) r_cmd.cmd,
+   r_cmd.roots) 

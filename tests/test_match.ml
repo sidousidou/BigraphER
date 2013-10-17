@@ -88,8 +88,8 @@ let do_tests ts v_flag =
                      "Expected result :\n\
                                        %s\nResult :\n%s\n"
                      (print_res t.exp_res) (print_res t.res);
-                   printf "Target:\n%s\nPattern:\n%s\n" (string_of_bg t.target)
-                     (string_of_bg t.pattern))
+                   printf "Target:\n%s\nPattern:\n%s\n" (to_string t.target)
+                     (to_string t.pattern))
                 else ();
                 (count, (i + 1))))
           with

@@ -337,14 +337,14 @@ let string_of_SAT solver m =
 
 type sat_vars = {
   iso_nodes : Minisat.var array array;
-  z0_rows : Minisat.var array list;
-  z0_cols : Minisat.var array list;
+  z0_rows : Minisat.var array array;
+  z0_cols : Minisat.var array array;
   iso_edges : Minisat.var array array;
-  z1_rows : Minisat.var array list;
-  z1_cols : Minisat.var array list;
-  z2 : Minisat.var array list;
+  z1_rows : Minisat.var array array;
+  z1_cols : Minisat.var array array;
+  z2 : Minisat.var array array;
   iso_hyp : Minisat.var array array;
-  z3 : Minisat.var array list;
+  z3 : Minisat.var array array;
 }
 
 let print_dump solver v =
@@ -367,14 +367,14 @@ let print_dump solver v =
           ------ Z3\n\
           %s\n"
     (string_of_SAT solver v.iso_nodes) 
-    (string_of_SAT solver (Array.of_list v.z0_rows))
-    (string_of_SAT solver (Array.of_list v.z0_cols)) 
+    (string_of_SAT solver v.z0_rows)
+    (string_of_SAT solver v.z0_cols) 
     (string_of_SAT solver v.iso_edges)
-    (string_of_SAT solver (Array.of_list v.z1_rows))
-    (string_of_SAT solver (Array.of_list v.z1_cols))
-    (string_of_SAT solver (Array.of_list v.z2))
+    (string_of_SAT solver v.z1_rows)
+    (string_of_SAT solver v.z1_cols)
+    (string_of_SAT solver v.z2)
     (string_of_SAT solver v.iso_hyp)
-    (string_of_SAT solver (Array.of_list v.z3))
+    (string_of_SAT solver v.z3)
   
 (**********************************************************)
    
@@ -413,25 +413,43 @@ let rec filter_loop solver t p vars t_trans =
 	end 
 	  
 let add_c4 t p t_n p_n solver v =
-  let (t_constraints, block_clauses, exc_clauses) = 
+  let (t_constraints, exc_clauses, js) = 
     Place.match_list t p t_n p_n in
-  Cnf.post_conj_m (block_clauses @ exc_clauses) solver v;
-  List.fold_left (fun acc x ->
-    (Cnf.post_tseitin x solver v) :: acc) [] t_constraints
+  Cnf.post_conj_m exc_clauses solver v;
+  (Array.of_list
+     (List.fold_left (fun acc x ->
+       (Cnf.post_tseitin x solver v) :: acc
+      ) [] t_constraints),
+   js)
   
 let add_c5 t p t_n p_n solver v =
-  let (clauses_l, b_l) = Place.match_leaves t p t_n p_n
-  and (clauses_o, b_o) = Place.match_orphans t p t_n p_n in
-  Cnf.post_conj_m (clauses_l @ b_l @ clauses_o @ b_o) solver v
+  let (clauses_l, js_l) = 
+    Place.match_leaves t p t_n p_n
+  and (clauses_o, js_o) = 
+    Place.match_orphans t p t_n p_n in
+  Cnf.post_conj_m (clauses_l @ clauses_o) solver v;
+  IntSet.union js_l js_o
 
 let add_c6 t p t_n p_n solver v =
-  let (clauses_s, b_s) = Place.match_sites t p t_n p_n
-  and (clauses_r, b_r) = Place.match_roots t p t_n p_n in
-  Cnf.post_conj_m (clauses_s @ b_s @ clauses_r @ b_r) solver v
+  let (clauses_s, js_s) = 
+    Place.match_sites t p t_n p_n
+  and (clauses_r, js_r) = 
+    Place.match_roots t p t_n p_n in
+  Cnf.post_conj_m (clauses_s @ clauses_r) solver v;
+  IntSet.union js_s js_r
 
-let add_c7 t p t_n p_n solver v =
-  let (clauses, b) = Link.match_edges t p t_n p_n in
-  Cnf.post_conj_m (clauses @ b) solver v;
+let add_c11 unmatch_v solver aux rc_v =
+  let clauses  =
+    IntSet.fold (fun i acc ->
+      (List.map (fun z ->
+	[Cnf.N_var (Cnf.V_lit z)]) rc_v) @ acc
+    ) unmatch_v [] in
+  Cnf.post_conj_m clauses solver aux
+
+let add_c7 t p t_n p_n f aux rc_v solver v =
+  let (clauses, js) = Link.match_edges t p t_n p_n in
+  Cnf.post_conj_m clauses solver v;
+  add_c11 (IntSet.diff (IntSet.of_int f) js) solver aux rc_v;  
   clauses
 
 let add_c8 t p t_n p_n clauses solver v w =
@@ -444,63 +462,79 @@ let add_c10 t p solver v =
 
 (* Fix *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, b) = Link.match_peers t p t_n p_n in
+  let (r, c, constraints, b) = 
+    Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   Cnf.post_conj_m b solver w;
   List.iter (fun x ->
-    Cnf.post_impl x solver w v) constraints;
-  let aux_bij_w_rows =
+    Cnf.post_impl x solver w v
+  ) constraints;
+  let (aux_bij_w_rows, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
-  (w, aux_bij_w_rows)
+  (w, aux_bij_w_rows, z_roots)
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p t_trans =
-  let solver = new solver
-  and (n, m) = (p.p.Place.n, t.p.Place.n) 
-  and closed_p = Link.closed_edges p.l
-  and closed_t = Link.closed_edges t.l in
-  let (e, f) = (Link.Lg.cardinal closed_p,
-		Link.Lg.cardinal closed_t) in
-  (* Iso between nodes *)
-  let v = Cnf.init_aux_m n m solver
-  (* Iso between closed edges *)
-  and w = Cnf.init_aux_m e f solver in
-  (* Add bijection over nodes *)
-  let (aux_bij_v_rows, aux_bij_v_cols) =
-    Cnf.post_bij (Cnf.bijection n m 6 3) solver v
-  (* Add bijection over closed edges *)
-  and (aux_bij_w_rows, aux_bij_w_cols) =
-    Cnf.post_bij (Cnf.bijection e f 6 3) solver w
-  (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
-     Return list of vectors of auxiliary vars. *)
-  and zs4 = add_c4 t.p p.p t.n p.n solver v in
-  (* Add C5: orphans and leaves matching in the place graphs. *)
-  add_c5 t.p p.p t.n p.n solver v;
-  (* Add C6: sites and roots in the place graphs. *)
-  add_c6 t.p p.p t.n p.n solver v;
-  (* Add C7: edges in the pattern are matched to edges in the target. *)
-  let clauses = add_c7 closed_t closed_p t.n p.n solver w in
-  (* Add C8: ports of matched closed edges have to be isomorphic. *)
-  add_c8 closed_t closed_p t.n p.n clauses solver v w;
-  (* Add C9: ports of matched open edges have to be isomorphic. 
-     Return matrix from open edges in the pattern to non-empty edges in the
-     target. *)
-  let (w', aux_bij_w'_rows) = add_c9 t.l p.l t.n p.n solver v in
-  (* Add C10: block edges between unconnected nodes with sites and nodes with
-     roots. *)
-  add_c10 t.p p.p solver v;
-  let vars = {
-    iso_nodes = v;
-    z0_rows = aux_bij_v_rows;
-    z0_cols = aux_bij_v_cols;
-    iso_edges = w;
-    z1_rows = aux_bij_w_rows;
-    z1_cols = aux_bij_w_cols;
-    z2 = zs4;
-    iso_hyp = w';
-    z3 = aux_bij_w'_rows;
-  } in
-  filter_loop solver t p vars t_trans
+  try
+    let solver = new solver
+    and (n, m) = (p.p.Place.n, t.p.Place.n) 
+    and closed_p = Link.closed_edges p.l
+    and closed_t = Link.closed_edges t.l in
+    let (e, f) = (Link.Lg.cardinal closed_p,
+		  Link.Lg.cardinal closed_t) in
+    (* Iso between nodes *)
+    let v = Cnf.init_aux_m n m solver
+    (* Iso between closed edges *)
+    and w = Cnf.init_aux_m e f solver in
+    (* Add bijection over nodes *)
+    let ((aux_bij_v_rows, _), 
+	 (aux_bij_v_cols, rc_v)) =
+      Cnf.post_bij (Cnf.bijection n m 6 3) solver v
+    (* Add bijection over closed edges *)
+    and ((aux_bij_w_rows, _), 
+	 (aux_bij_w_cols, rc_w)) =
+      Cnf.post_bij (Cnf.bijection e f 6 3) solver w
+    (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
+       Return list of vectors of auxiliary vars. *)
+    and (zs4, js0) = add_c4 t.p p.p t.n p.n solver v
+    (* Add C5: orphans and leaves matching in the place graphs. *)
+    and js1 = add_c5 t.p p.p t.n p.n solver v
+    (* Add C6: sites and roots in the place graphs. *)
+    and js2 = add_c6 t.p p.p t.n p.n solver v in
+    (* Add C7: edges in the pattern are matched to edges in the target. *)
+    let clauses = 
+      add_c7 closed_t closed_p t.n p.n f aux_bij_w_cols rc_w solver w in
+    (* Add C8: ports of matched closed edges have to be isomorphic. *)
+    add_c8 closed_t closed_p t.n p.n clauses solver v w;
+    (* Add C9: ports of matched open edges have to be isomorphic. 
+       Return matrix from open edges in the pattern to non-empty edges in the
+       target. *)
+    let (w', aux_bij_w'_rows, _) = 
+      add_c9 t.l p.l t.n p.n solver v in
+    (* Add C10: block edges between unconnected nodes with sites and nodes with
+       roots. *)
+    add_c10 t.p p.p solver v;
+    (* Block unmatchable columns *)
+    let unmatch_v = 
+      IntSet.diff 
+	(IntSet.of_int m) 
+	(IntSet.union js0 (IntSet.union js1 js2)) in
+    add_c11 unmatch_v solver aux_bij_v_cols rc_v;
+    let vars = {
+      iso_nodes = v;
+      z0_rows = aux_bij_v_rows;
+      z0_cols = aux_bij_v_cols;
+      iso_edges = w;
+      z1_rows = aux_bij_w_rows;
+      z1_cols = aux_bij_w_cols;
+      z2 = zs4;
+      iso_hyp = w';
+      z3 = aux_bij_w'_rows;
+    } in
+    filter_loop solver t p vars t_trans
+  with
+  | Place.NOT_TOTAL -> raise NO_MATCH
+  | Link.NOT_TOTAL -> raise NO_MATCH
 
 (* true when p is not a match *)
 let quick_unsat t p =
@@ -598,38 +632,65 @@ let occurrences t p =
       | NO_MATCH -> [])
     
 let equal_SAT a b =
-  let solver = new solver in
-  let (n, m) = (a.p.Place.n, b.p.Place.n)
-  and (h, k) = (Link.Lg.cardinal a.l, Link.Lg.cardinal b.l) in
-  let v_n = Cnf.init_aux_m n m solver
-  and v_l = Cnf.init_aux_m h k solver in 
-  let (aux_bij_n_rows, aux_bij_n_cols) =
-    Cnf.post_bij (Cnf.bijection n m 6 3) solver v_n
-  and (aux_bij_l_rows, aux_bij_l_cols) =
-    Cnf.post_bij (Cnf.bijection h k 6 3) solver v_l in
-  (* Place graph *)
-  let (t_constraints, block_clauses, exc_clauses) = 
-    Place.match_list_eq a.p b.p a.n b.n in
-  Cnf.post_conj_m (block_clauses @ exc_clauses) solver v_n;
-  let zs = List.fold_left (fun acc x ->
-    (Cnf.post_tseitin x solver v_n) :: acc) [] t_constraints in
-  Cnf.post_conj_m ((Place.match_root_nodes a.p b.p a.n b.n) @ 
-		      (Place.match_nodes_sites a.p b.p a.n b.n)) solver v_n;
-  (* Link graph *)
-  let (clauses, b_pairs) = Link.match_list_eq a.l b.l a.n b.n in
-  Cnf.post_conj_m (clauses @ b_pairs) solver v_l;
-  let l_constraints = Link.match_ports_eq a.l b.l a.n b.n clauses in
-  List.iter (fun x ->
-    Cnf.post_impl x solver v_l v_n) l_constraints;
-  solver#simplify;
-  match solver#solve with
-  | Minisat.UNSAT -> false
-  | Minisat.SAT -> true
+  try
+    let solver = new solver in
+    let n = a.p.Place.n
+    and h = Link.Lg.cardinal a.l in
+    let v_n = Cnf.init_aux_m n n solver
+    and v_l = Cnf.init_aux_m h h solver in 
+    let ((aux_bij_n_rows, _), 
+	 (aux_bij_n_cols, _)) =
+      Cnf.post_bij (Cnf.bijection n n 6 3) solver v_n
+    and ((aux_bij_l_rows, _), 
+	 (aux_bij_l_cols, _)) =
+      Cnf.post_bij (Cnf.bijection h h 6 3) solver v_l in
+    (* Place graph *)
+    let (t_constraints, exc_clauses, cols0) = 
+      Place.match_list_eq a.p b.p a.n b.n 
+    and (c_rn, cols1) =
+      Place.match_root_nodes a.p b.p a.n b.n
+    and (c_ns, cols2) =
+      Place.match_nodes_sites a.p b.p a.n b.n 
+    and (clauses_l, js_l) = 
+      Place.match_leaves a.p b.p a.n b.n
+    and (clauses_o, js_o) = 
+      Place.match_orphans a.p b.p a.n b.n in
+    let cols =
+      IntSet.union
+	(IntSet.union js_o js_l)
+	(IntSet.union cols0 (IntSet.union cols1 cols2)) in
+    if IntSet.cardinal cols <> n then raise NO_MATCH;
+    Cnf.post_conj_m (exc_clauses) solver v_n;
+    Cnf.post_conj_m (c_rn @ c_ns) solver v_n;
+    Cnf.post_conj_m (clauses_l @ clauses_o) solver v_n;
+    let z = 
+      Array.of_list (
+	List.fold_left (fun acc x ->
+	  (Cnf.post_tseitin x solver v_n) :: acc
+	) [] t_constraints
+      ) in
+    (* Link graph *)
+    let (clauses, b_pairs) = Link.match_list_eq a.l b.l a.n b.n in
+    Cnf.post_conj_m (clauses @ b_pairs) solver v_l;
+    let l_constraints = Link.match_ports_eq a.l b.l a.n b.n clauses in
+    List.iter (fun x ->
+      Cnf.post_impl x solver v_l v_n) l_constraints;
+    solver#simplify;
+    match solver#solve with
+    | Minisat.UNSAT -> false
+    | Minisat.SAT -> true
+  with
+  | NO_MATCH -> false
 
 type bg_key = int * int * int * int * int
 
 let key b = 
-  (b.p.Place.r, b.p.Place.n, b.p.Place.s, Place.edges b.p, Link.Lg.cardinal b.l)
+  (b.p.Place.r,
+   b.p.Place.n,
+   b.p.Place.s,
+   Place.edges b.p,
+   Link.Lg.cardinal b.l
+  )
 
 let equal a b =
   (a.n.Nodes.size = b.n.Nodes.size) &&
@@ -637,48 +698,51 @@ let equal a b =
     (inter_equal (inner a) (inner b)) && 
     (inter_equal (outer a) (outer b)) &&
     (Place.edges a.p = Place.edges b.p) &&
+    (Place.deg_roots a.p = Place.deg_roots b.p) &&
+    (Place.deg_sites a.p = Place.deg_sites b.p) &&
+    (Nodes.equal a.n b.n) && 
     (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
-    (*placing or wiring *)
+    (* Placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
       equal_SAT a b
 
-let compare a b =
-  match (a.n.Nodes.size) - (b.n.Nodes.size) with
-  | 0 -> 
-    begin
-      match (Link.Lg.cardinal a.l) - (Link.Lg.cardinal b.l) with
-      | 0 -> 
-	begin
-	  match inter_compare (inner a) (inner b) with
-	  | 0 -> 
-	    begin
-	      match inter_compare (outer a) (outer b) with
-	      | 0 -> 
-		begin
-		  match (Place.edges a.p) - (Place.edges b.p) with
-		  | 0 -> 
-		    begin
-		      match Sparse.compare a.p.Place.rs b.p.Place.rs with
-		      | 0 ->
-			begin
-			  (*placing or wiring *)
-			  if b.n.Nodes.size = 0 then
-			    match Place.compare_placing a.p b.p with
-			    | 0 -> Link.Lg.compare a.l b.l
-			    | v -> v
-			  else if equal_SAT a b then 0
-			  else compare a b
-			end
-		      | v -> v
-		    end
-		  | v -> v
-		end
-	      | v -> v 
-	    end
-	  | v -> v 
-	end
-      | v -> v 
-    end
-  | v -> v 
+(* let compare a b = *)
+(*   match (a.n.Nodes.size) - (b.n.Nodes.size) with *)
+(*   | 0 ->  *)
+(*     begin *)
+(*       match (Link.Lg.cardinal a.l) - (Link.Lg.cardinal b.l) with *)
+(*       | 0 ->  *)
+(* 	begin *)
+(* 	  match inter_compare (inner a) (inner b) with *)
+(* 	  | 0 ->  *)
+(* 	    begin *)
+(* 	      match inter_compare (outer a) (outer b) with *)
+(* 	      | 0 ->  *)
+(* 		begin *)
+(* 		  match (Place.edges a.p) - (Place.edges b.p) with *)
+(* 		  | 0 ->  *)
+(* 		    begin *)
+(* 		      match Sparse.compare a.p.Place.rs b.p.Place.rs with *)
+(* 		      | 0 -> *)
+(* 			begin *)
+(* 			  (\*placing or wiring *\) *)
+(* 			  if b.n.Nodes.size = 0 then *)
+(* 			    match Place.compare_placing a.p b.p with *)
+(* 			    | 0 -> Link.Lg.compare a.l b.l *)
+(* 			    | v -> v *)
+(* 			  else if equal_SAT a b then 0 *)
+(* 			  else compare a b *)
+(* 			end *)
+(* 		      | v -> v *)
+(* 		    end *)
+(* 		  | v -> v *)
+(* 		end *)
+(* 	      | v -> v  *)
+(* 	    end *)
+(* 	  | v -> v  *)
+(* 	end *)
+(*       | v -> v  *)
+(*     end *)
+(*   | v -> v  *)

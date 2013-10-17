@@ -465,20 +465,24 @@ let open_edges l = Lg.filter (fun e -> not (is_closed e)) l
 let compat_edges e_p e_t n_t n_p =
   Ports.types e_p.p n_p = Ports.types e_t.p n_t
 
+exception NOT_TOTAL
+
 (* Closed edges in p are matched to closed edges in t. Controls are checked to
    exclude incompatible pairs. *)
 let match_edges t p n_t n_p =
-  let (clauses, _, blocked) = 
-    Lg.fold (fun e_p (acc, i, block) ->
-      let clause = 
-	fst (Lg.fold (fun e_t (acc, j) ->
+  let (clauses, _, acc_c) = 
+    Lg.fold (fun e_p (acc, i, acc_c) ->
+      let (clause, js, _) = 
+	Lg.fold (fun e_t (acc, js, j) ->
 	  if compat_edges e_p e_t n_t n_p then 
-	    (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j + 1)
-	  else (acc, j + 1)) t ([], 0)) in
-      match clause with
-      | [] -> (acc, i + 1, i :: block) (* No compatible edges found *)
-      | _ -> (clause :: acc, i + 1, block)) p ([], 0, [])  in
-  (clauses, Cnf.block_rows blocked (Lg.cardinal t))
+	    (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j :: js, j + 1)
+	  else (acc, js, j + 1)
+	) t ([], [], 0) in
+      match js with
+      | [] -> raise NOT_TOTAL (* No compatible edges found *)
+      | _ -> (clause :: acc, i + 1, acc_c @ js)
+    ) p ([], 0, []) in
+  (clauses, IntSet.of_list acc_c)
 
 let _match_ports t p n_t n_p clauses : Cnf.clause list list =
   List.fold_left (fun acc e_match ->
@@ -559,12 +563,13 @@ let match_peers t p n_t n_p :  int * int * Cnf.clause list list * Cnf.clause lis
     i + 1) non_empty_t 0);
   let r = Lg.cardinal open_p
   and c = Lg.cardinal non_empty_t in
-  let (f, b, _) = Lg.fold (fun e_p (acc, block, i) ->
-    (* find compatible edges in the target *)
-    let (_, compat_t) = 
-      Lg.fold (fun e_t (j, acc) -> 
-	if sub_edge e_p e_t n_t n_p then (j + 1, IntSet.add j acc)
-	else (j + 1, acc)) non_empty_t (0, IntSet.empty) in
+  let (f, b, _) =
+    Lg.fold (fun e_p (acc, block, i) ->
+      (* find compatible edges in the target *)
+      let (_, compat_t) = 
+	Lg.fold (fun e_t (j, acc) -> 
+	  if sub_edge e_p e_t n_t n_p then (j + 1, IntSet.add j acc)
+	  else (j + 1, acc)) non_empty_t (0, IntSet.empty) in
     (* if no compatible edges block e_p *)
     if IntSet.is_empty compat_t then
       (acc, i :: block, i + 1)
@@ -609,8 +614,10 @@ let match_list_eq t p n_t n_p : Cnf.clause list  * Cnf.clause list =
   (clauses, Cnf.block_rows b (Lg.cardinal t))
 
 let match_ports_eq t p n_t n_p clauses : Cnf.clause list list =
-  let array_t = Array.of_list (List.map (fun e -> e.p) (Lg.elements t)) 
-  and array_p = Array.of_list (List.map (fun e -> e.p) (Lg.elements p)) in
+  let array_t = 
+    Array.of_list (List.map (fun e -> e.p) (Lg.elements t)) 
+  and array_p = 
+    Array.of_list (List.map (fun e -> e.p) (Lg.elements p)) in
   _match_ports array_t array_p n_t n_p clauses
 
 
