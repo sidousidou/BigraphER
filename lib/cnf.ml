@@ -83,7 +83,8 @@ let equiv (m : lit) (clauses : lit list list) =
 let impl (m : lit) (clauses : lit list list) =
   (* m negated *)
   List.map (fun c -> 
-    (N_var m) :: (List.map (fun v -> P_var v) c)) clauses
+    (N_var m) :: (List.map (fun v -> P_var v) c)
+  ) clauses
 
 let block_rows rows c =
   assert (c >= 0);
@@ -437,8 +438,12 @@ let post_equiv (pairs, clauses) s w v =
 let post_impl clauses s w v =
   List.iter (fun clause ->
     let z = convert_m (List.hd clause) w in
-    s#add_clause (z :: (List.map (fun x ->
-      convert_m x v) (List.tl clause)))) clauses
+    s#add_clause (
+      z :: (List.map (fun x ->
+	convert_m x v
+      ) (List.tl clause))
+    )
+  ) clauses
 
 (* V_lit are for auxiliary variables whereas M_lit are for encoding 
    variables. *)

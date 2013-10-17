@@ -527,9 +527,10 @@ let sub_edge p t n_t n_p =
     end in
   scan_p types_p types_t
 
-(* return a list of clauses on row i of matrix t. Cnf.equiv will process each
+(* Return a list of clauses on row i of matrix t. Cnf.impl will process each
    element *)
 let compat_clauses e_p i t h_t n_t n_p =
+  printf "compat_clauses\n";
   let p = Ports.to_IntSet e_p.p 
   and iso_p = Ports.arities e_p.p in
   IntSet.fold (fun j acc ->
@@ -544,15 +545,19 @@ let compat_clauses e_p i t h_t n_t n_p =
 	let compat_t = 
 	  IntSet.filter (fun u ->
 	    (Ctrl.(=) c_v (Nodes.find n_t u)) &&
-	      (arity_v <= (Iso.find iso_t u))) p_t in
+	      (arity_v <= (Iso.find iso_t u))
+	  ) p_t in
 	let nodes_assign =
-	 IntSet.fold (fun j acc -> Cnf.M_lit (v, j) :: acc) compat_t [] in
+	  IntSet.fold (fun j acc -> 
+	    Cnf.M_lit (v, j) :: acc
+	  ) compat_t [] in
 	nodes_assign :: acc) p [] in
-    (Cnf.M_lit (i, j), clauses) :: acc) t []
+    (Cnf.M_lit (i, j), clauses) :: acc
+  ) t []
 
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
-let match_peers t p n_t n_p :  int * int * Cnf.clause list list * Cnf.clause list =
+let match_peers t p n_t n_p =
   let open_p = Lg.filter (fun e ->
     not (Ports.is_empty e.p)) (open_edges p)
   and non_empty_t = Lg.filter (fun e ->
@@ -563,24 +568,28 @@ let match_peers t p n_t n_p :  int * int * Cnf.clause list list * Cnf.clause lis
     i + 1) non_empty_t 0);
   let r = Lg.cardinal open_p
   and c = Lg.cardinal non_empty_t in
-  let (f, b, _) =
-    Lg.fold (fun e_p (acc, block, i) ->
-      (* find compatible edges in the target *)
+  let (f, js, _) =
+    Lg.fold (fun e_p (acc, js, i) ->
+      (* Find compatible edges in the target *)
       let (_, compat_t) = 
 	Lg.fold (fun e_t (j, acc) -> 
-	  if sub_edge e_p e_t n_t n_p then (j + 1, IntSet.add j acc)
-	  else (j + 1, acc)) non_empty_t (0, IntSet.empty) in
-    (* if no compatible edges block e_p *)
-    if IntSet.is_empty compat_t then
-      (acc, i :: block, i + 1)
-    else begin
-      (* generate possible node matches for every edge assignment. *)
-      let clauses = 
-	List.map (fun (l, r) ->
-	  Cnf.impl l r) (compat_clauses e_p i compat_t h n_t n_p) in
-      (clauses @ acc, block, i + 1)
-    end) open_p ([], [], 0) in
-  (r, c, f, Cnf.block_rows b c)
+	  if sub_edge e_p e_t n_t n_p then 
+	    (j + 1, IntSet.add j acc)
+	  else (j + 1, acc)
+	) non_empty_t (0, IntSet.empty) in
+      (* No compatible edges found *)
+      if IntSet.is_empty compat_t then
+	raise NOT_TOTAL
+      else (
+	(* Generate possible node matches for every edge assignment. *)
+	let clauses = 
+	  List.map (fun (l, r) ->
+	    Cnf.impl l r
+	  ) (compat_clauses e_p i compat_t h n_t n_p) in
+	(clauses @ acc, IntSet.union compat_t js, i + 1)
+      )
+    ) open_p ([], IntSet.empty, 0) in
+  (r, c, f, js)
 
 let edg_iso a b n_a n_b  = 
   (Face.equal a.i b.i) && (Face.equal a.o b.o) &&

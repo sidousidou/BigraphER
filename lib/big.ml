@@ -447,31 +447,34 @@ let add_c11 unmatch_v solver aux rc_v =
   Cnf.post_conj_m clauses solver aux
 
 let add_c7 t p t_n p_n f aux rc_v solver v =
-  let (clauses, js) = Link.match_edges t p t_n p_n in
+  let (clauses, js) = 
+    Link.match_edges t p t_n p_n in
   Cnf.post_conj_m clauses solver v;
   add_c11 (IntSet.diff (IntSet.of_int f) js) solver aux rc_v;  
   clauses
 
 let add_c8 t p t_n p_n clauses solver v w =
-  let constraints = Link.match_ports t p t_n p_n clauses in
+  let constraints = 
+    Link.match_ports t p t_n p_n clauses in
   List.iter (fun x ->
-    Cnf.post_impl x solver w v) constraints
+    Cnf.post_impl x solver w v
+  ) constraints
 
 let add_c10 t p solver v =
   Cnf.post_conj_m (Place.match_trans t p) solver v
 
 (* Fix *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, b) = 
+  let (r, c, constraints, js) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
-  Cnf.post_conj_m b solver w;
   List.iter (fun x ->
     Cnf.post_impl x solver w v
   ) constraints;
-  let (aux_bij_w_rows, z_roots) =
+  let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
-  (w, aux_bij_w_rows, z_roots)
+  add_c11 (IntSet.diff (IntSet.of_int c) js) solver aux z_roots;
+  (w, aux)  
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p t_trans =
@@ -509,7 +512,7 @@ let aux_match t p t_trans =
     (* Add C9: ports of matched open edges have to be isomorphic. 
        Return matrix from open edges in the pattern to non-empty edges in the
        target. *)
-    let (w', aux_bij_w'_rows, _) = 
+    let (w', aux_bij_w'_rows) = 
       add_c9 t.l p.l t.n p.n solver v in
     (* Add C10: block edges between unconnected nodes with sites and nodes with
        roots. *)
