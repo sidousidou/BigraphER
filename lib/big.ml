@@ -438,11 +438,12 @@ let add_c6 t p t_n p_n solver v =
   Cnf.post_conj_m (clauses_s @ clauses_r) solver v;
   IntSet.union js_s js_r
 
-let add_c11 unmatch_v solver aux rc_v =
+(* Fall back when no commander tree is created *)
+let add_c11 unmatch_v solver (aux : Minisat.var array array) rc_v =
   let clauses  =
     IntSet.fold (fun i acc ->
       (List.map (fun z ->
-	[Cnf.N_var (Cnf.V_lit z)]) rc_v) @ acc
+	[Cnf.N_var (Cnf.V_lit z)]) rc_v) @ acc (* BUG *)
     ) unmatch_v [] in
   Cnf.post_conj_m clauses solver aux
 
@@ -468,12 +469,16 @@ let add_c9 t p t_n p_n solver v =
   let (r, c, constraints, js) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
+  printf "|clauses|  %d\n" (List.length constraints);
   List.iter (fun x ->
     Cnf.post_impl x solver w v
   ) constraints;
+  printf "Implication posted\n";
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
+  printf "Tot posted\n";
   add_c11 (IntSet.diff (IntSet.of_int c) js) solver aux z_roots;
+  printf "C11 posted\n";
   (w, aux)  
 
 (* Compute isos from nodes in the pattern to nodes in the target *)

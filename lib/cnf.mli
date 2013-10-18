@@ -27,6 +27,8 @@ type var =
 (** Unbox a variable stored in a matrix. *)
 val to_ij : var -> int * int
 
+(* val string_of_var : var -> string *)
+
 (** A disjunction of variables *)
 type clause = var list
 

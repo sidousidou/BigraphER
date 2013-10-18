@@ -35,6 +35,19 @@ let to_ij v =
     end
   | N_var _ -> assert false
 
+let string_of_lit l =
+  match l with
+  | M_lit (i, j) -> Printf.sprintf "(%d,%d)" i j
+  | V_lit i -> Printf.sprintf "(%d)" i
+    
+let string_of_var v =
+  match v with
+  | P_var l -> string_of_lit l
+  | N_var l -> "!" ^ (string_of_lit l)
+    
+let string_of_clause c = 
+  "[" ^ (String.concat " V " (List.map string_of_var c)) ^  "]"
+
 (* Conjunction of clauses *)
 exception TSEITIN of clause list 
   
@@ -356,16 +369,16 @@ let tot_fun n m t g =
 (* +++++++++++++++++++++++ Integration with Minisat +++++++++++++++++++++++ *)
 
 (* Convert variables for Minisat *)
-let convert_m v m =
+let convert_m v (m : Minisat.var array array) =
   let convert_lit l =
     match l with
-    | M_lit (i,j) -> m.(i).(j)
+    | M_lit (i, j) -> m.(i).(j)
     | V_lit _ -> assert false in
   match v with
   | P_var l -> Minisat.pos_lit (convert_lit l) 
   | N_var l -> Minisat.neg_lit (convert_lit l)
 
-let convert_v v vec =
+let convert_v v (vec : Minisat.var array) =
   let convert_lit l =
     match l with
     | V_lit i -> vec.(i)
@@ -375,7 +388,7 @@ let convert_v v vec =
   | N_var l -> Minisat.neg_lit (convert_lit l)
 
 (* Convert to vector z if V_lit, to matrix m otherwise *)
-let convert v z m =
+let convert v (z : Minisat.var array) (m : Minisat.var array array) =
   let convert_lit l =
     match l with
     | V_lit i -> z.(i)
@@ -425,25 +438,23 @@ let post_tseitin (z_clause, pairs) s m =
     s#add_clause [convert_v a z; convert_m v m]) pairs;
   z
 
+(* Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
+let post_impl clauses s w v =
+  Printf.printf "post_impl:\n";
+  List.iter (fun clause ->
+    Printf.printf "%s\n" (string_of_clause clause);
+    match clause with
+    | z :: rhs ->
+      let rhs' = 
+	List.map (fun x -> convert_m x v) rhs in
+      s#add_clause ((convert_m z w) :: rhs')
+  ) clauses 
+
 (* Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
 let post_equiv (pairs, clauses) s w v =
   List.iter (fun (m, x) ->
     s#add_clause [convert_m m w; convert_m x v]) pairs;
-  List.iter (fun clause ->
-    let z = convert_m (List.hd clause) w in
-    s#add_clause (z :: (List.map (fun x ->
-      convert_m x v) (List.tl clause)))) clauses
-
-(* Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
-let post_impl clauses s w v =
-  List.iter (fun clause ->
-    let z = convert_m (List.hd clause) w in
-    s#add_clause (
-      z :: (List.map (fun x ->
-	convert_m x v
-      ) (List.tl clause))
-    )
-  ) clauses
+  post_impl clauses s w v
 
 (* V_lit are for auxiliary variables whereas M_lit are for encoding 
    variables. *)
