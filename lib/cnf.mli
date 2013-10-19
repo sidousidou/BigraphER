@@ -146,3 +146,7 @@ val post_bij : (cmd * cmd) -> Minisat.solver -> Minisat.var array array ->
 val post_tot : cmd -> Minisat.solver -> Minisat.var array array -> 
   Minisat.var array array * int list
 
+val post_block_cmd : int -> Minisat.solver -> Minisat.var array array -> 
+  int list -> unit
+
+val post_block : int -> Minisat.solver -> Minisat.var array array -> unit

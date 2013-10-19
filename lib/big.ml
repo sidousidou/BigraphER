@@ -438,20 +438,27 @@ let add_c6 t p t_n p_n solver v =
   Cnf.post_conj_m (clauses_s @ clauses_r) solver v;
   IntSet.union js_s js_r
 
-(* Fall back when no commander tree is created *)
-let add_c11 unmatch_v solver (aux : Minisat.var array array) rc_v =
-  let clauses  =
-    IntSet.fold (fun i acc ->
-      (List.map (fun z ->
-	[Cnf.N_var (Cnf.V_lit z)]) rc_v) @ acc (* BUG *)
-    ) unmatch_v [] in
-  Cnf.post_conj_m clauses solver aux
+(* Each row of the input matrix aux is the commander-variable encoding of the 
+   corresponding column of thAe iso matrix m. *)
+let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
+  match rc_v with
+  | [] -> (
+    (* No commander-variable encoding *)
+    IntSet.iter (fun j ->
+      Cnf.post_block j solver m
+    ) unmatch_v
+  )
+  | _ -> (
+    IntSet.iter (fun i ->
+      Cnf.post_block_cmd i solver aux rc_v
+    ) unmatch_v
+  )
 
-let add_c7 t p t_n p_n f aux rc_v solver v =
+let add_c7 t p t_n p_n f aux rc_w solver w =
   let (clauses, js) = 
     Link.match_edges t p t_n p_n in
-  Cnf.post_conj_m clauses solver v;
-  add_c11 (IntSet.diff (IntSet.of_int f) js) solver aux rc_v;  
+  Cnf.post_conj_m clauses solver w;
+  add_c11 (IntSet.diff (IntSet.of_int f) js) solver w aux rc_w; 
   clauses
 
 let add_c8 t p t_n p_n clauses solver v w =
@@ -464,21 +471,20 @@ let add_c8 t p t_n p_n clauses solver v w =
 let add_c10 t p solver v =
   Cnf.post_conj_m (Place.match_trans t p) solver v
 
-(* Fix *)
+(* Cnf.tot does not introduce commander-variables on columns. Using 
+   post_block. *)
 let add_c9 t p t_n p_n solver v =
   let (r, c, constraints, js) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
-  printf "|clauses|  %d\n" (List.length constraints);
   List.iter (fun x ->
     Cnf.post_impl x solver w v
   ) constraints;
-  printf "Implication posted\n";
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
-  printf "Tot posted\n";
-  add_c11 (IntSet.diff (IntSet.of_int c) js) solver aux z_roots;
-  printf "C11 posted\n";
+  IntSet.iter (fun j ->
+    Cnf.post_block j solver w
+  ) (IntSet.diff (IntSet.of_int c) js);
   (w, aux)  
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
@@ -527,7 +533,7 @@ let aux_match t p t_trans =
       IntSet.diff 
 	(IntSet.of_int m) 
 	(IntSet.union js0 (IntSet.union js1 js2)) in
-    add_c11 unmatch_v solver aux_bij_v_cols rc_v;
+    add_c11 unmatch_v solver v aux_bij_v_cols rc_v; 
     let vars = {
       iso_nodes = v;
       z0_rows = aux_bij_v_rows;

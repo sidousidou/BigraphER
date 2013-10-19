@@ -530,7 +530,6 @@ let sub_edge p t n_t n_p =
 (* Return a list of clauses on row i of matrix t. Cnf.impl will process each
    element *)
 let compat_clauses e_p i t h_t n_t n_p =
-  printf "compat_clauses\n";
   let p = Ports.to_IntSet e_p.p 
   and iso_p = Ports.arities e_p.p in
   IntSet.fold (fun j acc ->

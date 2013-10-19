@@ -292,13 +292,6 @@ let exactly_one_cmd t =
 
 (* ++++++++++++++++++++++++ Higher level functions ++++++++++++++++++++++++ *)
 
-(* n size *) (* reverse *)
-let rec _iter f res i n =
-  if i < n  then (
-    let res' = f i res in
-		  _iter f res' (i + 1) n
-  ) else res
-
 let rec _downto f acc i =
   if i >= 0  then (
     let acc' = f i acc in
@@ -321,12 +314,14 @@ let _exactly_rows n m t g =
   Array.of_list (
     iter (fun i acc ->
       let row_i = iter (fun j acc ->
-	(M_lit (i, j)) :: acc) [] (m - 1) in
+	(M_lit (i, j)) :: acc
+      ) [] (m - 1) in
       let t = cmd_init row_i t g in
       if i = 0 then (
 	l := cmd_size t;
 	r := cmd_roots t);
-      (exactly_one_cmd t) :: acc) [] (n - 1)) in
+      (exactly_one_cmd t) :: acc
+    ) [] (n - 1)) in
   {length = !l; roots = !r; cmd = c}
 
 (* Generate constraints for a bijection from n to m. Parameters t and g
@@ -343,13 +338,16 @@ let bijection n m t g =
   let res_cols =
     Array.of_list (
       iter (fun j acc ->
-	let col_j = iter (fun i acc ->
-	  (M_lit (i, j)) :: acc) [] (n - 1) in
+	let col_j = 
+	  iter (fun i acc ->
+	    (M_lit (i, j)) :: acc
+	  ) [] (n - 1) in
 	let t = cmd_init col_j t g in
 	if j = 0 then (
 	  l := cmd_size t;
 	  r := cmd_roots t);
-	(at_most_cmd t) :: acc) [] (m - 1)) in
+	(at_most_cmd t) :: acc
+      ) [] (m - 1)) in
   (_exactly_rows n m t g, {
     length = !l;
     roots = !r;
@@ -440,9 +438,7 @@ let post_tseitin (z_clause, pairs) s m =
 
 (* Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
 let post_impl clauses s w v =
-  Printf.printf "post_impl:\n";
   List.iter (fun clause ->
-    Printf.printf "%s\n" (string_of_clause clause);
     match clause with
     | z :: rhs ->
       let rhs' = 
@@ -512,3 +508,14 @@ let post_tot r_cmd s m =
     | Cmd_at_most _ -> assert false
    ) r_cmd.cmd,
    r_cmd.roots) 
+
+(* Block a commander variable row *)
+let post_block_cmd i s m roots =
+  List.iter (fun r ->
+    s#add_clause [Minisat.neg_lit m.(i).(r)]
+  ) roots
+
+let post_block j s m =
+ Array.iteri (fun i _ ->
+   s#add_clause [Minisat.neg_lit m.(i).(j)]
+ ) m  
