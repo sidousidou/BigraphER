@@ -195,10 +195,11 @@ end
     
 module Nodes = struct
   
-  type t = { ctrl : (int, Ctrl.t) Hashtbl.t;
-	     sort : (string, int) Hashtbl.t;
-	     size : int;
-	   }
+  type t = { 
+    ctrl : (int, Ctrl.t) Hashtbl.t;
+    sort : (string, int) Hashtbl.t;
+    size : int;
+  }
   
   let empty () = { ctrl = Hashtbl.create 20;
 		   sort = Hashtbl.create 20;
@@ -224,7 +225,7 @@ module Nodes = struct
     assert (i >= 0);
     Hashtbl.find s.ctrl i
  
-  let find_all s n =
+  let find_all s (Ctrl.Ctrl (n, _)) =
     Hashtbl.find_all s.sort n
  
   let to_string s =
@@ -292,6 +293,17 @@ module Nodes = struct
     with
     | FOUND -> true
  
+  (* Inputs are assumed of the same size *)
+  let equal a b =
+    try
+      Hashtbl.iter (fun i c ->
+	if c <> Hashtbl.find b.ctrl i then
+	  raise Not_found;
+      ) a.ctrl;
+      true
+    with
+    | Not_found -> false
+
 end
 
 module Ports = struct

@@ -48,7 +48,7 @@ let init_ctmc n =
 
 let string_of_sreact r =
   Printf.sprintf "%s\n--%g-->\n%s" 
-    (string_of_bg r.rdx) r.rate (string_of_bg r.rct) 
+    (to_string r.rdx) r.rate (to_string r.rct) 
 
 let is_valid_sreact r =
   (inter_equal (inner r.rdx)  (inner r.rct)) 
@@ -155,7 +155,7 @@ let fix s srules =
 	try
 	  (* just an occurrence in order to minimise the number of match
 	     instances *)
-	  (*printf "s = %s\nrdx = %s\n" (string_of_bg s) (string_of_bg r.rdx);*)
+	  (*printf "s = %s\nrdx = %s\n" (to_string s) (to_string r.rdx);*)
 	  aux_apply (occurrence s r.rdx) s r.rdx r.rct
 	with
 	| NO_MATCH -> _step s rs

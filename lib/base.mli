@@ -174,7 +174,7 @@ sig
   val find : t -> int -> Ctrl.t 
 
   (** [find_all ns c] returns the list of nodes of control [c] in node set [ns]. *)
-  val find_all : t -> string -> int list 
+  val find_all : t -> Ctrl.t -> int list 
 
   (** [tens n0 n1] returns the disjoint union of name sets [n0] and [n1]. *)
   val tens : t -> t -> t
@@ -193,10 +193,13 @@ sig
   (** Apply an isomorphism *)
   val apply_iso : t -> Iso.t -> t
 
-  (** Apply an isomorphism only to nodes in the domain of the isomorphism. Other nodes are discarded. *)
+  (** Apply an isomorphism only to nodes in the domain of the isomorphism. 
+      Other nodes are discarded. *)
   val filter_apply_iso : t -> Iso.t -> t
   
   val not_sub : t -> t -> bool
+ 
+  val equal : t -> t -> bool
 
 end
 

@@ -64,8 +64,8 @@ val face_of_inter : inter -> Link.Face.t
 
 (** {6 Funtions on bigraphs}*)
 
-(** [string_of_bg b] returns a string representation of bigraph [b]. *)
-val string_of_bg: bg -> string
+(** [to_string b] returns a string representation of bigraph [b]. *)
+val to_string: bg -> string
 
 (** Parse a bigraph. *)
 val parse : string list -> bg
@@ -206,8 +206,8 @@ val levels : bg -> bg list*)
 (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise.*)
 val equal : bg -> bg -> bool
 
-(** [compare] function for bigraphs. *)
-val compare : bg -> bg -> int
+(* (\** [compare] function for bigraphs. *\) *)
+(* val compare : bg -> bg -> int *)
 
 (** {6 Matching} *)
 
@@ -227,7 +227,7 @@ val occurrences : bg -> bg -> (Base.Iso.t * Base.Iso.t) list
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
 val auto : bg -> (Base.Iso.t * Base.Iso.t) list
 
-type bg_key = int * int * int * int * int
+type bg_key = int * int * int * int * int * string * string
 
 val key : bg -> bg_key
 

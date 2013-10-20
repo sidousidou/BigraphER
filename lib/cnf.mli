@@ -27,6 +27,8 @@ type var =
 (** Unbox a variable stored in a matrix. *)
 val to_ij : var -> int * int
 
+(* val string_of_var : var -> string *)
+
 (** A disjunction of variables *)
 type clause = var list
 
@@ -41,6 +43,8 @@ val at_least : lit list -> clause
 
 (** Block any pair having an element in the input list as first component *)
 val block_rows : int list -> int -> clause list
+
+val blocking_pairs : (int * int) list -> clause list
 
 exception TSEITIN of clause list
 
@@ -68,34 +72,43 @@ type 'a cmd_tree =
 | Leaf of 'a list
 | Node of ('a * 'a cmd_tree) list 
 
+type cmd_constraint =
+| Cmd_at_most of b_clause list * clause list * b_clause list
+| Cmd_exactly of b_clause list * clause list * b_clause list * clause
+
 (** Initialisation of a tree of auxiliary variables. The two [int] arguments
     specify the recursion threshold and the maximum group size, respectively. *)
 val cmd_init : lit list -> int -> int -> lit cmd_tree
 
 (** At most a literal in the input list is [true]. *)
-val at_most_cmd : lit cmd_tree -> b_clause list * clause list * b_clause list
+val at_most_cmd : lit cmd_tree -> cmd_constraint
 
 (** At least a literal in the input list is [true]. *)
 val at_least_cmd : lit cmd_tree -> clause
 
 (** Axactly one literal in the input list is [true]. *)
-val exactly_one_cmd : lit cmd_tree -> 
-  b_clause list * clause list * b_clause list * clause
+val exactly_one_cmd : lit cmd_tree -> cmd_constraint
+
+(** Block the roots of a Commander-variable tree. *)
+val block_cmd : int list -> clause list
 
 (** {6 Higher level functions} *)
+
+type cmd = {
+  length : int;                 (** Number of auxiliary commander variables *)
+  roots : int list;             (** Root commander variables *)
+  cmd : cmd_constraint array;   (** Constraints *) 
+}
 
 (** Generate constraints for a bijection from n to m. Parameters t and g
     are used for configure the commander-variable encoding. Auxiliary variables
     are returned. *)
-val bijection : int -> int -> int -> int ->
-  ((int * (b_clause list * clause list * b_clause list * clause)) list)  * 
-    ((int * (b_clause list * clause list * b_clause list)) list)
+val bijection : int -> int -> int -> int -> (cmd * cmd)
 
 (** Generate constraints for a total, non-surjective function n to m. Parameters
     t and g  are used for configure the commander-variable encoding. Auxiliary 
     variables are returned. *)
-val tot_fun : int -> int -> int -> int ->
-  (int * (b_clause list * clause list * b_clause list * clause)) list
+val tot_fun : int -> int -> int -> int -> cmd
 
 (** {6 Integration with Minisat} *)
 
@@ -115,8 +128,8 @@ val post_conj_m : clause list -> Minisat.solver -> Minisat.var array array -> un
 
 (** Post Tseitin constraints to solver and return array of auxiliary 
     variables. *)
-val post_tseitin : clause * b_clause list -> Minisat.solver -> Minisat.var array array ->
-  Minisat.var array
+val post_tseitin : clause * b_clause list -> Minisat.solver -> 
+  Minisat.var array array -> Minisat.var array
 
 (** Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
 val post_impl : clause list -> Minisat.solver ->
@@ -127,13 +140,15 @@ val post_equiv : b_clause list * clause list -> Minisat.solver ->
   Minisat.var array array -> Minisat.var array array -> unit
 
 (** Post bijection constraints to solver and return auxiliary variables. *)
-val post_bij : ((int * (b_clause list * clause list * b_clause list * clause)) list)  * 
-  ((int * (b_clause list * clause list * b_clause list)) list) -> 
-  Minisat.solver -> Minisat.var array array ->
-  Minisat.var array list * Minisat.var array list
+val post_bij : (cmd * cmd) -> Minisat.solver -> Minisat.var array array ->
+  (Minisat.var array array * int list) * (Minisat.var array array * int list)
 
 (** Post total non-surjective function to solver and return auxiliary 
     variables. *)
-val post_tot : (int * (b_clause list * clause list * b_clause list * clause)) list -> 
-  Minisat.solver -> Minisat.var array array -> Minisat.var array list
+val post_tot : cmd -> Minisat.solver -> Minisat.var array array -> 
+  Minisat.var array array * int list
 
+val post_block_cmd : int -> Minisat.solver -> Minisat.var array array -> 
+  int list -> unit
+
+val post_block : int -> Minisat.solver -> Minisat.var array array -> unit

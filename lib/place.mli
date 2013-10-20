@@ -147,16 +147,26 @@ val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 
 (** {6 Matching constraints} *)
 
-(** Compute constraint for matching edges in the DAG. *)
+(** Raised when a node in the pattern cannot be matched to any node in the
+    target. *)
+exception NOT_TOTAL
+
+(** Compute constraints for matching edges in the DAG. 
+    @raise NOT_TOTAL when there are nodes in the pattern that are impossible
+    to match. *)
 val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Cnf.clause list
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Base.IntSet.t
 
+(** @raise NOT_TOTAL when there are nodes in the pattern that are impossible
+    to match. *)
 val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * Cnf.clause list
+  Cnf.clause list * Base.IntSet.t
 
-(** Dual of {!Place.match_leaves}. *)
+(** Dual of {!Place.match_leaves}.
+    @raise NOT_TOTAL when there are nodes in the pattern that are impossible
+    to match. *)
 val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * Cnf.clause list
+  Cnf.clause list * Base.IntSet.t
 
 (* val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> *)
 (*   Cnf.clause list *)
@@ -165,20 +175,26 @@ val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 (*   Cnf.clause list *)
 
 val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list * Cnf.clause list
+  Cnf.clause list * Base.IntSet.t
 
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list * Cnf.clause list
+  Cnf.clause list * Base.IntSet.t
 
 val match_trans : pg -> pg -> Cnf.clause list
 
 val check_match : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
 
-val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> Cnf.clause list
+val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+  Cnf.clause list * Base.IntSet.t
 
-val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> Cnf.clause list
+val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+  Cnf.clause list * Base.IntSet.t
 
 val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Cnf.clause list
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Base.IntSet.t
+
+val deg_roots : pg -> int list
+
+val deg_sites : pg -> int list
 
 (**/**)
