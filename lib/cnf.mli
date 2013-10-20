@@ -44,6 +44,8 @@ val at_least : lit list -> clause
 (** Block any pair having an element in the input list as first component *)
 val block_rows : int list -> int -> clause list
 
+val blocking_pairs : (int * int) list -> clause list
+
 exception TSEITIN of clause list
 
 (** Apply Tseitin transformation to a boolean formula.

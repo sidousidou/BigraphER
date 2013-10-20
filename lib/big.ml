@@ -333,7 +333,10 @@ let get_iso solver m =
 
 (************************** DEBUG *************************)
 let string_of_SAT solver m =
-  Iso.to_string (get_iso solver m)
+  let r = Array.length m
+  and c = try Array.length m.(0) with _ -> 0
+  and iso = Iso.to_string (get_iso solver m) in
+  sprintf "%d X %d : %s" r c iso
 
 type sat_vars = {
   iso_nodes : Minisat.var array array;
@@ -455,10 +458,10 @@ let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
   )
 
 let add_c7 t p t_n p_n f aux rc_w solver w =
-  let (clauses, js) = 
+  let (clauses, b_cols, b_pairs) = 
     Link.match_edges t p t_n p_n in
-  Cnf.post_conj_m clauses solver w;
-  add_c11 (IntSet.diff (IntSet.of_int f) js) solver w aux rc_w; 
+  Cnf.post_conj_m (clauses @ b_pairs) solver w;
+  add_c11 b_cols solver w aux rc_w; 
   clauses
 
 let add_c8 t p t_n p_n clauses solver v w =
@@ -474,7 +477,7 @@ let add_c10 t p solver v =
 (* Cnf.tot does not introduce commander-variables on columns. Using 
    post_block. *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, js) = 
+  let (r, c, constraints, blocks) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
@@ -482,9 +485,7 @@ let add_c9 t p t_n p_n solver v =
   ) constraints;
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
-  IntSet.iter (fun j ->
-    Cnf.post_block j solver w
-  ) (IntSet.diff (IntSet.of_int c) js);
+  Cnf.post_conj_m (Cnf.blocking_pairs blocks) solver w;
   (w, aux)  
 
 (* Compute isos from nodes in the pattern to nodes in the target *)
@@ -613,38 +614,46 @@ let occurrences t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else
     if quick_unsat t p then []
-    else (try
-	    (************************** DEBUG *************************)
-	    printf "------- TARGET:\n%!\
-                    %s\n\
-                    ------- PATTERN:\n%!\
-                    %s\n" (to_string t) (to_string p);
-	    (**********************************************************)
-	    let t_trans = Sparse.trans t.p.Place.nn in
-	    let (s, vars) = aux_match t p t_trans in
-	    print_dump s vars;
-	    let autos = auto p in
-	    let rec loop_occur res =
-	      add_blocking s vars.iso_nodes vars.iso_edges;
-	      (****************AUTOMORPHISMS****************)
-	      let gen = 
-		List.combine
-		  (Iso.gen_isos (get_iso s vars.iso_nodes) (List.map fst autos)) 
-		  (Iso.gen_isos (get_iso s vars.iso_edges) (List.map snd autos))  in
-	      List.iter (fun (iso_i, iso_e) ->
-		s#add_clause ((clause_of_iso iso_i vars.iso_nodes) @ 
-				 (clause_of_iso iso_e vars.iso_edges))) gen;
-	      (*********************************************)
-	      try 
-		ignore (filter_loop s t p vars t_trans);
-		loop_occur (res @ 
-			      [(get_iso s vars.iso_nodes), (get_iso s vars.iso_edges)])
-	      with
-	      | NO_MATCH -> res in
-	    loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
+    else (
+      try
+	(************************** DEBUG *************************)
+	(* printf "------- TARGET:\n%!\ *)
+        (*         %s\n\ *)
+        (*         ------- PATTERN:\n%!\ *)
+        (*         %s\n" (to_string t) (to_string p); *)
+	(**********************************************************)
+	let t_trans = Sparse.trans t.p.Place.nn in
+	let (s, vars) = aux_match t p t_trans in
+	(* print_dump s vars; *)
+	let autos = auto p in
+	let rec loop_occur res =
+	  add_blocking s vars.iso_nodes vars.iso_edges;
+	  (****************AUTOMORPHISMS****************)
+	  let gen = 
+	    List.combine
+	      (Iso.gen_isos 
+		 (get_iso s vars.iso_nodes) (List.map fst autos)) 
+	      (Iso.gen_isos 
+		 (get_iso s vars.iso_edges) (List.map snd autos)) in
+	  List.iter (fun (iso_i, iso_e) ->
+	    s#add_clause (
+	      (clause_of_iso iso_i vars.iso_nodes) @ 
+		(clause_of_iso iso_e vars.iso_edges)
+	    )
+	  ) gen;
+	  (*********************************************)
+	  try 
+	    ignore (filter_loop s t p vars t_trans);
+	    loop_occur (
+	      res @ [(get_iso s vars.iso_nodes), (get_iso s vars.iso_edges)]
+	    )
+	  with
+	  | NO_MATCH -> res in
+	loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
       with
-      | NO_MATCH -> [])
-    
+      | NO_MATCH -> []
+    )
+      
 let equal_SAT a b =
   try
     let solver = new solver in
@@ -684,11 +693,14 @@ let equal_SAT a b =
 	) [] t_constraints
       ) in
     (* Link graph *)
-    let (clauses, b_pairs) = Link.match_list_eq a.l b.l a.n b.n in
+    let (clauses, b_pairs) = 
+      Link.match_list_eq a.l b.l a.n b.n in
     Cnf.post_conj_m (clauses @ b_pairs) solver v_l;
-    let l_constraints = Link.match_ports_eq a.l b.l a.n b.n clauses in
+    let l_constraints = 
+      Link.match_ports_eq a.l b.l a.n b.n clauses in
     List.iter (fun x ->
-      Cnf.post_impl x solver v_l v_n) l_constraints;
+      Cnf.post_impl x solver v_l v_n
+    ) l_constraints;
     solver#simplify;
     match solver#solve with
     | Minisat.UNSAT -> false
@@ -696,14 +708,16 @@ let equal_SAT a b =
   with
   | NO_MATCH -> false
 
-type bg_key = int * int * int * int * int
+type bg_key = int * int * int * int * int * string * string
 
 let key b = 
   (b.p.Place.r,
    b.p.Place.n,
    b.p.Place.s,
    Place.edges b.p,
-   Link.Lg.cardinal b.l
+   Link.Lg.cardinal b.l,
+   Link.string_of_face (Link.inner b.l),
+   Link.string_of_face (Link.outer b.l)
   )
 
 let equal a b =

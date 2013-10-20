@@ -468,21 +468,23 @@ let compat_edges e_p e_t n_t n_p =
 exception NOT_TOTAL
 
 (* Closed edges in p are matched to closed edges in t. Controls are checked to
-   exclude incompatible pairs. *)
+   exclude incompatible pairs. Return blocking pairs and blocking columns. *)
 let match_edges t p n_t n_p =
-  let (clauses, _, acc_c) = 
-    Lg.fold (fun e_p (acc, i, acc_c) ->
-      let (clause, js, _) = 
-	Lg.fold (fun e_t (acc, js, j) ->
+  let (clauses, _, acc_c, acc_b) = 
+    Lg.fold (fun e_p (acc, i, acc_c, acc_b) ->
+      let (clause, js, b, _) = 
+	Lg.fold (fun e_t (acc, js, b, j) ->
 	  if compat_edges e_p e_t n_t n_p then 
-	    (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j :: js, j + 1)
-	  else (acc, js, j + 1)
-	) t ([], [], 0) in
+	    (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j :: js, b, j + 1)
+	  else (acc, js, (i, j) :: b, j + 1)
+	) t ([], [], [], 0) in
       match js with
       | [] -> raise NOT_TOTAL (* No compatible edges found *)
-      | _ -> (clause :: acc, i + 1, acc_c @ js)
-    ) p ([], 0, []) in
-  (clauses, IntSet.of_list acc_c)
+      | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b)
+    ) p ([], 0, [], []) in
+  (clauses, 
+   IntSet.diff (IntSet.of_int (Lg.cardinal t)) (IntSet.of_list acc_c), 
+   Cnf.blocking_pairs acc_b)
 
 let _match_ports t p n_t n_p clauses : Cnf.clause list list =
   List.fold_left (fun acc e_match ->
@@ -567,14 +569,16 @@ let match_peers t p n_t n_p =
     i + 1) non_empty_t 0);
   let r = Lg.cardinal open_p
   and c = Lg.cardinal non_empty_t in
-  let (f, js, _) =
-    Lg.fold (fun e_p (acc, js, i) ->
+  let c_s = IntSet.of_int c in
+  let (f, block, _) =
+    Lg.fold (fun e_p (acc, block, i) ->
       (* Find compatible edges in the target *)
       let (_, compat_t) = 
-	Lg.fold (fun e_t (j, acc) -> 
+	Lg.fold (fun e_t (j, acc) ->
 	  if sub_edge e_p e_t n_t n_p then 
 	    (j + 1, IntSet.add j acc)
-	  else (j + 1, acc)
+	  else
+	    (j + 1, acc)
 	) non_empty_t (0, IntSet.empty) in
       (* No compatible edges found *)
       if IntSet.is_empty compat_t then
@@ -584,11 +588,16 @@ let match_peers t p n_t n_p =
 	let clauses = 
 	  List.map (fun (l, r) ->
 	    Cnf.impl l r
-	  ) (compat_clauses e_p i compat_t h n_t n_p) in
-	(clauses @ acc, IntSet.union compat_t js, i + 1)
+	  ) (compat_clauses e_p i compat_t h n_t n_p)
+	(* Blockig pairs *)
+	and b =
+	  IntSet.fold (fun j acc ->
+	    (i, j) :: acc
+	  ) (IntSet.diff c_s compat_t) [] in
+	(clauses @ acc, b @ block, i + 1)
       )
-    ) open_p ([], IntSet.empty, 0) in
-  (r, c, f, js)
+    ) open_p ([], [], 0) in
+  (r, c, f, block)
 
 let edg_iso a b n_a n_b  = 
   (Face.equal a.i b.i) && (Face.equal a.o b.o) &&

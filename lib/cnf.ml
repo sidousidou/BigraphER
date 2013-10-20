@@ -108,6 +108,10 @@ let block_rows rows c =
   List.fold_left (fun acc i ->
     block_row i (c - 1) acc) [] rows
 
+let blocking_pairs l = 
+  List.map (fun (i, j) ->
+    [N_var (M_lit (i, j))]) l
+
 (* Input is a list of root commander variables *)
 let block_cmd : int list -> clause list =
   List.map (fun i_z ->

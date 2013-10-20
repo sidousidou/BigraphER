@@ -194,17 +194,17 @@ val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
 exception NOT_TOTAL
 
 (** Closed edges in the pattern can be matched only to closed edges in the 
-    target. The output is a list of clauses and a list of blocked rows 
-    (list of negated literals). *)
+    target. The output is a list of clauses a set of blocked columns and 
+    a set of blocking pairs. *)
 val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * Base.IntSet.t * Cnf.clause list
 
 (** Ports in matched closed edges have to be isomorphic *)
 val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
 
 val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  int * int * Cnf.clause list list * Base.IntSet.t
+  int * int * Cnf.clause list list * (int * int) list
 
 val match_list_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list
