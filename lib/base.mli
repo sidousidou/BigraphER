@@ -198,6 +198,8 @@ sig
   val filter_apply_iso : t -> Iso.t -> t
   
   val not_sub : t -> t -> bool
+
+  val norm: t -> string
  
   val equal : t -> t -> bool
 

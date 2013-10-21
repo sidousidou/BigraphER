@@ -293,16 +293,17 @@ module Nodes = struct
     with
     | FOUND -> true
  
-  (* Inputs are assumed of the same size *)
+  let norm s =
+    String.concat ";"
+      (List.fast_sort String.compare
+	 (fold (fun _ (Ctrl.Ctrl (n, _)) acc ->
+	   n :: acc
+	  ) s [])
+      )
+
+  (* Simple string comparison *)
   let equal a b =
-    try
-      Hashtbl.iter (fun i c ->
-	if c <> Hashtbl.find b.ctrl i then
-	  raise Not_found;
-      ) a.ctrl;
-      true
-    with
-    | Not_found -> false
+    (String.compare (norm a) (norm b)) = 0
 
 end
 

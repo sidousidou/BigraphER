@@ -448,6 +448,7 @@ let post_impl clauses s w v =
       let rhs' = 
 	List.map (fun x -> convert_m x v) rhs in
       s#add_clause ((convert_m z w) :: rhs')
+    | _ -> assert false
   ) clauses 
 
 (* Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)

@@ -655,6 +655,12 @@ let occurrences t p =
     )
       
 let equal_SAT a b =
+  (************************** DEBUG *************************)
+  (* printf "------- A:\n%!\ *)
+  (*         %s\n\ *)
+  (*         ------- B:\n%!\ *)
+  (*         %s\n" (to_string a) (to_string b); *)
+  (**********************************************************)
   try
     let solver = new solver in
     let n = a.p.Place.n
@@ -708,16 +714,16 @@ let equal_SAT a b =
   with
   | NO_MATCH -> false
 
-type bg_key = int * int * int * int * int * string * string
+type bg_key = int * int * int * int * string * string * string
 
 let key b = 
   (b.p.Place.r,
-   b.p.Place.n,
    b.p.Place.s,
    Place.edges b.p,
    Link.Lg.cardinal b.l,
    Link.string_of_face (Link.inner b.l),
-   Link.string_of_face (Link.outer b.l)
+   Link.string_of_face (Link.outer b.l),
+   Nodes.norm b.n
   )
 
 let equal a b =
@@ -728,8 +734,8 @@ let equal a b =
     (Place.edges a.p = Place.edges b.p) &&
     (Place.deg_roots a.p = Place.deg_roots b.p) &&
     (Place.deg_sites a.p = Place.deg_sites b.p) &&
-    (Nodes.equal a.n b.n) && 
-    (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
+     (Nodes.equal a.n b.n) && 
+     (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
     (* Placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)

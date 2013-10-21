@@ -227,7 +227,7 @@ val occurrences : bg -> bg -> (Base.Iso.t * Base.Iso.t) list
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
 val auto : bg -> (Base.Iso.t * Base.Iso.t) list
 
-type bg_key = int * int * int * int * int * string * string
+type bg_key = int * int * int * int * string * string * string
 
 val key : bg -> bg_key
 

@@ -462,7 +462,7 @@ let to_dot ctmc =
   and edges =
     Hashtbl.fold (fun v (u, rho) buff -> 
       sprintf "%s%d -> %d [ label=\" %.3g\", fontname=\"monospace\", fontsize=7.0,\
-                            arrowhead=\"vee\", arrowsize=0.5, minlen=0.5 ];\n" 
+                            arrowhead=\"vee\", arrowsize=0.5 ];\n" 
 	buff v u rho
     ) ctmc.e "" in
   sprintf "digraph ctmc {\n%s\n%s}" states edges

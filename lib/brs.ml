@@ -350,7 +350,7 @@ let to_dot ts =
     ) ts.v ""
   and edges =
     Hashtbl.fold (fun v u buff -> 
-      sprintf "%s%d -> %d [ arrowhead=\"vee\", arrowsize=0.5, minlen=0.5 ];\n"
+      sprintf "%s%d -> %d [ arrowhead=\"vee\", arrowsize=0.5 ];\n"
 	buff v u) ts.e "" in
   sprintf "digraph ts {\n%s\n%s}" states edges
 
