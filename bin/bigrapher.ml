@@ -175,7 +175,6 @@ let _ =
 	if !export_csl_str <> "" then
 	  Export.write_csl ctmc.Sbrs.l "properties.csl" !export_csl_str !verbose_bool;
       end;
-      Export.wait_before_exit !verbose_bool
     end
   with
   | Arg.Bad m -> 

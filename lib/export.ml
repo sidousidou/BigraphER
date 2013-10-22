@@ -8,22 +8,34 @@ let _end_with_sep s =
 
 (* Write a string in dot format to an svg file *)
 let _write_svg s name path verb =
-  let (dot_in, bigmc_out) = Unix.pipe ()
-  and n_path = _end_with_sep path in
-  let svg_file =  
-    Unix.openfile (concat n_path (name ^ ".svg")) 
-      [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o777 in
-  if verb then printf "Writing %s%s.svg\n%!" n_path name; 
-  let b_w = Unix.write bigmc_out s 0 (String.length s) in
-  Unix.close bigmc_out;
-  let pid = Unix.create_process "dot" [| "dot"; "-Tsvg" |]
-    dot_in svg_file Unix.stderr in
-  Unix.close dot_in;
-  Unix.close svg_file;
-  match Unix.waitpid [ Unix.WUNTRACED ] pid with
-  | (_, Unix.WSTOPPED _) -> eprintf "Warning: dot process was stopped.\n"
-  | (_, Unix.WSIGNALED _) | (_, Unix.WEXITED _) ->
-    if verb then printf "%d bytes written\n" b_w
+  let (dot_in, bigmc_out) = Unix.pipe () 
+  and n_path = concat (_end_with_sep path) (name ^ ".svg") in
+  match Unix.fork () with
+  | 0 -> (
+    (* child *) 
+    Unix.close bigmc_out;    
+    Unix.dup2 dot_in Unix.stdin;
+    Unix.close dot_in;
+    let svg_file =  
+      Unix.openfile n_path 
+	[ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 
+	0o600 in
+    Unix.dup2 svg_file Unix.stdout;
+    Unix.close svg_file;
+    Unix.execvp "dot" [| "dot"; "-Tsvg" |]
+  )
+  | pid -> (
+    (* parent *)
+    Unix.close dot_in;    
+    if verb then printf "Writing %s\n%!" n_path;
+    let b_w = Unix.write bigmc_out s 0 (String.length s) in
+    Unix.close bigmc_out;
+    match Unix.waitpid [ Unix.WNOHANG ] pid with
+    | (_, Unix.WSTOPPED _) -> 
+      eprintf "Warning: process %d \"dot\" was stopped.\n" pid
+    | (_, Unix.WSIGNALED _) | (_, Unix.WEXITED _) ->
+      if verb then printf "%d bytes written\n" b_w
+  )
 
 let _write_string s name path verb =
   let f_name = concat (_end_with_sep path) name in
@@ -48,33 +60,26 @@ let write_ts_prism ts n path verb =
 let write_ctmc_prism ctmc n path verb =
   _write_string (Sbrs.to_prism ctmc) n path verb
 
-(* check if cmd returns code when executed with arguments a *)
-let _check_cmd cmd a code =
-  let (read, write) = Unix.pipe () in
-  let _ = Unix.create_process cmd [| cmd; a |] Unix.stdin write write in
-  let (_, status) = Unix.wait () in
-  Unix.close read;
-  Unix.close write;
-  match status with
-  | Unix.WEXITED i ->
-    if i = code then ()
-    else failwith (sprintf "Error: %s is not installed in the system" cmd)
-  | Unix.WSIGNALED _ | Unix.WSTOPPED _ -> 
-    failwith (sprintf "Error: %s is not installed in the system" cmd)
-    
 (* bimatch does not return the correct exit code*)
 let check_graphviz () = 
-  _check_cmd "dot" "-V" 0
- 
-(* Avoid zombies *)
-let wait_before_exit v =
-  let rec loop () =
+  match Unix.fork () with
+  | 0 -> (
+    (* child *)
     try
-      ignore (Unix.wait ());
-      loop ()
+      let null = Unix.openfile "/dev/null"
+	[ Unix.O_WRONLY; Unix.O_NONBLOCK ] 0o200  in
+      Unix.dup2 null Unix.stderr;
+      Unix.dup2 null Unix.stdout;
+      Unix.close null;
+      Unix.execvp "dot" [| "dot"; "-V" |]
     with
-    | _ -> if v then printf "Terminating ...\n" else () in
-  loop ()
+    | Unix.Unix_error (err, _, _) ->
+      failwith (Unix.error_message err)
+  )
+  | pid -> (
+    (* parent *)
+    ignore (Unix.wait ())
+  )
 
 let string_of_l l =
   let inv = Hashtbl.create (Hashtbl.length l) in

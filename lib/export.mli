@@ -33,7 +33,3 @@ val write_ctmc_prism: Sbrs.ctmc -> string -> string -> bool -> unit
 
 (** Export a labelling function to a text file in PRISM format. *) 
 val write_csl: (int, int) Hashtbl.t -> string -> string -> bool -> unit
-
-(** [wait_before_exit v] wait for forked processes. Parameter [v] is
-    a flag for verbosity. *)
-val wait_before_exit : bool -> unit
