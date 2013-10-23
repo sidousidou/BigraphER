@@ -1,0 +1,22 @@
+version = "0.3.0"
+authors = [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
+license = [ "BSD" ]
+
+comp += [ "-warn-error" "A" ]
+
+begin program "bigrapher"
+  
+  files = [
+    "utils.ml"
+    "syntax.ml"
+    "store.ml"
+    "lexer_main.mll"
+    "parser_main.mly"  
+    "bigrapher.ml"
+  ]
+
+  requires = [
+    "bigraph" 
+  ]
+
+end

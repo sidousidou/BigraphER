@@ -26,7 +26,8 @@ let parse_mask mask =
            then (x, y)
            else raise (Arg.Bad (sprintf "Error: invalid mask %s" mask)))
     in (match_mask := m; brs_mask := b)
-  with | _ -> raise (Arg.Bad (sprintf "Error: invalid mask %s" mask))
+  with 
+  | _ -> raise (Arg.Bad (sprintf "Error: invalid mask %s" mask))
   
 let speclist =
   [ ("TEST-PATH", (Arg.String (fun s -> match_path := s)),
@@ -35,7 +36,7 @@ let speclist =
      "MASK Binary mask to exclude/include tests");
     ("-o", (Arg.String (fun s -> out_path := s)),
      "OUT-PATH Path to the output directory");
-    ("-v", (Arg.Unit (fun () -> verbose := true)), " Verbose output") ]
+    ("-v", (Arg.Unit (fun () -> verbose := true)), " Verbose output"); ]
   
 let print_header () =
   printf
@@ -52,27 +53,32 @@ let print_header () =
   
 let _ =
   try
-    (Arg.parse (Arg.align speclist) (fun path -> match_path := path) usage;
-     if !match_path <> ""
-     then
-       (Unix.access !match_path [ Unix.W_OK; Unix.F_OK ];
-        if !out_path <> ""
-        then
-          (Unix.access !out_path [ Unix.W_OK; Unix.F_OK ];
-           Export.check_graphviz ();
-           print_header ();
-           Test_match.main !match_path ~path_out: !out_path !match_mask
-             !verbose;
-           Test_brs.main ~path: !out_path !brs_mask !verbose)
-        else
-          (print_header ();
-           Test_match.main !match_path !match_mask !verbose;
-           Test_brs.main !brs_mask !verbose))
-     else raise (Arg.Bad ("Error: Argument missing.\n" ^ usage)))
-  with | Arg.Bad m -> (prerr_endline m; exit 1)
+    Arg.parse (Arg.align speclist) (fun path -> match_path := path) usage;
+    if !match_path <> ""
+    then (
+      Unix.access !match_path [ Unix.W_OK; Unix.F_OK ];
+      if !out_path <> ""
+      then (
+        Unix.access !out_path [ Unix.W_OK; Unix.F_OK ];
+        Export.check_graphviz ();
+        print_header ();
+        Test_match.main !match_path ~path_out: !out_path !match_mask
+          !verbose;
+        Test_brs.main ~path: !out_path !brs_mask !verbose;
+        exit 0
+      ) else (
+        print_header ();
+        Test_match.main !match_path !match_mask !verbose;
+        Test_brs.main !brs_mask !verbose;
+        exit 0
+      )
+    )
+    else raise (Arg.Bad ("Error: Argument missing.\n" ^ usage))
+  with 
+  | Arg.Bad m -> (prerr_endline m; exit 1)
   | Unix.Unix_error (err, _, arg) ->
-      (eprintf "Error: cannot acccess %s: %s.\n" arg (Unix.error_message err);
-       exit 1)
+    (eprintf "Error: cannot acccess %s: %s.\n" arg (Unix.error_message err);
+     exit 1)
   | e -> (prerr_endline (Printexc.to_string e); exit 1)
-  
+
 

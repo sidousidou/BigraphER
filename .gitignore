@@ -1,9 +1,8 @@
 # git on Cygwin does not support ** patterns
 
 # Ignore dirs
-lib/_build/
-bin/_build/
-tests/_build/
+_obuild/
+*.root
 
 # OCaml 
 */*.annot
