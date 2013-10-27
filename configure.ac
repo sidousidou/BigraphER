@@ -31,7 +31,6 @@ if test "$OCAMLFIND" = "no"; then
    AC_MSG_ERROR([You must install OCaml findlib (the ocamlfind command)])
 fi
 
-# Check for minisat
 AC_CHECK_OCAML_PKG([minisat])
  if test "$OCAML_PKG_minisat" = "no"; then
    AC_MSG_ERROR([Please install OCaml findlib module 'minisat'])

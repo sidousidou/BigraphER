@@ -90,6 +90,9 @@ AC_DEFUN([AC_PROG_OCAML],
 
   # checking for ocamlbuild
   AC_CHECK_TOOL([OCAMLBUILD],[ocamlbuild],[no])
+
+  # checking for ocp-build
+  AC_CHECK_TOOL([OCPBUILD],[ocp-build],[no])
 ])
 
 
