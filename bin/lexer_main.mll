@@ -1,6 +1,17 @@
 {
 
+open Lexing
 open Parser_main
+
+exception UNKNOWN_CHAR of char * position
+
+let incr_linenum lexbuf =
+  let pos = lexbuf.lex_curr_p in 
+  lexbuf.lex_curr_p <- 
+    { pos with
+      pos_lnum = pos.pos_lnum + 1;
+      pos_bol = pos.pos_cnum
+    }
 
 }
 
@@ -60,11 +71,11 @@ rule lex =  parse
   | num                     { NUM (Lexing.lexeme lexbuf) }
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
-  | comment                 { Utils.incr_linenum lexbuf; lex lexbuf } 
+  | comment                 { incr_linenum lexbuf; lex lexbuf } 
   | [' ' '\t']              { lex lexbuf }
-  | ['\n' '\r']             { Utils.incr_linenum lexbuf; lex lexbuf }
+  | ['\n' '\r']             { incr_linenum lexbuf; lex lexbuf }
   | eof                     { EOF }
-  | _ as c                  { raise (Utils.UNKNOWN_CHAR (c, Lexing.lexeme_start_p lexbuf)) }
+  | _ as c                  { raise (UNKNOWN_CHAR (c, Lexing.lexeme_start_p lexbuf)) }
 
 {
 

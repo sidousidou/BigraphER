@@ -2,7 +2,10 @@
 
 # Ignore dirs
 _obuild/
-*.root
+ocp-build.root
+ocp-build.root.old
+ocp-build.root.old.old
+
 
 # OCaml 
 */*.annot

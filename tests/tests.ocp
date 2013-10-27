@@ -7,7 +7,7 @@ begin test "bigraph-test"
   test_byte = false
   
   files = [
-    "global.ml"
+    "../utils/utils.ml"
     "test_match.ml"
     "test_brs.ml"
     "test.ml"

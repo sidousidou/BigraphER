@@ -94,6 +94,11 @@ type dec =
   | Sreact_dec_f of string * string list * bexp * bexp * num_exp * (Lexing.position * Lexing.position)
 
 
+let print_pos (p0, p1) =
+  Printf.eprintf "File \"%s\", line %d, charachters %d-%d:\n"
+    p0.Lexing.pos_fname p0.Lexing.pos_lnum (p0.Lexing.pos_cnum - p0.Lexing.pos_bol)
+    (p1.Lexing.pos_cnum - p1.Lexing.pos_bol)
+
 (*****************************************************************************)
 (********************************** BILOG ************************************)
 (*****************************************************************************)

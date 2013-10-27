@@ -1,3 +1,7 @@
+version = "0.3.0"
+authors = [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
+license = [ "BSD" ]
+
 comp += [ "-warn-error" "A" ]
 
 begin library "bigraph"

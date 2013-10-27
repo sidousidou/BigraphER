@@ -4,10 +4,12 @@ license = [ "BSD" ]
 
 comp += [ "-warn-error" "A" ]
 
+install = false
+
 begin program "bigrapher"
   
   files = [
-    "utils.ml"
+    "../utils/utils.ml"
     "syntax.ml"
     "store.ml"
     "lexer_main.mll"

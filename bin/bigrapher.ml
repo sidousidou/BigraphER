@@ -57,24 +57,10 @@ let speclist =
   
 let print_version () = 
   printf "BigraphER %s\n" version
-
-let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
-let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
-                "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec" |]
- 
-let format_time () =
-  let tm = Unix.localtime (Unix.time ()) in
-  sprintf "%s %s %2d %02d:%02d:%02d %04d"
-    days.(tm.Unix.tm_wday)
-    months.(tm.Unix.tm_mon)
-    tm.Unix.tm_mday
-    tm.Unix.tm_hour
-    tm.Unix.tm_min
-    tm.Unix.tm_sec
-    (tm.Unix.tm_year + 1900)
     
 let print_header () =
-  printf "\nBigraphER: Bigraph Evaluator & Rewriting\n\
+  printf "\n\
+          BigraphER: Bigraph Evaluator & Rewriting\n\
           ========================================\n\n\
           Version: %s\n\
           Date: %s\n\
@@ -96,6 +82,18 @@ let print_stats_store env stoch t0 =
 let print_loop v_flag i _ = 
   if v_flag then printf "\r%3d states found%!" (i + 1)
   else () 
+
+(* Raise Sys_error if the file could not be opened *)
+let open_lex path = 
+  let file = open_in path in
+  let lexbuf = Lexing.from_channel file in
+  lexbuf.Lexing.lex_curr_p <-
+    { Lexing.pos_fname = Filename.basename path;
+      Lexing.pos_lnum = 1;
+      Lexing.pos_bol = 0;
+      Lexing.pos_cnum = 0;
+    };
+  (lexbuf, file)          
 
 let _ =
   try
@@ -180,9 +178,6 @@ let _ =
   with
   | Arg.Bad m -> 
     prerr_endline m; exit 1 
-  | Utils.PARSE_ERROR ->
-    prerr_endline "Parsing unsuccesful"; 
-    exit 1
   | Parsing.Parse_error ->
     prerr_endline "Parsing unsuccesful"; 
     exit 1

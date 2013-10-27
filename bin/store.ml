@@ -1,4 +1,5 @@
 open Syntax
+open Lexing
 open Str
 open Printf
 
@@ -62,28 +63,28 @@ let _is_int f =
   f -. (float (int_of_float f)) = 0.0 
 
 let print_err msg p =
-  Utils.print_pos p;
+  print_pos p;
   prerr_endline msg
 
 let type_err v f p =
-  Utils.print_pos p;
+  print_pos p;
   eprintf "Error: This expression has type %s\n\t\
            but an expression was expected of type %s\n!" (get_type v) f;
   raise WRONG_TYPE
 
 let unbound_err ide p  =
-  Utils.print_pos p;
+  print_pos p;
   eprintf "Error: Unbound value %s\n!" ide;
   raise NO_IDE
     
 let args_err ide forms acts p =
-  Utils.print_pos p;
+  print_pos p;
   eprintf "Error: %s expects %d argument(s)\n\t\
            but is here used with %d argument(s)\n!" ide forms acts;
   raise WRONG_TYPE
 
 let pri_err p  =
-  Utils.print_pos p;
+  print_pos p;
   prerr_endline "Error: Invalid priority classes";
   raise INVALID_PRI
  
@@ -523,16 +524,30 @@ let _build_react_ide ide params =
   | Store_react _ | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ ->
     raise WRONG_TYPE) params)) 
 
+let rec par_comb pars = 
+  match pars with
+  | [x] -> List.map (fun v -> [v]) x
+  | x :: xs -> ( 
+      let aux1 v ls =
+	List.map (fun l -> v :: l) ls
+      in let rec aux2 l ls = 
+	match l with
+	| [] -> []
+	| x :: xs -> (aux1 x ls) @ (aux2 xs ls)
+      in aux2 x (par_comb xs) 
+    )
+  | [] -> []
+
 let _build_params ides env p =
-  Utils.par_comb (List.map (fun ide -> 
-    try 
-      get_param_m ide p env
-    with
-    | WRONG_TYPE -> 
-      try
-	[Store_int (get_int_m ide p env)]
+  par_comb (List.map (fun ide -> 
+      try 
+        get_param_m ide p env
       with
-      | WRONG_TYPE -> [Store_float (get_float ide p env)]) ides)
+      | WRONG_TYPE -> 
+        try
+	  [Store_int (get_int_m ide p env)]
+        with
+        | WRONG_TYPE -> [Store_float (get_float ide p env)]) ides)
 
 let store_rule r env =
   match r with
