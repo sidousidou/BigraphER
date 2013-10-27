@@ -1,7 +1,7 @@
 open Printf
 open Utils
 
-let version = "0.3.0"
+let version = "@PACKAGE_VERSION@"
   
 let verbose_bool = ref false
 
