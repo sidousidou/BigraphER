@@ -91,8 +91,6 @@ AC_DEFUN([AC_PROG_OCAML],
   # checking for ocamlbuild
   AC_CHECK_TOOL([OCAMLBUILD],[ocamlbuild],[no])
 
-  # checking for ocp-build
-  AC_CHECK_TOOL([OCPBUILD],[ocp-build],[no])
 ])
 
 
@@ -115,6 +113,11 @@ AC_DEFUN([AC_PROG_OCAMLYACC],
   AC_SUBST([OCAMLYACC])
 ])
 
+AC_DEFUN([AC_PROG_OCPBUILD],
+[dnl
+  AC_CHECK_TOOL([OCPBUILD],[ocp-build],[no])
+  AC_SUBST([OCPBUILD])
+])
 
 AC_DEFUN([AC_PROG_CAMLP4],
 [dnl

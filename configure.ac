@@ -26,6 +26,11 @@ if test "$OCAMLYACC" = "no"; then
    AC_MSG_ERROR([You must install the OCaml parser (the ocamlyacc command)])
 fi
 
+AC_PROG_OCPBUILD
+if test "$OCPBUILD" = "no"; then
+   AC_MSG_ERROR([You must install ocp-build])
+fi
+
 AC_PROG_FINDLIB
 if test "$OCAMLFIND" = "no"; then
    AC_MSG_ERROR([You must install OCaml findlib (the ocamlfind command)])
