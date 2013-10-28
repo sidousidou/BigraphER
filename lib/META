@@ -1,7 +1,0 @@
-name="bigraph"
-version="0.3.0"
-description="OCaml implementation of bigraphs with sharing"
-requires="str bigarray minisat"
-archive(byte) = "bigraph.cma"
-archive(native) = "bigraph.cmxa"
-linkopts = ""

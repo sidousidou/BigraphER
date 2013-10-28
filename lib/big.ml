@@ -667,12 +667,8 @@ let equal_SAT a b =
     and h = Link.Lg.cardinal a.l in
     let v_n = Cnf.init_aux_m n n solver
     and v_l = Cnf.init_aux_m h h solver in 
-    let ((aux_bij_n_rows, _), 
-	 (aux_bij_n_cols, _)) =
-      Cnf.post_bij (Cnf.bijection n n 6 3) solver v_n
-    and ((aux_bij_l_rows, _), 
-	 (aux_bij_l_cols, _)) =
-      Cnf.post_bij (Cnf.bijection h h 6 3) solver v_l in
+    ignore (Cnf.post_bij (Cnf.bijection n n 6 3) solver v_n);
+    ignore (Cnf.post_bij (Cnf.bijection h h 6 3) solver v_l);
     (* Place graph *)
     let (t_constraints, exc_clauses, cols0) = 
       Place.match_list_eq a.p b.p a.n b.n 
@@ -692,12 +688,9 @@ let equal_SAT a b =
     Cnf.post_conj_m (exc_clauses) solver v_n;
     Cnf.post_conj_m (c_rn @ c_ns) solver v_n;
     Cnf.post_conj_m (clauses_l @ clauses_o) solver v_n;
-    let z = 
-      Array.of_list (
-	List.fold_left (fun acc x ->
-	  (Cnf.post_tseitin x solver v_n) :: acc
-	) [] t_constraints
-      ) in
+    List.iter (fun x ->
+	ignore (Cnf.post_tseitin x solver v_n)
+      ) t_constraints;
     (* Link graph *)
     let (clauses, b_pairs) = 
       Link.match_list_eq a.l b.l a.n b.n in

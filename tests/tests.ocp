@@ -1,0 +1,24 @@
+comp += [ "-warn-error" "A" ]
+
+begin test "bigraph-test"
+  
+  test_benchmark = true
+
+  test_byte = false
+  
+  files = [
+    "../utils/utils.ml"
+    "test_match.ml"
+    "test_brs.ml"
+    "test.ml"
+  ]
+
+  requires = [
+    "bigraph"
+  ]
+
+  test_args = [
+    "%{sources}%/files/match/"
+  ]
+
+end

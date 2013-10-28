@@ -1,0 +1,28 @@
+version = "0.3.0"
+authors = [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
+license = [ "BSD" ]
+
+comp += [ "-warn-error" "A" ]
+
+begin library "bigraph"
+  
+  files = [
+    "base.ml"
+    "cnf.ml"
+    "sparse.ml"
+    "link.ml"
+    "place.ml"
+    "big.ml"
+    "brs.ml"
+    "sbrs.ml"
+    "export.ml"
+  ]
+
+  requires = [
+    "bigarray"
+    "minisat"
+    "unix" 
+    "str"
+  ]
+
+end

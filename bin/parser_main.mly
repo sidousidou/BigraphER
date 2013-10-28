@@ -1,18 +1,46 @@
 %{
-
-  open Utils
-  open Syntax
  
-  let add_closure n c =
-    match c with
-    | Big_close (l, pos) -> Big_close (n :: l, pos)
-    | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
-    | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
-    | Big_ion_fun _ | Big_share _ | Big_tens _ ->
-      parse_error_msg "Invalid closure" n; 
-      raise Parsing.Parse_error
+open Syntax
 
-%}
+exception PARSE_ERROR
+exception INVALID_INTERVAL
+
+let int_interval s h e =
+  if e <= s || h <=0 then raise INVALID_INTERVAL
+  else let rec aux s h e res =
+    if s < e then aux (s + h) h e (s :: res)
+    else e :: res
+    in List.fast_sort (fun x y -> x - y) (aux s h e [])
+
+let float_interval s h e =
+  if e <= s || h <=0.0 then raise INVALID_INTERVAL
+  else let rec aux s h e res =
+    if s < e then aux (s +. h) h e (s :: res)
+    else e :: res
+    in List.fast_sort compare (aux s h e [])
+
+let add_pos () =
+  Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()
+
+let parse_error_msg msg tok =
+  let start_pos = Parsing.symbol_start_pos ()
+  and end_pos = Parsing.symbol_end_pos () in
+  print_pos (start_pos, end_pos);
+  prerr_string ("Syntax error: " ^ msg);
+  match tok with
+  | "" -> prerr_newline ()
+  | _ -> prerr_endline (" " ^ tok)
+
+let add_closure n c =
+  match c with
+  | Big_close (l, pos) -> Big_close (n :: l, pos)
+  | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
+  | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
+  | Big_ion_fun _ | Big_share _ | Big_tens _ ->
+    parse_error_msg "Invalid closure" n; 
+    raise Parsing.Parse_error
+
+    %}
 
 %token <string>   CIDE
 %token <string>   IDE       

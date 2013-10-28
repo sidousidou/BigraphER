@@ -1,9 +1,16 @@
-# git on Cygwin does not support ** patterns
-
 # Ignore dirs
-lib/_build/
-bin/_build/
-tests/_build/
+_obuild/
+ocp-build.root
+ocp-build.root.old
+ocp-build.root.old.old
+
+# Generated files
+aclocal.m4
+autom4te.cache/
+Makefile.config
+bin/bigrapher.ml
+bin/bigrapher.ocp
+config.*
 
 # OCaml 
 */*.annot
