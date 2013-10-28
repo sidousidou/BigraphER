@@ -21,8 +21,10 @@ clean:
 	rm -f *~
 	rm -f aclocal.m4
 	rm -fr autom4te.cache
+	rm -f *.tar.gz
 
-distclean: clean
+distclean:
+	$(MAKE) clean 
 	rm -f ocp-build.root*
 	rm -f config.status config.log Makefile.config
 	rm -f bin/bigrapher.ml bin/bigrapher.ocp
@@ -40,3 +42,24 @@ uninstall:
 configure: configure.ac m4/*.m4
 	aclocal -I m4
 	autoconf
+
+ARCH = bigrapher-$(version)
+ARCH_TARGZ = $(ARCH).tar.gz
+
+ARCH_FILES = $(shell git ls-tree --name-only -r HEAD)
+
+prepare-archive:
+	rm -f $(ARCH) $(ARCH_TARGZ)
+	ln -s . $(ARCH)
+
+complete-archive:
+	tar cz $(addprefix $(ARCH)/,$(ARCH_FILES)) > $(ARCH).tar.gz
+	rm -f $(ARCH)
+
+$(ARCH_TARGZ):
+	@echo "    Preparing files ..."
+	$(MAKE) prepare-archive
+	$(MAKE) complete-archive
+
+dist: $(ARCH_TARGZ)
+	@
