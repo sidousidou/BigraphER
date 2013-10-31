@@ -13,8 +13,6 @@ let consts_str = ref ""
   
 let properties_str = ref ""
   
-(*let priorities_str = ref ""*)
-  
 let export_trans_str = ref ""
 
 let export_csl_str = ref ""
@@ -33,7 +31,7 @@ let s_max = ref 10000
   
 let usage =
   "Usage: bigrapher [options] <model-file> [<properties-file>] [more-options]"
-  
+
 let speclist =
   [ ("-v", (Arg.Unit (fun () -> verbose_bool := true)), " Verbose output");
     ("-V", (Arg.Unit (fun () -> version_bool := true)), " Program version");
@@ -54,30 +52,35 @@ let speclist =
      "<path> Export each bigraph in the store to a dot file");
     ("-consts", (Arg.String (fun s -> consts_str := s)),
      "<ide=val, ...> Specify constants") ]
-  
+
 let print_version () = 
   printf "BigraphER %s\n" version
-    
+
 let print_header () =
   printf "\n\
-          BigraphER: Bigraph Evaluator & Rewriting\n\
-          ========================================\n\n\
-          Version: %s\n\
-          Date: %s\n\
-          Hostname: %s\n\
-          OS type: %s\n\
-          Command line: %s\n\n"
-    version (format_time ()) (Unix.gethostname ()) Sys.os_type 
-    (String.concat " " (Array.to_list Sys.argv))
+          %s\n\
+          ========================================\n\
+          %s      %s\n\
+          %s         %s\n\
+          %s     %s\n\
+          %s      %s\n\
+          %s %s\n"
+    (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
+    (colorise `magenta "Version:") (String.trim version) 
+    (colorise `magenta "Date:") (format_time ()) 
+    (colorise `magenta "Hostname:") (Unix.gethostname ()) 
+    (colorise `magenta "OS type:") Sys.os_type
+    (colorise `magenta "Command line:")  (String.concat " " (Array.to_list Sys.argv))
 
 let print_stats_store env stoch t0 =
   let t = (Unix.gettimeofday ()) -. t0 
-  and ty = if stoch then "SBRS" else "BRS" in
-  printf "Time for model construction: %-4g seconds.\n\n" t;
-  printf "Type:     %s\n\
-          Bindings: %d\n\n\
-          --------------------------------------------------------------------------------\n\n%!" 
-    ty (Hashtbl.length env)
+  and ty = if stoch then "Stochastic BRS" else "BRS" in
+  printf "%s   %-4g s\n\
+          %s         %s\n\
+          %s     %d\n"
+    (colorise `cyan "Build time:") t
+    (colorise `cyan "Type:") ty
+    (colorise `cyan "Bindings:") (Hashtbl.length env)
 
 let print_loop v_flag i _ = 
   if v_flag then printf "\r%3d states found%!" (i + 1)
@@ -100,28 +103,30 @@ let _ =
     Printexc.record_backtrace true;
     Export.check_graphviz ();
     Arg.parse (Arg.align speclist) (fun filename ->
-      if Filename.check_suffix filename "big" then 
-	model_str := filename
-      else if Filename.check_suffix filename "bilog" then 
-	properties_str := filename
-      else raise (Arg.Bad ("Bad argument: " ^ filename))) usage;
+        if Filename.check_suffix filename "big" then 
+	  model_str := filename
+        else if Filename.check_suffix filename "bilog" then 
+	  properties_str := filename
+        else raise (Arg.Bad ((colorise `red "Bad argument: ") ^ filename))
+      ) usage;
     if !version_bool then print_version ()
     else begin 
       let iter_f = print_loop true in
       print_header ();
       let (decs, brs) =
 	if !model_str = "" then 
-	  raise (Arg.Bad ("Error: Model file missing.\n" ^ usage))
-	else begin
-	  printf "Parsing model file \"%s\"...\n\n" !model_str; 
+          raise (Arg.Bad ((colorise `red "Error: ") ^ "Model file missing.\n" ^ usage))
+        else begin
+	  print_string ((colorise `yellow "Parsing model file ") ^ 
+                   (colorise `bold (colorise `yellow !model_str)) ^
+                   (colorise `yellow "...\n")); 
 	  let lexbuf, file = open_lex !model_str in
 	  let out = Parser_main.model Lexer_main.lex lexbuf in 
 	  close_in file; 
 	  out
 	end in
       let t0 = Unix.gettimeofday () in
-      printf "--------------------------------------------------------------------------------\n\n%!\
-              Building model...\n\n";
+      printf "%s\n" (colorise `yellow "Building model...");
       let env = Store.init_env decs in
       Store.parse_consts !consts_str env;
       Store.store_decs decs env;
@@ -144,8 +149,8 @@ let _ =
 	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
 	    Brs.iter_states (fun i s ->
-	      Export.write_big s (string_of_int i) !export_trans_dot_str
-		!verbose_bool) ts;
+	        Export.write_big s (string_of_int i) !export_trans_dot_str
+		  !verbose_bool) ts;
 	  Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool
 	end;
 	if !export_trans_str <> "" then 
@@ -164,8 +169,8 @@ let _ =
 	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
 	    Sbrs.iter_states (fun i s ->
-	      Export.write_big s (string_of_int i) !export_trans_dot_str
-		!verbose_bool) ctmc;
+	        Export.write_big s (string_of_int i) !export_trans_dot_str
+		  !verbose_bool) ctmc;
 	  Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool
 	end;
 	if !export_trans_str <> "" then
@@ -178,35 +183,41 @@ let _ =
   | Arg.Bad m -> 
     prerr_endline m; exit 1 
   | Parsing.Parse_error ->
-    prerr_endline "Parsing unsuccesful"; 
+    prerr_endline (colorise `red "Parsing unsuccesful"); 
     exit 1
   | Store.INVALID_CONSTS | Store.INVALID_VAL | Store.WRONG_TYPE 
   | Store.NO_IDE | Store.INVALID_PRI -> 
     exit 1
   | Link.FACES_MISMATCH (inner, outer) ->
-    eprintf "Error: Impossible to compose over faces:\n\
+    eprintf "%sImpossible to compose over faces:\n\
             \       %s\n\
             \       %s\n" 
+      (colorise `red "Error: ")
       (Link.string_of_face inner) (Link.string_of_face outer); 
     exit 1
   | Link.NAMES_ALREADY_DEFINED (inner, outer) ->
-    eprintf "Error: Duplicate inner names: %s\n\
+    eprintf "%sDuplicate inner names: %s\n\
             \       Duplicate outer names: %s\n"
+      (colorise `red "Error: ")
       (Link.string_of_face inner) (Link.string_of_face outer); 
     exit 1
   | Place.COMP_ERROR (sites, roots) ->
-    eprintf "Error: Impossible to compose with %d sites and %d regions\n"
+    eprintf "%sImpossible to compose with %d sites and %d regions\n"
+      (colorise `red "Error: ")
       sites roots;
     exit 1
   | Big.SHARING_ERROR -> 
-    eprintf "Error: Invalid sharing expression\n"; 
+    eprintf "%sInvalid sharing expression\n"    
+      (colorise `red "Error: "); 
     exit 1
   | Big.CTRL_ERROR (n, face) ->
-    eprintf "Error: Impossible to use face %s with a control of arity %d\n" 
+    eprintf "%sImpossible to use face %s with a control of arity %d\n" 
+      (colorise `red "Error: ")
       (Link.string_of_face face) n;
     exit 1
   | Big.ISO_ERROR (n, n_dom) ->
-    eprintf "Error: Isomorphism is not total: (%d < %d)\n"
+    eprintf "%sIsomorphism is not total: (%d < %d)\n"
+      (colorise `red "Error: ")
       n_dom n;
     exit 1
   | e -> 
