@@ -1,3 +1,6 @@
+open Utils
+open Printf
+
 (*****************************************************************************)
 (******************************* PRIORITIES **********************************)
 (*****************************************************************************)
@@ -93,11 +96,24 @@ type dec =
   | Sreact_dec of string * bexp * bexp * num_exp  * (Lexing.position * Lexing.position)        (* react r = ... -> ... @ 3.4 *)
   | Sreact_dec_f of string * string list * bexp * bexp * num_exp * (Lexing.position * Lexing.position)
 
-
 let print_pos (p0, p1) =
-  Printf.eprintf "File \"%s\", line %d, charachters %d-%d:\n"
+  eprintf "File \"%s\", line %d, charachters %d-%d:\n"
     p0.Lexing.pos_fname p0.Lexing.pos_lnum (p0.Lexing.pos_cnum - p0.Lexing.pos_bol)
     (p1.Lexing.pos_cnum - p1.Lexing.pos_bol)
+
+let print_stats t ?(sim = infinity) s r o =
+  printf " in %.3gs.\n" t;
+  if sim <> infinity then
+    printf  
+      "%s    %.3g\n"
+      (colorise `green "Sim time:") t;
+  printf
+    "%s       %-8d\n\
+     %s    %-8d\n\
+     %s  %-8d\n"
+    (colorise `green "States:") s 
+    (colorise `green "Reactions:") r 
+    (colorise `green "Occurrences:") o
 
 (*****************************************************************************)
 (********************************** BILOG ************************************)
@@ -107,5 +123,5 @@ let print_pos (p0, p1) =
 
 (* type bilog =  *)
 (*   | B_null *)
-(*   | Bilog of var_dec list * pred list *)
+  (*   | Bilog of var_dec list * pred list  ~path_out: !out_path*)
 

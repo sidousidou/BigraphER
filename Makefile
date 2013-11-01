@@ -2,18 +2,10 @@
 
 .PHONY: all install
 
-all: _obuild/bigrapher/bigrapher.asm
+all: init
+	$(OCPBUILD) -njobs 5
 
-_obuild/bigrapher/bigrapher.asm: init
-	$(OCPBUILD)
-
-bin/bigrapher.ml:
-	@echo
-	@echo "    ERROR: you need to run ./configure."
-	@echo
-	@exit 1
-
-init: bin/bigrapher.ml
+init: 
 	$(OCPBUILD) root
 
 clean: 
@@ -38,6 +30,12 @@ install: _obuild/bigrapher/bigrapher.asm
 uninstall:
 	$(OCPBUILD) uninstall
 	rm -f $(prefix)/bin/bigrapher
+
+call_conf: bin/bigrapher.ml.in bin/bigrapher.ocp.in Makefile.config.in
+	@echo
+	@echo "    ERROR: you need to run ./configure."
+	@echo
+	@exit 1
 
 configure: configure.ac m4/*.m4
 	aclocal -I m4

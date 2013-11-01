@@ -1,5 +1,6 @@
 open Printf
 open Utils
+open Syntax
 
 let version = "@PACKAGE_VERSION@"
   
@@ -118,8 +119,8 @@ let _ =
           raise (Arg.Bad ((colorise `red "Error: ") ^ "Model file missing.\n" ^ usage))
         else begin
 	  print_string ((colorise `yellow "Parsing model file ") ^ 
-                   (colorise `bold (colorise `yellow !model_str)) ^
-                   (colorise `yellow "...\n")); 
+                          (colorise `bold (colorise `yellow !model_str)) ^
+                          (colorise `yellow "...\n")); 
 	  let lexbuf, file = open_lex !model_str in
 	  let out = Parser_main.model Lexer_main.lex lexbuf in 
 	  close_in file; 
@@ -140,20 +141,20 @@ let _ =
       if not stoch then begin
 	let brs_p_classes = List.map Store.p_to_brs p_classes 
 	and get_f = Store.get_react p env in
-	let (ts, stats) = 
-	  if !sim_bool then
-	    Brs.sim_ide s0 brs_p_classes get_f !s_max n iter_f
-	  else
-	    Brs.bfs_ide s0 brs_p_classes get_f !s_max n iter_f in
-	printf "\n%s\n" (Brs.string_of_stats stats);
-	if !export_trans_dot_str <> "" then begin
-	  if !export_states_bool then
-	    Brs.iter_states (fun i s ->
+        let (ts, stats) = 
+          if !sim_bool then
+            Brs.sim_ide s0 brs_p_classes get_f !s_max n iter_f
+          else
+            Brs.bfs_ide s0 brs_p_classes get_f !s_max n iter_f in
+        print_stats stats.Brs.t stats.Brs.s stats.Brs.r stats.Brs.o; 
+        if !export_trans_dot_str <> "" then begin
+          if !export_states_bool then
+            Brs.iter_states (fun i s ->
 	        Export.write_big s (string_of_int i) !export_trans_dot_str
-		  !verbose_bool) ts;
-	  Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool
-	end;
-	if !export_trans_str <> "" then 
+	          !verbose_bool) ts;
+          Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool
+        end;
+        if !export_trans_str <> "" then 
 	  Export.write_ts_prism ts "ts_prism" !export_trans_str !verbose_bool;
 	if !export_csl_str <> "" then
 	  Export.write_csl ts.Brs.l "properties.csl" !export_csl_str !verbose_bool;
@@ -163,9 +164,9 @@ let _ =
 	let (ctmc, stats) = 
 	  if !sim_bool then
 	    Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n iter_f
-	  else
-	    Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n iter_f in
-	printf "\n%s\n" (Sbrs.string_of_stats stats);
+          else
+            Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n iter_f in
+        print_stats stats.Sbrs.t ~sim:stats.Sbrs.sim stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o; 
 	if !export_trans_dot_str <> "" then begin
 	  if !export_states_bool then
 	    Sbrs.iter_states (fun i s ->
