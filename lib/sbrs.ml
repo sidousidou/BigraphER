@@ -14,7 +14,6 @@ type ctmc = {
   l : (int, int) Hashtbl.t;  
 }
 
-
 type stats = {
   t : float;    (** Execution time *)
   sim : float;  (** Simulation time *)

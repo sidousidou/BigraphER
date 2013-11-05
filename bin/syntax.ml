@@ -101,17 +101,19 @@ let print_pos (p0, p1) =
     p0.Lexing.pos_fname p0.Lexing.pos_lnum (p0.Lexing.pos_cnum - p0.Lexing.pos_bol)
     (p1.Lexing.pos_cnum - p1.Lexing.pos_bol)
 
-let print_stats t ?(sim = infinity) s r o =
+let print_stats t ?(sim = infinity) ?(t_max = false) s ?(s_max = false) r o =
   printf " in %.3gs.\n" t;
   if sim <> infinity then
     printf  
-      "%s    %.3g\n"
-      (colorise `green "Sim time:") t;
+      "%s     %s\n"
+      (colorise `green "Sim time:") (let s = sprintf "%.3g" sim in 
+                                     if t_max then colorise `red s else s);
   printf
-    "%s       %-8d\n\
+    "%s       %s\n\
      %s    %-8d\n\
      %s  %-8d\n"
-    (colorise `green "States:") s 
+    (colorise `green "States:") (let s = sprintf "%-8d" s in 
+                                 if s_max then colorise `red s else s)
     (colorise `green "Reactions:") r 
     (colorise `green "Occurrences:") o
 

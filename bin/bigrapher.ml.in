@@ -1,6 +1,7 @@
 open Printf
 open Utils
 open Syntax
+open Filename
 
 let version = "@PACKAGE_VERSION@"
   
@@ -26,9 +27,9 @@ let export_states_bool = ref false
   
 let sim_bool = ref false
   
-let t_max = ref 100.0
+let t_max = ref 100000.0
   
-let s_max = ref 10000
+let s_max = ref 100000
   
 let usage =
   "Usage: bigrapher [options] <model-file> [<properties-file>] [more-options]"
@@ -37,7 +38,7 @@ let speclist =
   [ ("-v", (Arg.Unit (fun () -> verbose_bool := true)), " Verbose output");
     ("-V", (Arg.Unit (fun () -> version_bool := true)), " Program version");
     ("-t", (Arg.Float (fun t -> t_max := t)),
-     "<float> Set the termination time of the simulation");
+     "<float> Set the termination time of the simulation"); (* only makes sense for stochastic simulations *)
     ("-max", (Arg.Int (fun n -> s_max := n)),
      "<int> Set the maximum number of states");
     ("-sim", (Arg.Unit (fun () -> sim_bool := true)), " Simulate the model");
@@ -46,13 +47,21 @@ let speclist =
     ("-exportdot", (Arg.String (fun s -> export_trans_dot_str := s)),
      "<path> Export the transition system to a dot file");
     ("-exportstates", (Arg.Unit (fun () -> export_states_bool := true)),
-     " Export each state to a file");
+     " Export each state to a dot file"); (* only with -exportdot *)
     ("-exportcsl", (Arg.String (fun s -> export_csl_str := s)),
      "<file> Export the labelling function to a file"); 
     ("-exportstore", (Arg.String (fun s -> export_store := s)),
      "<path> Export each bigraph in the store to a dot file");
     ("-consts", (Arg.String (fun s -> consts_str := s)),
      "<ide=val, ...> Specify constants") ]
+
+let _end_with_sep s =
+  if Str.string_match (Str.regexp (".*" ^ dir_sep ^ "$")) s 0 then s
+  else s ^ dir_sep
+
+(* let check_args () = *)
+(*   if !export_trans_dot_str = "" && !export_states_bool then *)
+(*     eprintf "Warning: argument -exportstates will be ignored since"; *)
 
 let print_version () = 
   printf "BigraphER %s\n" version
@@ -76,7 +85,7 @@ let print_header () =
 let print_stats_store env stoch t0 =
   let t = (Unix.gettimeofday ()) -. t0 
   and ty = if stoch then "Stochastic BRS" else "BRS" in
-  printf "%s   %-4g s\n\
+  printf "%s   %-4gs\n\
           %s         %s\n\
           %s     %d\n"
     (colorise `cyan "Build time:") t
@@ -99,6 +108,90 @@ let open_lex path =
     };
   (lexbuf, file)          
 
+let export_csl label path v =
+  if path <> "" then (
+    print_endline (
+      (colorise `yellow "Exporting properties to ") ^ 
+        (colorise `yellow (colorise `bold path)) ^ 
+        (colorise `yellow " ...")
+    );
+    Export.write_csl label "properties.csl" path v
+  )
+
+let export_ctmc_prism ctmc file v =
+  if file <> "" then (
+    print_endline (
+      (colorise `yellow "Exporting CTMC in PRISM format to ") ^ 
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
+    );
+    Export.write_ctmc_prism ctmc "ctmc_prism" file v
+  )
+
+let export_ts_prism ts file v =
+  if file <> "" then (
+    print_endline (
+      (colorise `yellow "Exporting transition system in PRISM format to ") ^ 
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
+    );
+    Export.write_ts_prism ts "ts_prism" file v
+  )
+
+let export_ctmc_states ctmc path v =
+  print_endline (
+    (colorise `yellow "Exporting states to ") ^ 
+      (colorise `yellow (colorise `bold path)) ^ 
+      (colorise `yellow " ...")
+  );
+  Sbrs.iter_states (fun i s ->
+      Export.write_big s (string_of_int i) path v
+    ) ctmc
+    
+let export_ctmc_dot ctmc path v states =
+  if path <> "" then (    
+    print_endline (
+      (colorise `yellow "Exporting CTMC to ") ^ 
+        (colorise `yellow (colorise `bold ((_end_with_sep path) ^ "ctmc.svg"))) ^ 
+        (colorise `yellow " ...")
+    );
+    Export.write_ctmc ctmc "ctmc" path v;
+    if states then export_ctmc_states ctmc path v;
+  )
+
+let export_ts_states ts path v =
+  print_endline (
+    (colorise `yellow "Exporting states to ") ^ 
+      (colorise `yellow (colorise `bold path)) ^ 
+      (colorise `yellow " ...")
+  );
+  Brs.iter_states (fun i s ->
+      Export.write_big s (string_of_int i) path v
+    ) ts
+
+let export_ts_dot ts path v states =
+  if path <> "" then (    
+    print_endline (
+      (colorise `yellow "Exporting transition system to ") ^ 
+        (colorise `yellow (colorise `bold ((_end_with_sep path) ^ "ts.svg"))) ^ 
+        (colorise `yellow " ...")
+    );
+    Export.write_ts ts "ts" path v;
+    if states then export_ts_states ts path v;
+  )
+
+let after_brs stats ts trans_dot states ?(s_max = false) trans csl v =
+  print_stats stats.Brs.t stats.Brs.s ~s_max:s_max stats.Brs.r stats.Brs.o; 
+  export_ts_dot ts trans_dot v states;
+  export_ts_prism ts trans v;
+  export_csl ts.Brs.l csl v
+
+let after_sbrs stats ctmc ?(t_max = false) trans_dot states ?(s_max = false) trans csl v =
+  print_stats stats.Sbrs.t ~sim:stats.Sbrs.sim ~t_max:t_max stats.Sbrs.s ~s_max:s_max stats.Sbrs.r stats.Sbrs.o;
+  export_ctmc_dot ctmc trans_dot v states;
+  export_ctmc_prism ctmc trans v;
+  export_csl ctmc.Sbrs.l csl v
+
 let _ =
   try
     Printexc.record_backtrace true;
@@ -110,76 +203,100 @@ let _ =
 	  properties_str := filename
         else raise (Arg.Bad ((colorise `red "Bad argument: ") ^ filename))
       ) usage;
+    (* check_args (); *)
     if !version_bool then print_version ()
-    else begin 
+    else ( 
       let iter_f = print_loop true in
       print_header ();
       let (decs, brs) =
 	if !model_str = "" then 
           raise (Arg.Bad ((colorise `red "Error: ") ^ "Model file missing.\n" ^ usage))
-        else begin
-	  print_string ((colorise `yellow "Parsing model file ") ^ 
-                          (colorise `bold (colorise `yellow !model_str)) ^
-                          (colorise `yellow "...\n")); 
-	  let lexbuf, file = open_lex !model_str in
+        else (
+          print_endline (
+            (colorise `yellow "Parsing model file ") ^ 
+              (colorise `bold (colorise `yellow !model_str)) ^
+              (colorise `yellow " ...")
+          ); 
+          let lexbuf, file = open_lex !model_str in
 	  let out = Parser_main.model Lexer_main.lex lexbuf in 
 	  close_in file; 
 	  out
-	end in
+	) in
       let t0 = Unix.gettimeofday () in
-      printf "%s\n" (colorise `yellow "Building model...");
       let env = Store.init_env decs in
-      Store.parse_consts !consts_str env;
+      Store.parse_consts !consts_str env; (* constants *)
       Store.store_decs decs env;
       let (s0, stoch, p_classes) =
 	Store.store_brs brs env in
-      if !export_store <> "" then
-	Store.export decs env !export_store !verbose_bool;
+      if !export_store <> "" then (
+        print_endline (
+          (colorise `yellow "Exporting declarations to ") ^ 
+            (colorise `yellow (colorise `bold !export_store)) ^ 
+            (colorise `yellow " ...")
+        );
+	Store.export decs env !export_store !verbose_bool
+      );
       print_stats_store env stoch t0;
       let p = Store.dummy_pos  
       and n = Hashtbl.length env in
-      if not stoch then begin
-	let brs_p_classes = List.map Store.p_to_brs p_classes 
-	and get_f = Store.get_react p env in
-        let (ts, stats) = 
-          if !sim_bool then
-            Brs.sim_ide s0 brs_p_classes get_f !s_max n iter_f
-          else
-            Brs.bfs_ide s0 brs_p_classes get_f !s_max n iter_f in
-        print_stats stats.Brs.t stats.Brs.s stats.Brs.r stats.Brs.o; 
-        if !export_trans_dot_str <> "" then begin
-          if !export_states_bool then
-            Brs.iter_states (fun i s ->
-	        Export.write_big s (string_of_int i) !export_trans_dot_str
-	          !verbose_bool) ts;
-          Export.write_ts ts "ts" !export_trans_dot_str !verbose_bool
-        end;
-        if !export_trans_str <> "" then 
-	  Export.write_ts_prism ts "ts_prism" !export_trans_str !verbose_bool;
-	if !export_csl_str <> "" then
-	  Export.write_csl ts.Brs.l "properties.csl" !export_csl_str !verbose_bool;
-      end else begin
-	let sbrs_p_classes = List.map Store.p_to_sbrs p_classes 
-	and get_f = Store.get_sreact p env in
-	let (ctmc, stats) = 
-	  if !sim_bool then
-	    Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n iter_f
-          else
-            Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n iter_f in
-        print_stats stats.Sbrs.t ~sim:stats.Sbrs.sim stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o; 
-	if !export_trans_dot_str <> "" then begin
-	  if !export_states_bool then
-	    Sbrs.iter_states (fun i s ->
-	        Export.write_big s (string_of_int i) !export_trans_dot_str
-		  !verbose_bool) ctmc;
-	  Export.write_ctmc ctmc "ctmc" !export_trans_dot_str !verbose_bool
-	end;
-	if !export_trans_str <> "" then
-	  Export.write_ctmc_prism ctmc "ctmc_prism" !export_trans_str !verbose_bool;
-	if !export_csl_str <> "" then
-	  Export.write_csl ctmc.Sbrs.l "properties.csl" !export_csl_str !verbose_bool;
-      end;
-    end
+      try
+        if not stoch then (
+	  let brs_p_classes = List.map Store.p_to_brs p_classes 
+	  and get_f = Store.get_react p env in
+          let (ts, stats) = 
+            if !sim_bool then (
+              print_endline (
+                (colorise `yellow "Starting simulation ...\n") ^
+                  (colorise `cyan "Max # states: ") ^
+                  (string_of_int !s_max)
+              );
+              Brs.sim_ide s0 brs_p_classes get_f !s_max n iter_f
+            )
+            else (
+              print_endline (
+                (colorise `yellow "Starting transition system construction ...\n") ^
+                  (colorise `cyan "Max # states: ") ^
+                  (string_of_int !s_max)
+              );
+              Brs.bfs_ide s0 brs_p_classes get_f !s_max n iter_f 
+            ) in
+          after_brs stats ts !export_trans_dot_str !export_states_bool 
+            !export_trans_str !export_csl_str !verbose_bool	
+        ) else (
+	  let sbrs_p_classes = List.map Store.p_to_sbrs p_classes 
+	  and get_f = Store.get_sreact p env in
+	  let (ctmc, stats) = 
+	    if !sim_bool then (
+              print_endline (
+                (colorise `yellow "Starting stochastic simulation ...\n") ^
+                  (colorise `cyan "Max sim time: ") ^
+                  (string_of_float !t_max)
+              );
+              Sbrs.sim_ide s0 sbrs_p_classes get_f !t_max n iter_f
+            )
+            else (
+              print_endline (
+                (colorise `yellow "Starting CTMC construction ...\n") ^
+                  (colorise `cyan "Max # states: ") ^
+                  (string_of_int !s_max)
+              );
+              Sbrs.bfs_ide s0 sbrs_p_classes get_f !s_max n iter_f 
+            ) in
+          after_sbrs stats ctmc !export_trans_dot_str !export_states_bool 
+            !export_trans_str !export_csl_str !verbose_bool
+        )
+      with
+      | Sbrs.LIMIT (ctmc, stats) -> (
+          let (s, t) =
+            if !sim_bool then (false, true) else (true, false) in 
+          after_sbrs stats ctmc ~t_max:t !export_trans_dot_str !export_states_bool ~s_max:s 
+            !export_trans_str !export_csl_str !verbose_bool
+        ) 
+      | Brs.LIMIT (ts, stats) -> (
+          after_brs stats ts !export_trans_dot_str !export_states_bool ~s_max:true 
+            !export_trans_str !export_csl_str !verbose_bool
+        )
+    )
   with
   | Arg.Bad m -> 
     prerr_endline m; exit 1 

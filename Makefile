@@ -2,11 +2,11 @@
 
 .PHONY: all install
 
-all: init
-	$(OCPBUILD) -njobs 5
-
-init: 
+all: #call_conf
+ifeq (,$(wildcard ocp-build.root))
 	$(OCPBUILD) root
+endif
+	$(OCPBUILD) -njobs 5
 
 clean: 
 	$(OCPBUILD) clean
@@ -24,7 +24,7 @@ distclean:
 test:
 	$(OCPBUILD) test
 
-install: _obuild/bigrapher/bigrapher.asm
+install: all _obuild/bigrapher/bigrapher.asm
 	install -m 755 _obuild/bigrapher/bigrapher.asm $(prefix)/bin/bigrapher
 
 uninstall:

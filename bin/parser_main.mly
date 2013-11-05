@@ -64,7 +64,7 @@ let add_closure n c =
 %left  PIPE DPIPE 
 %left  PLUS MINUS
 %left  PROD SLASH
-%right DOT CARET
+%right CARET
 
 %%
 
