@@ -11,6 +11,7 @@ Makefile.config
 bin/cmd.ml
 bin/bigrapher.ocp
 man/bigrapher.1
+lib/bigraph.ocp
 config.*
 
 # OCaml 

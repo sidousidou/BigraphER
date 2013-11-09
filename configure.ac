@@ -43,6 +43,7 @@ AC_CHECK_OCAML_PKG([minisat])
 
 AC_CONFIG_FILES(
   Makefile.config
+  lib/bigraph.ocp
   bin/bigrapher.ocp
   bin/cmd.ml
   man/bigrapher.1

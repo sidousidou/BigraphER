@@ -1,8 +1,9 @@
-version = "0.3.0"
+version = "@PACKAGE_VERSION@"
 authors = [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
 license = [ "BSD" ]
 
 comp += [ "-warn-error" "A" ]
+install = true
 
 begin library "bigraph"
   
