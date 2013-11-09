@@ -1,0 +1,283 @@
+open String
+open Printf
+open Utils
+open Filename
+open Str
+
+let version = "@PACKAGE_VERSION@"
+
+type 'a option = Some of 'a | None
+
+exception UNKNOWN_OPTION of string
+exception NOT_OPTION of string
+
+type arg = 
+  [ `verbose 
+  | `sim 
+  | `s_max
+  | `version 
+  | `consts
+  | `out_csl
+  | `out_dot
+  | `out_states
+  | `out_prism
+  | `out_store
+  | `help ]
+
+exception MALFORMED_OPTION of arg
+
+type err = 
+  [ `model
+  | `big
+  | `u_opt
+  | `m_opt
+  | `not_opt ]
+
+type env = {
+  mutable verbose : bool;
+  mutable sim : bool;
+  mutable t_max : float;
+  mutable s_max : int;
+  mutable model: string option;
+  mutable bilog : string option;
+  mutable consts : (string * string) list;
+  mutable out_csl : string option;
+  mutable out_dot : string option;
+  mutable out_states : bool;
+  mutable out_prism : string option;
+  mutable out_store : string option;
+}
+
+let defaults = {
+  verbose = false;
+  sim = false;
+  t_max = 10000.0;
+  s_max = 1000;
+  model = None;
+  bilog = None;
+  consts = [];
+  out_csl = None;
+  out_dot = None;
+  out_states = false;
+  out_prism = None;
+  out_store = None;
+}
+
+let msg (a: arg) =
+  match a with
+  | `verbose ->    "Be more verbose."
+  | `sim ->        "Simulate the model. The optional argument sets the maximum simulation time."  
+  | `s_max ->      "Set the maximum number of states."
+  | `version ->    "Show version information."
+  | `consts ->     "Specify a list of constants."  
+  | `out_csl ->    "Export the labelling function to PRISM csl format."
+  | `out_dot ->    "Export the transition system to svg format."
+  | `out_states -> "Export each state to svg format. This option may only be use in conjuntion with the -d or --export-dot options."
+  | `out_prism ->  "Export the transition system to PRISM tra format."
+  | `out_store ->  "Export each declaration in the model to svg format. Dummy values are used to instantiate functional values."
+  | `help ->       "Show this help."
+
+let flags (a: arg) =
+  match a with
+  | `verbose ->    ["-v"; "--verbose"]
+  | `sim ->        ["-s"; "--simulation"]
+  | `s_max ->      ["-m"; "--max-states"]
+  | `version ->    ["--version"]
+  | `consts ->     ["-c"; "--consts"]
+  | `out_csl ->    ["-l"; "--export-labels"]
+  | `out_dot ->    ["-d"; "--export-dot"]
+  | `out_states -> ["-o"; "--export-states"]
+  | `out_prism ->  ["-p"; "--export-prism"]
+  | `out_store ->  ["-g"; "--export-store"]
+  | `help ->       ["-h"; "--help"] 
+ 
+let is_option s =
+  length s >= 1 && s.[0] = '-' 
+
+let parse_option s =
+  if is_option s then 
+    match s with
+    | "-v" | "--verbose" ->       `verbose
+    | "-s" | "--simulation" ->    `sim
+    | "-m" | "--max-states" ->    `s_max
+    | "--version" ->              `version
+    | "-c" | "--consts" ->        `consts
+    | "-l" | "--export-labels" -> `out_csl 
+    | "-d" | "--export-dot" ->    `out_dot
+    | "-o" | "--export-states" -> `out_states
+    | "-p" | "--export-prism" ->  `out_prism
+    | "-g" | "--export-store" ->  `out_store
+    | "-h" | "--help" ->          `help
+    | _ ->                         raise (UNKNOWN_OPTION s)
+  else raise (NOT_OPTION s)
+
+let usage_str =
+  "USAGE: bigrapher [--version]\n\
+  \                 [--help]\n\
+  \                 <model.big> [predicates.bilog] [options]\n"
+
+let usage =
+  usage_str ^ "Try `bigrapher --help' for more information."
+
+let options_str =
+  let l = [ 
+    `consts; `out_dot; `out_store; `help; `out_csl; `s_max; 
+    `out_states; `out_prism; `sim; `verbose; `version 
+  ] 
+  and format a =
+    match a with
+    | `version -> sprintf "       %s     %s"
+                    (String.concat ", " (flags a))
+                    (msg a) 
+    | `sim -> sprintf "       %s <float>\n\
+                      \              %s" 
+                (String.concat ", " (flags a))
+                (msg a)
+    | `s_max -> sprintf "       %s [int]\n\
+                        \              %s" 
+                  (String.concat ", " (flags a))
+                  (msg a)
+    | `consts -> sprintf "       %s x=val,...\n\
+                         \              %s" 
+                   (String.concat ", " (flags a))
+                   (msg a)
+    | `out_csl | `out_dot  | `out_prism ->
+      sprintf "       %s [outfile]\n\
+              \              %s" 
+        (String.concat ", " (flags a))
+        (msg a)
+    | `out_store -> sprintf "       %s [dir]\n\
+                            \              %s" 
+                      (String.concat ", " (flags a))
+                      (msg a)
+    | `help | `verbose | `out_states ->
+      sprintf "       %s\n\
+              \              %s" 
+        (String.concat ", " (flags a))
+        (msg a)
+  in
+  String.concat "\n" (List.map format l)
+
+let help =
+  usage_str ^ 
+    "\nOPTIONS:\n" ^
+    options_str
+
+let _to_string opt =
+  match opt with
+  | None -> assert false
+  | Some str -> str
+
+let error (e : err) (msg : string option) =
+  let msg = 
+    match e with
+    | `model -> "Model missing\n"
+    | `big -> sprintf "`%s' is not a valid model\n" (_to_string msg)
+    | `u_opt |`not_opt -> sprintf "Unknown option `%s'\n" (_to_string msg)
+    | `m_opt -> sprintf "Missing argument for option `%s'\n" (_to_string msg)
+  in
+  print_endline ("bigrapher: " ^ msg ^ usage);
+  exit 1
+
+let parse_consts args i =
+  try
+    let tokens = split (regexp_string ",") args.(i) in
+    defaults.consts <- List.map (fun s -> 
+        match split (regexp_string "=") s with
+        | [ide; v] -> (ide, v)
+        | _ -> assert false
+      ) tokens;
+  with
+  | _ -> raise (MALFORMED_OPTION `consts)
+
+let parse_int args i =
+  try
+    defaults.s_max <- int_of_string args.(i + 1)
+  with
+  | _ -> raise (MALFORMED_OPTION `s_max)
+
+let parse_file a args i =
+  try
+    match a with
+    | `out_csl -> defaults.out_csl <- Some (args.(i))
+    | `out_dot -> defaults.out_dot <- Some (args.(i))
+    | `out_prism -> defaults.out_prism <- Some (args.(i))
+    | `out_store -> defaults.out_store <- Some (args.(i))
+    | `verbose | `sim | `s_max | `version | `out_states
+    | `consts | `help -> assert false
+  with
+  | _ -> raise (MALFORMED_OPTION a)
+  
+let is_big str =
+  check_suffix (basename str) ".big"
+
+let is_bilog str =
+  check_suffix (basename str) ".bilog"
+
+let check args =
+  if args.out_states && 
+     (match args.out_dot with | None -> true | Some _ -> false)
+  then eprintf "%s: Ignoring option `%s'.\n%!" 
+      (colorise `red "Warning") (String.concat "|" (flags `out_states))
+
+let parse_options args =
+  let rec _parse args i =
+    if i < Array.length args then (
+      try
+        match parse_option args.(i) with
+        | `verbose -> defaults.verbose <- true; _parse args (i + 1)
+        | `version -> print_endline version; exit 0
+        | `help -> print_endline help; exit 0 
+        | `out_states -> defaults.out_states <- true; _parse args (i + 1)
+        | `s_max -> parse_int args (i + 1); _parse args (i + 2)
+        | `sim -> (
+            defaults.sim <- true;
+            try
+               defaults.t_max <- float_of_string args.(i + 1);
+               _parse args (i + 2) 
+             with
+             | Invalid_argument _ | Failure _ -> _parse args (i + 1)
+          )
+        | `out_csl -> parse_file `out_csl args (i + 1); _parse args (i + 2)
+        | `consts -> parse_consts args (i + 1); _parse args (i + 2)
+        | `out_dot -> parse_file `out_dot args (i + 1); _parse args (i + 2)
+        | `out_prism -> parse_file `out_prism args (i + 1); _parse args (i + 2)
+        | `out_store -> parse_file `out_store args (i + 1); _parse args (i + 2)
+      with
+      | NOT_OPTION str -> error `not_opt (Some str)
+      | MALFORMED_OPTION a -> error `m_opt (Some (String.concat "|" (flags a)))
+      | UNKNOWN_OPTION str -> error `u_opt (Some str)
+    );
+  in
+  _parse args 0;
+  check defaults
+
+let parse_model str =
+  try 
+    match parse_option str with
+    | `version -> print_endline version; exit 0
+    | `help -> print_endline help; exit 0
+    | `verbose | `sim | `s_max  | `consts  | `out_csl
+    | `out_dot | `out_states | `out_prism  
+    | `out_store -> error `big (Some str)         
+  with
+  | NOT_OPTION _ -> (* Model *)
+    if is_big str then defaults.model <- Some str
+    else error `big (Some str)
+  | UNKNOWN_OPTION str -> error `u_opt (Some str)
+
+let parse_bilog str =
+  if is_bilog str && not (is_option str) then (
+    defaults.bilog <- Some str; true
+  ) else false
+
+let parse cmd =
+  if Array.length cmd > 1 then (
+    parse_model cmd.(1);
+    try 
+      if parse_bilog cmd.(2) then 
+        parse_options (Array.sub cmd 3 ((Array.length cmd) - 3))
+      else parse_options (Array.sub cmd 2 ((Array.length cmd) - 2)) 
+    with
+    | Invalid_argument _ -> ()
+  ) else error `model None

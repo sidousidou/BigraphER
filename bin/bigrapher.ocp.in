@@ -10,6 +10,7 @@ begin program "bigrapher"
   
   files = [
     "../utils/utils.ml"
+    "cmd.ml"  
     "syntax.ml"
     "store.ml"
     "lexer_main.mll"

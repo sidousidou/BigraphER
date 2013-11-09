@@ -26,7 +26,6 @@ let colorise (c: text_style) s =
   in
   Printf.sprintf "\027[%sm%s\027[m" code s
 
-
 let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
 let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
                 "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec" |]
@@ -41,3 +40,20 @@ let format_time () =
     tm.Unix.tm_min
     tm.Unix.tm_sec
     (tm.Unix.tm_year + 1900)
+
+let (/) = Filename.concat
+
+let safe_mkdir dir =
+  if not (Sys.file_exists dir) then
+    try
+      Unix.mkdir dir 0o755
+    with
+      Unix.Unix_error(Unix.EEXIST,_,_) -> ()
+
+let mkdir dir =
+  let rec aux dir =
+    if not (Sys.file_exists dir) then (
+      aux (Filename.dirname dir);
+      safe_mkdir dir;
+    ) in
+  aux dir

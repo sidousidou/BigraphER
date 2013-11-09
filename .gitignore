@@ -8,7 +8,7 @@ ocp-build.root.old.old
 aclocal.m4
 autom4te.cache/
 Makefile.config
-bin/bigrapher.ml
+bin/cmd.ml
 bin/bigrapher.ocp
 config.*
 
@@ -33,6 +33,7 @@ massif*
 */massif*
 */*.out
 prof*
+*.stackdump
 
 # ocamldoc
 */*.html

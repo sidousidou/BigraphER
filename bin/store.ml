@@ -89,23 +89,18 @@ let pri_err p  =
   raise INVALID_PRI
  
 (* -consts a=2,b=3.4,c=inf*)
-let parse_consts str env =
-  let tokens = split (regexp_string ",") str in
-  List.iter (fun s -> 
-    match split (regexp_string "=") s with
-    | [ide; v] -> begin 
+let parse_consts pairs env =
+  List.iter (fun (ide, v) -> 
       try
 	Hashtbl.add env ide (Store_int (int_of_string v))
       with
       | Failure _ -> 
 	try
 	  Hashtbl.add env ide (Store_float (float_of_string v))
-	with
-	| Failure _ -> prerr_endline ("Error: invalid argument \"" ^ s ^ "\""); 
-	  raise INVALID_CONSTS
-    end
-    | _ -> prerr_endline ("Error: invalid argument \"" ^ s ^ "\""); 
-      raise INVALID_CONSTS) tokens
+        with
+	| Failure _ -> prerr_endline ("Error: invalid constant \"" ^ ide ^ "\""); 
+          raise INVALID_CONSTS
+    ) pairs
 
 let get_int ide p env =
   try 

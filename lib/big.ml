@@ -705,6 +705,8 @@ let equal_SAT a b =
     | Minisat.UNSAT -> false
     | Minisat.SAT -> true
   with
+  | Place.NOT_TOTAL -> false
+  | Link.NOT_TOTAL -> false
   | NO_MATCH -> false
 
 type bg_key = int * int * int * int * string * string * string

@@ -4146,7 +4146,7 @@ $as_echo "not found" >&6; }
    as_fn_error $? "Please install OCaml findlib module 'minisat'" "$LINENO" 5
  fi
 
-ac_config_files="$ac_config_files Makefile.config bin/bigrapher.ocp bin/bigrapher.ml"
+ac_config_files="$ac_config_files Makefile.config bin/bigrapher.ocp bin/cmd.ml"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4856,7 +4856,7 @@ do
   case $ac_config_target in
     "Makefile.config") CONFIG_FILES="$CONFIG_FILES Makefile.config" ;;
     "bin/bigrapher.ocp") CONFIG_FILES="$CONFIG_FILES bin/bigrapher.ocp" ;;
-    "bin/bigrapher.ml") CONFIG_FILES="$CONFIG_FILES bin/bigrapher.ml" ;;
+    "bin/cmd.ml") CONFIG_FILES="$CONFIG_FILES bin/cmd.ml" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
