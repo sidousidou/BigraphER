@@ -25,11 +25,12 @@ test:
 	$(OCPBUILD) test
 
 install: all _obuild/bigrapher/bigrapher.asm
+	$(OCPBUILD) install bigraph	
 	install -m 755 _obuild/bigrapher/bigrapher.asm $(prefix)/bin/bigrapher
 	install -m 755 man/bigrapher.1 $(mandir)/man1/
 
 uninstall:
-	$(OCPBUILD) uninstall
+	$(OCPBUILD) uninstall bigraph
 	rm -f $(prefix)/bin/bigrapher
 	rm -f $(mandir)/man1/bigrapher.1
 
