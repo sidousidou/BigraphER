@@ -19,19 +19,21 @@ distclean:
 	$(MAKE) clean 
 	rm -f ocp-build.root*
 	rm -f config.status config.log Makefile.config
-	rm -f bin/cmd.ml bin/bigrapher.ocp
+	rm -f bin/cmd.ml bin/bigrapher.ocp man/bigrapher.1
 
 test:
 	$(OCPBUILD) test
 
 install: all _obuild/bigrapher/bigrapher.asm
 	install -m 755 _obuild/bigrapher/bigrapher.asm $(prefix)/bin/bigrapher
+	install -m 755 man/bigrapher.1 $(mandir)/man1/
 
 uninstall:
 	$(OCPBUILD) uninstall
 	rm -f $(prefix)/bin/bigrapher
+	rm -f $(mandir)/man1/bigrapher.1
 
-call_conf: bin/arg.ml.in bin/bigrapher.ocp.in Makefile.config.in
+call_conf: bin/arg.ml.in bin/bigrapher.ocp.in Makefile.config.in man/bigrapher.1.in
 	@echo
 	@echo "    ERROR: you need to run ./configure."
 	@echo

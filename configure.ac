@@ -45,6 +45,7 @@ AC_CONFIG_FILES(
   Makefile.config
   bin/bigrapher.ocp
   bin/cmd.ml
+  man/bigrapher.1
 )
 AC_OUTPUT
 

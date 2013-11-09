@@ -1,3 +1,0 @@
-bin: [
-  "_obuild/bigrapher/bigrapher.asm" { "bigrapher" }
-]
