@@ -83,7 +83,7 @@ fun big s(l) =
 big r = 
 	M_L{r,x}.(id | A{d}.1);
 	
-fun sreact r_CTS(t,u,l) =
+fun sreact r_CTS(t, u, l) =
 	share (m_l(l) || M_D{r,x}.(id | A{d}.1)|| id(2))
 		by psi_2
 		in (id(2, {x,a,d,q}) || (S_L(t){a} | S(u){d}) || /r)

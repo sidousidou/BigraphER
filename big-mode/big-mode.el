@@ -9,22 +9,27 @@
 
 (add-to-list 'auto-mode-alist '("\\.big\\'" . big-mode))
 
-(defconst big-keywords
+(defconst big-types
   (eval-when-compile
     (regexp-opt
      '("big"
        "ctrl"
-       "fun"
        "float"
        "int"
+       "react"
+       "sreact")))
+  "BigraphER mode types.")
+
+(defconst big-keywords
+  (eval-when-compile
+    (regexp-opt
+     '("fun"
        "brs"
        "endbrs"
        "sbrs"
        "endsbrs"
        "init"
-       "rules"
-       "react"
-       "sreact")))
+       "rules")))
   "BigraphER mode keywords.")
 
 (defconst big-exp
@@ -46,16 +51,6 @@
        "inf")))
   "BigraphER mode constants.")
 
-(defconst big-identifier
-  (eval-when-compile
-    '"[a-zA-Z][a-zA-Z0-9_]*")
-  "Characters in an identifier.")
-
-(defconst form-identifier
-  (eval-when-compile
-    '"[a-z][a-zA-Z0-9_]*")
-  "Characters in a formal.")
-
 (defconst big-font-lock-keywords-1
   (append
    (list
@@ -67,6 +62,10 @@
     (cons
      (concat "\\<\\(" big-keywords "\\)\\>")
      '(1 font-lock-builtin-face))
+    ;; Fontify types
+    (cons
+     (concat "\\<\\(" big-types "\\)\\>")
+     '(1 font-lock-type-face))
     ;; Fontify expressions
     (cons
      (concat "\\<\\(" big-exp "\\)\\>")
@@ -77,10 +76,17 @@
   (append
    big-font-lock-keywords-1
    (list
-    ;; Fontify declarations -- It doesn't work
-    (cons
-     (concat "\\<\\(" big-identifier "\\)\\((" form-identifier ")\\)?\s-=")
-     '(1 font-lock-function-name-face nil t))))
+    ;; Fontify var names
+    (list
+     (concat "\\(" big-types "\\)\\s-\\(\[^(\s-\]+\\)")
+     '(2 font-lock-function-name-face))
+    ;; Fontify formals
+    ;;(list
+    ;; "fun\[^(\]+(\\(\\(.*,\\)*\[^,)\]+\\)\[^)\]*)"
+    ;; "fun\[^(\]+(\\(\[^,)\]+\\)" ;; first formal
+    ;; "fun\[^(\]+(\[^,\]+,\\(\[^,)\]+\\)" ;; second
+    ;; '(1 font-lock-variable-name-face)
+    ))
   "Medium level highlighting for BigraphER mode.")
 
 (defvar big-font-lock-keywords big-font-lock-keywords-2

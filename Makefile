@@ -24,15 +24,21 @@ distclean:
 test:
 	$(OCPBUILD) test
 
+# compile and install in the home dir
+emacs:
+	install -m 755 big-mode/big-mode.el $(prefix)/usr/share/emacs/site-lisp/
+
 install: all _obuild/bigrapher/bigrapher.asm
 	$(OCPBUILD) install bigraph	
 	install -m 755 _obuild/bigrapher/bigrapher.asm $(prefix)/bin/bigrapher
 	install -m 755 man/bigrapher.1 $(mandir)/man1/
+	$(MAKE) emacs
 
 uninstall:
 	$(OCPBUILD) uninstall bigraph
 	rm -f $(prefix)/bin/bigrapher
 	rm -f $(mandir)/man1/bigrapher.1
+	rm -f $(prefix)/usr/share/emacs/site-lisp/big-mode.el
 
 call_conf: bin/arg.ml.in bin/bigrapher.ocp.in Makefile.config.in man/bigrapher.1.in lib/bigraph.ocp.in
 	@echo
