@@ -1,4 +1,4 @@
-AC_INIT(bigrapher,0.4.1)
+AC_INIT(bigrapher,0.4.2)
 AC_COPYRIGHT(Copyright 2012-2013 Michele Sevegnani)
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -47,6 +47,7 @@ AC_CONFIG_FILES(
   bin/bigrapher.ocp
   bin/cmd.ml
   man/bigrapher.1
+  opam/url
 )
 AC_OUTPUT
 
@@ -55,9 +56,8 @@ if test "$prefix" = "NONE"; then
 fi
 
 bindir="`eval echo ${bindir}`"
-bindir="`eval echo ${bindir}`"
 mandir="`eval echo ${mandir}`"
-mandir="`eval echo ${mandir}`"
+OCPBUILD="`eval echo ${OCPBUILD}`"
 
 echo
 echo Executables will be installed in ${bindir}

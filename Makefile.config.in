@@ -1,5 +1,5 @@
-datarootdir = @datarootdir@
 prefix = @prefix@
 mandir = @mandir@
+bindir = @bindir@
 version = @PACKAGE_VERSION@
 OCPBUILD = @OCPBUILD@

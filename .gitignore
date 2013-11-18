@@ -12,7 +12,9 @@ bin/cmd.ml
 bin/bigrapher.ocp
 man/bigrapher.1
 lib/bigraph.ocp
+opam/url
 config.*
+*.elc
 
 # OCaml 
 */*.annot
