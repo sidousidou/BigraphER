@@ -1,6 +1,7 @@
 -include Makefile.config
 
 INSTALL = install
+OCPBUILD ?= ocp-build
 
 .PHONY: all install clean distclean test uninstall emacs
 
@@ -35,6 +36,7 @@ big-mode/big-mode.elc: big-mode/big-mode.el
 	$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
 emacs: big-mode/big-mode.elc
+	@echo "    INSTALL_DIR=$(prefix)/share/bigrapher/"
 	mkdir -p $(prefix)/share/bigrapher
 	$(INSTALL) -m 644 big-mode/big-mode.el $(prefix)/share/bigrapher
 	$(INSTALL) -m 644 big-mode/big-mode.elc $(prefix)/share/bigrapher
