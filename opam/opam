@@ -3,10 +3,6 @@ maintainer: "michele.sevegnani@glasgow.ac.uk"
 build: [
   ["./configure" "--prefix=%{prefix}%"]
   [make]
-  [make "install"]
-]
-remove: [
-  [make "uninstall"]
 ]
 depends: [
   "ocp-build"
@@ -15,8 +11,6 @@ depends: [
 authors: [ "Michele Sevegnani" ]
 post-messages: [
 "Please add in ~/.emacs.d/init.el or ~/.emacs the following lines:
-    (add-to-list 'load-path \"INSTALL_DIR\")
-    (load \"big-mode\")
-where you must replace INSTALL_DIR with the value displayed during the
-above installation"
+    (add-to-list 'load-path \"%{prefix}%/share/bigrapher/\")
+    (load \"big-mode\")"
   {success} ]

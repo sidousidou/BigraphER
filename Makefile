@@ -36,11 +36,12 @@ big-mode/big-mode.elc: big-mode/big-mode.el
 	$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
 emacs: big-mode/big-mode.elc
-	@echo "    INSTALL_DIR=$(prefix)/share/bigrapher/"
 	mkdir -p $(prefix)/share/bigrapher
 	$(INSTALL) -m 644 big-mode/big-mode.el $(prefix)/share/bigrapher
 	$(INSTALL) -m 644 big-mode/big-mode.elc $(prefix)/share/bigrapher
-	$(POST_INSTALL_HOOK)
+	@echo "Please add in ~/.emacs.d/init.el or ~/.emacs the following lines:"
+	@echo "    (add-to-list 'load-path \"$(prefix)/share/bigrapher/\")"
+	@echo "    (load \"big-mode\")"
 
 install: all
 	$(OCPBUILD) install bigraph	

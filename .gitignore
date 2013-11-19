@@ -14,7 +14,6 @@ man/bigrapher.1
 lib/bigraph.ocp
 opam/url
 config.*
-*.elc
 
 # OCaml 
 */*.annot
