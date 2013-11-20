@@ -4,6 +4,9 @@ build: [
   ["./configure" "--prefix=%{prefix}%"]
   [make]
 ]
+remove: [
+  ["ocp-build" "uninstall" "bigraph"]
+]
 depends: [
   "ocp-build"
   "minisat"
