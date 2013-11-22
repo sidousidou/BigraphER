@@ -5,6 +5,6 @@ man: [
   "man/bigrapher.1" { "man1" }
 ]
 share: [
-  "big-mode/big-mode.el"
-  "big-mode/big-mode.elc"
+  "bigrapher/big-mode.el"
+  "bigrapher/big-mode.elc"
 ]

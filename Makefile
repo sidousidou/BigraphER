@@ -41,7 +41,7 @@ emacs: big-mode/big-mode.elc
 	$(INSTALL) -m 644 big-mode/big-mode.elc $(prefix)/share/bigrapher
 	@echo "Please add in ~/.emacs.d/init.el or ~/.emacs the following lines:"
 	@echo "    (add-to-list 'load-path \"$(prefix)/share/bigrapher/\")"
-	@echo "    (load \"big-mode\")"
+	@echo "    (require 'big-mode)"
 
 install: all
 	$(OCPBUILD) install bigraph	
