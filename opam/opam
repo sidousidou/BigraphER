@@ -1,5 +1,6 @@
 opam-version: "1"
 maintainer: "michele.sevegnani@glasgow.ac.uk"
+license: "BSD"
 build: [
   ["./configure" "--prefix=%{prefix}%"]
   [make]
@@ -15,8 +16,9 @@ authors: [ "Michele Sevegnani" ]
 post-messages: [
 "Please add in ~/.emacs.d/init.el or ~/.emacs the following lines:
     (add-to-list 'load-path (concat
-      (replace-regexp-in-string "\n$" ""
-        (shell-command-to-string "opam config var share"))
-      "/bigrapher"))
+      (replace-regexp-in-string \"\\n$\" \"\"
+        (shell-command-to-string \"opam config var share\"))
+      \"/bigrapher\"))
     (require 'big-mode)"
-  {success} ]
+  {success}
+]
