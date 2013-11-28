@@ -18,7 +18,7 @@ let incr_linenum lexbuf =
 (* REGULAR DEFINITIONS *)
 
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let identifier = ['a'-'z']['a'-'z' 'A'-'Z' '0'-'9' '_']*
+let identifier = ['a'-'z']['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let comment = '#' [^'\n']* ('\n' | eof )  
 let num =   ((['0'-'9']+ | (['0'-'9']+ '.'['0'-'9']+))
 		(['E' 'e'](['+' '-']?)['0'-'9']+)?) 
@@ -34,6 +34,7 @@ rule lex =  parse
   | "("                     { LPAR }
   | ")"                     { RPAR }
   | "ctrl"                  { CTRL }
+  | "atomic"                { ATOMIC }     
   | "big"                   { BIG } 
   | "react"                 { REACT }
   | "sreact"                { SREACT }

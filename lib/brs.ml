@@ -90,6 +90,16 @@ let rec is_class_enabled b rs =
 
 let aux_apply (i_n, i_e) b r0 r1 =
   let (c, d, id) = decomp b r0 i_n i_e in
+(* Debug *)
+(*printf "\n\
+            Decomposition\n\
+        c ---------------\n\
+        %s\n\
+        d ---------------\n\
+        %s\n\
+        state -----------\n\
+        %s\n\n" (to_string c) (to_string d) 
+(to_string (comp c (comp (tens r1 id) d)));*)
   comp c (comp (tens r1 id) d) 
   
 (* Compute all the possible evolutions in one step. *)

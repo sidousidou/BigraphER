@@ -74,16 +74,16 @@ let open_lex path =
   (lexbuf, file)          
 
 let export_csl label =
- match defaults.out_csl with
-   | None -> ()
-   | Some file -> (
-       print_endline (
-         (colorise `yellow "Exporting properties to ") ^ 
-           (colorise `yellow (colorise `bold file)) ^ 
-           (colorise `yellow " ...")
-       );
-       Export.write_csl label (basename file) (dirname file) defaults.verbose
-     )
+  match defaults.out_csl with
+  | None -> ()
+  | Some file -> (
+      print_endline (
+        (colorise `yellow "Exporting properties to ") ^ 
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
+      );
+      Export.write_csl label (basename file) (dirname file) defaults.verbose
+    )
 
 let export_ctmc_prism ctmc =
   match defaults.out_prism with
@@ -91,11 +91,11 @@ let export_ctmc_prism ctmc =
   | Some file -> (
       print_endline (
         (colorise `yellow "Exporting CTMC in PRISM format to ") ^ 
-          (colorise `yellow (colorise `bold file)) ^ 
-          (colorise `yellow " ...")
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
       );
       Export.write_ctmc_prism ctmc (basename file) (dirname file) defaults.verbose
-  )
+    )
 
 let export_ts_prism ts =
   match defaults.out_prism with
@@ -103,8 +103,8 @@ let export_ts_prism ts =
   | Some file -> (
       print_endline (
         (colorise `yellow "Exporting transition system in PRISM format to ") ^ 
-          (colorise `yellow (colorise `bold file)) ^ 
-          (colorise `yellow " ...")
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
       );
       Export.write_ts_prism ts (basename file) (dirname file) defaults.verbose
     )
@@ -112,32 +112,32 @@ let export_ts_prism ts =
 let export_ctmc_states ctmc path =
   print_endline (
     (colorise `yellow "Exporting states to ") ^ 
-      (colorise `yellow (colorise `bold path)) ^ 
-      (colorise `yellow " ...")
+    (colorise `yellow (colorise `bold path)) ^ 
+    (colorise `yellow " ...")
   );
   Sbrs.iter_states (fun i s ->
       Export.write_big s (string_of_int i) path defaults.verbose
     ) ctmc
-    
+
 let export_ctmc_dot ctmc =
   match defaults.out_dot with
   | None -> ()
   | Some file -> (
       print_endline (
         (colorise `yellow "Exporting CTMC to ") ^ 
-          (colorise `yellow (colorise `bold file)) ^ 
-          (colorise `yellow " ...")
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
       );
       Export.write_ctmc ctmc (basename file) (dirname file) defaults.verbose;
       if defaults.out_states then 
         export_ctmc_states ctmc (dirname file);
     )
-    
+
 let export_ts_states ts path =
   print_endline (
     (colorise `yellow "Exporting states to ") ^ 
-      (colorise `yellow (colorise `bold path)) ^ 
-      (colorise `yellow " ...")
+    (colorise `yellow (colorise `bold path)) ^ 
+    (colorise `yellow " ...")
   );
   Brs.iter_states (fun i s ->
       Export.write_big s (string_of_int i) path defaults.verbose
@@ -149,8 +149,8 @@ let export_ts_dot ts =
   | Some file -> (
       print_endline (
         (colorise `yellow "Exporting transition system to ") ^ 
-          (colorise `yellow (colorise `bold file)) ^ 
-          (colorise `yellow " ...")
+        (colorise `yellow (colorise `bold file)) ^ 
+        (colorise `yellow " ...")
       );
       Export.write_ts ts (basename file) (dirname file) defaults.verbose;
       if defaults.out_states then 
@@ -177,8 +177,8 @@ let _ =
     let (decs, brs) =
       print_endline (
         (colorise `yellow "Parsing model file ") ^ 
-          (colorise `bold (colorise `yellow (_to_string defaults.model))) ^
-          (colorise `yellow " ...")
+        (colorise `bold (colorise `yellow (_to_string defaults.model))) ^
+        (colorise `yellow " ...")
       ); 
       let (lexbuf, file) = 
         open_lex (_to_string defaults.model) in
@@ -197,8 +197,8 @@ let _ =
       | Some path -> (
           print_endline (
             (colorise `yellow "Exporting declarations to ") ^ 
-              (colorise `yellow (colorise `bold path)) ^ 
-              (colorise `yellow " ...")
+            (colorise `yellow (colorise `bold path)) ^ 
+            (colorise `yellow " ...")
           );
 	  Store.export decs env path defaults.verbose
         )
@@ -214,16 +214,16 @@ let _ =
           if defaults.sim then (
             print_endline (
               (colorise `yellow "Starting simulation ...\n") ^
-                (colorise `cyan "Max # states: ") ^
-                (string_of_int defaults.s_max)
+              (colorise `cyan "Max # states: ") ^
+              (string_of_int defaults.s_max)
             );
             Brs.sim_ide s0 brs_p_classes get_f defaults.s_max n iter_f
           )
           else (
             print_endline (
               (colorise `yellow "Starting transition system construction ...\n") ^
-                (colorise `cyan "Max # states: ") ^
-                (string_of_int defaults.s_max)
+              (colorise `cyan "Max # states: ") ^
+              (string_of_int defaults.s_max)
             );
             Brs.bfs_ide s0 brs_p_classes get_f defaults.s_max n iter_f 
           ) in
@@ -235,20 +235,20 @@ let _ =
           if defaults.sim then (
             print_endline (
               (colorise `yellow "Starting stochastic simulation ...\n") ^
-                (colorise `cyan "Max sim time: ") ^
-                (string_of_float defaults.t_max)
+              (colorise `cyan "Max sim time: ") ^
+              (string_of_float defaults.t_max)
             );
             Sbrs.sim_ide s0 sbrs_p_classes get_f defaults.t_max n iter_f
           )
           else (
             print_endline (
               (colorise `yellow "Starting CTMC construction ...\n") ^
-                (colorise `cyan "Max # states: ") ^
-                (string_of_int defaults.s_max)
-              );
+              (colorise `cyan "Max # states: ") ^
+              (string_of_int defaults.s_max)
+            );
             Sbrs.bfs_ide s0 sbrs_p_classes get_f defaults.s_max n iter_f 
           ) in
-          after_sbrs stats ctmc false false
+        after_sbrs stats ctmc false false
       )
     with
     | Sbrs.LIMIT (ctmc, stats) -> (

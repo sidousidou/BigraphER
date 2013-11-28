@@ -40,6 +40,7 @@ type brs =
 
 type bexp =
   | Big_ide of string * (Lexing.position * Lexing.position)                                   (* b *)
+  | Big_name of string * (Lexing.position * Lexing.position)                                  (* name *)
   | Big_ide_fun of string * num_exp list * (Lexing.position * Lexing.position)                (* b(1, 5.67) *)
   | Big_plac of int list list * int * (Lexing.position * Lexing.position)                     (* ({{0,2,3}, {}}, 5) *)
   | Big_comp_c of bexp * bexp * (Lexing.position * Lexing.position)                           (* composition (lhs is a closure)*)    
@@ -59,6 +60,7 @@ type bexp =
 let string_of_bexp b =
   match b with
   | Big_ide _ -> "Big_ide"
+  | Big_name _ -> "Big_name"
   | Big_ide_fun _ -> "Big_ide_fun"
   | Big_plac _ -> "Big_plac"
   | Big_comp_c _ -> "Big_comp_c"

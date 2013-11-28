@@ -1,24 +1,39 @@
 comp += [ "-warn-error" "A" ]
 
-begin test "bigraph-test"
-  
-  test_benchmark = true
-
+begin test "matching"
+  test_benchmark = false
   test_byte = false
-  
   files = [
     "../utils/utils.ml"
     "test_match.ml"
-    "test_brs.ml"
-    "test.ml"
   ]
-
   requires = [
     "bigraph"
   ]
+  test_stdout = [ "%{sources}%/files/%{variant}%.reference" ]
+  test_args = [ "%{variant}%" "%{sources}%/files/match/" ] 
+  test_variants = [
+    "match"
+    "equality"
+  ]	    
+end
 
-  test_args = [
-    "%{sources}%/files/match/"
+begin test "brs"
+  test_benchmark = true
+  test_byte = false
+  files = [
+    "../utils/utils.ml"
+    "test_brs.ml"
   ]
-
+  requires = [
+    "bigraph"
+  ]
+  test_stdout = [ "%{sources}%/files/stdout.reference" ]
+  test_args = [ "%{test}%" ]
+  tests = [
+    "brs"
+    "sym_brs"
+    "sbrs"
+    "sym_sbrs"
+  ]
 end

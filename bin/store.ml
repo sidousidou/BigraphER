@@ -288,6 +288,8 @@ let rec eval_big exp env =
      | _ -> 
        print_err ("Error: Invalid placing expression") p; 
        raise INVALID_VAL)
+  | Big_name (n, _) -> 
+    Big.sub (Link.Face.empty) (Link.Face.singleton (Link.Nam n))
   | Big_comp (l, r, p) -> 
     (try Big.comp (eval_big l env) (eval_big r env)
      with
@@ -304,7 +306,7 @@ let rec eval_big exp env =
 	 raise INVALID_VAL)
     | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _
     | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
-    | Big_ion_fun _ | Big_share _ | Big_tens _ -> 
+    | Big_ion_fun _ | Big_share _ | Big_tens _ | Big_name _ -> 
       print_err ("Error: Invalid composition expression") p; 
       raise INVALID_VAL)			
   | Big_close (names, p) -> 
@@ -338,7 +340,7 @@ let rec eval_big exp env =
     | Big_ion_fun _ -> Big.nest (eval_big l env) (eval_big r env)
     | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
     | Big_close _ | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ 
-    | Big_share _ | Big_tens _ ->
+    | Big_share _ | Big_tens _ | Big_name _ ->
       print_err ("Error: Invalid nesting expression: Left-hand side is not an ion") p; 
       raise INVALID_VAL
      with

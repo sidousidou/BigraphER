@@ -1,11 +1,8 @@
 (* Tests for the matching engine *)
 open Printf
-  
 open Big
-  
 open Export
-  
-open Global
+open Utils
   
 (* parse a .big file *)
 let parse path =
@@ -55,113 +52,85 @@ let check_res res exp_res =
       (fun ((i0, j0), (i1, j1)) ->
          (Base.Iso.equal i0 i1) && (Base.Iso.equal j0 j1)
       ) (List.combine (sort_res res) (sort_res exp_res))
-  
-let print_test (t, (c, n)) =
-  (printf "Finished in %s seconds.\n"
-     (colorise `bold (colorise `blue (sprintf "%f" t)));
-   if c = n
-   then
-     printf "%s\n"
-       (colorise `bold (colorise `green (sprintf "%d/%d tests passed." c n)))
-   else
-     printf "%s\n"
-       (colorise `bold (colorise `red (sprintf "%d/%d tests passed." c n))))
-  
-let do_tests ts v_flag =
-  (printf "%s\n\n%!" (colorise `bold "Tests for matching");
-   let t0 = Unix.gettimeofday () in
-   let (count, _) =
-     List.fold_left
-       (fun (count, i) t ->
+
+let print_test (c, n) =
+  if c = n then
+    printf "%s\n"
+      (colorise `bold (colorise `green (sprintf "%d/%d tests passed." c n)))
+  else
+    printf "%s\n"
+      (colorise `bold (colorise `red (sprintf "%d/%d tests passed." c n)))
+
+let do_tests ts =
+  let (count, _) =
+    List.fold_left (fun (count, i) t ->
+        try
+          (t.res <- occurrences t.target t.pattern;
+           if check_res t.res t.exp_res then
+             ((count + 1), (i + 1))
+           else (
+             printf "%s\n"
+               (colorise `red (sprintf "Test %2d failed." (i + 1)));
+             (count, (i + 1))
+           )
+          )
+        with
+        | NODE_FREE -> (* tests 23 and 16 are special cases *)
+          if (i = 15) || (i = 22) then
+            ((count + 1), (i + 1))
+          else (
+            printf "%s\n"
+              (colorise `red (sprintf "Test %2d failed." (i + 1)));
+            (count, (i + 1))
+          )
+        | e -> (
+            printf "%s"
+              (colorise `red (sprintf "Test %2d failed: " (i + 1)));
+            printf "%s\n" (Printexc.to_string e);
+            (count, (i + 1))
+          )
+      ) (0, 0) ts
+  and n = List.length ts in
+  print_test (count, n)
+
+let do_equality_tests l ts =
+  let count0 =
+    List.fold_left (fun x (n, b) ->
+        try
+          if Big.equal b b then
+            x + 1
+          else (
+            printf "%s\n"
+              (colorise `red (sprintf "Test %3s=%3s failed.\n" n n));
+            x
+          )
+        with
+        | e -> (
+            printf "%s" (colorise `red (sprintf "Test %3s=%3s failed: " n n));
+            printf "%s\n" (Printexc.to_string e);
+            x
+          )
+      ) 0 (List.sort (fun (x, _) (y, _) -> String.compare x y) l)
+  and count1 =
+    snd (
+      List.fold_left (fun (i, x) t ->
           try
-            (t.res <- occurrences t.target t.pattern;
-             if check_res t.res t.exp_res
-             then
-               (if v_flag then printf "Test %2d passed.\n" (i + 1) else ();
-                ((count + 1), (i + 1)))
-             else
-               (printf "%s\n"
-                  (colorise `red (sprintf "Test %2d failed." (i + 1)));
-                if v_flag
-                then
-                  (printf
-                     "Expected result :\n\
-                                       %s\nResult :\n%s\n"
-                     (print_res t.exp_res) (print_res t.res);
-                   printf "Target:\n%s\nPattern:\n%s\n" (to_string t.target)
-                     (to_string t.pattern))
-                else ();
-                (count, (i + 1))))
-          with
-          | NODE_FREE -> (* tests 23 and 16 are special cases *)
-              if (i = 15) || (i = 22)
-              then
-                (if v_flag then printf "Test %2d passed.\n" (i + 1) else ();
-                 ((count + 1), (i + 1)))
-              else
-                (printf "%s\n"
-                   (colorise `red (sprintf "Test %2d failed." (i + 1)));
-                 if v_flag
-                 then
-                   printf "Expected result :\nInfinite matches\nResult :\n%s\n"
-                     (print_res t.res)
-                 else ();
-                 (count, (i + 1)))
-          | e ->
-              (printf "%s"
-                 (colorise `red (sprintf "Test %2d failed: " (i + 1)));
-               printf "%s\n" (Printexc.to_string e);
-               (count, (i + 1))))
-       (0, 0) ts in
-   let t = (Unix.gettimeofday ()) -. t0
-   and n = List.length ts
-   in
-     (print_test (t, (count, n));
-      printf "\n----------------------------------------\n\n"))
-  
-let do_equality_tests l ts v_flag =
-  (printf "%s\n\n%!" (colorise `bold "Tests for equality");
-   let t0 = Unix.gettimeofday () in
-   let count0 =
-     List.fold_left
-       (fun x (n, b) ->
-          try
-            if Big.equal b b
-            then
-              (if v_flag then printf "Test %3s=%3s passed.\n" n n else (); x + 1)
+            if (equal t.target t.pattern) && (i <> 27) then (
+              printf "%s\n" (colorise `red (sprintf "Test %2d failed." i));
+              ((i + 1), x)
+            )
             else
-              (printf "%s\n"
-                 (colorise `red (sprintf "Test %3s=%3s failed.\n" n n));
-               x)
+              ((i + 1), (x + 1))
           with
-          | e ->
-              (printf "%s" (colorise `red (sprintf "Test %3s=%3s failed: " n n));
-               printf "%s\n" (Printexc.to_string e);
-               x))
-       0 (List.sort (fun (x, _) (y, _) -> String.compare x y) l)
-   and count1 =
-     snd
-       (List.fold_left
-          (fun (i, x) t ->
-             try
-               if (equal t.target t.pattern) && (i <> 27)
-               then
-                 (printf "%s\n" (colorise `red (sprintf "Test %2d failed." i));
-                  ((i + 1), x))
-               else
-                 (if v_flag then printf "Test %2d passed.\n" i else ();
-                  ((i + 1), (x + 1)))
-             with
-             | e ->
-                 (printf "%s" (colorise `red (sprintf "Test %2d failed: " i));
-                  printf "%s\n" (Printexc.to_string e);
-                  ((i + 1), x)))
-          (1, 0) ts) in
-   let t = (Unix.gettimeofday ()) -. t0
-   and n = (List.length l) + (List.length ts)
-   in
-     (print_test (t, ((count0 + count1), n));
-      printf "\n----------------------------------------\n\n"))
+          | e -> (
+              printf "%s" (colorise `red (sprintf "Test %2d failed: " i));
+              printf "%s\n" (Printexc.to_string e);
+              ((i + 1), x)
+            )
+        ) (1, 0) ts
+    )
+  and n = (List.length l) + (List.length ts) in
+  print_test ((count0 + count1), n)
   
 let tests bgs = (* TEST 1 *)
   [ {
@@ -437,24 +406,14 @@ let tests bgs = (* TEST 1 *)
       res = [];
     } ]
   
-(* The first argument is the path of the directory containing the tests. The
-   second optional argument is the path for the svg output. *)
-let main path_tests ?(path_out = "") mask v_flag =
-  (if v_flag then printf "Loading input files in %s\n" path_tests else ();
-   let bg_strings = parse_all path_tests in
-   let bgs =
-     List.map
-       (fun (n, ls) ->
-          (if v_flag then printf "Building %s\n" n else ();
-           (n, (Big.parse ls))))
-       bg_strings
-   in
-     (if path_out <> ""
-      then List.iter (fun (n, b) -> write_big b n path_out v_flag) bgs
-      else ();
-      let ts = tests bgs
-      in
-        (if (mask land 0b10) > 0 then do_tests ts v_flag else ();
-         if (mask land 0b01) > 0 then do_equality_tests bgs ts v_flag else ())))
+let () =
+  let bg_strings = parse_all Sys.argv.(2) in
+  let bgs =
+    List.map (fun (n, ls) -> (n, (Big.parse ls))) bg_strings in
+  let ts = tests bgs in
+  match Sys.argv.(1) with
+  | "match" -> do_tests ts
+  | "equality" -> do_equality_tests bgs ts
+  | _ -> exit 1
   
 

@@ -28,7 +28,7 @@ distclean:
 	rm -f $(IN_FILES)
 
 test:
-	$(OCPBUILD) test
+	$(OCPBUILD) -tests
 
 EMACS ?= emacs
 

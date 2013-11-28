@@ -36,7 +36,7 @@ let add_closure n c =
   | Big_close (l, pos) -> Big_close (n :: l, pos)
   | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
   | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
-  | Big_ion_fun _ | Big_share _ | Big_tens _ ->
+  | Big_ion_fun _ | Big_share _ | Big_tens _ | Big_name _ ->
     parse_error_msg "Invalid closure" n; 
     raise Parsing.Parse_error
 
@@ -47,7 +47,7 @@ let add_closure n c =
 %token <string>   NUM      
 
 %token            LSBR RSBR LCBR RCBR LPAR RPAR 
-%token 	          CTRL BIG REACT SREACT INIT INT FLOAT FUN BRS ENDBRS SBRS ENDSBRS RULES SORT
+%token 	          CTRL BIG REACT SREACT INIT INT FLOAT FUN BRS ENDBRS SBRS ENDSBRS RULES SORT ATOMIC
 %token            TRUE FALSE NOT
 %token            SHARE BY IN
 %token            ID 
@@ -272,6 +272,7 @@ bexp
 simple_exp
   : IDE                                     { Big_ide ($1, add_pos ()) }
   | IDE LPAR acts RPAR                      { Big_ide_fun ($1, $3, add_pos ()) }
+  | LCBR IDE RCBR                           { Big_name ($2, add_pos ()) }
   | ion_exp                                 { $1 }
   | ion_exp DOT simple_exp                  { Big_nest ($1, $3, add_pos ()) }	
   | LPAR LSBR places RSBR COMMA NUM RPAR    { try

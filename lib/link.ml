@@ -388,40 +388,44 @@ let decomp t p i_n i_e i_c i_d =
   and iso_t = norm t_a in
   let i_e_norm = Iso.empty () in
   Iso.iter (fun a b ->
-    Iso.add i_e_norm (Iso.find iso_p a)  (Iso.find iso_t b)) i_e;
+      Iso.add i_e_norm (Iso.find iso_p a)  (Iso.find iso_t b)) i_e;
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
   let vect = Array.mapi (fun n e ->
-    let p_d = Ports.filter (fun (x, _) -> 
-      IntSet.mem x v_d) e.p
-    and p_c = Ports.filter (fun (x, _) -> 
-      IntSet.mem x v_c) e.p
-    and p_p = Ports.filter (fun (x, _) -> 
-      IntSet.mem x (IntSet.of_list (Iso.codom i_n))) e.p in
-    (* Interface of id *)
-    let f_id = 
-      if ((Ports.equal e.p p_c) && (Face.is_empty e.i)) || (* e is in c *)
-	((Ports.equal e.p p_d) && (Face.is_empty e.o)) || (* e is in d *)
-	(* e is ONE edge in p *)
-	((Ports.equal e.p p_p) (*&& (List.length (Hashtbl.find_all h n) < 2)*)) (* e is in p *)    
-      then Face.empty
-      else Face.singleton (Nam (sprintf "id%d" n)) in
-    (* Mediating interfaces of d and c *) 
-    (* Find liks in p having ports in common with e *)
+      let p_d = Ports.filter (fun (x, _) -> 
+          IntSet.mem x v_d
+        ) e.p
+      and p_c = Ports.filter (fun (x, _) -> 
+          IntSet.mem x v_c
+        ) e.p
+      and p_p = Ports.filter (fun (x, _) -> 
+          IntSet.mem x (IntSet.of_list (Iso.codom i_n))
+        ) e.p in
+      (* Interface of id *)
+      let f_id = 
+        if ((Ports.equal e.p p_c) && (Face.is_empty e.i)) || (* e is in c *)
+	   ((Ports.equal e.p p_d) && (Face.is_empty e.o)) || (* e is in d *)
+	   (* e is ONE edge in p *)
+	   ((Ports.equal e.p p_p) (*&& (List.length (Hashtbl.find_all h n) < 2)*)) (* e is in p *)    
+        then Face.empty
+        else Face.singleton (Nam (sprintf "~%d" n)) in (* ~ is forbidden by t *)
+      (* Mediating interfaces of d and c *) 
+      (* Find liks in p having ports in common with e *)
       let edges_p = 
 	(* if it's a matched edge no names are required *)
 	if IntSet.mem n (IntSet.of_list (Iso.codom i_e_norm)) then Lg.empty
-	else Lg.filter (fun e_p ->
-	  Ports.sub_multiset (Ports.apply e_p.p i_n) p_p)
-	  (* sub_multi (card_ports p_p) (card_ports e_p.p))  *)
-	  (Lg.filter (fun e_p ->
-	    Ports.exists (fun (x, _) ->
-	      IntSet.mem (Iso.find i_n x) (Ports.to_IntSet p_p)) e_p.p) p) in
-      (*multiset_of_ports e.p*)
+        else Lg.filter (fun e_p ->
+            Ports.sub_multiset (Ports.apply e_p.p i_n) p_p)
+	    (* sub_multi (card_ports p_p) (card_ports e_p.p))  *)
+	    (Lg.filter (fun e_p ->
+	         Ports.exists (fun (x, _) ->
+	             IntSet.mem (Iso.find i_n x) (Ports.to_IntSet p_p)) e_p.p
+               ) p) in (* remove links already used *)
       let i_c = outer edges_p 
       and o_d = inner edges_p in
       ({ i = Face.union f_id i_c; o = e.o; p = p_c },
        { i = e.i; o = Face.union f_id o_d; p = p_d },
-       { i = f_id; o = f_id; p = Ports.empty })) t_a in					
+       { i = f_id; o = f_id; p = Ports.empty })
+    ) t_a in					
   (* Build link graphs by removing empty edges*)
   let (u_c, u_d, id) =
     Array.fold_left (fun (acc_c, acc_d, acc_id) (c, d, id) ->
