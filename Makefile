@@ -27,7 +27,7 @@ distclean:
 	rm -f config.status config.log
 	rm -f $(IN_FILES)
 
-test:
+test: _obuild/bigrapher/bigrapher.asm
 	$(OCPBUILD) -tests
 
 EMACS ?= emacs

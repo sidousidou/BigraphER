@@ -65,7 +65,9 @@ let do_tests ts =
   let (count, _) =
     List.fold_left (fun (count, i) t ->
         try
-          (t.res <- occurrences t.target t.pattern;
+          (t.res <- List.map (fun (a, b, _) ->
+               (a, b)
+             ) (occurrences t.target t.pattern);
            if check_res t.res t.exp_res then
              ((count + 1), (i + 1))
            else (

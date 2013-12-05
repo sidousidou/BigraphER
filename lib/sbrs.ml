@@ -98,8 +98,8 @@ let rec is_class_enabled b rs =
     if occurs b r.rdx then true
     else is_class_enabled b rs
 
-let aux_apply (i_n, i_e) b r0 r1 =
-  let (c, d, id) = decomp b r0 i_n i_e in
+let aux_apply (i_n, i_e, f_e) b r0 r1 =
+  let (c, d, id) = decomp b r0 i_n i_e f_e in
   comp c (comp (tens r1 id) d)
 
 let step s srules =

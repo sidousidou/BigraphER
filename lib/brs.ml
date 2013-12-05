@@ -88,8 +88,8 @@ let rec is_class_enabled b rs =
     if occurs b r.rdx then true
     else is_class_enabled b rs
 
-let aux_apply (i_n, i_e) b r0 r1 =
-  let (c, d, id) = decomp b r0 i_n i_e in
+let aux_apply (i_n, i_e, f_e) b r0 r1 =
+  let (c, d, id) = decomp b r0 i_n i_e f_e in
 (* Debug *)
 (*printf "\n\
             Decomposition\n\
@@ -106,10 +106,14 @@ let aux_apply (i_n, i_e) b r0 r1 =
 (* No checks for solid redex *)
 (* Iso states are merged *)
 let step s rules = 
-  let filter_iso l =
-    ((List.fold_left (fun acc s ->
-      if List.exists (fun a -> Big.equal a s) acc then acc
-      else s :: acc) [] l), (List.length l)) in
+  let filter_iso l = (
+    List.fold_left (fun acc s ->
+        if List.exists (fun a -> Big.equal a s) acc then 
+          acc
+        else s :: acc
+      ) [] l, 
+    List.length l
+  ) in
   filter_iso (List.fold_left (fun acc r ->
     (List.map (fun o ->
       aux_apply o s r.rdx r.rct) (occurrences s r.rdx)) @ acc) [] rules) 

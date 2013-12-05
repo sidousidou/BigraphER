@@ -55,8 +55,8 @@ exception TSEITIN of clause list
 val tseitin : (lit * lit) list -> clause * b_clause list
 
 (** CNF encoding of  boolean implications.
-    Input :  [M -> ((X0 or X1 or ...) and (Y0 or Y1 or ...) ...)]
-    Output : [(!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ...] *)
+    Input :  [ (X0 or X1 or ...) -> (!Y0 and !Y1 and ...) ]
+    Output : [ (!X0 or !Y0) and (!X0 and !Y1) and ... (!X1 and !Y0) and ...] *)
 val impl : lit -> lit list list -> clause list 
 
 (** CNF encoding of [if and only if] boolean formulae.
@@ -152,3 +152,6 @@ val post_block_cmd : int -> Minisat.solver -> Minisat.var array array ->
   int list -> unit
 
 val post_block : int -> Minisat.solver -> Minisat.var array array -> unit
+
+val post_impl2 : var list -> var list -> Minisat.solver -> 
+  Minisat.var array array -> Minisat.var array array -> unit

@@ -253,11 +253,11 @@ let get_dot b ide =
       ide roots_shp outer_shp rank_out hyp_shp nodes_shp sites_shp
       node_ranks inner_shp rank_in place_adj link_adj
 
-let decomp t p i_v i_e =
+let decomp t p i_v i_e f_e =
   let (p_c, p_d, p_id, i_c, i_d) = 
     Place.decomp t.p p.p i_v in
   let (l_c, l_d, l_id) = 
-    Link.decomp t.l p.l i_v i_e i_c i_d
+    Link.decomp t.l p.l i_v i_e i_c i_d f_e
   and (n_c, n_d) = 
     (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
@@ -324,11 +324,12 @@ let snf b =
 let get_iso solver m =
   let iso = Iso.empty () in 
   Array.iteri (fun i r ->
-    Array.iteri (fun j x ->
-      match solver#value_of x with
-      | Minisat.True -> Iso.add iso i j
-      | Minisat.False | Minisat.Unknown -> ()
-    ) r) m;
+      Array.iteri (fun j x ->
+          match solver#value_of x with
+          | Minisat.True -> Iso.add iso i j
+          | Minisat.False | Minisat.Unknown -> ()
+        ) r
+    ) m;
   iso
 
 (************************** DEBUG *************************)
@@ -442,7 +443,7 @@ let add_c6 t p t_n p_n solver v =
   IntSet.union js_s js_r
 
 (* Each row of the input matrix aux is the commander-variable encoding of the 
-   corresponding column of thAe iso matrix m. *)
+   corresponding column of the iso matrix m. *)
 let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
   match rc_v with
   | [] -> (
@@ -477,7 +478,7 @@ let add_c10 t p solver v =
 (* Cnf.tot does not introduce commander-variables on columns. Using 
    post_block. *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, blocks) = 
+  let (r, c, constraints, blocks, iso_open) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
@@ -486,15 +487,45 @@ let add_c9 t p t_n p_n solver v =
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   Cnf.post_conj_m (Cnf.blocking_pairs blocks) solver w;
-  (w, aux)  
+  (w, aux, iso_open)  
 
+(* Block columns in W' when the corresponding column in W is in a match *)
+let add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w =
+  (* T index -> W' index *)
+  let inv_w' = Iso.inverse iso_w' in
+  let convert_j j =
+    Iso.find inv_w' (Iso.find iso_w j) 
+  and vars_of_col j m =
+    snd (
+      Array.fold_left (fun (i, acc) _ ->
+          (i + 1, (Cnf.N_var (Cnf.M_lit (i, j))) :: acc)
+        ) (0, []) m
+    ) in
+  let cols_w = Iso.dom iso_w in
+  match rc_w with
+  | [] -> (* no commander-variable encoding on the columns *)
+    List.iter (fun j ->
+        let vars_w = vars_of_col j w
+        and vars_w' = vars_of_col (convert_j j) w' in
+        Cnf.post_impl2 vars_w vars_w' solver w w'
+      ) cols_w
+  | _ -> 
+    List.iter (fun j ->
+        let vars_w =
+          List.map (fun r ->
+              Cnf.N_var (Cnf.M_lit (j, r))
+            ) rc_w
+        and vars_w' = vars_of_col (convert_j j) w' in
+        Cnf.post_impl2 vars_w vars_w' solver aux_bij_w_cols w'  
+      ) cols_w
+  
 (* Compute isos from nodes in the pattern to nodes in the target *)
 let aux_match t p t_trans =
   try
     let solver = new solver
     and (n, m) = (p.p.Place.n, t.p.Place.n) 
     and closed_p = Link.closed_edges p.l
-    and closed_t = Link.closed_edges t.l in
+    and (closed_t, iso_w) = Link.closed_edges_iso t.l in
     let (e, f) = (Link.Lg.cardinal closed_p,
 		  Link.Lg.cardinal closed_t) in
     (* Iso between nodes *)
@@ -524,11 +555,13 @@ let aux_match t p t_trans =
     (* Add C9: ports of matched open edges have to be isomorphic. 
        Return matrix from open edges in the pattern to non-empty edges in the
        target. *)
-    let (w', aux_bij_w'_rows) = 
+    let (w', aux_bij_w'_rows, iso_w') = 
       add_c9 t.l p.l t.n p.n solver v in
     (* Add C10: block edges between unconnected nodes with sites and nodes with
        roots. *)
     add_c10 t.p p.p solver v;
+    (* If an edge is in a match in w then forbid matches in w' *)
+    add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w;
     (* Block unmatchable columns *)
     let unmatch_v = 
       IntSet.diff 
@@ -573,10 +606,16 @@ let occurs t p =
     
 let occurrence t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
-  else (if quick_unsat t p then raise NO_MATCH
-    else (let t_trans = Sparse.trans t.p.Place.nn in
-	  let (s, vars) = aux_match t p t_trans in
-	  (get_iso s vars.iso_nodes, get_iso s vars.iso_edges)))
+  else (
+    if quick_unsat t p then raise NO_MATCH
+    else (
+      let t_trans = Sparse.trans t.p.Place.nn in
+      let (s, vars) = aux_match t p t_trans in
+      (get_iso s vars.iso_nodes, 
+       get_iso s vars.iso_edges,
+       get_iso s vars.iso_hyp)
+    )
+  )
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
@@ -585,7 +624,8 @@ let auto b =
     let b_trans = Sparse.trans b.p.Place.nn
     and rem_id res = 
       List.filter (fun (i, e) ->
-	not ((Iso.is_id i) && (Iso.is_id e))) res in
+	  not ((Iso.is_id i) && (Iso.is_id e))
+        ) res in
     rem_id (try 
 	      let (s, vars) = aux_match b b b_trans in
 	      let rec loop_occur res =
@@ -596,64 +636,72 @@ let auto b =
 		with
 		| NO_MATCH -> res in
 	      loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
-      with
-      | NO_MATCH -> [])
+            with
+            | NO_MATCH -> [])
   end
-      
+
 let clause_of_iso iso m =
-  snd 
-    (Array.fold_left (fun (i, acc) r ->
-      (i + 1, snd 
-	(Array.fold_left (fun (j, acc) x ->
-	  if Iso.mem iso i j then (j + 1, neg_lit x :: acc)
-	  else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
-	 ) (0, acc) r))
-     ) (0, []) m)
+  snd (
+    Array.fold_left (fun (i, acc) r ->
+        (i + 1, snd (
+            Array.fold_left (fun (j, acc) x ->
+	        if Iso.mem iso i j then 
+                  (j + 1, neg_lit x :: acc)
+	        else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
+	      ) (0, acc) r)
+        )
+      ) (0, []) m
+  )
 
 let occurrences t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
-  else
-    if quick_unsat t p then []
-    else (
-      try
-	(************************** DEBUG *************************)
-	(* printf "------- TARGET:\n%!\ *)
-        (*         %s\n\ *)
-        (*         ------- PATTERN:\n%!\ *)
-        (*         %s\n" (to_string t) (to_string p); *)
-	(**********************************************************)
-	let t_trans = Sparse.trans t.p.Place.nn in
-	let (s, vars) = aux_match t p t_trans in
-	(* print_dump s vars; *)
-	let autos = auto p in
-	let rec loop_occur res =
-	  add_blocking s vars.iso_nodes vars.iso_edges;
-	  (****************AUTOMORPHISMS****************)
-	  let gen = 
-	    List.combine
-	      (Iso.gen_isos 
-		 (get_iso s vars.iso_nodes) (List.map fst autos)) 
-	      (Iso.gen_isos 
-		 (get_iso s vars.iso_edges) (List.map snd autos)) in
-	  List.iter (fun (iso_i, iso_e) ->
+  else if quick_unsat t p then []
+  else (
+    try
+      (************************** DEBUG *************************)
+      (* printf "------- TARGET:\n%!\ *)
+             (*         %s\n\ *)
+             (*         ------- PATTERN:\n%!\ *)
+             (*         %s\n" (to_string t) (to_string p); *)
+      (**********************************************************)
+      let t_trans = Sparse.trans t.p.Place.nn in
+      let (s, vars) = aux_match t p t_trans in
+      (* print_dump s vars; *)
+      let autos = auto p in
+      let rec loop_occur res =
+	add_blocking s vars.iso_nodes vars.iso_edges;
+        (****************AUTOMORPHISMS****************)
+	let gen = 
+	  List.combine 
+            (Iso.gen_isos 
+	       (get_iso s vars.iso_nodes) (List.map fst autos)) 
+	    (Iso.gen_isos 
+	       (get_iso s vars.iso_edges) (List.map snd autos)) in
+	List.iter (fun (iso_i, iso_e) ->
 	    s#add_clause (
 	      (clause_of_iso iso_i vars.iso_nodes) @ 
-		(clause_of_iso iso_e vars.iso_edges)
+	      (clause_of_iso iso_e vars.iso_edges)
 	    )
 	  ) gen;
-	  (*********************************************)
-	  try 
-	    ignore (filter_loop s t p vars t_trans);
-	    loop_occur (
-	      res @ [(get_iso s vars.iso_nodes), (get_iso s vars.iso_edges)]
-	    )
-	  with
-	  | NO_MATCH -> res in
-	loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
-      with
-      | NO_MATCH -> []
-    )
-      
+	(*********************************************)
+	try 
+          ignore (filter_loop s t p vars t_trans);
+	  loop_occur (
+            (get_iso s vars.iso_nodes, 
+             get_iso s vars.iso_edges,
+             get_iso s vars.iso_hyp) :: res 
+          )
+	with
+	| NO_MATCH -> res in
+      loop_occur [
+        (get_iso s vars.iso_nodes, 
+         get_iso s vars.iso_edges,
+         get_iso s vars.iso_hyp)
+      ]
+    with
+    | NO_MATCH -> []
+  )
+
 let equal_SAT a b =
   (************************** DEBUG *************************)
   (* printf "------- A:\n%!\ *)

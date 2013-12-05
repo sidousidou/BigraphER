@@ -192,11 +192,13 @@ val is_solid : bg -> bool
 
 (** {6 Decompositions} *)
 
-(** [decomp t p i_v i_e] builds the decomposition of target [t] given pattern
+(** [decomp t p i_v i_e f_e] builds the decomposition of target [t] given pattern
     [p], node isomorphism [i_v] and edge isomorphism [i_e]. The isomorphism
     are from [p] to [t]. The elements in the result are the context, the 
-    parameter and the identity of the decomposition. *)
-val decomp :  bg -> bg -> Base.Iso.t -> Base.Iso.t -> bg * bg * bg
+    parameter and the identity of the decomposition. Argument [f_e] is a total
+    function from links in the pattern to links in the target. *)
+val decomp :  bg -> bg -> Base.Iso.t -> Base.Iso.t -> Base.Iso.t -> 
+  bg * bg * bg
 
 (*(** [levels b] computes the decomposition in levels of [b]. *)
 val levels : bg -> bg list*)
@@ -218,11 +220,11 @@ val occurs : bg -> bg ->  bool
     [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
     @raise NO_MATCH when there is no match. 
     @raise NODE_FREE when [p] has an empty node set.*)
-val occurrence : bg -> bg ->  Base.Iso.t * Base.Iso.t
+val occurrence : bg -> bg ->  Base.Iso.t * Base.Iso.t * Base.Iso.t
 
 (** [occurrences t p] returns a list of pairs of isomorphisms.
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrences : bg -> bg -> (Base.Iso.t * Base.Iso.t) list
+val occurrences : bg -> bg -> (Base.Iso.t * Base.Iso.t * Base.Iso.t) list
 
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
 val auto : bg -> (Base.Iso.t * Base.Iso.t) list

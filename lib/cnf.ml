@@ -451,22 +451,39 @@ let post_impl clauses s w v =
     | _ -> assert false
   ) clauses 
 
+(* Post implication to solver. Clauses are pairs in which the first element 
+   refers to matrix w and the second to matrix w'. *)
+let post_impl2 vars_w vars_w' s w w' =
+  (* cartesian product *)
+  let pairs = 
+    List.fold_left (fun acc j ->
+        List.fold_left (fun acc j' ->
+          (j, j') :: acc) acc vars_w'     
+      ) [] vars_w in
+  List.iter (fun (j, j') ->
+      s#add_clause [convert_m j w; convert_m j' w']
+    ) pairs
+
 (* Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
 let post_equiv (pairs, clauses) s w v =
   List.iter (fun (m, x) ->
-    s#add_clause [convert_m m w; convert_m x v]) pairs;
+      s#add_clause [convert_m m w; convert_m x v]
+    ) pairs;
   post_impl clauses s w v
 
 (* V_lit are for auxiliary variables whereas M_lit are for encoding 
    variables. *)
 let _post_pairs l s a v = 
   List.iter (fun (x, y) ->
-    s#add_clause [ (convert x a v); (convert y a v) ]) l
+      s#add_clause [ (convert x a v); (convert y a v) ]
+    ) l
 
 let _post_list l s a v =
   List.iter (fun clause ->
-  s#add_clause (List.map (fun x ->
-    convert x a v) clause)) l
+      s#add_clause (List.map (fun x ->
+          convert x a v
+        ) clause)
+    ) l
 
 (* Post bijection constraints to solver and return two matrices of auxiliary
    variables. Root indices are the same for every row of the matrix. *)
