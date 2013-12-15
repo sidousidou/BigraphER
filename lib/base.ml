@@ -62,7 +62,15 @@ module Iso = struct
   let inverse iso = 
     let iso' = Hashtbl.create (Hashtbl.length iso) in
     Hashtbl.iter (fun i j ->
-      Hashtbl.add iso' j i) iso;
+        Hashtbl.add iso' j i
+      ) iso;
+    iso'
+
+  let map iso i_dom i_codom = 
+    let iso' = Hashtbl.create (Hashtbl.length iso) in
+    Hashtbl.iter (fun i j ->
+        Hashtbl.add iso' (find i_dom i) (find i_codom j)
+      ) iso;
     iso'
   
   let dom iso =
@@ -139,10 +147,11 @@ module Iso = struct
     let apply iso a = 
       assert (cardinal iso = cardinal a);
       fold (fun i j acc ->
-	add acc (find a i) j; 
-	acc) iso (empty ()) in
+	  add acc (find a i) j; 
+          acc
+        ) iso (empty ()) in
     List.map (apply i) autos
-      
+
 end 
 
 module IntSet = struct  

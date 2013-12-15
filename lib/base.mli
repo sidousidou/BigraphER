@@ -73,7 +73,10 @@ sig
   
   (** Return the inverse of an isomorphism. *)
   val inverse : t -> t
-
+  
+  (** Return a new isomorphism in which elements in the domain and codomain
+      are transformed by the input isomorphisms. *)
+  val map : t -> t -> t-> t
   (** Compute the domain of an isomorphism. *)
   val dom : t -> int list
     

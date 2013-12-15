@@ -374,71 +374,81 @@ let decomp t p i_n i_e i_c i_d f_e =
     (IntSet.of_list (Iso.dom i_c), IntSet.of_list (Iso.dom i_d)) 
   (* Introduce indices *)
   and t_a = Array.of_list (Lg.elements t)
-  and p_a = Array.of_list (Lg.elements p) in
-  (* normalise iso on all links not just edges *)
-  let norm a =
-    let iso = Iso.empty () in
-    ignore (Array.fold_left (fun (i, j) e ->
-        if is_closed e then begin
-	  Iso.add iso i j; 
-	  (i + 1, j + 1)
-        end else (i, j + 1)) (0, 0) a);
-    iso in
-  let iso_p = norm p_a
-  and iso_t = norm t_a in
-  let i_e_norm = Iso.empty () in
-  Iso.iter (fun a b ->
-      Iso.add i_e_norm (Iso.find iso_p a)  (Iso.find iso_t b)) i_e;
+  and p_a = Array.of_list (Lg.elements p) 
+  (* Inverse isos: T -> P *)
+  and i_e' = Iso.inverse i_e
+  and f_e' = Iso.inverse f_e in (* Not a function *) 
+  (* Domains: disjoint subsets of T *)
+  let closed_t = IntSet.of_list (Iso.dom i_e')
+  and non_empty_t = IntSet.of_list (Iso.dom f_e') 
+  in
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
-  let vect = Array.mapi (fun n e ->
-      let p_d = Ports.filter (fun (x, _) -> 
-          IntSet.mem x v_d
-        ) e.p
-      and p_c = Ports.filter (fun (x, _) -> 
-          IntSet.mem x v_c
-        ) e.p
-      and p_p = Ports.filter (fun (x, _) -> 
-          IntSet.mem x (IntSet.of_list (Iso.codom i_n))
-        ) e.p in
-      (* Interface of id *)
-      let f_id = 
-        if ((Ports.equal e.p p_c) && (Face.is_empty e.i)) || (* e is in c *)
-	   ((Ports.equal e.p p_d) && (Face.is_empty e.o)) || (* e is in d *)
-	   (* e is ONE edge in p *)
-	   ((Ports.equal e.p p_p) (*&& (List.length (Hashtbl.find_all h n) < 2)*)) (* e is in p *)    
-        then Face.empty
-        else Face.singleton (Nam (sprintf "~%d" n)) in (* ~ is forbidden by t *)
-      (* Mediating interfaces of d and c *) 
-      (* Find liks in p having ports in common with e *)
-      let edges_p = 
-	(* if it's a matched edge no names are required *)
-	if IntSet.mem n (IntSet.of_list (Iso.codom i_e_norm)) then Lg.empty
-        else Lg.filter (fun e_p ->
-            Ports.sub_multiset (Ports.apply e_p.p i_n) p_p)
-	    (* sub_multi (card_ports p_p) (card_ports e_p.p))  *)
-	    (Lg.filter (fun e_p ->
-	         Ports.exists (fun (x, _) ->
-	             IntSet.mem (Iso.find i_n x) (Ports.to_IntSet p_p)) e_p.p
-               ) p) in (* remove links already used *)
-      let i_c = outer edges_p 
-      and o_d = inner edges_p in
-      ({ i = Face.union f_id i_c; o = e.o; p = p_c },
-       { i = e.i; o = Face.union f_id o_d; p = p_d },
-       { i = f_id; o = f_id; p = Ports.empty })
-    ) t_a in					
-  (* Build link graphs by removing empty edges*)
-  let (u_c, u_d, id) =
-    Array.fold_left (fun (acc_c, acc_d, acc_id) (c, d, id) ->
-        let aux e acc =
-	  if (Face.is_empty e.i) && (Face.is_empty e.o) && 
-	     (Ports.is_empty e.p) then 
-	    acc
-	  else Lg.add e acc in
-        (aux c acc_c, aux d acc_d, aux id acc_id)) 
-      (Lg.empty, Lg.empty, Lg.empty) vect in
-  (* Normalise ports *) 	  
-  (apply_iso i_c u_c, apply_iso i_d u_d, id)	  
-
+  let (c, d, b_id, _) = 
+    Array.fold_left (fun (acc_c, acc_d, acc_id, n) e ->
+        (* n is an edge in a match with an edge in P *)
+        if IntSet.mem n closed_t then (
+          (acc_c, acc_d, acc_id, n + 1)
+        ) 
+        else (
+          (* n needs to be split *) 
+          let p_d = Ports.filter (fun (x, _) -> 
+              IntSet.mem x v_d
+            ) e.p
+          and p_c = Ports.filter (fun (x, _) -> 
+              IntSet.mem x v_c
+            ) e.p
+          and (in_c, out_d) =
+            (* n is a link/edge in a match with link in P *)
+            if IntSet.mem n non_empty_t then (
+              let match_p = 
+                List.fold_left (fun acc i ->
+                    Lg.add  p_a.(i) acc
+                  ) Lg.empty (Hashtbl.find_all f_e' n) in
+              (outer match_p, inner match_p)
+            ) else
+              (Face.empty, Face.empty) 
+          in
+          (* d and p *)
+          if Face.is_empty e.o && Ports.is_empty p_c &&
+             Face.is_empty in_c then
+            (acc_c, 
+             Lg.add { i = e.i; o = out_d; p = Ports.apply p_d i_d} acc_d, 
+             acc_id, 
+             n + 1)
+          else 
+          (* c and p *)
+          if Face.is_empty e.i && Ports.is_empty p_d then
+            (Lg.add { i = in_c; o = e.o; p = Ports.apply p_c i_c} acc_c, 
+             acc_d,
+             acc_id, 
+             n + 1)
+          else (
+            (* id *)
+            let name = Face.singleton (Nam (sprintf "~%d" n)) in
+            (Lg.add { i = Face.union name in_c; 
+                      o = e.o; 
+                      p = Ports.apply p_c i_c } acc_c, 
+             Lg.add { i = e.i; 
+                      o = Face.union name out_d; 
+                      p = Ports.apply p_d i_d } acc_d, 
+             Lg.add { i = name; o = name; p = Ports.empty } acc_id, 
+             n + 1)
+          )
+        )
+      ) (Lg.empty, Lg.empty, Lg.empty, 0) t_a in
+  printf "---- Decomposition\n\
+          T  : %s\n\
+          P  : %s\n\
+          iso_e : %s\n\
+          map_e : %s\n\
+          -----\n\
+          c  : %s\n\
+          d  : %s\n\
+          id : %s%!\n"
+    (to_string t) (to_string p) (Iso.to_string i_e) (Iso.to_string f_e)
+    (to_string c) (to_string d) (to_string b_id);
+  (c, d, b_id)
+    
 (* Compute the levels of l. ps is a list of port levels (leaves are the last
    element). The output is a wiring and a list of link graphs. *)
 let levels l ps =
@@ -581,8 +591,10 @@ let compat_clauses e_p i t h_t n_t n_p =
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
 let match_peers t p n_t n_p =
-  let open_p = Lg.filter (fun e ->
-      not (Ports.is_empty e.p)) (open_edges p)
+  let (open_p, iso_p) = 
+    filter_iso (fun e ->
+        not (Ports.is_empty e.p) && (not (is_closed e))
+      ) p
   and (non_empty_t, iso_open) = 
     filter_iso (fun e ->  not (Ports.is_empty e.p)) t in
   let h = Hashtbl.create (Lg.cardinal non_empty_t) in
@@ -619,7 +631,7 @@ let match_peers t p n_t n_p =
 	  (clauses @ acc, b @ block, i + 1)
         )
       ) open_p ([], [], 0) in
-  (r, c, f, block, iso_open)
+  (r, c, f, block, iso_p, iso_open)
 
 let edg_iso a b n_a n_b  = 
   (Face.equal a.i b.i) && (Face.equal a.o b.o) &&

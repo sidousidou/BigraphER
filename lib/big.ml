@@ -344,10 +344,14 @@ type sat_vars = {
   z0_rows : Minisat.var array array;
   z0_cols : Minisat.var array array;
   iso_edges : Minisat.var array array;
+  map_edges_r : Base.Iso.t;
+  map_edges_c : Base.Iso.t;
   z1_rows : Minisat.var array array;
   z1_cols : Minisat.var array array;
   z2 : Minisat.var array array;
   iso_hyp : Minisat.var array array;
+  map_hyp_r : Base.Iso.t;
+  map_hyp_c : Base.Iso.t;
   z3 : Minisat.var array array;
 }
 
@@ -478,7 +482,7 @@ let add_c10 t p solver v =
 (* Cnf.tot does not introduce commander-variables on columns. Using 
    post_block. *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, blocks, iso_open) = 
+  let (r, c, constraints, blocks, iso_p, iso_open) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
@@ -487,7 +491,7 @@ let add_c9 t p t_n p_n solver v =
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   Cnf.post_conj_m (Cnf.blocking_pairs blocks) solver w;
-  (w, aux, iso_open)  
+  (w, aux, iso_p, iso_open)  
 
 (* Block columns in W' when the corresponding column in W is in a match *)
 let add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w =
@@ -524,8 +528,8 @@ let aux_match t p t_trans =
   try
     let solver = new solver
     and (n, m) = (p.p.Place.n, t.p.Place.n) 
-    and closed_p = Link.closed_edges p.l
-    and (closed_t, iso_w) = Link.closed_edges_iso t.l in
+    and (closed_p, iso_w_r) = Link.closed_edges_iso p.l
+    and (closed_t, iso_w_c) = Link.closed_edges_iso t.l in
     let (e, f) = (Link.Lg.cardinal closed_p,
 		  Link.Lg.cardinal closed_t) in
     (* Iso between nodes *)
@@ -555,13 +559,13 @@ let aux_match t p t_trans =
     (* Add C9: ports of matched open edges have to be isomorphic. 
        Return matrix from open edges in the pattern to non-empty edges in the
        target. *)
-    let (w', aux_bij_w'_rows, iso_w') = 
+    let (w', aux_bij_w'_rows, iso_w'_r, iso_w'_c) = 
       add_c9 t.l p.l t.n p.n solver v in
     (* Add C10: block edges between unconnected nodes with sites and nodes with
        roots. *)
     add_c10 t.p p.p solver v;
     (* If an edge is in a match in w then forbid matches in w' *)
-    add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w;
+    add_c12 solver w iso_w_c w' iso_w'_c aux_bij_w_cols rc_w;
     (* Block unmatchable columns *)
     let unmatch_v = 
       IntSet.diff 
@@ -573,10 +577,14 @@ let aux_match t p t_trans =
       z0_rows = aux_bij_v_rows;
       z0_cols = aux_bij_v_cols;
       iso_edges = w;
+      map_edges_r = iso_w_r;
+      map_edges_c = iso_w_c;
       z1_rows = aux_bij_w_rows;
       z1_cols = aux_bij_w_cols;
       z2 = zs4;
       iso_hyp = w';
+      map_hyp_r = iso_w'_r;
+      map_hyp_c = iso_w'_c;
       z3 = aux_bij_w'_rows;
     } in
     filter_loop solver t p vars t_trans
@@ -598,12 +606,12 @@ let occurs t p =
   try
     if p.n.Nodes.size = 0 then true
     else (if quick_unsat t p then false
-      else (let t_trans = Sparse.trans t.p.Place.nn in
-	    ignore (aux_match t p t_trans);
-	    true))
+          else (let t_trans = Sparse.trans t.p.Place.nn in
+	        ignore (aux_match t p t_trans);
+	        true))
   with
-    | NO_MATCH -> false
-    
+  | NO_MATCH -> false
+
 let occurrence t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else (
@@ -612,8 +620,9 @@ let occurrence t p =
       let t_trans = Sparse.trans t.p.Place.nn in
       let (s, vars) = aux_match t p t_trans in
       (get_iso s vars.iso_nodes, 
-       get_iso s vars.iso_edges,
-       get_iso s vars.iso_hyp)
+       Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
+       Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_r
+      )
     )
   )
 
@@ -628,14 +637,18 @@ let auto b =
         ) res in
     rem_id (try 
 	      let (s, vars) = aux_match b b b_trans in
-	      let rec loop_occur res =
+              let rec loop_occur res =
 		add_blocking s vars.iso_nodes vars.iso_edges;
 		try 
-		  ignore (filter_loop s b b vars b_trans);
-		  loop_occur (res @ [(get_iso s vars.iso_nodes), (get_iso s vars.iso_edges)])
+                  ignore (filter_loop s b b vars b_trans);
+                  loop_occur (
+                    ((get_iso s vars.iso_nodes), 
+                     (get_iso s vars.iso_edges) (* matrix indices *)
+                    ) :: res)
 		with
 		| NO_MATCH -> res in
-	      loop_occur [(get_iso s vars.iso_nodes, get_iso s vars.iso_edges)]
+              loop_occur [(get_iso s vars.iso_nodes, 
+                           get_iso s vars.iso_edges)] (* matrix indices *)
             with
             | NO_MATCH -> [])
   end
@@ -688,15 +701,16 @@ let occurrences t p =
           ignore (filter_loop s t p vars t_trans);
 	  loop_occur (
             (get_iso s vars.iso_nodes, 
-             get_iso s vars.iso_edges,
-             get_iso s vars.iso_hyp) :: res 
+             Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
+             Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c
+            ) :: res 
           )
 	with
 	| NO_MATCH -> res in
       loop_occur [
         (get_iso s vars.iso_nodes, 
-         get_iso s vars.iso_edges,
-         get_iso s vars.iso_hyp)
+         Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
+         Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c)
       ]
     with
     | NO_MATCH -> []
