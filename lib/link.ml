@@ -436,17 +436,17 @@ let decomp t p i_n i_e i_c i_d f_e =
           )
         )
       ) (Lg.empty, Lg.empty, Lg.empty, 0) t_a in
-  printf "---- Decomposition\n\
-          T  : %s\n\
-          P  : %s\n\
-          iso_e : %s\n\
-          map_e : %s\n\
-          -----\n\
-          c  : %s\n\
-          d  : %s\n\
-          id : %s%!\n"
-    (to_string t) (to_string p) (Iso.to_string i_e) (Iso.to_string f_e)
-    (to_string c) (to_string d) (to_string b_id);
+  (* printf "---- Decomposition\n\ *)
+  (*         T  : %s\n\ *)
+  (*         P  : %s\n\ *)
+  (*         iso_e : %s\n\ *)
+  (*         map_e : %s\n\ *)
+  (*         -----\n\ *)
+  (*         c  : %s\n\ *)
+  (*         d  : %s\n\ *)
+  (*         id : %s%!\n" *)
+  (*   (to_string t) (to_string p) (Iso.to_string i_e) (Iso.to_string f_e) *)
+  (*   (to_string c) (to_string d) (to_string b_id); *)
   (c, d, b_id)
     
 (* Compute the levels of l. ps is a list of port levels (leaves are the last
@@ -524,15 +524,24 @@ let _match_ports t p n_t n_p clauses : Cnf.clause list list =
       let formulas =
         Ports.compat_list p.(e_i) t.(e_j) n_p n_t in
       let res = Cnf.impl (Cnf.M_lit (e_i, e_j)) formulas in
-      res :: acc) [] (List.flatten clauses) 
+      res :: acc
+    ) [] (List.flatten clauses) 
 
 (* Nodes of matched edges are isomorphic. Indexes in clauses are for closed
    edges. *)
 let match_ports t p n_t n_p clauses : Cnf.clause list list =
-  let a_t = Array.of_list (List.map (fun e -> 
-      e.p) (Lg.elements t)) 
-  and a_p = Array.of_list (List.map (fun e -> 
-      e.p) (Lg.elements p)) in
+  let a_t = 
+    Array.of_list (
+      List.map (fun e -> 
+          e.p
+        ) (Lg.elements t)
+    ) 
+  and a_p = 
+    Array.of_list (
+      List.map (fun e -> 
+          e.p
+        ) (Lg.elements p)
+    ) in
   _match_ports a_t a_p n_t n_p clauses
 
 (* Is p sub-hyperedge of t? *)
@@ -588,6 +597,63 @@ let compat_clauses e_p i t h_t n_t n_p =
       (Cnf.M_lit (i, j), clauses) :: acc
     ) t []
 
+let port_subsets p_i_list j p_a t_edge n_t n_p : Cnf.clause list = 
+  let subsets xs = 
+    List.fold_right (fun x rest -> 
+        rest @ List.map (fun ys -> x :: ys) rest
+      ) xs [[]] in
+  let blocks = List.filter (fun l ->
+     (* match l with 
+      | [] -> false
+      | _  -> ( *)
+          let p_set = List.fold_left (fun acc i ->
+              Ports.union acc p_a.(i).p
+            ) Ports.empty l in
+          not (
+            sub_edge {i = Face.empty; 
+                      o = Face.empty; 
+                      p = p_set} t_edge n_t n_p
+          )
+       (* ) *)
+    ) (subsets p_i_list) in
+  List.map (fun l ->
+      List.map (fun i ->
+          Cnf.N_var (Cnf.M_lit (i, j))
+        ) l
+    ) blocks
+    
+(* Generate constraints to block sets of edges in P that cannot be matched 
+   to a link in T. Example: {A, B} -> [{A}, {B}, {A, B}] blocks [{A}, {A, B}],
+   [{B}, {A, B}] and [{A}, {B}, {A, B}] *)
+
+(* 3 -> 0,2,4 *)
+(* !(0,3) | ! (4,3) | !(2,3) *)
+(* !(0,3) | ! (4,3) *)
+(* !(2,3) | ! (4,3) *)
+
+let compat_sub p t f_e n_t n_p =
+  let p_a = Array.of_list (Lg.elements p)
+  and t_a = Array.of_list (Lg.elements t) in
+  fst (
+    Hashtbl.fold (fun j i (acc, marked) ->
+        if List.mem j marked then (acc, marked)
+        else (
+          let p_i_list = Hashtbl.find_all f_e j in
+          let p_set = List.fold_left (fun acc i ->
+              Ports.union acc p_a.(i).p
+            ) Ports.empty p_i_list in
+          if sub_edge {i = Face.empty; 
+                       o = Face.empty; 
+                       p = p_set} t_a.(j) n_t n_p 
+          then (acc, marked)
+          else (
+            let clauses = port_subsets p_i_list j p_a t_a.(j) n_t n_p in
+            (clauses @ acc, j :: marked)
+          )
+        )
+      ) f_e ([], [])
+  )
+  
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
 let match_peers t p n_t n_p =
@@ -603,15 +669,17 @@ let match_peers t p n_t n_p =
       i + 1) non_empty_t 0);
   let r = Lg.cardinal open_p
   and c = Lg.cardinal non_empty_t in
+  let f_e = Hashtbl.create (r * c) in (* T -> P *)
   let c_s = IntSet.of_int c in
   let (f, block, _) =
     Lg.fold (fun e_p (acc, block, i) ->
         (* Find compatible edges in the target *)
         let (_, compat_t) = 
 	  Lg.fold (fun e_t (j, acc) ->
-	      if sub_edge e_p e_t n_t n_p then 
-	        (j + 1, IntSet.add j acc)
-	      else
+	      if sub_edge e_p e_t n_t n_p then ( 
+                Hashtbl.add f_e j i;	
+                (j + 1, IntSet.add j acc)
+              ) else
 	        (j + 1, acc)
 	    ) non_empty_t (0, IntSet.empty) in
         (* No compatible edges found *)
@@ -627,11 +695,12 @@ let match_peers t p n_t n_p =
 	  and b =
 	    IntSet.fold (fun j acc ->
 	        (i, j) :: acc
-	      ) (IntSet.diff c_s compat_t) [] in
+              ) (IntSet.diff c_s compat_t) [] in
 	  (clauses @ acc, b @ block, i + 1)
         )
       ) open_p ([], [], 0) in
-  (r, c, f, block, iso_p, iso_open)
+  let block_f = compat_sub open_p non_empty_t f_e n_t n_p in
+  (r, c, f, block, block_f, iso_p, iso_open)
 
 let edg_iso a b n_a n_b  = 
   (Face.equal a.i b.i) && (Face.equal a.o b.o) &&

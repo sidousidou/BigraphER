@@ -208,7 +208,8 @@ val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
 
 val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  int * int * Cnf.clause list list * (int * int) list * Base.Iso.t * Base.Iso.t
+  int * int * Cnf.clause list list * (int * int) list * 
+  Cnf.clause list * Base.Iso.t * Base.Iso.t
 
 val match_list_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list

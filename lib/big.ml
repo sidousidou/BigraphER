@@ -482,12 +482,13 @@ let add_c10 t p solver v =
 (* Cnf.tot does not introduce commander-variables on columns. Using 
    post_block. *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, blocks, iso_p, iso_open) = 
+  let (r, c, constraints, blocks, blocks_f, iso_p, iso_open) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
-    Cnf.post_impl x solver w v
-  ) constraints;
+      Cnf.post_impl x solver w v
+    ) constraints;
+  Cnf.post_conj_m blocks_f solver w;
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   Cnf.post_conj_m (Cnf.blocking_pairs blocks) solver w;

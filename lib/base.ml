@@ -339,22 +339,25 @@ module Ports = struct
   (* Transform a set of nodes in a set of ports *)
   let of_nodes ns =
     Nodes.fold (fun n c acc -> 
-      union (of_node (n, c)) acc) ns empty
+        union (of_node (n, c)) acc) ns empty
 
   (* Construct a list of control strings [AA;BBBB;C]*)
   let types p n =
-    let h = Hashtbl.create n.Nodes.size 
+    let h = Hashtbl.create (cardinal p) 
     and aux (Ctrl.Ctrl (s, _)) = s in
     iter (fun (i, _) ->
-      Hashtbl.add h i (aux (Nodes.find n i))) p;
+        Hashtbl.add h i (aux (Nodes.find n i))) p;
     let l = 
-      fst (Hashtbl.fold (fun i _ (acc, marked) ->
-      if List.mem i marked then (acc, marked)
-      else begin
-	let s =
-	  String.concat "" (Hashtbl.find_all h i) in
-	(s :: acc, i :: marked)
-      end) h ([], [])) in
+      fst (
+        Hashtbl.fold (fun i _ (acc, marked) ->
+            if List.mem i marked then (acc, marked)
+            else (
+	      let s =
+	        String.concat "" (Hashtbl.find_all h i) in
+              (s :: acc, i :: marked)
+            )
+          ) h ([], [])
+      ) in
     List.fast_sort String.compare l
 
   let to_IntSet ps =
@@ -366,18 +369,18 @@ module Ports = struct
     fold (fun (i, p) acc ->
       add (Iso.find iso i, p) acc) s empty
 
-  (* normalise a port set: 
-     INPUT:  {(1, 1), (1, 2), (2, 3), (3, 5)}
-     OUTPUT: {(1, 0), (1, 1), (2, 0), (3, 0)} *)
-  let norm ps =
-    let h = Hashtbl.create (cardinal ps) in
-    fold (fun (i, p) res ->
-      let p' = List.length (Hashtbl.find_all h i) in
-      Hashtbl.add h i p;
-    add (i, p') res) ps empty
+  (* (\* normalise a port set:  *)
+  (*    INPUT:  {(1, 1), (1, 2), (2, 3), (3, 5)} *)
+  (*    OUTPUT: {(1, 0), (1, 1), (2, 0), (3, 0)} *\) *)
+  (* let norm ps = *)
+  (*   let h = Hashtbl.create (cardinal ps) in *)
+  (*   fold (fun (i, p) res -> *)
+  (*     let p' = List.length (Hashtbl.find_all h i) in *)
+  (*     Hashtbl.add h i p; *)
+  (*   add (i, p') res) ps empty *)
 
-  let sub_multiset a b =
-    subset (norm a) (norm b)
+  (* let sub_multiset a b = *)
+  (*   subset (norm a) (norm b) *)
 
   (* Compute the arities of the nodes within a port set. The output is an iso 
      node -> arity *)

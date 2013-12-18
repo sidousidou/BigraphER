@@ -17,12 +17,12 @@
 @author Michele Sevegnani *)
 
 type lit =
-| M_lit of int * int   (** Literal stored in a matrix *)
-| V_lit of int                 (** Literal stored in a vector *)
+  | M_lit of int * int   (** Literal stored in a matrix *)
+  | V_lit of int         (** Literal stored in a vector *)
 
 type var = 
-| P_var of lit (** Positive literal *)
-| N_var of lit (** Negative literal *)
+  | P_var of lit         (** Positive literal *)
+  | N_var of lit         (** Negative literal *)
 
 (** Unbox a variable stored in a matrix. *)
 val to_ij : var -> int * int
@@ -69,12 +69,12 @@ val equiv : lit -> lit list list -> b_clause list * clause list
 
 (** Data structure (n-ary tree) for the encoding of the auxiliary variables. *)
 type 'a cmd_tree = 
-| Leaf of 'a list
-| Node of ('a * 'a cmd_tree) list 
+  | Leaf of 'a list
+  | Node of ('a * 'a cmd_tree) list 
 
 type cmd_constraint =
-| Cmd_at_most of b_clause list * clause list * b_clause list
-| Cmd_exactly of b_clause list * clause list * b_clause list * clause
+  | Cmd_at_most of b_clause list * clause list * b_clause list
+  | Cmd_exactly of b_clause list * clause list * b_clause list * clause
 
 (** Initialisation of a tree of auxiliary variables. The two [int] arguments
     specify the recursion threshold and the maximum group size, respectively. *)

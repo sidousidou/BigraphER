@@ -192,7 +192,7 @@ sig
    
   (** [to_dot ns] returns a string expressing node shapes in dot format. *)
   val to_dot: t -> string
-
+    
   (** Apply an isomorphism *)
   val apply_iso : t -> Iso.t -> t
 
@@ -257,9 +257,9 @@ sig
 	(** Apply an isomorphism *)
 	val apply : t -> Iso.t -> t
 	
-	(** [sub_multiset a b] returns [true] if [a] is a submultiset of [b]. 
-	    Port identifiers are ignored. *)  
-	val sub_multiset : t -> t -> bool  
+	(* (\** [sub_multiset a b] returns [true] if [a] is a submultiset of [b].  *)
+	(*     Port identifiers are ignored. *\)   *)
+	(* val sub_multiset : t -> t -> bool   *)
 
 	(** Construct an isomorphism from nodes to number of port occurrences
 	    within a port set. *)  
