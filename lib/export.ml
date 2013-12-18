@@ -2,14 +2,14 @@ open Printf
 open Filename
 open Big
 
-let _end_with_sep s =
-  if Str.string_match (Str.regexp (".*" ^ dir_sep ^ "$")) s 0 then s
-  else s ^ dir_sep
+(* let _end_with_sep s = *)
+(*   if Str.string_match (Str.regexp (".*" ^ dir_sep ^ "$")) s 0 then s *)
+(*   else s ^ dir_sep *)
 
 (* Write a string in dot format to an svg file *)
 let _write_svg s name path verb =
   let (dot_in, bigmc_out) = Unix.pipe () 
-  and n_path = concat (_end_with_sep path) (name ^ ".svg") in
+  and n_path = concat path name in
   match Unix.fork () with
   | 0 -> (
       (* child *) 
@@ -37,7 +37,7 @@ let _write_svg s name path verb =
     )
 
 let _write_string s name path verb =
-  let f_name = concat (_end_with_sep path) name in
+  let f_name = concat path name in
   if verb then printf "Writing %s\n" f_name; 
   let out_ch = open_out f_name in
   output_string out_ch s;

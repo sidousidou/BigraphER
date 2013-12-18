@@ -113,7 +113,7 @@ let parse_option s =
 
 let usage_str =
   "USAGE: bigrapher [--version]\n\
-  \                 [--help]\n\
+  \                 [--help |-h]\n\
   \                 <model.big> [predicates.bilog] [options]\n"
 
 let usage =

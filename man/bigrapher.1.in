@@ -5,7 +5,7 @@ bigrapher \- implementation of Bigraphical Reactive Systems
 .P
 .B bigrapher [--version] 
 .br
-.B bigrapher [--help]
+.B bigrapher [--help|-h]
 .br
 .B bigrapher <
 .I model-file
