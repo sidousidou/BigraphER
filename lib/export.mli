@@ -10,8 +10,8 @@
     @author Michele Sevegnani
     @version 0.3.0 *)
 
-(** @raise Failure when [dot] is not in the execution path.*)
-val check_graphviz : unit -> unit
+(* (\** @raise Failure when [dot] is not in the execution path.*\) *)
+(* val check_graphviz : unit -> unit *)
 
 (** [write_big b name path v] writes an svg representation of bigraph
     [b] on file [name] in directory [path]. Argument [v] is a flag for

@@ -41,6 +41,8 @@ AC_CHECK_OCAML_PKG([minisat])
    AC_MSG_ERROR([Please install OCaml findlib module 'minisat'])
  fi
 
+AC_CHECK_PROG(DOT, dot, "yes")
+
 AC_CONFIG_FILES(
   Makefile.config
   lib/bigraph.ocp

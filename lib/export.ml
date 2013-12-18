@@ -60,26 +60,26 @@ let write_ctmc_prism ctmc n path verb =
   _write_string (Sbrs.to_prism ctmc) n path verb
 
 (* bimatch does not return the correct exit code*)
-let check_graphviz () = 
-  match Unix.fork () with
-  | 0 -> (
-      (* child *)
-      try
-        let null = 
-          Unix.openfile 
-            "/dev/null" [ Unix.O_WRONLY; Unix.O_NONBLOCK ] 0o200  in
-        Unix.dup2 null Unix.stderr;
-        Unix.dup2 null Unix.stdout;
-        Unix.close null;
-        Unix.execvp "dot" [| "dot"; "-V" |]
-      with
-      | Unix.Unix_error (err, _, _) ->
-        failwith (Unix.error_message err)
-    )
-  | pid -> (
-      (* parent *)
-      ignore (Unix.wait ())
-    )
+(* let check_graphviz () =  *)
+(*   match Unix.fork () with *)
+(*   | 0 -> ( *)
+(*       (\* child *\) *)
+(*       try *)
+(*         let null =  *)
+(*           Unix.openfile  *)
+(*             "/dev/null" [ Unix.O_WRONLY; Unix.O_NONBLOCK ] 0o200  in *)
+(*         Unix.dup2 null Unix.stderr; *)
+(*         Unix.dup2 null Unix.stdout; *)
+(*         Unix.close null; *)
+(*         Unix.execvp "dot" [| "dot"; "-V" |] *)
+(*       with *)
+(*       | Unix.Unix_error (err, _, _) -> *)
+(*         failwith (Unix.error_message err) *)
+(*     ) *)
+(*   | pid -> ( *)
+(*       (\* parent *\) *)
+(*       ignore (Unix.wait ()) *)
+(*     ) *)
 
 let string_of_l l =
   let inv = Hashtbl.create (Hashtbl.length l) in
