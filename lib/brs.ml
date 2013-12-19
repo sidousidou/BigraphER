@@ -114,12 +114,16 @@ let step s rules =
       ) [] l, 
     List.length l
   ) in
-  filter_iso (List.fold_left (fun acc r ->
-    (List.map (fun o ->
-      aux_apply o s r.rdx r.rct) (occurrences s r.rdx)) @ acc) [] rules) 
-    
+  filter_iso (
+    List.fold_left (fun acc r ->
+        (List.map (fun o ->
+             aux_apply o s r.rdx r.rct) (occurrences s r.rdx)
+        ) @ acc
+      ) [] rules
+  ) 
+
 let random_step s rules =
-  let ss, l = step s rules in
+  let (ss, l) = step s rules in
   if (List.length ss) = 0 then raise NO_MATCH
   else (List.nth ss (Random.int (List.length ss)), l)
 
@@ -151,7 +155,13 @@ let is_new b v =
     Hashtbl.find_all v k in
   try 
     let (old, _) = List.find (fun (_, b') ->
-      Big.equal b b') k_buket in
+        (* printf "b =? b'\n\ *)
+        (*         ----------------\n\ *)
+        (*         %s\n\ *)
+        (*         ----------------\n\ *)
+        (*         %s\n\ *)
+        (*         ----------------\n" (Big.to_string b) (Big.to_string b'); *)
+        Big.equal b b') k_buket in
     raise (OLD old)
   with
   | Not_found -> true
@@ -199,7 +209,6 @@ let _partition_aux ts i f_iter =
     try 
       ignore (is_new b ts.v);
       let i' = i + 1 in
-      (* if iter_f then (printf "\r%6d states found%!" (i' + 1)); *)
       f_iter i' b;
       ((i', b) :: new_acc, old_acc, i')
     with
@@ -209,25 +218,26 @@ let _partition_aux ts i f_iter =
 (* Iterate over priority classes *)
 let rec _scan step_f curr m ts i iter_f (pl : p_class list) pl_const =
   match pl with
-    | [] -> (([], [], i), m)
-    | c :: cs ->
-      begin
-	match c with
-	  | P_class rr ->
-	    begin
-	      let (ss, l) = step_f curr rr in
-	      if l = 0 then _scan step_f curr m ts i iter_f cs pl_const 
-	      else 
-		(* apply rewriting *)
-		let (ss', l') = 
-		  List.fold_left (fun (ss,  l) s -> 
-		    let (s', l') = rewrite s pl_const l in
-		    (s' :: ss, l')) ([], l) ss in
-		(_partition_aux ts i iter_f ss', m + l')
-	    end
-	  | P_rclass _ -> (* skip *)
-	    _scan step_f curr m ts i iter_f cs pl_const
-      end 
+  | [] -> (([], [], i), m)
+  | c :: cs ->
+    begin
+      match c with
+      | P_class rr ->
+	begin
+	  let (ss, l) = step_f curr rr in
+	  if l = 0 then _scan step_f curr m ts i iter_f cs pl_const 
+	  else 
+	    (* apply rewriting *)
+	    let (ss', l') = 
+	      List.fold_left (fun (ss,  l) s -> 
+		  let (s', l') = rewrite s pl_const l in
+		  (s' :: ss, l')
+                ) ([], l) ss in
+	    (_partition_aux ts i iter_f ss', m + l')
+	end
+      | P_rclass _ -> (* skip *)
+	_scan step_f curr m ts i iter_f cs pl_const
+    end 
 
 (* Iterate over priority classes *)
 let rec _scan_ide get_react step_f curr m ts i iter_f pl pl_const =

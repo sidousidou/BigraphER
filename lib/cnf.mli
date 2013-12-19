@@ -17,12 +17,12 @@
 @author Michele Sevegnani *)
 
 type lit =
-| M_lit of int * int   (** Literal stored in a matrix *)
-| V_lit of int                 (** Literal stored in a vector *)
+  | M_lit of int * int   (** Literal stored in a matrix *)
+  | V_lit of int         (** Literal stored in a vector *)
 
 type var = 
-| P_var of lit (** Positive literal *)
-| N_var of lit (** Negative literal *)
+  | P_var of lit         (** Positive literal *)
+  | N_var of lit         (** Negative literal *)
 
 (** Unbox a variable stored in a matrix. *)
 val to_ij : var -> int * int
@@ -55,8 +55,8 @@ exception TSEITIN of clause list
 val tseitin : (lit * lit) list -> clause * b_clause list
 
 (** CNF encoding of  boolean implications.
-    Input :  [ (X0 or X1 or ...) -> (!Y0 and !Y1 and ...) ]
-    Output : [ (!X0 or !Y0) and (!X0 and !Y1) and ... (!X1 and !Y0) and ...] *)
+    Input :  [ X -> (clause0 and clause1 and ...) ]
+    Output : [ (!X or clause0) and (!X or clause1) and ... ] *)
 val impl : lit -> lit list list -> clause list 
 
 (** CNF encoding of [if and only if] boolean formulae.
@@ -69,12 +69,12 @@ val equiv : lit -> lit list list -> b_clause list * clause list
 
 (** Data structure (n-ary tree) for the encoding of the auxiliary variables. *)
 type 'a cmd_tree = 
-| Leaf of 'a list
-| Node of ('a * 'a cmd_tree) list 
+  | Leaf of 'a list
+  | Node of ('a * 'a cmd_tree) list 
 
 type cmd_constraint =
-| Cmd_at_most of b_clause list * clause list * b_clause list
-| Cmd_exactly of b_clause list * clause list * b_clause list * clause
+  | Cmd_at_most of b_clause list * clause list * b_clause list
+  | Cmd_exactly of b_clause list * clause list * b_clause list * clause
 
 (** Initialisation of a tree of auxiliary variables. The two [int] arguments
     specify the recursion threshold and the maximum group size, respectively. *)
@@ -109,6 +109,11 @@ val bijection : int -> int -> int -> int -> (cmd * cmd)
     t and g  are used for configure the commander-variable encoding. Auxiliary 
     variables are returned. *)
 val tot_fun : int -> int -> int -> int -> cmd
+
+(** Generate constraints for a one to one function. Parameters
+    t and g  are used for configure the commander-variable encoding. *)
+val one_to_one : int -> int -> int -> 
+  (cmd_constraint list * int) * (cmd_constraint list * int)
 
 (** {6 Integration with Minisat} *)
 
@@ -147,6 +152,9 @@ val post_bij : (cmd * cmd) -> Minisat.solver -> Minisat.var array array ->
     variables. *)
 val post_tot : cmd -> Minisat.solver -> Minisat.var array array -> 
   Minisat.var array array * int list
+
+val post_one_to_one : (cmd_constraint list * int) * (cmd_constraint list * int) -> 
+  Minisat.solver -> Minisat.var array array -> unit
 
 val post_block_cmd : int -> Minisat.solver -> Minisat.var array array -> 
   int list -> unit

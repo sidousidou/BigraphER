@@ -482,12 +482,13 @@ let add_c10 t p solver v =
 (* Cnf.tot does not introduce commander-variables on columns. Using 
    post_block. *)
 let add_c9 t p t_n p_n solver v =
-  let (r, c, constraints, blocks, iso_p, iso_open) = 
+  let (r, c, constraints, blocks, blocks_f, iso_p, iso_open) = 
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
-    Cnf.post_impl x solver w v
-  ) constraints;
+      Cnf.post_impl x solver w v
+    ) constraints;
+  Cnf.post_conj_m blocks_f solver w;
   let (aux, z_roots) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   Cnf.post_conj_m (Cnf.blocking_pairs blocks) solver w;
@@ -729,24 +730,24 @@ let equal_SAT a b =
     and h = Link.Lg.cardinal a.l in
     let v_n = Cnf.init_aux_m n n solver
     and v_l = Cnf.init_aux_m h h solver in 
-    ignore (Cnf.post_bij (Cnf.bijection n n 6 3) solver v_n);
-    ignore (Cnf.post_bij (Cnf.bijection h h 6 3) solver v_l);
+    Cnf.post_one_to_one (Cnf.one_to_one n 6 3) solver v_n;
+    Cnf.post_one_to_one (Cnf.one_to_one h 6 3) solver v_l;
     (* Place graph *)
-    let (t_constraints, exc_clauses, cols0) = 
+    let (t_constraints, exc_clauses, _) = 
       Place.match_list_eq a.p b.p a.n b.n 
-    and (c_rn, cols1) =
+    and (c_rn, _) =
       Place.match_root_nodes a.p b.p a.n b.n
-    and (c_ns, cols2) =
+    and (c_ns, _) =
       Place.match_nodes_sites a.p b.p a.n b.n 
-    and (clauses_l, js_l) = 
-      Place.match_leaves a.p b.p a.n b.n
-    and (clauses_o, js_o) = 
-      Place.match_orphans a.p b.p a.n b.n in
-    let cols =
-      IntSet.union
-	(IntSet.union js_o js_l)
-	(IntSet.union cols0 (IntSet.union cols1 cols2)) in
-    if IntSet.cardinal cols <> n then raise NO_MATCH;
+    and (clauses_l, _) = 
+      Place.match_leaves b.p a.p b.n a.n
+    and (clauses_o, _) = 
+      Place.match_orphans b.p a.p b.n a.n in
+    (* let cols = *)
+    (*   IntSet.union *)
+    (*     (IntSet.union js_o js_l) *)
+    (*     (IntSet.union cols0 (IntSet.union cols1 cols2)) in *)
+    (* if IntSet.cardinal cols <> n then raise NO_MATCH; *)
     Cnf.post_conj_m (exc_clauses) solver v_n;
     Cnf.post_conj_m (c_rn @ c_ns) solver v_n;
     Cnf.post_conj_m (clauses_l @ clauses_o) solver v_n;
@@ -757,7 +758,7 @@ let equal_SAT a b =
     let (clauses, b_pairs) = 
       Link.match_list_eq a.l b.l a.n b.n in
     Cnf.post_conj_m (clauses @ b_pairs) solver v_l;
-    let l_constraints = 
+    let l_constraints =
       Link.match_ports_eq a.l b.l a.n b.n clauses in
     List.iter (fun x ->
       Cnf.post_impl x solver v_l v_n
