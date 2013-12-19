@@ -828,7 +828,7 @@ let deg_sites p =
     nodes :: acc
   ) (IntSet.of_int p.s) [] 
 
-let match_list_eq t p n_t n_p =
+let match_list_eq p t n_p n_t =
   let h = partition_edges t n_t in
   let (clauses, clauses_exc, cols) = 
     Sparse.fold (fun i j (acc, exc, acc_c) ->
@@ -846,9 +846,9 @@ let match_list_eq t p n_t n_p =
 	  (* No compatible edges found *)
 	  raise NOT_TOTAL
 	else (
-	  let new_c = List.fold_left (fun acc (i', j') ->
-	    i' :: j' :: acc
-	  ) [] t_edges in
+	  (* let new_c = List.fold_left (fun acc (i', j') -> *)
+	  (*   i' :: j' :: acc *)
+	  (* ) [] t_edges in *)
 	  try
 	    let (clause, pairs) = 
 	      Cnf.tseitin (
@@ -856,10 +856,10 @@ let match_list_eq t p n_t n_p =
 		  (Cnf.M_lit (i, i'), Cnf.M_lit (j, j'))
 		) t_edges
 	      ) in
-	    ((clause, pairs) :: acc, exc, new_c @ acc_c)
+	    ((clause, pairs) :: acc, exc, (*new_c @*) acc_c)
 	  with
 	  | Cnf.TSEITIN clauses ->
-	    (acc, clauses @ exc, new_c @ acc_c)
+	    (acc, clauses @ exc, (*new_c @*) acc_c)
 	)
       )
     ) p.nn ([], [], []) in
@@ -876,7 +876,8 @@ let match_root_nodes a b n_a n_b =
     ((List.map (fun j -> 
       Cnf.P_var (Cnf.M_lit (i, j))
       ) children) :: acc,
-     IntSet.union acc_c (IntSet.of_list children))
+     (*IntSet.union acc_c (IntSet.of_list children)*)
+    acc_c)
   ) a.rn ([], IntSet.empty)
 
 (*Dual*)
@@ -890,5 +891,6 @@ let match_nodes_sites a b n_a n_b =
     ((List.map (fun j -> 
       Cnf.P_var (Cnf.M_lit (i, j))
       ) parents) :: acc, 
-     IntSet.union acc_c (IntSet.of_list parents))
+     (* IntSet.union acc_c (IntSet.of_list parents) *)
+       acc_c)
   ) a.ns ([], IntSet.empty)

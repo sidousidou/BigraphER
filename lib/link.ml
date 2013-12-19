@@ -519,11 +519,21 @@ let match_edges t p n_t n_p =
    Cnf.blocking_pairs acc_b)
 
 let _match_ports t p n_t n_p clauses : Cnf.clause list list =
+  (* printf "-------------------- _match_ports -------------------\n"; *)
   List.fold_left (fun acc e_match ->
       let (e_i, e_j) = Cnf.to_ij e_match in
       let formulas =
         Ports.compat_list p.(e_i) t.(e_j) n_p n_t in
       let res = Cnf.impl (Cnf.M_lit (e_i, e_j)) formulas in
+      (* printf "%s\n" (String.concat "\n" (List.map (fun f -> *)
+      (*      sprintf "(%d, %d) -> (%s)" e_i e_j  *)
+      (*        (String.concat "or" (List.map (fun l -> *)
+      (*             match l with *)
+      (*             | Cnf.M_lit (i, j) -> sprintf "(%d, %d)" i j *)
+      (*             | Cnf.V_lit _ -> assert false *)
+      (*           ) f) *)
+      (*        ) *)
+      (*   ) formulas)); *)
       res :: acc
     ) [] (List.flatten clauses) 
 
@@ -713,13 +723,18 @@ let key e =
    Return a hastbl : key -> (edge, index) *)
 let partition_edg l =
   let h = Hashtbl.create (Lg.cardinal l) in
-  ignore (Lg.fold (fun e i ->
-      let k = key e in 
-      Hashtbl.add h k (e, i);
-      i + 1) l 0);
+  ignore (
+    Lg.fold (fun e i ->
+        let k = key e in 
+        Hashtbl.add h k (e, i);
+        i + 1
+      ) l 0
+  );
   h
 
-let match_list_eq t p n_t n_p : Cnf.clause list  * Cnf.clause list =
+(* P -> T Example constraint:
+   [[(1, 2) or (1, 3) or (1, 4)]; [(2, 4)]; [(3, 4) or (3, 2)]] *)
+let match_list_eq p t n_p n_t : Cnf.clause list  * Cnf.clause list =
   let h = partition_edg t in
   let (clauses, b, _) = 
     Lg.fold (fun e_p (acc, block, i) ->
@@ -727,13 +742,15 @@ let match_list_eq t p n_t n_p : Cnf.clause list  * Cnf.clause list =
         let clause = List.fold_left (fun acc (e_t, j) ->
 	    if edg_iso e_t e_p n_t n_p then 
 	      (Cnf.P_var (Cnf.M_lit (i, j))) :: acc
-	    else acc) [] t_edges in
+            else acc
+          ) [] t_edges in
         match clause with
         | [] -> (acc, i :: block, i + 1 )
-        | _ -> (clause :: acc, block, i + 1)) p ([], [], 0) in
+        | _ -> (clause :: acc, block, i + 1)
+      ) p ([], [], 0) in
   (clauses, Cnf.block_rows b (Lg.cardinal t))
 
-let match_ports_eq t p n_t n_p clauses : Cnf.clause list list =
+let match_ports_eq p t n_p n_t clauses : Cnf.clause list list =
   let array_t = 
     Array.of_list (List.map (fun e -> e.p) (Lg.elements t)) 
   and array_p = 

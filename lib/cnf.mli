@@ -55,8 +55,8 @@ exception TSEITIN of clause list
 val tseitin : (lit * lit) list -> clause * b_clause list
 
 (** CNF encoding of  boolean implications.
-    Input :  [ (X0 or X1 or ...) -> (!Y0 and !Y1 and ...) ]
-    Output : [ (!X0 or !Y0) and (!X0 and !Y1) and ... (!X1 and !Y0) and ...] *)
+    Input :  [ X -> (clause0 and clause1 and ...) ]
+    Output : [ (!X or clause0) and (!X or clause1) and ... ] *)
 val impl : lit -> lit list list -> clause list 
 
 (** CNF encoding of [if and only if] boolean formulae.
@@ -110,6 +110,11 @@ val bijection : int -> int -> int -> int -> (cmd * cmd)
     variables are returned. *)
 val tot_fun : int -> int -> int -> int -> cmd
 
+(** Generate constraints for a one to one function. Parameters
+    t and g  are used for configure the commander-variable encoding. *)
+val one_to_one : int -> int -> int -> 
+  (cmd_constraint list * int) * (cmd_constraint list * int)
+
 (** {6 Integration with Minisat} *)
 
 (** Initialise a vector of (auxiliary) variables. *)
@@ -147,6 +152,9 @@ val post_bij : (cmd * cmd) -> Minisat.solver -> Minisat.var array array ->
     variables. *)
 val post_tot : cmd -> Minisat.solver -> Minisat.var array array -> 
   Minisat.var array array * int list
+
+val post_one_to_one : (cmd_constraint list * int) * (cmd_constraint list * int) -> 
+  Minisat.solver -> Minisat.var array array -> unit
 
 val post_block_cmd : int -> Minisat.solver -> Minisat.var array array -> 
   int list -> unit

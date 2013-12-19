@@ -402,14 +402,17 @@ module Ports = struct
     and i_a = to_IntSet a 
     and i_b = to_IntSet b in
     IntSet.fold (fun i acc ->
-      let ar_i = Iso.find ar_a i
-      and c_i = Nodes.find n_a i in
-      let pairs =
-	List.map (fun j -> 
-	  Cnf.M_lit (i, j)) 
-	  (IntSet.elements (IntSet.filter (fun j ->
-	    (ar_i = (Iso.find ar_b j)) && 
-	      (Ctrl.(=) c_i (Nodes.find n_b j))) i_b)) in 
-      pairs :: acc) i_a []
+        let ar_i = Iso.find ar_a i
+        and c_i = Nodes.find n_a i in
+        let pairs =
+	  List.map (fun j -> 
+	      Cnf.M_lit (i, j)
+            ) (IntSet.elements (
+              IntSet.filter (fun j ->
+	          (ar_i = (Iso.find ar_b j)) && 
+	          (Ctrl.(=) c_i (Nodes.find n_b j))
+                ) i_b)) in 
+        pairs :: acc
+      ) i_a []
 
 end   

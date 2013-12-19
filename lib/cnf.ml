@@ -93,6 +93,10 @@ let equiv (m : lit) (clauses : lit list list) =
     (N_var m) :: (List.map (fun v -> P_var v) c)) clauses in
   (pairs, l)
 
+(* input: X [ [Y0, Y1]; [Y2]; [Y3, Y4, Y5] ]
+   output: X => (Y0 or Y1)
+           X => Y2 
+           X => (Y3 or Y4 or Y5) *)
 let impl (m : lit) (clauses : lit list list) =
   (* m negated *)
   List.map (fun c -> 
@@ -368,6 +372,32 @@ let tot_fun n m t g =
   assert (n >= 0);
   _exactly_rows n m t g
 
+let _exactly_rows_eq n t g =
+  let ts =
+    iter (fun i acc ->
+        let row_i = iter (fun j acc ->
+	    (M_lit (i, j)) :: acc
+          ) [] (n - 1) in
+        (cmd_init row_i t g) :: acc
+      ) [] (n - 1) in
+  (List.map exactly_one_cmd ts, 
+   try cmd_size (List.hd ts) with _ -> 0)
+
+let _exactly_cols_eq n t g =
+  let ts =
+    iter (fun j acc ->
+        let col_j = iter (fun i acc ->
+	    (M_lit (i, j)) :: acc
+          ) [] (n - 1) in
+        (cmd_init col_j t g) :: acc
+      ) [] (n - 1) in
+  (List.map exactly_one_cmd ts, 
+   try cmd_size (List.hd ts) with _ -> 0)
+
+let one_to_one n t g =
+  assert (n >= 0);
+  (_exactly_rows_eq n t g,_exactly_cols_eq n t g)
+
 (* +++++++++++++++++++++++ Integration with Minisat +++++++++++++++++++++++ *)
 
 (* Convert variables for Minisat *)
@@ -485,20 +515,32 @@ let _post_list l s a v =
         ) clause)
     ) l
 
+let _post_exactly cmd l solver m =
+  match cmd with
+  | Cmd_exactly (cl1, cl2, cl3, cl4) -> (
+      let z = init_aux_v l solver in
+      _post_pairs cl1 solver z m;
+      _post_list cl2 solver z m;
+      _post_pairs cl3 solver z m;
+      _post_list [cl4] solver z m;
+      z)
+  | Cmd_at_most _ -> assert false
+
 (* Post bijection constraints to solver and return two matrices of auxiliary
    variables. Root indices are the same for every row of the matrix. *)
 let post_bij (r_cmd, c_cmd) s m =
   let aux_r =
     (Array.map (fun c ->
-      match c with
-      | Cmd_exactly (cl1, cl2, cl3, cl4) -> (
-	let z = init_aux_v r_cmd.length s in
-	_post_pairs cl1 s z m;
-	_post_list cl2 s z m;
-	_post_pairs cl3 s z m;
-	_post_list [cl4] s z m;
-	z)
-      | Cmd_at_most _ -> assert false
+      (* match c with *)
+      (* | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
+      (*   let z = init_aux_v r_cmd.length s in *)
+      (*   _post_pairs cl1 s z m; *)
+      (*   _post_list cl2 s z m; *)
+      (*   _post_pairs cl3 s z m; *)
+      (*   _post_list [cl4] s z m; *)
+      (*   z) *)
+      (* | Cmd_at_most _ -> assert false *)
+         _post_exactly c r_cmd.length s m
      ) r_cmd.cmd,
      r_cmd.roots) 
   and aux_c =
@@ -519,17 +561,44 @@ let post_bij (r_cmd, c_cmd) s m =
    variables. *)
 let post_tot r_cmd s m =
   (Array.map (fun c ->
-    match c with
-    | Cmd_exactly (cl1, cl2, cl3, cl4) -> (
-      let z = init_aux_v r_cmd.length s in
-      _post_pairs cl1 s z m;
-      _post_list cl2 s z m;
-      _post_pairs cl3 s z m;
-      _post_list [cl4] s z m;
-      z)
-    | Cmd_at_most _ -> assert false
+    (* match c with *)
+    (* | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
+    (*   let z = init_aux_v r_cmd.length s in *)
+    (*   _post_pairs cl1 s z m; *)
+    (*   _post_list cl2 s z m; *)
+    (*   _post_pairs cl3 s z m; *)
+    (*   _post_list [cl4] s z m; *)
+    (*   z) *)
+    (* | Cmd_at_most _ -> assert false *)
+       _post_exactly c r_cmd.length s m
    ) r_cmd.cmd,
    r_cmd.roots) 
+
+let post_one_to_one ((cmd_r, l_r), (cmd_c, l_c)) s m =
+  List.iter (fun c ->
+      (* match c with *)
+      (* | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
+      (*     let z = init_aux_v l_r s in *)
+      (*     _post_pairs cl1 s z m; *)
+      (*     _post_list cl2 s z m; *)
+      (*     _post_pairs cl3 s z m; *)
+      (*     _post_list [cl4] s z m *)
+      (*   ) *)
+      (* | Cmd_at_most _ -> assert false *)
+      ignore (_post_exactly c l_r s m)
+    ) cmd_r;
+  List.iter (fun c ->
+      (* match c with *)
+   (*    | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
+   (*        let z = init_aux_v l_c s in *)
+   (*        _post_pairs cl1 s z m; *)
+   (*        _post_list cl2 s z m; *)
+   (*        _post_pairs cl3 s z m; *)
+   (* _post_list [cl4] s z m *)
+   (*        ) *)
+   (*    | Cmd_at_most _ -> assert false *)
+      ignore (_post_exactly c l_c s m)
+    ) cmd_c
 
 (* Block a commander variable row *)
 let post_block_cmd i s m roots =
