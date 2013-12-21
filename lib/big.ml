@@ -620,10 +620,10 @@ let occurrence t p =
     else (
       let t_trans = Sparse.trans t.p.Place.nn in
       let (s, vars) = aux_match t p t_trans in
-      (get_iso s vars.iso_nodes, 
-       Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
-       Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_r
-      )
+      let i_v = get_iso s vars.iso_nodes
+      and i_e = Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c 
+      and i_h = Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c in
+      (i_v, i_e, i_h)
     )
   )
 
@@ -798,7 +798,7 @@ let equal a b =
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
-      equal_SAT a b
+       equal_SAT a b
 
 (* let compare a b = *)
 (*   match (a.n.Nodes.size) - (b.n.Nodes.size) with *)

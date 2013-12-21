@@ -116,7 +116,7 @@ let export_ctmc_states ctmc path =
     (colorise `yellow " ...")
   );
   Sbrs.iter_states (fun i s ->
-      Export.write_big s (string_of_int i) path defaults.verbose
+      Export.write_big s ((string_of_int i) ^ ".svg") path defaults.verbose
     ) ctmc
 
 let export_ctmc_dot ctmc =
@@ -140,7 +140,7 @@ let export_ts_states ts path =
     (colorise `yellow " ...")
   );
   Brs.iter_states (fun i s ->
-      Export.write_big s (string_of_int i) path defaults.verbose
+      Export.write_big s ((string_of_int i) ^ ".svg") path defaults.verbose
     ) ts
 
 let export_ts_dot ts =
@@ -170,6 +170,7 @@ let after_sbrs stats ctmc t_lim s_lim =
   export_csl ctmc.Sbrs.l
 
 let _ =
+  Printexc.record_backtrace true;
   try
     let iter_f = print_loop true in
     parse Sys.argv;
