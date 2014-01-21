@@ -82,8 +82,8 @@ $(ARCH_TARGZ):
 dist: $(ARCH_TARGZ)
 	@
 
-REPO = ~/pkg_repo
-REPO_DIR = $(REPO)/packages/bigrapher.$(version)
+REPO = ~/dcs-opam-repository/packages
+REPO_DIR = $(REPO)/bigrapher/bigrapher.$(version)
 
 .PHONY: opam release
 
@@ -94,9 +94,9 @@ opam:
 	cp -f opam/descr $(REPO_DIR)
 	cp -f opam/url $(REPO_DIR)
 
-#upload: $(ARCH_TARGZ)
-#	@echo "    Uploading archive ..."
-#	scp $< michele@www.dcs.gla.ac.uk:~/public_html/arch/
+upload: $(ARCH_TARGZ)
+	@echo "    Uploading archive ..."
+	scp $< michele@www.dcs.gla.ac.uk:~/public_html/arch/
 
 COMMIT_MSG = "Add bigrapher.$(version)"
 export COMMIT_MSG
@@ -104,6 +104,6 @@ export COMMIT_MSG
 release:
 	git tag -a "v$(version)" -m "Release $(version)"
 	git push --tags
-#	$(MAKE) upload
+	$(MAKE) upload
 	$(MAKE) opam
 	$(MAKE) -C $(REPO) release
