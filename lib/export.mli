@@ -1,17 +1,20 @@
 (******************************************************************************)
 (*                                                                            *)
-(*                                  BigraphER                                 *)
+(*        ______ __                          __     _______ ______            *)
+(*       |   __ \__|.-----.----.---.-.-----.|  |--.|    ___|   __ \           *)
+(*       |   __ <  ||  _  |   _|  _  |  _  ||     ||    ___|      <           *)
+(*       |______/__||___  |__| |___._|   __||__|__||_______|___|__|           *)
+(*                  |_____|          |__|                                     *)
 (*                                                                            *)
-(*                   Michele Sevegnani, University of Glasgow                 *)
+(*       Bigraph Evaluator & Rewriting                                        *)
+(*                                                                            *)
+(*                                                                            *)
+(*     Copyright (c) 2010-2013, Michele Sevegnani - University of Glasgow     *)       
 (*                                                                            *)
 (******************************************************************************)
 
 (** This module provides export operations on bigraphs.
-    @author Michele Sevegnani
-    @version 0.3.0 *)
-
-(* (\** @raise Failure when [dot] is not in the execution path.*\) *)
-(* val check_graphviz : unit -> unit *)
+    @author Michele Sevegnani *)
 
 (** [write_big b name path v] writes an svg representation of bigraph
     [b] on file [name] in directory [path]. Argument [v] is a flag for

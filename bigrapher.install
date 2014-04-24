@@ -2,7 +2,7 @@ bin:  [
   "_obuild/bigrapher/bigrapher.asm" { "bigrapher" }
 ]
 man: [
-  "man/bigrapher.1"
+  "man/bigrapher.1" {"man1"}
 ]
 share: [
   "big-mode/big-mode.el"

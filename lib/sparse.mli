@@ -1,24 +1,40 @@
+(******************************************************************************)
+(*                                                                            *)
+(*        ______ __                          __     _______ ______            *)
+(*       |   __ \__|.-----.----.---.-.-----.|  |--.|    ___|   __ \           *)
+(*       |   __ <  ||  _  |   _|  _  |  _  ||     ||    ___|      <           *)
+(*       |______/__||___  |__| |___._|   __||__|__||_______|___|__|           *)
+(*                  |_____|          |__|                                     *)
+(*                                                                            *)
+(*       Bigraph Evaluator & Rewriting                                        *)
+(*                                                                            *)
+(*                                                                            *)
+(*     Copyright (c) 2010-2013, Michele Sevegnani - University of Glasgow     *)       
+(*                                                                            *)
+(******************************************************************************)
+
 (** This module provides operations on boolean matrices
     @author Michele Sevegnani *)
 
 (** The type of boolean matrices. *)    
 type bmatrix =
-  { r: int;
-    c: int;
-    r_major: (int, int) Hashtbl.t; (* Row-major order: i -> j,...,j' *)
-    c_major: (int, int) Hashtbl.t; (* Column-major order: j -> i,...,i' *)
+  { r: int;  (** Number of rows. *)
+    c: int;  (** Number of columns. *)
+    r_major: (int, int) Hashtbl.t; (** Row-major order matrix *)
+    c_major: (int, int) Hashtbl.t; (** Column-major order matrix *)
   }
 
-(** [make r c] build a matrix with [r] rows and [c] columns. *) 
+(** [make r c] builds a matrix with [r] rows and [c] columns. *) 
 val make : int -> int -> bmatrix
 
+(** Copy a matrix. *)
 val copy : bmatrix -> bmatrix
 
+(** Matrix equality. *)
 val ( = ) : bmatrix -> bmatrix -> bool
 
+(** Matrix comparison. *)
 val compare : bmatrix -> bmatrix -> int
-
-(*val is_0 : bmatrix -> bool*)
 
 (** String representation. 0 = false and 1 = true *)
 val to_string : bmatrix -> string
