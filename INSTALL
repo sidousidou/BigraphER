@@ -9,27 +9,37 @@
 
 ----------------------------------------------------------------------------
 
-REQUIREMENTS:
+ REQUIREMENTS:
 
-  *  OCaml >=3.10
+  *  OCaml >= 4.0.0
   *  findlib
-  *  ocamlbuild
-  *  CamlMiniSat
+  *  ocp-build
+  *  camlMiniSat
   *  Graphviz
 
 ----------------------------------------------------------------------------
 
-INSTALL:
+ INSTALL:
 
-  > ./build install 
- 
-  Override variable INSTDIR (default /usr/bin) to install BigraphER in a
-  different directory. Note that superuser privileges may be required.
+  > ./configure
+  > make 
+  > make install
+
+----------------------------------------------------------------------------
+
+ UNINSTALL:
+
+  > make uninstall
 
 ----------------------------------------------------------------------------
 
-UNINSTALL:
+ VIA OPAM:
 
-  > ./build uninstall
+  > opam repository add dcs http://dcs.gla.ac.uk/~michele/dcs-opam-repository
+  > opam install bigrapher
 
 ----------------------------------------------------------------------------
+
+ NOTES:
+
+  *  Use gmake instead of make on BSD systems.

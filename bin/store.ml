@@ -625,31 +625,32 @@ let store_brs brs env  =
 
 let export decs env path verb = 
   let _dummy_acts =
-    List.map (fun _ -> Num_val (0.0, dummy_pos)) in
+    List.map (fun _ -> Num_val (0.0, dummy_pos))
+  and svg = ".svg" in 
   List.iter (fun d ->
     match d with
   | Ctrl_dec _ | Ctrl_dec_f _ | Int_dec _ | Float_dec _ -> ()
   | Big_dec (ide, exp, _) -> 
-    Export.write_big (eval_big exp env) ide path verb
+    Export.write_big (eval_big exp env) (ide ^ svg) path verb
   | Big_dec_f (ide, forms, exp, _) ->
     let b = eval_big exp (scope env forms (_dummy_acts forms)) in
-    Export.write_big b ide path verb
+    Export.write_big b (ide ^ svg) path verb
   | React_dec (ide, lhs, rhs, _) ->
-    Export.write_big (eval_big lhs env) (ide ^ "_lhs") path verb;
-    Export.write_big (eval_big rhs env) (ide ^ "_rhs") path verb
+    Export.write_big (eval_big lhs env) (ide ^ "_lhs" ^ svg) path verb;
+    Export.write_big (eval_big rhs env) (ide ^ "_rhs" ^ svg) path verb
   | React_dec_f (ide, forms, lhs, rhs, _) ->
     let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
     and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
-    Export.write_big l (ide ^ "_lhs") path verb;
-    Export.write_big r (ide ^ "_rhs") path verb
+    Export.write_big l (ide ^ "_lhs" ^ svg) path verb;
+    Export.write_big r (ide ^ "_rhs" ^ svg) path verb
   | Sreact_dec (ide, lhs, rhs, _, _) ->
-    Export.write_big (eval_big lhs env) (ide ^ "_lhs") path verb;
-    Export.write_big (eval_big rhs env) (ide ^ "_rhs") path verb
+    Export.write_big (eval_big lhs env) (ide ^ "_lhs" ^ svg) path verb;
+    Export.write_big (eval_big rhs env) (ide ^ "_rhs" ^ svg) path verb
   | Sreact_dec_f (ide, forms, lhs, rhs, _, _) ->
     let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
     and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
-    Export.write_big l (ide ^ "_lhs") path verb;
-    Export.write_big r (ide ^ "_rhs") path verb) decs
+    Export.write_big l (ide ^ "_lhs" ^ svg) path verb;
+    Export.write_big r (ide ^ "_rhs" ^ svg) path verb) decs
   
 
   

@@ -1,6 +1,7 @@
 opam-version: "1"
 maintainer: "michele.sevegnani@glasgow.ac.uk"
 license: "BSD"
+available: [ocaml-version >= "4.00.0"]
 build: [
   ["./configure" "--prefix=%{prefix}%"]
   [make]

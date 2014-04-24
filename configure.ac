@@ -2,17 +2,17 @@ AC_INIT(bigrapher,0.4.3)
 AC_COPYRIGHT(Copyright 2012-2013 Michele Sevegnani)
 
 AC_CONFIG_MACRO_DIR([m4])
-AC_PROG_CC
+#AC_PROG_CC
 
 AC_PROG_OCAML
 if test "$OCAMLC" = "no"; then
    AC_MSG_ERROR([You must install the OCaml compiler])
 fi
 
-# Check that OCaml version is greater or equal to 3.12.1
+# Check that OCaml version is greater or equal to 4.00.0
 AS_IF([test "x${enable_version_check}" != "xno"], [
   AX_COMPARE_VERSION(
-    [$OCAMLVERSION], [lt], [3.12.1],
+    [$OCAMLVERSION], [lt], [4.00.0],
     AC_MSG_ERROR([Your version of OCaml: $OCAMLVERSION is not supported]))
 ])
 
@@ -57,9 +57,9 @@ if test "$prefix" = "NONE"; then
   prefix=$ac_default_prefix
 fi
 
-bindir="`eval echo ${bindir}`"
-mandir="`eval echo ${mandir}`"
-OCPBUILD="`eval echo ${OCPBUILD}`"
+#bindir="`eval echo ${bindir}`"
+#mandir="`eval echo ${mandir}`"
+#OCPBUILD="`eval echo ${OCPBUILD}`"
 
 echo
 echo Executables will be installed in ${bindir}
