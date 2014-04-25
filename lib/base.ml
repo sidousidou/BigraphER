@@ -43,117 +43,6 @@ let ints_compare (i0, p0) (i1, p1) =
   | 0 -> p0 - p1 
   | x -> x
 
-module Iso = struct
-
-  type t = (int, int) Hashtbl.t                   
- 
-  let empty () = Hashtbl.create 20
-
-  (* No duplicates *)
-  let add iso i j = 
-    assert (i >= 0);
-    assert (j >= 0);
-    Hashtbl.replace iso i j  
-
-  let find iso i = 
-    assert (i >= 0);
-    Hashtbl.find iso i
-    
-  let inverse iso = 
-    let iso' = Hashtbl.create (Hashtbl.length iso) in
-    Hashtbl.iter (fun i j ->
-        Hashtbl.add iso' j i
-      ) iso;
-    iso'
-
-  let map iso i_dom i_codom = 
-    let iso' = Hashtbl.create (Hashtbl.length iso) in
-    Hashtbl.iter (fun i j ->
-        Hashtbl.add iso' (find i_dom i) (find i_codom j)
-      ) iso;
-    iso'
-  
-  let dom iso =
-    Hashtbl.fold (fun i _ acc -> i :: acc) iso []
-
-  let codom iso =
-    Hashtbl.fold (fun _ j acc -> j :: acc) iso []
-      
-  let union a b =
-    let u = Hashtbl.create ((Hashtbl.length a) + (Hashtbl.length b)) in 
-    let f i j = add u i j in
-    Hashtbl.iter f a;
-    Hashtbl.iter f b;
-    u
-
-  let fold f iso acc = Hashtbl.fold f iso acc
-
-  let iter f iso = Hashtbl.iter f iso
-  
-  exception COMPARE of int  
-
-  let subseteq a b =     
-    try
-      iter (fun i j ->
-	match j - (find b i) with
-	| 0 -> ()
-	| x -> raise (COMPARE x)) a;
-      0
-    with
-    | Not_found -> 1
-    | COMPARE x -> x
-
-  let compare a b = 
-    let x = subseteq a b
-    and y = subseteq b a in
-    match x with
-    | 0 -> y
-    | _ -> x
-      
-  let equal a b = 
-    compare a b = 0  
-
-  let to_string iso =
-    sprintf "{%s}" 
-      (String.concat ", " 
-	 (Hashtbl.fold (fun i j acc -> 
-	   (sprintf "(%d, %d)" i j) :: acc) iso []))
-
-  let of_list l =
-    let iso = Hashtbl.create (List.length l) in
-    List.iter (fun (i, j) ->
-      Hashtbl.add iso i j) l;
-    iso
-
-  let to_list  iso =
-    fold (fun i j acc -> (i, j) :: acc) iso []
-
-  let mem iso i j = 
-    assert (i >= 0);
-    assert (j >= 0);
-    try 
-      j = Hashtbl.find iso i
-    with
-    | _ -> false
-
-  let cardinal iso = Hashtbl.length iso
-
-  let is_id iso =
-    Hashtbl.fold (fun i j acc -> 
-      (i = j) && acc) iso true
-
-  (* input:  i : P -> T  autos : P -> P *)
-  let gen_isos i autos =
-    let apply iso a = 
-      assert (cardinal iso = cardinal a);
-      fold (fun i j acc ->
-	  add acc (find a i) j; 
-          acc
-        ) iso (empty ()) in
-    List.map (apply i) autos
-
-end 
-
 module IntSet = struct  
     
   include Set.Make (struct 
@@ -192,7 +81,7 @@ module IntSet = struct
   let apply s iso =
     assert (Iso.cardinal iso >= cardinal s);
     fold (fun i acc ->
-      add (Iso.find iso i) acc) s empty
+      add (Iso.find i iso) acc) s empty
 
   (* Generates an isomorphism to fix the numbering of a set of int. 
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                           *)
@@ -268,7 +157,7 @@ module Nodes = struct
   let apply_iso s iso =
     assert (Iso.cardinal iso >= s.size);
     fold (fun i c acc ->
-      add acc (Iso.find iso i) c) s (empty ())
+      add acc (Iso.find i iso) c) s (empty ())
   
   (* Only nodes in the domain of the isomorphism are transformed. Other nodes are discarded. *)    
   let filter_apply_iso s iso =    
@@ -367,7 +256,7 @@ module Ports = struct
   let apply s iso =
     assert (Iso.cardinal iso >= cardinal s);
     fold (fun (i, p) acc ->
-      add (Iso.find iso i, p) acc) s empty
+      add (Iso.find i iso, p) acc) s empty
 
   (* (\* normalise a port set:  *)
   (*    INPUT:  {(1, 1), (1, 2), (2, 3), (3, 5)} *)

@@ -40,65 +40,6 @@ sig
   val acts : t -> string list
 end
 
-(** {6 Isomorphisms} *)
-
-(** This module provides set operations on isomorphisms. Elements are pairs
-    of integers. *)
-module Iso :
-sig
-  
-  type t = (int, int) Hashtbl.t
-
-  val empty : unit -> t
-  val mem : t -> int -> int -> bool
-    
-  (** [find iso i] returns the image via isomorphism [iso] of element [i], i.e. 
-      [iso(i)].
-      @raise Not_found if element [i] is not in the domain of isomorphism [iso]. *)
-  val find : t -> int -> int
-
-  val compare : t -> t -> int
-  
-  val equal : t -> t -> bool  
-
-  val cardinal : t -> int
-  
-  val add : t -> int -> int -> unit
-
-  val union : t -> t -> t
-
-  val fold : (int -> int -> 'a -> 'a) -> t -> 'a -> 'a    
-    
-  val iter : (int -> int -> unit) -> t -> unit
-  
-  (** Return the inverse of an isomorphism. *)
-  val inverse : t -> t
-  
-  (** Return a new isomorphism in which elements in the domain and codomain
-      are transformed by the input isomorphisms. *)
-  val map : t -> t -> t-> t
-  (** Compute the domain of an isomorphism. *)
-  val dom : t -> int list
-    
-  (** Compute the co-domain of an isomorphism. *)
-  val codom : t -> int list
-    
-  val to_string : t -> string
-    
-  (** [of_list l] returns an isomorphism with the elements in list [l]. *)
-  val of_list : (int * int) list -> t
-
-  (** Return the elements of an isomorphism. Order is unspecified. *)
-  val to_list : t -> (int * int) list
-
-  (** [is_id i] returns [true] if iso [i] is an identity, [false] otherwise.*)
-  val is_id : t -> bool
-
-  (** Generate the equivalent isomorphisms by using a list of automorphisms. *)
-  val gen_isos : t -> t list -> t list
-
-end
-
 (** {6 Sets of integers} *)
 
 (** This module provides operations for sets of int.*)
@@ -194,11 +135,11 @@ sig
   val to_dot: t -> string
     
   (** Apply an isomorphism *)
-  val apply_iso : t -> Iso.t -> t
+  val apply_iso : t -> Iso.int t -> t
 
   (** Apply an isomorphism only to nodes in the domain of the isomorphism. 
       Other nodes are discarded. *)
-  val filter_apply_iso : t -> Iso.t -> t
+  val filter_apply_iso : t -> Iso.int t -> t
   
   val not_sub : t -> t -> bool
 
