@@ -3,58 +3,58 @@
 
 type key = int
 type +'a t
-val empty : 'a t
-val is_empty : 'a t -> bool
-val mem : key -> 'a t -> bool
-val add : key -> 'a -> 'a t -> 'a t
-val singleton : key -> 'a -> 'a t
-val remove : key -> 'a t -> 'a t
+val empty : int t
+val is_empty : int t -> bool
+val mem : key -> int t -> bool
+val add : key -> int -> int t -> int t
+val singleton : key -> int -> int t
+val remove : key -> int t -> int t
 (*val merge :
   (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t*)
-val iter : (key -> 'a -> unit) -> 'a t -> unit
-val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-val for_all : (key -> 'a -> bool) -> 'a t -> bool
-val exists : (key -> 'a -> bool) -> 'a t -> bool
-val filter : (key -> 'a -> bool) -> 'a t -> 'a t
-val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
-val cardinal : 'a t -> int
-val bindings : 'a t -> (key * 'a) list
-val min_binding : 'a t -> key * 'a
-val max_binding : 'a t -> key * 'a
-val choose : 'a t -> key * 'a
-val split : key -> 'a t -> 'a t * 'a option * 'a t
-val find : key -> 'a t -> 'a
-val map : ('a -> 'b) -> 'a t -> 'b t
+val iter : (key -> int -> unit) -> int t -> unit
+val fold : (key -> int -> 'b -> 'b) -> int t -> 'b -> 'b
+val for_all : (key -> int -> bool) -> int t -> bool
+val exists : (key -> int -> bool) -> int t -> bool
+val filter : (key -> int -> bool) -> int t -> int t
+val partition : (key -> int -> bool) -> int t -> int t * int t
+val cardinal : int t -> int
+val bindings : int t -> (key * int) list
+val min_binding : int t -> key * int
+val max_binding : int t -> key * int
+val choose : int t -> key * int
+val split : key -> int t -> int t * int option * int t
+val find : key -> int t -> int
+val map : (int -> 'b) -> int t -> 'b t
 (*val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t*)
 
 (** Return the inverse of an isomorphism. *)
-val inverse : key t -> key t
+val inverse : int t -> key t
 
 (** Compute the domain of an isomorphism. *)
-val dom : 'a t -> key list
+val dom : int t -> key list
 
 (** Compute the co-domain of an isomorphism. *)
-val codom : 'a t -> 'a list
+val codom : int t -> int list
 
-val to_list : 'a t -> (key * 'a) list
+val to_list : int t -> (key * int) list
 
 (** [of_list l] returns an isomorphism with the elements in list [l]. *)
-val of_list : (key * 'a) list -> 'a t
+val of_list : (key * int) list -> int t
 
 val to_string : int t -> string
 
 (** [is_id i] returns [true] if iso [i] is an identity, [false] otherwise.*)
-val is_id : key t -> bool
+val is_id : int t -> bool
 
-val equal : '_a t -> '_a t -> bool
+val equal : int t -> int t -> bool
 
 val compare : int t -> int t -> int
 
-val union : '_a t -> '_a t -> '_a t
+val union : int t -> int t -> int t
 
 (** Apply an iso to domain and one to codomain.
     @raise Not_found *)
-val transform : key t -> key t -> 'a t -> 'a t
+val transform : int t -> int t -> int t -> int t
 
 (** Generate the equivalent isomorphisms by using a list of automorphisms. *)
-val gen_isos : 'a t -> key t list -> 'a t list
+val gen_isos : int t -> key t list -> int t list
