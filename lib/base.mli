@@ -145,9 +145,9 @@ sig
 	(*     Port identifiers are ignored. *\)   *)
 	(* val sub_multiset : t -> t -> bool   *)
 
-	(** Construct an isomorphism from nodes to number of port occurrences
+	(** Construct a mapping from nodes to number of port occurrences
 	    within a port set. *)  
-	val arities : t -> int Iso.t
+	val arities : t -> (int * int) list
 
 	(** Construct a list of possible node assignments starting from two
 	    compatible port sets. *)

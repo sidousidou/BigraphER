@@ -226,12 +226,13 @@ module Ports = struct
   (* Compute the arities of the nodes within a port set. The output is an iso 
      node -> arity *)
   let arities p =
-    fold (fun (i, _) iso ->
-        try
-          Iso.add i ((Iso.find i iso) + 1) iso
-        with
-        | Not_found -> Iso.add i 1 iso
-      ) p Iso.empty
+    let zero = IntSet.singleton 0 in
+    let r = fold (fun (i, _) r ->
+        Rel.add i zero r
+      ) p Rel.empty in
+    List.map (fun (i, js) -> 
+        (i, IntSet.cardinal js)
+      ) (Rel.bindings r)
 
   let compat_list a b n_a n_b =
     let ar_a = arities a
@@ -239,14 +240,14 @@ module Ports = struct
     and i_a = to_IntSet a 
     and i_b = to_IntSet b in
     IntSet.fold (fun i acc ->
-        let ar_i = Iso.find i ar_a
+        let ar_i = List.assoc i ar_a
         and c_i = Nodes.find n_a i in
         let pairs =
 	  List.map (fun j -> 
 	      Cnf.M_lit (i, j)
             ) (IntSet.elements (
               IntSet.filter (fun j ->
-	          (ar_i = (Iso.find j ar_b)) && 
+	          (ar_i = (List.assoc j ar_b)) && 
 	          (Ctrl.(=) c_i (Nodes.find n_b j))
                 ) i_b)) in 
         pairs :: acc
