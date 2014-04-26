@@ -2,6 +2,10 @@ build_environment: Ubuntu 13.04
 
 language: java
 
-install: sudo apt-get install -y ocaml
+install: 
+ - add-apt-repository ppa:avsm/ocaml41+opam11
+ - apt-get update 
+ - apt-get install ocaml opam
 
-script: bash -ex shippable-ci.sh
+script: 
+ - shippable-ci.sh
