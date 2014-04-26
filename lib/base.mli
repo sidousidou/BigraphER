@@ -7,8 +7,7 @@
 (******************************************************************************)
 
 (** This module provides operations on basic bigraphical entities such as 
-    controls, nodes and ports. It also defines sets of int, binary relations
-    and various functions for combinatorial problems.
+    controls, nodes and ports.
     @author Michele Sevegnani *)
 
 (** {6 Controls} *)
@@ -38,121 +37,6 @@ sig
   (** Parses the control string to obtain a list of actuals:
     [Control(a0,a1,a2) --> a0;a1;a2] *)
   val acts : t -> string list
-end
-
-(** {6 Isomorphisms} *)
-
-(** This module provides set operations on isomorphisms. Elements are pairs
-    of integers. *)
-module Iso :
-sig
-  
-  type t = (int, int) Hashtbl.t
-
-  val empty : unit -> t
-  val mem : t -> int -> int -> bool
-    
-  (** [find iso i] returns the image via isomorphism [iso] of element [i], i.e. 
-      [iso(i)].
-      @raise Not_found if element [i] is not in the domain of isomorphism [iso]. *)
-  val find : t -> int -> int
-
-  val compare : t -> t -> int
-  
-  val equal : t -> t -> bool  
-
-  val cardinal : t -> int
-  
-  val add : t -> int -> int -> unit
-
-  val union : t -> t -> t
-
-  val fold : (int -> int -> 'a -> 'a) -> t -> 'a -> 'a    
-    
-  val iter : (int -> int -> unit) -> t -> unit
-  
-  (** Return the inverse of an isomorphism. *)
-  val inverse : t -> t
-  
-  (** Return a new isomorphism in which elements in the domain and codomain
-      are transformed by the input isomorphisms. *)
-  val map : t -> t -> t-> t
-  (** Compute the domain of an isomorphism. *)
-  val dom : t -> int list
-    
-  (** Compute the co-domain of an isomorphism. *)
-  val codom : t -> int list
-    
-  val to_string : t -> string
-    
-  (** [of_list l] returns an isomorphism with the elements in list [l]. *)
-  val of_list : (int * int) list -> t
-
-  (** Return the elements of an isomorphism. Order is unspecified. *)
-  val to_list : t -> (int * int) list
-
-  (** [is_id i] returns [true] if iso [i] is an identity, [false] otherwise.*)
-  val is_id : t -> bool
-
-  (** Generate the equivalent isomorphisms by using a list of automorphisms. *)
-  val gen_isos : t -> t list -> t list
-
-end
-
-(** {6 Sets of integers} *)
-
-(** This module provides operations for sets of int.*)
-module IntSet: sig
-
-  type elt = int
-  type t
-  val empty : t
-  val is_empty : t -> bool
-  val mem : elt -> t -> bool
-  val add : elt -> t -> t
-  val singleton : elt -> t
-  val remove : elt -> t -> t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val compare : t -> t -> int
-  val equal : t -> t -> bool
-  val subset : t -> t -> bool
-  val iter : (elt -> unit) -> t -> unit
-  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-  val for_all : (elt -> bool) -> t -> bool
-  val exists : (elt -> bool) -> t -> bool
-  val filter : (elt -> bool) -> t -> t
-  val partition : (elt -> bool) -> t -> t * t
-  val cardinal : t -> int
-  val elements : t -> elt list
-  val min_elt : t -> elt
-  val max_elt : t -> elt
-  val choose : t -> elt
-  val split : elt -> t -> t * bool * t
-    
-  (** [to_string s] gives the string representation of [Int_set s].*)
-  val to_string : t -> string
-
-  (** [of_list l] returns a set of int form a list *)
-  val of_list : int list -> t
-
-  (** [of_int i] returns a set [{0, 1, ...., i-1}].*)
-  val of_int: int -> t
-
-  (** [off i s] adds offset [i] to all the elements of set [s].*)
-  val off: int -> t -> t
-
-  (** [norm s] normalises set [s]: e.g. [{4, 6, 7, 9} --> {0, 1, 2, 3}] *)
-  val norm : t -> t
-    
-  (** [fix s] generates an isomorphism to fix the numbering of [s]: e.g. 
-      [{2, 5, 6, 7} --> {(2,0), (5,1), (6,2), (7,3)}]*)
-  val fix : t -> Iso.t
-  
-  (** Apply an isomorphism *)
-  val apply : t -> Iso.t -> t
-  
 end
 
 (** {6 Nodes} *)
@@ -194,11 +78,11 @@ sig
   val to_dot: t -> string
     
   (** Apply an isomorphism *)
-  val apply_iso : t -> Iso.t -> t
+  val apply_iso : t -> int Iso.t -> t
 
   (** Apply an isomorphism only to nodes in the domain of the isomorphism. 
       Other nodes are discarded. *)
-  val filter_apply_iso : t -> Iso.t -> t
+  val filter_apply_iso : t -> int Iso.t -> t
   
   val not_sub : t -> t -> bool
 
@@ -255,15 +139,15 @@ sig
 	val to_IntSet : t -> IntSet.t
 
 	(** Apply an isomorphism *)
-	val apply : t -> Iso.t -> t
+	val apply : t -> int Iso.t -> t
 	
 	(* (\** [sub_multiset a b] returns [true] if [a] is a submultiset of [b].  *)
 	(*     Port identifiers are ignored. *\)   *)
 	(* val sub_multiset : t -> t -> bool   *)
 
-	(** Construct an isomorphism from nodes to number of port occurrences
+	(** Construct a mapping from nodes to number of port occurrences
 	    within a port set. *)  
-	val arities : t -> Iso.t
+	val arities : t -> (int * int) list
 
 	(** Construct a list of possible node assignments starting from two
 	    compatible port sets. *)

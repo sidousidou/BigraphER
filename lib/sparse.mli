@@ -55,11 +55,11 @@ val append : bmatrix -> bmatrix -> bmatrix
 
 val stack : bmatrix -> bmatrix -> bmatrix
 
-val apply_iso_rows : Base.Iso.t -> bmatrix -> bmatrix
+val apply_iso_rows : int Iso.t -> bmatrix -> bmatrix
 
-val apply_iso_cols : Base.Iso.t -> bmatrix -> bmatrix
+val apply_iso_cols : int Iso.t -> bmatrix -> bmatrix
 
-val apply_iso : Base.Iso.t -> bmatrix -> bmatrix
+val apply_iso : int Iso.t -> bmatrix -> bmatrix
 
 val parse_vector : int list list -> int -> bmatrix
 
@@ -67,19 +67,19 @@ val chl : bmatrix -> int -> int list
 
 val prn : bmatrix -> int -> int list
 
-val dom : bmatrix -> Base.IntSet.t
+val dom : bmatrix -> IntSet.t
 
-val leaves : bmatrix -> Base.IntSet.t
+val leaves : bmatrix -> IntSet.t
 
-val codom : bmatrix ->  Base.IntSet.t
+val codom : bmatrix -> IntSet.t
 
-val orphans : bmatrix ->  Base.IntSet.t
+val orphans : bmatrix -> IntSet.t
 
-val siblings : bmatrix -> int ->  Base.IntSet.t
+val siblings : bmatrix -> int -> IntSet.t
 
 val siblings_chk: bmatrix -> bool
 
-val partners : bmatrix -> int ->  Base.IntSet.t
+val partners : bmatrix -> int -> IntSet.t
 
 val partners_chk : bmatrix -> bool
 
@@ -97,4 +97,4 @@ val add_list : bmatrix -> (int * int) list -> unit
 
 val entries : bmatrix -> int
 
-val levels : bmatrix -> Base.IntSet.t list
+val levels : bmatrix -> IntSet.t list

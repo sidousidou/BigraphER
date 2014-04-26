@@ -47,15 +47,15 @@ val get_dot : pg -> string * string * string * string
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying 
     isomorphism [i] to [p].*)
-val apply_iso : Base.Iso.t -> pg -> pg
+val apply_iso : int Iso.t -> pg -> pg
 
 (** [parse_placing l r] returns the placing with [r] roots defined by list
     [l] in which each element is a site's parent set.*)
 val parse_placing : int list list -> int -> pg
 
-val leaves : pg -> Base.IntSet.t
+val leaves : pg -> IntSet.t
 
-val orphans : pg -> Base.IntSet.t
+val orphans : pg -> IntSet.t
 
 (** {6 Elementary place graphs} *)
 
@@ -135,7 +135,7 @@ val is_guard : pg -> bool
     and node isomorphism [i] from [p] to [t]. Pattern [p] is assumed epi and 
     mono. The result is context [c], identity [id], parameter [d], and nodes 
     in [c] and [d] expressed as rows of [t]. *)
-val decomp : pg -> pg -> Base.Iso.t -> pg * pg * pg * Base.Iso.t * Base.Iso.t
+val decomp : pg -> pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
 
 (*
 (** [levels p] returns the levels of place graph [p]. The first component is the
@@ -155,18 +155,18 @@ exception NOT_TOTAL
     @raise NOT_TOTAL when there are nodes in the pattern that are impossible
     to match. *)
 val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Base.IntSet.t
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
 (** @raise NOT_TOTAL when there are nodes in the pattern that are impossible
     to match. *)
 val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_leaves}.
     @raise NOT_TOTAL when there are nodes in the pattern that are impossible
     to match. *)
 val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * IntSet.t
 
 (* val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> *)
 (*   Cnf.clause list *)
@@ -175,23 +175,23 @@ val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 (*   Cnf.clause list *)
 
 val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * IntSet.t
 
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * IntSet.t
 
 val match_trans : pg -> pg -> Cnf.clause list
 
-val check_match : pg -> pg -> Sparse.bmatrix -> Base.Iso.t -> bool
+val check_match : pg -> pg -> Sparse.bmatrix -> int Iso.t -> bool
 
 val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * IntSet.t
 
 val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * Base.IntSet.t
+  Cnf.clause list * IntSet.t
 
 val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * Base.IntSet.t
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
 val deg_roots : pg -> int list
 

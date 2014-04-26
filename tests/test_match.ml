@@ -24,16 +24,16 @@ let parse_all dir =
   
 type test =
   { target : Big.bg; pattern : Big.bg;
-    exp_res : (Base.Iso.t * Base.Iso.t) list;
-    mutable res : (Base.Iso.t * Base.Iso.t) list
+    exp_res : (int Iso.t * int Iso.t) list;
+    mutable res : (int Iso.t * int Iso.t) list
   }
 
 let sort_res =
   List.fast_sort
     (fun (iv0, ie0) (iv1, ie1) ->
-      let x = Base.Iso.compare iv0 iv1
+      let x = Iso.compare iv0 iv1
       in match x with 
-      | 0 -> Base.Iso.compare ie0 ie1 
+      | 0 -> Iso.compare ie0 ie1 
       | _ -> x)
   
 let print_res res =
@@ -41,16 +41,18 @@ let print_res res =
     (String.concat "\n"
        (List.map
           (fun (i, j) ->
-             sprintf "%s -- %s" (Base.Iso.to_string i) (Base.Iso.to_string j))
+             sprintf "%s -- %s" (Iso.to_string i) (Iso.to_string j))
           (sort_res res)))
   
 let check_res res exp_res =
+  (* printf "%s\n" (print_res res); *)
+  (* printf "%s\n" (print_res exp_res); *)
   if (List.length res) <> (List.length exp_res)
   then false
   else
     List.for_all
       (fun ((i0, j0), (i1, j1)) ->
-         (Base.Iso.equal i0 i1) && (Base.Iso.equal j0 j1)
+         (Iso.equal i0 i1) && (Iso.equal j0 j1)
       ) (List.combine (sort_res res) (sort_res exp_res))
 
 let print_test (c, n) =
@@ -64,6 +66,7 @@ let print_test (c, n) =
 let do_tests ts =
   let (count, _) =
     List.fold_left (fun (count, i) t ->
+        (* printf "T: %s\nP: %s\n" (to_string t.target) (to_string t.pattern); *)
         try
           (t.res <- List.map (fun (a, b, _) ->
                (a, b)
@@ -139,8 +142,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T1" bgs;
       pattern = List.assoc "P1" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 2) ]), (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 0); (1, 3) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 2) ]), (Iso.of_list []));
+          ((Iso.of_list [ (0, 0); (1, 3) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 2 *)
     {
@@ -152,7 +155,7 @@ let tests bgs = (* TEST 1 *)
     {
       target = List.assoc "T2" bgs;
       pattern = List.assoc "P2" bgs;
-      exp_res = [ ((Base.Iso.of_list [ (0, 0) ]), (Base.Iso.of_list [])) ];
+      exp_res = [ ((Iso.of_list [ (0, 0) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 4 *)
     {
@@ -165,7 +168,7 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T3" bgs;
       pattern = List.assoc "P5" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 1); (1, 0) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 1); (1, 0) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 6 *)
     {
@@ -190,45 +193,45 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T5" bgs;
       pattern = List.assoc "P9" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 10 *)
     {
       target = List.assoc "T6" bgs;
       pattern = List.assoc "P10" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1) ]),
-           (Base.Iso.of_list [ (0, 0) ])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1) ]),
+           (Iso.of_list [ (0, 0) ])) ];
       res = [];
     }; (* TEST 11 *)
     {
       target = List.assoc "T7" bgs;
       pattern = List.assoc "P11" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 12 *)
     {
       target = List.assoc "T8" bgs;
       pattern = List.assoc "P12" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1) ]),
-           (Base.Iso.of_list [ (0, 0) ])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1) ]),
+           (Iso.of_list [ (0, 0) ])) ];
       res = [];
     }; (* TEST 13 *)
     {
       target = List.assoc "T9" bgs;
       pattern = List.assoc "P13" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 14 *)
     {
       target = List.assoc "T9" bgs;
       pattern = List.assoc "P14" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1) ]),
-           (Base.Iso.of_list [ (0, 1) ])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1) ]),
+           (Iso.of_list [ (0, 1) ])) ];
       res = [];
     }; (* TEST 15 *)
     {
@@ -248,8 +251,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T11" bgs;
       pattern = List.assoc "P17" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0) ]), (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 1) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0) ]), (Iso.of_list []));
+          ((Iso.of_list [ (0, 1) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 18 *)
     {
@@ -262,8 +265,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T12" bgs;
       pattern = List.assoc "P19" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 2) ]), (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 1) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 2) ]), (Iso.of_list []));
+          ((Iso.of_list [ (0, 1) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 20 *)
     {
@@ -275,7 +278,7 @@ let tests bgs = (* TEST 1 *)
     {
       target = List.assoc "T12" bgs;
       pattern = List.assoc "P21" bgs;
-      exp_res = [ ((Base.Iso.of_list [ (0, 0) ]), (Base.Iso.of_list [])) ];
+      exp_res = [ ((Iso.of_list [ (0, 0) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 22 *)
     {
@@ -294,48 +297,48 @@ let tests bgs = (* TEST 1 *)
     {
       target = List.assoc "T13" bgs;
       pattern = List.assoc "P24" bgs;
-      exp_res = [ ((Base.Iso.of_list [ (0, 0) ]), (Base.Iso.of_list [])) ];
+      exp_res = [ ((Iso.of_list [ (0, 0) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 25 *)
     {
       target = List.assoc "T14" bgs;
       pattern = List.assoc "P25" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 2); (1, 3) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 2); (1, 3) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 26 *)
     {
       target = List.assoc "T15" bgs;
       pattern = List.assoc "P26" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 2); (1, 3); (2, 5); (3, 4); (4, 6) ]),
-           (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 2); (1, 3); (2, 4); (3, 5); (4, 6) ]),
-           (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 2); (1, 3); (2, 5); (3, 4); (4, 6) ]),
+           (Iso.of_list []));
+          ((Iso.of_list [ (0, 2); (1, 3); (2, 4); (3, 5); (4, 6) ]),
+           (Iso.of_list [])) ];
       res = [];
     }; (* TEST 27 *)
     {
       target = List.assoc "T16" bgs;
       pattern = List.assoc "T16" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1); (2, 2); (3, 3); (4, 4) ]),
-           (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1); (2, 2); (3, 3); (4, 4) ]),
+           (Iso.of_list [])) ];
       res = [];
     }; (* TEST 28 *)
     {
       target = List.assoc "T17" bgs;
       pattern = List.assoc "P27" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 1); (1, 2) ]),
-           (Base.Iso.of_list [ (0, 0) ])) ];
+        [ ((Iso.of_list [ (0, 1); (1, 2) ]),
+           (Iso.of_list [ (0, 0) ])) ];
       res = [];
     }; (* TEST 29 *)
     {
       target = List.assoc "T18" bgs;
       pattern = List.assoc "P27" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 1); (1, 5) ]),
-           (Base.Iso.of_list [ (0, 0) ])) ];(* or (0,1)? *)
+        [ ((Iso.of_list [ (0, 1); (1, 5) ]),
+           (Iso.of_list [ (0, 0) ])) ];(* or (0,1)? *)
       
       res = [];
     }; (* TEST 30 *) (* closed edges have to be iso *)
@@ -343,8 +346,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T19" bgs;
       pattern = List.assoc "P27" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 4); (1, 8) ]),
-           (Base.Iso.of_list [ (0, 2) ])) ];
+        [ ((Iso.of_list [ (0, 4); (1, 8) ]),
+           (Iso.of_list [ (0, 2) ])) ];
       res = [];
     }; (* TEST 31 *)
     {
@@ -352,23 +355,23 @@ let tests bgs = (* TEST 1 *)
       pattern = List.assoc "P28" bgs;(* no edges *)
       
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0) ]), (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 4) ]), (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 5) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0) ]), (Iso.of_list []));
+          ((Iso.of_list [ (0, 4) ]), (Iso.of_list []));
+          ((Iso.of_list [ (0, 5) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 32 *)
     {
       target = List.assoc "T20" bgs;
       pattern = List.assoc "P29" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 2); (1, 3) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 2); (1, 3) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 33 *)
     {
       target = List.assoc "T21" bgs;
       pattern = List.assoc "P30" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 1); (1, 2) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 1); (1, 2) ]), (Iso.of_list [])) ];
       res = [];
     }; (*vvvvvvvvvvvvvvvvvvvv   EXAMPLES from the THESIS    vvvvvvvvvvvvvvvvv*)
     (* TEST 34 *)
@@ -376,17 +379,17 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T22" bgs;
       pattern = List.assoc "P31" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 3); (1, 6) ]), (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 3); (1, 6) ]), (Iso.of_list [])) ];
       res = [];
     }; (* TEST 35 *)
     {
       target = List.assoc "T22" bgs;
       pattern = List.assoc "P32" bgs;
       exp_res =
-        [ ((Base.Iso.of_list [ (0, 0); (1, 1); (2, 4) ]),
-           (Base.Iso.of_list []));
-          ((Base.Iso.of_list [ (0, 0); (1, 2); (2, 5) ]),
-           (Base.Iso.of_list [])) ];
+        [ ((Iso.of_list [ (0, 0); (1, 1); (2, 4) ]),
+           (Iso.of_list []));
+          ((Iso.of_list [ (0, 0); (1, 2); (2, 5) ]),
+           (Iso.of_list [])) ];
       res = [];
     }; (* TEST 36 *)
     {
@@ -407,12 +410,19 @@ let tests bgs = (* TEST 1 *)
       exp_res = [];
       res = [];
     } ]
-  
+
+
+(* Args: (match | equality) PATH [INDEX] *)  
 let () =
   let bg_strings = parse_all Sys.argv.(2) in
   let bgs =
     List.map (fun (n, ls) -> (n, (Big.parse ls))) bg_strings in
-  let ts = tests bgs in
+  let ts = 
+    try 
+      [List.nth (tests bgs) ((int_of_string Sys.argv.(3)) - 1)]
+    with
+    | _ -> tests bgs 
+  in
   match Sys.argv.(1) with
   | "match" -> do_tests ts
   | "equality" -> do_equality_tests bgs ts
