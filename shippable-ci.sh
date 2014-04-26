@@ -13,8 +13,8 @@ export DCS_REPO='http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/'
 export OPAM_PACKAGES='ocp-build minisat'
 
 # Install OCaml
-sudo apt-get update -qq
-sudo apt-get install -qq ocaml
+#sudo apt-get update -qq
+#sudo apt-get install -qq ocaml
 
 echo 'OCaml version'
 ocaml -version
@@ -24,7 +24,7 @@ curl -L https://github.com/ocaml/opam/archive/${OPAM_VERSION}.tar.gz | tar xz -C
 pushd /tmp/opam-${OPAM_VERSION}
 ./configure
 make
-sudo make install
+make install
 opam init
 eval `opam config -env`
 popd

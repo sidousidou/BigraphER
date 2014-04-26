@@ -2,4 +2,6 @@ build_environment: Ubuntu 13.04
 
 language: java
 
+install: sudo apt-get install -y ocaml
+
 script: bash -ex shippable-ci.sh
