@@ -1,4 +1,4 @@
-AC_INIT(bigrapher,0.4.3)
+AC_INIT(bigrapher,0.4.4)
 AC_COPYRIGHT(Copyright 2012-2013 Michele Sevegnani)
 
 AC_CONFIG_MACRO_DIR([m4])
