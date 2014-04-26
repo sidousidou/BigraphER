@@ -581,10 +581,10 @@ let sub_edge p t n_t n_p =
    element *)
 let compat_clauses e_p i t h_t n_t n_p =
   let p = Ports.to_IntSet e_p.p 
-  and iso_p = Ports.arities e_p.p n_p in
+  and iso_p = Ports.arities e_p.p in
   IntSet.fold (fun j acc ->
       let e_t = Hashtbl.find h_t j in
-      let iso_t = Ports.arities e_t.p n_t in
+      let iso_t = Ports.arities e_t.p in
       let clauses : Cnf.lit list list = 
         IntSet.fold (fun v acc ->
 	    let c_v = Nodes.find n_p v 

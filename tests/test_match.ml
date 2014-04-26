@@ -45,6 +45,8 @@ let print_res res =
           (sort_res res)))
   
 let check_res res exp_res =
+  (* printf "%s\n" (print_res res); *)
+  (* printf "%s\n" (print_res exp_res); *)
   if (List.length res) <> (List.length exp_res)
   then false
   else
@@ -64,6 +66,7 @@ let print_test (c, n) =
 let do_tests ts =
   let (count, _) =
     List.fold_left (fun (count, i) t ->
+        (* printf "T: %s\nP: %s\n" (to_string t.target) (to_string t.pattern); *)
         try
           (t.res <- List.map (fun (a, b, _) ->
                (a, b)
@@ -407,12 +410,19 @@ let tests bgs = (* TEST 1 *)
       exp_res = [];
       res = [];
     } ]
-  
+
+
+(* Args: (match | equality) PATH [INDEX] *)  
 let () =
   let bg_strings = parse_all Sys.argv.(2) in
   let bgs =
     List.map (fun (n, ls) -> (n, (Big.parse ls))) bg_strings in
-  let ts = tests bgs in
+  let ts = 
+    try 
+      [List.nth (tests bgs) ((int_of_string Sys.argv.(3)) - 1)]
+    with
+    | _ -> tests bgs 
+  in
   match Sys.argv.(1) with
   | "match" -> do_tests ts
   | "equality" -> do_equality_tests bgs ts
