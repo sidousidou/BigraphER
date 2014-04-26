@@ -202,8 +202,8 @@ module Ports = struct
     List.fast_sort String.compare l
 
   let to_IntSet ps =
-    fold (fun p acc -> 
-      IntSet.add (fst p) acc) ps IntSet.empty
+    fold (fun (i, _) acc -> 
+      IntSet.add i acc) ps IntSet.empty
 
   let apply s iso =
     assert (Iso.cardinal iso >= cardinal s);
@@ -226,16 +226,12 @@ module Ports = struct
   (* Compute the arities of the nodes within a port set. The output is an iso 
      node -> arity *)
   let arities p =
-    let h = Hashtbl.create (cardinal p) in
-    iter (fun (i, p) -> Hashtbl.add h i p) p;
-    let iso = Iso.empty () in 
-    ignore (Hashtbl.fold (fun i _ marked ->
-      if IntSet.mem i marked then marked
-      else begin
-	Iso.add iso i (List.length (Hashtbl.find_all h i));
-	IntSet.add i marked
-      end) h IntSet.empty);
-    iso
+    fold (fun (i, _) iso ->
+        try
+          Iso.add i ((Iso.find i iso) + 1) iso
+        with
+        | Not_found -> Iso.add i 1 iso
+      ) p Iso.empty
 
   let compat_list a b n_a n_b =
     let ar_a = arities a
@@ -243,14 +239,14 @@ module Ports = struct
     and i_a = to_IntSet a 
     and i_b = to_IntSet b in
     IntSet.fold (fun i acc ->
-        let ar_i = Iso.find ar_a i
+        let ar_i = Iso.find i ar_a
         and c_i = Nodes.find n_a i in
         let pairs =
 	  List.map (fun j -> 
 	      Cnf.M_lit (i, j)
             ) (IntSet.elements (
               IntSet.filter (fun j ->
-	          (ar_i = (Iso.find ar_b j)) && 
+	          (ar_i = (Iso.find j ar_b)) && 
 	          (Ctrl.(=) c_i (Nodes.find n_b j))
                 ) i_b)) in 
         pairs :: acc

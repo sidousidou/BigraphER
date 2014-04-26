@@ -129,7 +129,7 @@ let apply_iso_rows iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
-    let i' = Iso.find iso i in
+    let i' = Iso.find i iso in
     Hashtbl.add m'.r_major i' j;
     Hashtbl.add m'.c_major j i') m.r_major;
    m'
@@ -138,7 +138,7 @@ let apply_iso_cols iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.c);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
-    let j' = Iso.find iso j in
+    let j' = Iso.find j iso in
     Hashtbl.add m'.r_major i j';
     Hashtbl.add m'.c_major j' i) m.r_major;
   m'
@@ -149,7 +149,7 @@ let apply_iso iso m =
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let (i', j') = 
-      (Iso.find iso i, Iso.find iso j) in
+      (Iso.find i iso, Iso.find j iso) in
     Hashtbl.add m'.r_major i' j';
     Hashtbl.add m'.c_major j' i') m.r_major;
   m'

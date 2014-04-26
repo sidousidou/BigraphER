@@ -120,7 +120,7 @@ val ports : Lg.t -> Base.Ports.t
 (** [apply_iso i l] returns a link graph obtained by applying isomorphism [i]
     to [l].
     @raise Not_found when a node is not defined in the iso. *)
-val apply_iso: Base.Iso.t -> Lg.t -> Lg.t
+val apply_iso: int Iso.t -> Lg.t -> Lg.t
 
 (** {6 Elementary link graphs} *)
 
@@ -174,19 +174,19 @@ val max_ports : Lg.t -> int
 
 val closed_edges : Lg.t -> Lg.t
 
-val closed_edges_iso : Lg.t -> Lg.t * Base.Iso.t
+val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
 
 (** {6 Decompositions} *)
 
-(** [decomp t p i_v i_e i_c i_d f_e] builds the decomposition of target [t] given 
-    pattern [p], isomorphism [i_v], relation [i_e], and isos from nodes in [t]
+(** [decomp t p i_e i_c i_d f_e] builds the decomposition of target [t] given 
+    pattern [p], relation [i_e], and isos from nodes in [t]
     to nodes of [c] and [d], respectively. Argument [f_e] is a total function
     from links in the pattern to links in the target. Pattern [p] is assumed epi 
     and mono, [i_v] is from nodes in [p] to nodes in [t] and [i_e] is from 
     edges in [p] to edges in [t]. Isos [i_c] and [i_d] are obtained by 
     {!Place.decomp}. The results are link graph [c], [d] and [id].*)
-val decomp : Lg.t -> Lg.t -> Base.Iso.t -> Base.Iso.t -> Base.Iso.t -> 
-  Base.Iso.t -> Base.Iso.t -> Lg.t * Lg.t * Lg.t
+val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t -> 
+  int Iso.t -> IntSet.t Rel.t -> Lg.t * Lg.t * Lg.t
 
 (** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained 
     by {!Place.levels}. The output is a wiring and a list of
@@ -201,7 +201,7 @@ exception NOT_TOTAL
     target. The output is a list of clauses a set of blocked columns and 
     a set of blocking pairs. *)
 val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list * Base.IntSet.t * Cnf.clause list
+  Cnf.clause list * IntSet.t * Cnf.clause list
 
 (** Ports in matched closed edges have to be isomorphic *)
 val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
@@ -209,7 +209,7 @@ val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
 
 val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   int * int * Cnf.clause list list * (int * int) list * 
-  Cnf.clause list * Base.Iso.t * Base.Iso.t
+  Cnf.clause list * int Iso.t * int Iso.t
 
 val match_list_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * Cnf.clause list

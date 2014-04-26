@@ -8,6 +8,9 @@ install = true
 begin library "bigraph"
   
   files = [
+    "iso.ml"
+    "intSet.ml"
+    "rel.ml"
     "base.ml"
     "cnf.ml"
     "sparse.ml"

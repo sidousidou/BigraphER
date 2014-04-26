@@ -368,7 +368,7 @@ let get_dot l =
 
 (* decompose t. p is assumed epi and mono. Ports are normalised.
    i_c and i_d are isos from t to c and d.*)
-let decomp t p i_n i_e i_c i_d f_e =
+let decomp t p i_e i_c i_d f_e =
   (* compute sets of nodes in c and d *)
   let (v_c, v_d) = 
     (IntSet.of_list (Iso.dom i_c), IntSet.of_list (Iso.dom i_d)) 
@@ -377,10 +377,10 @@ let decomp t p i_n i_e i_c i_d f_e =
   and p_a = Array.of_list (Lg.elements p) 
   (* Inverse isos: T -> P *)
   and i_e' = Iso.inverse i_e
-  and f_e' = Iso.inverse f_e in (* Not a function *) 
+  and f_e' = Rel.inverse f_e in (* Not a function *) 
   (* Domains: disjoint subsets of T *)
   let closed_t = IntSet.of_list (Iso.dom i_e')
-  and non_empty_t = IntSet.of_list (Iso.dom f_e') 
+  and non_empty_t = IntSet.of_list (Rel.dom f_e') 
   in
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
   let (c, d, b_id, _) = 
@@ -401,9 +401,9 @@ let decomp t p i_n i_e i_c i_d f_e =
             (* n is a link/edge in a match with link in P *)
             if IntSet.mem n non_empty_t then (
               let match_p = 
-                List.fold_left (fun acc i ->
+                IntSet.fold (fun i acc ->
                     Lg.add  p_a.(i) acc
-                  ) Lg.empty (Hashtbl.find_all f_e' n) in
+                  ) (Rel.find n f_e') Lg.empty in
               (outer match_p, inner match_p)
             ) else
               (Face.empty, Face.empty) 
@@ -473,14 +473,11 @@ let max_ports l =
 let closed_edges l = Lg.filter is_closed l
 
 let filter_iso f l =
-  let iso = Iso.empty () in
-  let (l', _, _) =
-    Lg.fold (fun e (acc, i, i') ->
-        if f e then (
-          Iso.add iso i' i;
-          (Lg.add e acc, i + 1, i' + 1))
-        else (acc, i + 1, i')
-      ) l (Lg.empty, 0, 0) in
+  let (l', _, _, iso) =
+    Lg.fold (fun e (acc, i, i', iso) ->
+        if f e then (Lg.add e acc, i + 1, i' + 1, Iso.add i' i iso)
+        else (acc, i + 1, i', iso)
+      ) l (Lg.empty, 0, 0, Iso.empty) in
   (l', iso)
   
 let closed_edges_iso l =
@@ -591,13 +588,13 @@ let compat_clauses e_p i t h_t n_t n_p =
       let clauses : Cnf.lit list list = 
         IntSet.fold (fun v acc ->
 	    let c_v = Nodes.find n_p v 
-	    and arity_v = Iso.find iso_p v 
+	    and arity_v = Iso.find v iso_p 
 	    and p_t = Ports.to_IntSet e_t.p in	    
 	    (* find nodes in e_t that are compatible with v *)
 	    let compat_t = 
 	      IntSet.filter (fun u ->
 	          (Ctrl.(=) c_v (Nodes.find n_t u)) &&
-	          (arity_v <= (Iso.find iso_t u))
+	          (arity_v <= (Iso.find u iso_t))
 	        ) p_t in
 	    let nodes_assign =
 	      IntSet.fold (fun j acc -> 

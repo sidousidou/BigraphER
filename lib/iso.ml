@@ -2,16 +2,24 @@ include Map.Make (struct
     type t = int
     let compare a b = a - b
   end)
-    
-let inverse iso =
-  fold (fun i j iso' ->
-      add j i iso') iso empty
 
 let dom iso =
   fst (List.split (bindings iso))
 
 let codom iso = 
   snd (List.split (bindings iso))
+
+(* Must be a bijection: e.g. 1 -> 2 , 3 -> 2 is not allowed *)
+exception NOT_BIJECTIVE
+  
+let add i j iso = 
+  if List.mem j (codom iso) then raise NOT_BIJECTIVE
+  else add i j iso
+      
+let inverse iso =
+  fold (fun i j iso' ->
+      add j i iso'
+    ) iso empty
 
 let to_list = bindings
 
@@ -39,11 +47,13 @@ let union = fold add
    Raise: Not_found *)
 let transform iso i_dom i_codom =
   fold (fun i j iso' ->
-      add (find i i_dom) (find j i_codom) iso') iso empty
+      add (find i i_dom) (find j i_codom) iso'
+    ) iso empty
 
 (* input:  i : P -> T  autos : P -> P *)
 let gen_isos i autos =
   List.map (fun a ->
       fold (fun i j iso' -> 
-          add (find i a) j iso') i empty
+          add (find i a) j iso'
+        ) i empty
     ) autos

@@ -6,6 +6,11 @@ type +'a t
 val empty : int t
 val is_empty : int t -> bool
 val mem : key -> int t -> bool
+
+exception NOT_BIJECTIVE
+
+(** Add a new binding. Old binding on the same key is replaced.
+    @raise NOT_BIJECTIVE if image is already in the isomorphism. *)
 val add : key -> int -> int t -> int t
 val singleton : key -> int -> int t
 val remove : key -> int t -> int t

@@ -3,8 +3,8 @@ open Printf
 open Minisat
   
 type bg = {
-  p : Place.pg;  (** Place graph *)
-  l : Link.Lg.t; (** Link graph *)
+  p : Place.pg;     (** Place graph  *)
+  l : Link.Lg.t;    (** Link graph   *)
   n : Base.Nodes.t; (** Set of nodes *)
 }
 
@@ -257,7 +257,7 @@ let decomp t p i_v i_e f_e =
   let (p_c, p_d, p_id, i_c, i_d) = 
     Place.decomp t.p p.p i_v in
   let (l_c, l_d, l_id) = 
-    Link.decomp t.l p.l i_v i_e i_c i_d f_e
+    Link.decomp t.l p.l i_e i_c i_d f_e
   and (n_c, n_d) = 
     (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
@@ -322,15 +322,22 @@ let snf b =
 
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver m =
-  let iso = Iso.empty () in 
-  Array.iteri (fun i r ->
-      Array.iteri (fun j x ->
-          match solver#value_of x with
-          | Minisat.True -> Iso.add iso i j
-          | Minisat.False | Minisat.Unknown -> ()
-        ) r
-    ) m;
-  iso
+  snd (Array.fold_left (fun (i, iso) r ->
+      (i + 1, snd (Array.fold_left (fun (j, iso) x ->
+           match solver#value_of x with
+           | Minisat.True -> (j + 1, Iso.add i j iso)
+           | Minisat.False | Minisat.Unknown -> (j + 1, iso)
+         ) (0, iso) r))
+    ) (0, Iso.empty) m)
+
+let get_rel solver m =
+  snd (Array.fold_left (fun (i, f) r ->
+      (i + 1, snd (Array.fold_left (fun (j, f) x ->
+           match solver#value_of x with
+           | Minisat.True -> (j + 1, Rel.add i (IntSet.singleton j) f)
+           | Minisat.False | Minisat.Unknown -> (j + 1, f)
+         ) (0, f) r))
+    ) (0, Rel.empty) m)
 
 (************************** DEBUG *************************)
 let string_of_SAT solver m =
@@ -344,14 +351,14 @@ type sat_vars = {
   z0_rows : Minisat.var array array;
   z0_cols : Minisat.var array array;
   iso_edges : Minisat.var array array;
-  map_edges_r : Base.Iso.t;
-  map_edges_c : Base.Iso.t;
+  map_edges_r : int Iso.t;
+  map_edges_c : int Iso.t;
   z1_rows : Minisat.var array array;
   z1_cols : Minisat.var array array;
   z2 : Minisat.var array array;
   iso_hyp : Minisat.var array array;
-  map_hyp_r : Base.Iso.t;
-  map_hyp_c : Base.Iso.t;
+  map_hyp_r : int Iso.t;
+  map_hyp_c : int Iso.t;
   z3 : Minisat.var array array;
 }
 
@@ -499,7 +506,7 @@ let add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w =
   (* T index -> W' index *)
   let inv_w' = Iso.inverse iso_w' in
   let convert_j j =
-    Iso.find inv_w' (Iso.find iso_w j) 
+    Iso.find (Iso.find j iso_w) inv_w' 
   and vars_of_col j m =
     snd (
       Array.fold_left (fun (i, acc) _ ->
@@ -621,8 +628,10 @@ let occurrence t p =
       let t_trans = Sparse.trans t.p.Place.nn in
       let (s, vars) = aux_match t p t_trans in
       let i_v = get_iso s vars.iso_nodes
-      and i_e = Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c 
-      and i_h = Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c in
+      and i_e = 
+        Iso.transform (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c 
+      and i_h = 
+        Rel.transform (get_rel s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c in
       (i_v, i_e, i_h)
     )
   )
@@ -659,7 +668,7 @@ let clause_of_iso iso m =
     Array.fold_left (fun (i, acc) r ->
         (i + 1, snd (
             Array.fold_left (fun (j, acc) x ->
-	        if Iso.mem iso i j then 
+	        if Iso.find i iso = j then 
                   (j + 1, neg_lit x :: acc)
 	        else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
 	      ) (0, acc) r)
@@ -702,16 +711,16 @@ let occurrences t p =
           ignore (filter_loop s t p vars t_trans);
 	  loop_occur (
             (get_iso s vars.iso_nodes, 
-             Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
-             Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c
+             Iso.transform (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
+             Rel.transform (get_rel s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c
             ) :: res 
           )
 	with
 	| NO_MATCH -> res in
       loop_occur [
         (get_iso s vars.iso_nodes, 
-         Iso.map (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
-         Iso.map (get_iso s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c)
+         Iso.transform (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
+         Rel.transform (get_rel s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c)
       ]
     with
     | NO_MATCH -> []
@@ -799,42 +808,3 @@ let equal a b =
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
        equal_SAT a b
-
-(* let compare a b = *)
-(*   match (a.n.Nodes.size) - (b.n.Nodes.size) with *)
-(*   | 0 ->  *)
-(*     begin *)
-(*       match (Link.Lg.cardinal a.l) - (Link.Lg.cardinal b.l) with *)
-(*       | 0 ->  *)
-(* 	begin *)
-(* 	  match inter_compare (inner a) (inner b) with *)
-(* 	  | 0 ->  *)
-(* 	    begin *)
-(* 	      match inter_compare (outer a) (outer b) with *)
-(* 	      | 0 ->  *)
-(* 		begin *)
-(* 		  match (Place.edges a.p) - (Place.edges b.p) with *)
-(* 		  | 0 ->  *)
-(* 		    begin *)
-(* 		      match Sparse.compare a.p.Place.rs b.p.Place.rs with *)
-(* 		      | 0 -> *)
-(* 			begin *)
-(* 			  (\*placing or wiring *\) *)
-(* 			  if b.n.Nodes.size = 0 then *)
-(* 			    match Place.compare_placing a.p b.p with *)
-(* 			    | 0 -> Link.Lg.compare a.l b.l *)
-(* 			    | v -> v *)
-(* 			  else if equal_SAT a b then 0 *)
-(* 			  else compare a b *)
-(* 			end *)
-(* 		      | v -> v *)
-(* 		    end *)
-(* 		  | v -> v *)
-(* 		end *)
-(* 	      | v -> v  *)
-(* 	    end *)
-(* 	  | v -> v  *)
-(* 	end *)
-(*       | v -> v  *)
-(*     end *)
-(*   | v -> v  *)

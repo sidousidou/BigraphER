@@ -7,8 +7,7 @@
 (******************************************************************************)
 
 (** This module provides operations on basic bigraphical entities such as 
-    controls, nodes and ports. It also defines sets of int, binary relations
-    and various functions for combinatorial problems.
+    controls, nodes and ports.
     @author Michele Sevegnani *)
 
 (** {6 Controls} *)
@@ -79,11 +78,11 @@ sig
   val to_dot: t -> string
     
   (** Apply an isomorphism *)
-  val apply_iso : t -> Iso.int t -> t
+  val apply_iso : t -> int Iso.t -> t
 
   (** Apply an isomorphism only to nodes in the domain of the isomorphism. 
       Other nodes are discarded. *)
-  val filter_apply_iso : t -> Iso.int t -> t
+  val filter_apply_iso : t -> int Iso.t -> t
   
   val not_sub : t -> t -> bool
 
@@ -140,7 +139,7 @@ sig
 	val to_IntSet : t -> IntSet.t
 
 	(** Apply an isomorphism *)
-	val apply : t -> Iso.t -> t
+	val apply : t -> int Iso.t -> t
 	
 	(* (\** [sub_multiset a b] returns [true] if [a] is a submultiset of [b].  *)
 	(*     Port identifiers are ignored. *\)   *)
@@ -148,7 +147,7 @@ sig
 
 	(** Construct an isomorphism from nodes to number of port occurrences
 	    within a port set. *)  
-	val arities : t -> Iso.t
+	val arities : t -> int Iso.t
 
 	(** Construct a list of possible node assignments starting from two
 	    compatible port sets. *)

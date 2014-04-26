@@ -243,7 +243,7 @@ let decomp t p iso =
       List.fold_left (fun (acc_c, acc_d, j) c ->
 	if IntSet.mem c v_d then 
 	  ((r, j + p.r) :: acc_c, 
-	   (j + p.s, Iso.find iso_v_d c) :: acc_d, 
+	   (j + p.s, Iso.find c iso_v_d) :: acc_d, 
 	   j + 1)
 	else (acc_c, acc_d, j)
       ) acc (Sparse.chl t.rn r)
@@ -262,8 +262,8 @@ let decomp t p iso =
     IntSet.fold (fun i acc ->
       List.fold_left (fun (acc_c, acc_d, j) c ->
 	if IntSet.mem c v_d then 
-	  ((Iso.find iso_v_c i, j + p.r + s0 + s1) :: acc_c, 
-	   (j + p.s + s0 + s1, Iso.find iso_v_d c) :: acc_d, 
+	  ((Iso.find i iso_v_c, j + p.r + s0 + s1) :: acc_c, 
+	   (j + p.s + s0 + s1, Iso.find c iso_v_d) :: acc_d, 
 	   j + 1)
 	else (acc_c, acc_d, j)
       ) acc (Sparse.chl t.nn i)
@@ -272,7 +272,7 @@ let decomp t p iso =
   let (edg_c_ns1, edg_d_rs1, s3) = 
     IntSet.fold (fun i acc ->
       List.fold_left (fun (acc_c, acc_d, s) c ->
-	((Iso.find iso_v_c i, s + p.r + s0 + s1 + s2) :: acc_c, 
+	((Iso.find i iso_v_c, s + p.r + s0 + s1 + s2) :: acc_c, 
 	 (s + p.s + s0 + s1 + s2, c) :: acc_d, 
 	 s + 1)
       ) acc (Sparse.chl t.ns i)
@@ -283,7 +283,7 @@ let decomp t p iso =
     IntSet.fold (fun r acc ->
       List.fold_left (fun acc c ->
 	if IntSet.mem c v_p' then 
-	  let s = List.hd (Sparse.prn p.rn (Iso.find iso' c)) in (* check c's siblings *) 
+	  let s = List.hd (Sparse.prn p.rn (Iso.find c iso')) in (* check c's siblings *) 
 	  (r, s) :: acc
 	else acc
       ) acc (Sparse.chl t.rn r)
@@ -293,8 +293,8 @@ let decomp t p iso =
     IntSet.fold (fun r acc ->
       List.fold_left (fun acc c ->
 	if IntSet.mem c v_p' then 
-	  let s = List.hd (Sparse.prn p.rn (Iso.find iso' c)) in 
-	  (Iso.find iso_v_c r, s) :: acc
+	  let s = List.hd (Sparse.prn p.rn (Iso.find c iso')) in 
+	  (Iso.find r iso_v_c, s) :: acc
 	else acc
       ) acc (Sparse.chl t.nn r)
     ) v_c []
@@ -304,8 +304,8 @@ let decomp t p iso =
     IntSet.fold (fun n acc ->
       List.fold_left (fun acc c ->
 	if IntSet.mem c v_d then 
-	  let s = List.hd (Sparse.chl p.ns (Iso.find iso' n)) in 
-	  (s, Iso.find iso_v_d c) :: acc
+	  let s = List.hd (Sparse.chl p.ns (Iso.find n iso')) in 
+	  (s, Iso.find c iso_v_d) :: acc
 	else acc
       ) acc (Sparse.chl t.nn n)
     ) v_p' []
@@ -313,7 +313,7 @@ let decomp t p iso =
   and edg_d_ns = 
     IntSet.fold (fun n acc ->
       List.fold_left (fun acc c ->
-	let s = List.hd (Sparse.chl p.ns (Iso.find iso' n)) in 
+	let s = List.hd (Sparse.chl p.ns (Iso.find n iso')) in 
 	(s, c) :: acc
       ) acc (Sparse.chl t.ns n)
     ) v_p' [] in 
@@ -345,16 +345,16 @@ let decomp t p iso =
     } in
   (* Add old edges *)
   Sparse.iter (fun i j ->
-    if IntSet.mem j v_c then Sparse.add c.rn i (Iso.find iso_v_c j)
+    if IntSet.mem j v_c then Sparse.add c.rn i (Iso.find j iso_v_c)
   ) t.rn;
   Sparse.iter (fun  i j ->
   if (IntSet.mem i v_c) && (IntSet.mem j v_c) then
-    Sparse.add c.nn (Iso.find iso_v_c i) (Iso.find iso_v_c j)
+    Sparse.add c.nn (Iso.find i iso_v_c) (Iso.find j iso_v_c)
   else if (IntSet.mem i v_d) && (IntSet.mem j v_d) then
-    Sparse.add d.nn (Iso.find iso_v_d i) (Iso.find iso_v_d j)
+    Sparse.add d.nn (Iso.find i iso_v_d) (Iso.find j iso_v_d)
   ) t.nn;
   Sparse.iter (fun i j ->
-    if IntSet.mem i v_d then Sparse.add d.ns (Iso.find iso_v_d i) j
+    if IntSet.mem i v_d then Sparse.add d.ns (Iso.find i iso_v_d) j
   ) t.ns;
   (* Add new edges *)
   Sparse.add_list c.rs (edg_c_rs0 @  edg_c_rs1 @ edg_c_rp);
