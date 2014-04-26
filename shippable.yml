@@ -8,4 +8,4 @@ install:
  - sudo apt-get install -qq ocaml opam
 
 script: 
- - shippable-ci.sh
+ - ./shippable-ci.sh
