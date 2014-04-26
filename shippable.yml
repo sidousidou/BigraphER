@@ -1,2 +1,1 @@
-language: c
-script: bash -ex shippable-ci.sh
+script: ./shippable-ci.sh
