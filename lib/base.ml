@@ -210,33 +210,16 @@ module Ports = struct
     fold (fun (i, p) acc ->
       add (Iso.find i iso, p) acc) s empty
 
-  (* (\* normalise a port set:  *)
-  (*    INPUT:  {(1, 1), (1, 2), (2, 3), (3, 5)} *)
-  (*    OUTPUT: {(1, 0), (1, 1), (2, 0), (3, 0)} *\) *)
-  (* let norm ps = *)
-  (*   let h = Hashtbl.create (cardinal ps) in *)
-  (*   fold (fun (i, p) res -> *)
-  (*     let p' = List.length (Hashtbl.find_all h i) in *)
-  (*     Hashtbl.add h i p; *)
-  (*   add (i, p') res) ps empty *)
-
-  (* let sub_multiset a b = *)
-  (*   subset (norm a) (norm b) *)
-
-  (* Compute the arities of the nodes within a port set. The output is an iso 
+  (* Compute the arities of the nodes within a port set. The output is a map 
      node -> arity *)
-  let arities p =
-    let zero = IntSet.singleton 0 in
-    let r = fold (fun (i, _) r ->
-        Rel.add i zero r
-      ) p Rel.empty in
-    List.map (fun (i, js) -> 
-        (i, IntSet.cardinal js)
-      ) (Rel.bindings r)
+  let arities p n =
+    IntSet.fold (fun i l ->
+        (i, Ctrl.arity (Nodes.find n i)) :: l
+      ) (to_IntSet p) []
 
   let compat_list a b n_a n_b =
-    let ar_a = arities a
-    and ar_b = arities b
+    let ar_a = arities a n_a
+    and ar_b = arities b n_b
     and i_a = to_IntSet a 
     and i_b = to_IntSet b in
     IntSet.fold (fun i acc ->

@@ -147,7 +147,7 @@ sig
 
 	(** Construct a mapping from nodes to number of port occurrences
 	    within a port set. *)  
-	val arities : t -> (int * int) list
+	val arities : t -> Nodes.t -> (int * int) list
 
 	(** Construct a list of possible node assignments starting from two
 	    compatible port sets. *)
