@@ -1,1 +1,5 @@
-script: ./shippable-ci.sh
+build_environment: Ubuntu 13.04
+
+language: java
+
+script: bash -ex shippable-ci.sh
