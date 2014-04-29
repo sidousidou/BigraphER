@@ -11,8 +11,3 @@ opam init -q -a --sh
 eval `opam config -env`
 opam repository -q -y add dcs ${DCS_REPO}
 opam install -q -y ${OPAM_PACKAGES}
-
-# Compile & run tests 
-./configure
-make
-make test

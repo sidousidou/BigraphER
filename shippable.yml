@@ -8,4 +8,5 @@ before_install:
  - sudo apt-get install -qq ocaml opam graphviz minisat
 
 script: 
- - ./shippable-ci.sh
+ - ./scripts/shippable-opam.sh
+ - ./scripts/shippable-tests.sh
