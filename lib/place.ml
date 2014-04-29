@@ -894,3 +894,48 @@ let match_nodes_sites a b n_a n_b =
      (* IntSet.union acc_c (IntSet.of_list parents) *)
        acc_c)
   ) a.ns ([], IntSet.empty)
+
+(* Compute the reachable set via Depth First Search. *)
+exception NOT_PRIME
+let rec dfs_ns p l (res_n, res_s) (marked_n, marked_s) =
+  match l with
+  | [] -> (res_n, res_s)
+  | i :: l' -> 
+    let js = IntSet.of_list (Sparse.chl p.nn i)
+    and ss = IntSet.of_list (Sparse.chl p.ns i) in
+    if IntSet.is_empty (IntSet.inter marked_n js) &&
+       IntSet.is_empty (IntSet.inter marked_s ss) then (    
+      let js' = IntSet.diff js res_n in
+      dfs_ns p ((IntSet.elements js') @ l') 
+        (IntSet.union js' res_n, IntSet.union ss res_s)
+        (marked_n, marked_s)
+    ) else raise NOT_PRIME
+        
+let dfs_r p r marked =
+   let js = Sparse.chl p.rn r
+  and ss = IntSet.of_list (Sparse.chl p.rs r) in
+  dfs_ns p js (IntSet.of_list js, ss) marked
+
+let dfs p =
+  let rec aux i res (marked_n, marked_s) =
+    match i with
+    | 0 -> let (res_n, res_s) =
+      dfs_r p 0 (marked_n, marked_s) in
+      ((res_n, res_s) :: res, 
+       (IntSet.union res_n marked_n, IntSet.union res_s marked_s))
+    | _ -> let (res_n, res_s) =
+      dfs_r p i (marked_n, marked_s) in
+      aux (i - 1) ((res_n, res_s) :: res) 
+        (IntSet.union res_n marked_n, IntSet.union res_s marked_s) in
+  aux (p.r - 1) [] (IntSet.empty, IntSet.empty)
+
+(* Return a list of bigraphs * iso *)
+let prime_components p =
+  (* Compute components for orphans *)
+  let os = Sparse.orphans p.nn in
+  (* Merge components *)
+  (* Merge components with root components *)
+  (* Create bigraphs from sets of nodes and sites *)
+  os
+
+(* Check reshuffling of sites *)
