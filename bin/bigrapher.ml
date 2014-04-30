@@ -169,7 +169,7 @@ let after_sbrs stats ctmc t_lim s_lim =
   export_ctmc_prism ctmc;
   export_csl ctmc.Sbrs.l
 
-let _ =
+let () =
   Printexc.record_backtrace true;
   try
     let iter_f = print_loop true in
