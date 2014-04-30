@@ -917,7 +917,7 @@ let dfs p =
   let rec aux i res marked_n =
     match i with
     | 0 -> let res_n =
-      dfs_r p 0 (marked_n, marked_s) in
+      dfs_r p 0 marked_n in
       (res_n :: res, IntSet.union res_n marked_n)
     | _ -> let res_n =
       dfs_r p i marked_n in
