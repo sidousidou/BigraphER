@@ -897,38 +897,58 @@ let match_nodes_sites a b n_a n_b =
 
 (* Compute the reachable set via Depth First Search. *)
 exception NOT_PRIME
-let rec dfs_ns p l (res_n, res_s) (marked_n, marked_s) =
+let rec dfs_ns p l res_n marked_n =
   match l with
-  | [] -> (res_n, res_s)
+  | [] -> res_n
   | i :: l' -> 
-    let js = IntSet.of_list (Sparse.chl p.nn i)
-    and ss = IntSet.of_list (Sparse.chl p.ns i) in
-    if IntSet.is_empty (IntSet.inter marked_n js) &&
-       IntSet.is_empty (IntSet.inter marked_s ss) then (    
+    let js = IntSet.of_list (Sparse.chl p.nn i) in
+    if IntSet.is_empty (IntSet.inter marked_n js) then (    
       let js' = IntSet.diff js res_n in
-      dfs_ns p ((IntSet.elements js') @ l') 
-        (IntSet.union js' res_n, IntSet.union ss res_s)
-        (marked_n, marked_s)
+      dfs_ns p ((IntSet.elements js') @ l') (IntSet.union js' res_n) marked_n
     ) else raise NOT_PRIME
-        
+
 let dfs_r p r marked =
-   let js = Sparse.chl p.rn r
-  and ss = IntSet.of_list (Sparse.chl p.rs r) in
-  dfs_ns p js (IntSet.of_list js, ss) marked
+  let js = Sparse.chl p.rn r in
+  dfs_ns p js (IntSet.of_list js) marked
 
 let dfs p =
-  let rec aux i res (marked_n, marked_s) =
+  (* Only for ground place graphs *)
+  assert (p.s = 0);
+  let rec aux i res marked_n =
     match i with
-    | 0 -> let (res_n, res_s) =
+    | 0 -> let res_n =
       dfs_r p 0 (marked_n, marked_s) in
-      ((res_n, res_s) :: res, 
-       (IntSet.union res_n marked_n, IntSet.union res_s marked_s))
-    | _ -> let (res_n, res_s) =
-      dfs_r p i (marked_n, marked_s) in
-      aux (i - 1) ((res_n, res_s) :: res) 
-        (IntSet.union res_n marked_n, IntSet.union res_s marked_s) in
-  aux (p.r - 1) [] (IntSet.empty, IntSet.empty)
+      (res_n :: res, IntSet.union res_n marked_n)
+    | _ -> let res_n =
+      dfs_r p i marked_n in
+      aux (i - 1) (res_n :: res) (IntSet.union res_n marked_n) in
+  aux (p.r - 1) [] IntSet.empty
 
+(* Build a prime bigraph P' starting from a root, a set of nodes and a set of
+   sites. An isomorphism P -> P' is also generated. *)
+let build component p r nodes =
+  let n = IntSet.cardinal nodes 
+  and iso = IntSet.fix nodes in
+  let p' = { r = 1;
+             n = n;
+             s = 0;
+             rn = Sparse.make 1 n;
+             rs = Sparse.make 1 0;
+             nn = Sparse.make n n;
+             ns = Sparse.make n 0;
+           } in
+  List.iter (fun j -> 
+      Sparse.add p'.rn 0 (Iso.find j iso)
+    ) (Sparse.chl p.rn r);
+  IntSet.iter (fun i ->
+      let js = Sparse.chl p.nn i
+      and i' = Iso.find i iso in
+      List.iter (fun j ->
+          Sparse.add p'.nn i' (Iso.find j iso)
+        ) js
+    ) nodes;
+  (p', iso)
+  
 (* Return a list of bigraphs * iso *)
 let prime_components p =
   (* Compute components for orphans *)
