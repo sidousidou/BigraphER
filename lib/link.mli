@@ -48,7 +48,7 @@ type edg = {
   i: Face.t; (** Inner face *)
   o: Face.t; (** Outer face *)
   p: Base.Ports.t; (** Set of ports *)
-  }
+}
   
 (** This module provides set operations for link graphs. *)
 module Lg :

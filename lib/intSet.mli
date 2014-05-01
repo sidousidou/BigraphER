@@ -34,6 +34,9 @@ val to_string : t -> string
 (** [of_list l] returns a set of int form a list *)
 val of_list : int list -> t
 
+(** Compute the union of all the sets in the input list. *)
+val union_list : t list -> t
+
 (** [of_int i] returns a set [{0, 1, ...., i-1}].*)
 val of_int: int -> t
 
@@ -50,3 +53,8 @@ val fix : t -> int Iso.t
 (** Apply an isomorphism *)
 val apply : t -> int Iso.t -> t
 
+(** Merge sets with common elements. *)
+val merge : t list -> t list
+
+(** Check if the intersection of two sets is empty. *)
+val disjoint : t -> t -> bool

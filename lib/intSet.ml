@@ -38,6 +38,30 @@ let apply s iso =
 
 (* Generates an isomorphism to fix the numbering of a set of int. 
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                           *)
-  let fix s =
-    let img = of_int (cardinal s)
-    in Iso.of_list (List.combine (elements s) (elements img))
+let fix s =
+  let img = of_int (cardinal s)
+  in Iso.of_list (List.combine (elements s) (elements img))
+
+let union_list l = 
+  List.fold_left (fun acc s ->
+      union s acc) empty l
+
+let rec augment s l =
+  let (l1, l2) = List.partition (fun s' -> 
+      is_empty (inter s s')
+    ) l in
+  match l2 with
+  | [] -> (s, l1)
+  | _ -> augment (union_list (s :: l2)) l1
+
+(* Merge sets with common elements *)
+let rec merge l =
+  match l with
+  | [] -> []
+  | s :: l' -> 
+    let (s', l'') = augment s l' in
+    s' :: (merge l'') 
+
+(* Check if the intersection of two sets is empty *)
+let disjoint a b =
+  is_empty (inter a b)

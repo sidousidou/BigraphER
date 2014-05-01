@@ -895,6 +895,7 @@ let match_nodes_sites a b n_a n_b =
        acc_c)
   ) a.ns ([], IntSet.empty)
 
+(*******************************************************************************)
 (* Compute the reachable set via Depth First Search. *)
 exception NOT_PRIME
 let rec dfs_ns p l res_n marked_n =
@@ -902,11 +903,18 @@ let rec dfs_ns p l res_n marked_n =
   | [] -> res_n
   | i :: l' -> 
     let js = IntSet.of_list (Sparse.chl p.nn i) in
-    if IntSet.is_empty (IntSet.inter marked_n js) then (    
+    if IntSet.disjoint marked_n js then (    
       let js' = IntSet.diff js res_n in
       dfs_ns p ((IntSet.elements js') @ l') (IntSet.union js' res_n) marked_n
     ) else raise NOT_PRIME
 
+let rec dfs_orphans p l res_n =
+  match l with
+  | [] -> res_n
+  | i :: l' -> 
+    let js' = IntSet.diff (IntSet.of_list (Sparse.chl p.nn i)) res_n in
+    dfs_orphans p ((IntSet.elements js') @ l') (IntSet.union js' res_n)
+    
 let dfs_r p r marked =
   let js = Sparse.chl p.rn r in
   dfs_ns p js (IntSet.of_list js) marked
@@ -922,11 +930,11 @@ let dfs p =
     | _ -> let res_n =
       dfs_r p i marked_n in
       aux (i - 1) (res_n :: res) (IntSet.union res_n marked_n) in
-  aux (p.r - 1) [] IntSet.empty
+  fst (aux (p.r - 1) [] IntSet.empty)
 
 (* Build a prime bigraph P' starting from a root, a set of nodes and a set of
    sites. An isomorphism P -> P' is also generated. *)
-let build component p r nodes =
+let build_component p r nodes =
   let n = IntSet.cardinal nodes 
   and iso = IntSet.fix nodes in
   let p' = { r = 1;
@@ -948,14 +956,61 @@ let build component p r nodes =
         ) js
     ) nodes;
   (p', iso)
-  
-(* Return a list of bigraphs * iso *)
-let prime_components p =
-  (* Compute components for orphans *)
-  let os = Sparse.orphans p.nn in
-  (* Merge components *)
-  (* Merge components with root components *)
-  (* Create bigraphs from sets of nodes and sites *)
-  os
 
-(* Check reshuffling of sites *)
+let build_o_component p nodes =
+  let n = IntSet.cardinal nodes 
+  and iso = IntSet.fix nodes in
+  let p' = { r = 0;
+             n = n;
+             s = 0;
+             rn = Sparse.make 0 n;
+             rs = Sparse.make 0 0;
+             nn = Sparse.make n n;
+             ns = Sparse.make n 0;
+           } in
+  IntSet.iter (fun i ->
+      let js = Sparse.chl p.nn i
+      and i' = Iso.find i iso in
+      List.iter (fun j ->
+          Sparse.add p'.nn i' (Iso.find j iso)
+        ) js
+    ) nodes;
+  (p', iso)
+
+(* Merge sub-graphs rooted in an orphans having common nodes *)
+let orphan_components p = 
+  let os = Sparse.orphans p.nn in
+  let components = IntSet.fold (fun o acc ->
+      (dfs_orphans p [o] (IntSet.singleton o)) :: acc
+    ) os [] in
+  IntSet.merge components
+
+(* Compute new components. If o is not added, it is returned *)
+let rec merge_orphan comps o (res_c, res_o) =
+  match (comps, res_o) with
+  | ([], _) -> (res_c, res_o)
+  | (c :: comps', []) ->
+    if IntSet.disjoint c o then
+      merge_orphan comps' o (res_c @ [c], [])
+    else raise NOT_PRIME
+  | (c :: comps', _) ->
+    if IntSet.disjoint c o then
+      merge_orphan comps' o (res_c @ [c], res_o)
+    else merge_orphan comps' o (res_c @ [IntSet.union c o], [])            
+
+let rec merge_orphans comps o_comps =
+  List.fold_left (fun (acc, acc_o) o ->
+      match merge_orphan acc o ([], [o]) with
+      | (res_c, [res_o]) -> (res_c, IntSet.union acc_o res_o)
+      | _ -> assert false
+    ) ([], IntSet.empty) o_comps
+
+(* Return a list of (bigraphs, iso) *)
+let prime_components p =
+  let comps = dfs p 
+  and o_comps = orphan_components p in
+  let (comps', o_comp) = merge_orphans comps o_comps in
+  (List.mapi (fun r s -> build_component p r s) comps',
+   build_o_component p o_comp)
+
+(*******************************************************************************)
