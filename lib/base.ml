@@ -206,9 +206,9 @@ module Ports = struct
       IntSet.add i acc) ps IntSet.empty
 
   let apply s iso =
-    assert (Iso.cardinal iso >= cardinal s);
     fold (fun (i, p) acc ->
-      add (Iso.find i iso, p) acc) s empty
+        add (Iso.find i iso, p) acc
+      ) s empty
 
   (* Compute the arities of the nodes within a port set. The output is a map 
      node -> arity *)

@@ -63,37 +63,48 @@ let print_test (c, n) =
     printf "%s\n"
       (colorise `bold (colorise `red (sprintf "%d/%d tests passed." c n)))
 
+let test_decomposition t p (i_n, i_e, f_e) =
+  let (c, d, id) = decomp t p i_n i_e f_e in
+  equal (comp c (comp (tens p id) d)) t   
+
+
+let print_fail msg i =
+  printf "%s" (colorise `red (sprintf "Test %2d failed: " (i + 1)));
+  printf "%s\n" msg
+
 let do_tests ts =
   let (count, _) =
     List.fold_left (fun (count, i) t ->
         (* printf "T: %s\nP: %s\n" (to_string t.target) (to_string t.pattern); *)
         try
+          let occs = occurrences t.target t.pattern in
           (t.res <- List.map (fun (a, b, _) ->
                (a, b)
-             ) (occurrences t.target t.pattern);
-           if check_res t.res t.exp_res then
+             ) occs;
+           if (check_res t.res t.exp_res) &&
+              (List.for_all (fun o -> 
+                   test_decomposition t.target t.pattern o) occs) then
              ((count + 1), (i + 1))
            else (
-             printf "%s\n"
-               (colorise `red (sprintf "Test %2d failed." (i + 1)));
+             print_fail "" i;
              (count, (i + 1))
            )
           )
         with
         | NODE_FREE -> (* tests 23 and 16 are special cases *)
-          if (i = 15) || (i = 22) then
-            ((count + 1), (i + 1))
+          if (i = 15) || (i = 22) then ((count + 1), (i + 1))
           else (
-            printf "%s\n"
-              (colorise `red (sprintf "Test %2d failed." (i + 1)));
+            print_fail "" i;
             (count, (i + 1))
           )
-        | e -> (
-            printf "%s"
-              (colorise `red (sprintf "Test %2d failed: " (i + 1)));
-            printf "%s\n" (Printexc.to_string e);
+        | Link.FACES_MISMATCH (x, y) -> (* pattern in test 25 is not epi *)
+          if (i = 24) then ((count + 1), (i + 1))
+          else (
+            print_fail (sprintf "%s != %s" 
+                          (Link.string_of_face x) (Link.string_of_face y)) i; 
             (count, (i + 1))
           )
+        |  e -> print_fail (Printexc.to_string e) i; (count, (i + 1))
       ) (0, 0) ts
   and n = List.length ts in
   print_test (count, n)
