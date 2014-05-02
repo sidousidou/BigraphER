@@ -174,7 +174,11 @@ let tens a b =
     nn = Sparse.tens a.nn b.nn;
     ns = Sparse.tens a.ns b.ns;
   }
-    
+
+let tens_of_list l =
+  List.fold_left (fun acc a ->
+      tens acc a) id0 l
+  
 (* Composition: G o F (indices in the right hand-side are increased) *)
 let comp g f =
   if g.s = f.r then 
@@ -917,7 +921,9 @@ let rec dfs_orphans p l res_n =
     
 let dfs_r p r marked =
   let js = Sparse.chl p.rn r in
-  dfs_ns p js (IntSet.of_list js) marked
+  if IntSet.disjoint (IntSet.of_list js) marked then
+    dfs_ns p js (IntSet.of_list js) marked
+  else raise NOT_PRIME
 
 let dfs p =
   (* Only for ground place graphs *)
@@ -927,6 +933,7 @@ let dfs p =
     | 0 -> let res_n =
       dfs_r p 0 marked_n in
       (res_n :: res, IntSet.union res_n marked_n)
+    | -1 -> (res, marked_n)
     | _ -> let res_n =
       dfs_r p i marked_n in
       aux (i - 1) (res_n :: res) (IntSet.union res_n marked_n) in
@@ -979,7 +986,7 @@ let build_o_component p nodes =
 
 (* Merge sub-graphs rooted in an orphans having common nodes *)
 let orphan_components p = 
-  let os = Sparse.orphans p.nn in
+  let os = IntSet. diff (Sparse.orphans p.nn) (Sparse.codom p.rn) in
   let components = IntSet.fold (fun o acc ->
       (dfs_orphans p [o] (IntSet.singleton o)) :: acc
     ) os [] in
@@ -1001,16 +1008,17 @@ let rec merge_orphan comps o (res_c, res_o) =
 let rec merge_orphans comps o_comps =
   List.fold_left (fun (acc, acc_o) o ->
       match merge_orphan acc o ([], [o]) with
+      | (res_c, []) -> (res_c, acc_o)
       | (res_c, [res_o]) -> (res_c, IntSet.union acc_o res_o)
       | _ -> assert false
-    ) ([], IntSet.empty) o_comps
+    ) (comps, IntSet.empty) o_comps
 
-(* Return a list of (bigraphs, iso) *)
+(* Return a list of bigraphs *)
 let prime_components p =
-  let comps = dfs p 
+  let comps = dfs p      
   and o_comps = orphan_components p in
   let (comps', o_comp) = merge_orphans comps o_comps in
-  (List.mapi (fun r s -> build_component p r s) comps',
-   build_o_component p o_comp)
+  (List.mapi (fun r s -> build_component p r s) comps') @ 
+  [build_o_component p o_comp]
 
 (*******************************************************************************)
