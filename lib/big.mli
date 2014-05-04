@@ -116,6 +116,9 @@ val sym : inter -> inter -> bg
     @raise CONTROL_ERROR when [ns] has size different than the arity of [c].*)
 val ion : Link.Face.t -> Base.Ctrl.t -> bg
 
+(** Same as [ion] but without the site. *)
+val atom : Link.Face.t -> Base.Ctrl.t -> bg
+
 (** [sub n m] returns a substitution where [n] and [m] are the inner and outer 
     faces, respectively.*)
 val sub : Link.Face.t -> Link.Face.t -> bg

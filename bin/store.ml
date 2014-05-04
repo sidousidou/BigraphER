@@ -9,55 +9,61 @@ exception INVALID_PRI
 exception WRONG_TYPE
 exception NO_IDE
 
+type form = string
+
 type store_val =
-| Store_int of int
-| Store_float of float
-| Store_int_fun of num_exp * string list
-| Store_float_fun of num_exp * string list
-| Store_big of Big.bg
-| Store_big_fun of bexp * string list
-| Store_ctrl of Base.Ctrl.t
-| Store_ctrl_fun of int * string list
-| Store_react of Brs.react
-| Store_react_fun of bexp * bexp * string list
-| Store_sreact of Sbrs.sreact
-| Store_sreact_fun of bexp * bexp * num_exp * string list
-| Store_int_param of int list
-| Store_float_param of float list
+  | Int of int
+  | Float of float
+  | Int_fun of num_exp * form list
+  | Float_fun of num_exp * form list
+  | Big of Big.bg
+  | Big_fun of bexp * form list
+  | Ctrl of Base.Ctrl.t
+  | Ctrl_fun of int * form list
+  | A_ctrl of Base.Ctrl.t
+  | A_ctrl_fun of int * form list
+  | React of Brs.react
+  | React_fun of bexp * bexp * form list
+  | Sreact of Sbrs.sreact
+  | Sreact_fun of bexp * bexp * num_exp * form list
+  | Int_param of int list
+  | Float_param of float list
 
 type p_class_ide = 
-| P_class_ide of string list  (** Priority class *)
-| P_rclass_ide of string list (** Reducable priority class *)
+  | P_class_ide of string list  (** Priority class *)
+  | P_rclass_ide of string list (** Reducable priority class *)
 
 let p_to_brs c =
   match c with
   | P_class_ide x -> Brs.P_class_ide x 
   | P_rclass_ide x -> Brs.P_rclass_ide x
-    
+
 let p_to_sbrs c =
   match c with
   | P_class_ide x -> Sbrs.P_class_ide x 
   | P_rclass_ide x -> Sbrs.P_rclass_ide x
-    
+
 let init_env decs =
   Hashtbl.create (List.length decs)
 
 let get_type v = 
   match v with
-  | Store_int _ -> "int"
-  | Store_float _ -> "float"
-  | Store_int_fun _ -> "int"
-  | Store_float_fun _ -> "float"
-  | Store_big _ -> "big"
-  | Store_big_fun _ -> "big"
-  | Store_ctrl _ -> "ctrl"
-  | Store_ctrl_fun _ -> "ctrl"
-  | Store_react _ -> "react"
-  | Store_react_fun _ -> "react"
-  | Store_sreact _ -> "sreact"
-  | Store_sreact_fun _ -> "sreact"
-  | Store_int_param _ -> "int param"
-  | Store_float_param _ -> "float param"
+  | Int _ -> "int"
+  | Float _ -> "float"
+  | Int_fun _ -> "int"
+  | Float_fun _ -> "float"
+  | Big _ -> "big"
+  | Big_fun _ -> "big"
+  | Ctrl _ -> "ctrl"
+  | Ctrl_fun _ -> "ctrl"
+  | A_ctrl _ -> "ctrl"
+  | A_ctrl_fun _ -> "ctrl"
+  | React _ -> "react"
+  | React_fun _ -> "react"
+  | Sreact _ -> "sreact"
+  | Sreact_fun _ -> "sreact"
+  | Int_param _ -> "int param"
+  | Float_param _ -> "float param"
 
 let _is_int f = 
   f -. (float (int_of_float f)) = 0.0 
@@ -76,7 +82,7 @@ let unbound_err ide p  =
   print_pos p;
   eprintf "Error: Unbound value %s\n!" ide;
   raise NO_IDE
-    
+
 let args_err ide forms acts p =
   print_pos p;
   eprintf "Error: %s expects %d argument(s)\n\t\
@@ -87,16 +93,16 @@ let pri_err p  =
   print_pos p;
   prerr_endline "Error: Invalid priority classes";
   raise INVALID_PRI
- 
+
 (* -consts a=2,b=3.4,c=inf*)
 let parse_consts pairs env =
   List.iter (fun (ide, v) -> 
       try
-	Hashtbl.add env ide (Store_int (int_of_string v))
+	Hashtbl.add env ide (Int (int_of_string v))
       with
       | Failure _ -> 
 	try
-	  Hashtbl.add env ide (Store_float (float_of_string v))
+	  Hashtbl.add env ide (Float (float_of_string v))
         with
 	| Failure _ -> prerr_endline ("Error: invalid constant \"" ^ ide ^ "\""); 
           raise INVALID_CONSTS
@@ -104,71 +110,78 @@ let parse_consts pairs env =
 
 let get_int ide p env =
   try 
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_int v -> v
-    | Store_float _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_ctrl _ | Store_ctrl_fun _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _  -> type_err v "int" p
+    match Hashtbl.find env ide with
+    | Int v -> v
+    | Float _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl _ | Ctrl_fun _ as v -> type_err v "int" p
   with
   | Not_found -> unbound_err ide p
 
 let get_int_m ide p env =
   try 
     match Hashtbl.find env ide with
-    | Store_int v -> v
-    | Store_float _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_ctrl _ | Store_ctrl_fun _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _ -> raise WRONG_TYPE
+    | Int v -> v
+    | Float _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl _ | Ctrl_fun _ -> raise WRONG_TYPE
   with
   | Not_found -> unbound_err ide p
 
 let get_float ide p env =
   try
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_float v -> v
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_ctrl _ | Store_ctrl_fun _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _ -> type_err v "float" p
+    match Hashtbl.find env ide with
+    | Float v -> v
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl _ | Ctrl_fun _ as v -> type_err v "float" p
   with
   | Not_found -> unbound_err ide p
 
 let get_float_m ide p env =
   try 
     match Hashtbl.find env ide with
-    | Store_float v -> v
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_ctrl _ | Store_ctrl_fun _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _  -> raise WRONG_TYPE
+    | Float v -> v
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl _ | Ctrl_fun _ -> raise WRONG_TYPE
   with
   | Not_found -> unbound_err ide p
 
 let get_ctrl ide p env =
   try 
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_ctrl c -> c
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl_fun _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _ -> type_err v "ctrl" p
+    match Hashtbl.find env ide with
+    | A_ctrl c | Ctrl c -> c
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | A_ctrl_fun _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl_fun _ as v -> type_err v "ctrl" p
+  with
+  | Not_found -> unbound_err ide p
+
+let is_atomic ide p env =
+  try 
+    match Hashtbl.find env ide with
+    | A_ctrl _ |  A_ctrl_fun _ -> true
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | Ctrl _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl_fun _ -> false
   with
   | Not_found -> unbound_err ide p
 
 let get_big ide p env =
-  try 
-    let v = Hashtbl.find env ide in 
-    match v with
-    | Store_big v -> v
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_ctrl _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl_fun _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _ -> type_err v "big" p
+  try
+    match Hashtbl.find env ide with
+    | Big v -> v
+    | Int _ | Int_fun _ | Float_fun _ | A_ctrl _ 
+    | Big_fun _ | Float _ | A_ctrl_fun _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | Ctrl _ | Ctrl_fun _ as v -> type_err v "big" p
   with
   | Not_found -> unbound_err ide p
 
@@ -181,7 +194,7 @@ let rec eval_int exp env =
      | WRONG_TYPE -> 
        let v = get_float ide p env in
        if _is_int v then int_of_float v
-       else type_err (Store_float 0.0) "int" p) 
+       else type_err (Float 0.0) "int" p) 
   | Num_plus (l, r, _) -> (eval_int l env) + (eval_int r env)
   | Num_minus (l, r, _) -> (eval_int l env) - (eval_int r env)
   | Num_prod (l, r, _) -> (eval_int l env) * (eval_int r env)
@@ -225,37 +238,36 @@ let rec eval_float exp env =
   | Num_pow (l, r, _) -> (eval_float l env) ** (eval_float r env) 
 
 let get_ctrl_fun ide acts p env =
-  try 
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_ctrl_fun (ar, forms) -> 
+  try
+    match Hashtbl.find env ide with
+    | A_ctrl_fun (ar, forms) | Ctrl_fun (ar, forms) -> 
       (let f_l = List.length forms
-      and a_l = List.length acts in
+       and a_l = List.length acts in
        if f_l <> a_l then args_err ide f_l a_l p
        else let acts_s = String.concat "," (List.map (fun exp ->
-	 try
-	   sprintf "%d" (eval_int_m exp env) (* MUTE *)
-	 with
-	 | WRONG_TYPE -> sprintf "%g" (eval_float exp env)) acts) in
-	    Base.Ctrl.Ctrl (sprintf "%s(%s)" ide acts_s, ar))
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_react _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _  -> type_err v "ctrl" p
+	   try
+	     sprintf "%d" (eval_int_m exp env) (* MUTE *)
+	   with
+	   | WRONG_TYPE -> sprintf "%g" (eval_float exp env)) acts) in
+	 Base.Ctrl.Ctrl (sprintf "%s(%s)" ide acts_s, ar))
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | A_ctrl _ | React _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _  | Ctrl _ as v -> type_err v "ctrl" p
   with
   | Not_found -> unbound_err ide p
 
 let scope env forms acts =
   let h = Hashtbl.copy env in
   List.iter (fun (ide, exp) ->
-    let v = eval_float exp env in (* precision? *)
-    if _is_int v then Hashtbl.add h ide (Store_int (int_of_float v))
-    else Hashtbl.add h ide (Store_float v)) (List.combine forms acts);
+      let v = eval_float exp env in (* precision? *)
+      if _is_int v then Hashtbl.add h ide (Int (int_of_float v))
+      else Hashtbl.add h ide (Float v)) (List.combine forms acts);
   h
 
-let eval_ion c names p  =
+let eval_ion_aux f c names p =
   try 
-    Big.ion (Link.parse_face names) c
+    f (Link.parse_face names) c
   with
   | Big.CTRL_ERROR (n, _) -> 
     (print_err (sprintf "Error: ctrl %s has arity %d\n\t\
@@ -263,20 +275,23 @@ let eval_ion c names p  =
 		  (Base.Ctrl.name c) n (List.length names)) p; 
      raise INVALID_VAL)
  
+let eval_ion = eval_ion_aux Big.ion
+
+let eval_atom = eval_ion_aux Big.atom
+
 let rec eval_big exp env =
   let get_big_fun ide acts p env =
     try (
-      let v = Hashtbl.find env ide in 
-      match v with
-      | Store_big_fun (exp, forms) -> 
+      match Hashtbl.find env ide with
+      | Big_fun (exp, forms) -> 
 	(try eval_big exp (scope env forms acts)
 	 with
 	 | Invalid_argument _ -> 
 	   args_err ide (List.length forms) (List.length acts) p) 
-      | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-      | Store_ctrl_fun _ | Store_float _ | Store_ctrl _ | Store_react _ 
-      | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-      | Store_float_param _  -> type_err v "big" p)
+      | Int _ | Int_fun _ | Float_fun _ | Big _ 
+      | A_ctrl_fun _ | Float _ | A_ctrl _ | React _ 
+      | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+      | Float_param _  | Ctrl _ | Ctrl_fun _ as v -> type_err v "big" p)
     with
     | Not_found -> unbound_err ide p in
   match exp with
@@ -355,8 +370,14 @@ let rec eval_big exp env =
       print_err (sprintf "Error: Expression %d is not a valid bigraph" v) p; 
       raise INVALID_VAL)
   | Big_id (n, names, _) -> Big.id (Big.Inter (n, (Link.parse_face names)))
-  | Big_ion (c, names, p) -> eval_ion (get_ctrl c p env) names p
-  | Big_ion_fun (c, names, acts, p) -> eval_ion (get_ctrl_fun c acts p env) names p
+  | Big_ion (c, names, p) -> (
+      if is_atomic c p env then
+        eval_atom (get_ctrl c p env) names p
+      else eval_ion (get_ctrl c p env) names p) 
+  | Big_ion_fun (c, names, acts, p) -> (
+      if is_atomic c p env then
+        eval_atom (get_ctrl_fun c acts p env) names p
+      else eval_ion (get_ctrl_fun c acts p env) names p)
   | Big_share (a, psi, b, p) -> 
     (try Big.share (eval_big a env) (eval_big psi env) (eval_big b env)
      with
@@ -389,40 +410,47 @@ let store_decs decs env =
   let _dummy_acts =
     List.map (fun _ -> Num_val (0.0, dummy_pos)) in
   List.iter (fun d ->
-    match d with
-  | Ctrl_dec (ide, ar, _) ->
-    Hashtbl.add env ide (Store_ctrl (Base.Ctrl.Ctrl (ide, ar)))
-  | Ctrl_dec_f (ide, forms, ar, _) ->
-    Hashtbl.add env ide (Store_ctrl_fun (ar, forms))
-  | Int_dec (ide, exp, _) ->
-    Hashtbl.add env ide (Store_int (eval_int exp env))
-  | Float_dec (ide, exp, _) ->
-    Hashtbl.add env ide (Store_float (eval_float exp env))
-  | Big_dec (ide, exp, _) ->
-    Hashtbl.add env ide (Store_big (eval_big exp env))
-  | Big_dec_f (ide, forms, exp, _) ->
-    ignore (eval_big exp (scope env forms (_dummy_acts forms)));
-    Hashtbl.add env ide (Store_big_fun (exp, forms))
-  | React_dec (ide, lhs, rhs, p) ->
-    Hashtbl.add env ide (Store_react (eval_react lhs rhs env p))
-  | React_dec_f (ide, forms, lhs, rhs, p) ->
-    ignore (eval_react lhs rhs (scope env forms (_dummy_acts forms)) p);
-    Hashtbl.add env ide (Store_react_fun (lhs, rhs, forms))
-  | Sreact_dec (ide, lhs, rhs, exp, p) ->
-    Hashtbl.add env ide (Store_sreact (eval_sreact lhs rhs exp env p))
-  | Sreact_dec_f (ide, forms, lhs, rhs, exp, p) ->
-    ignore (eval_sreact lhs rhs exp (scope env forms (_dummy_acts forms)) p);
-    Hashtbl.add env ide (Store_sreact_fun (lhs, rhs, exp, forms))) decs
+      match d with
+      | Atomic c -> (
+          match c with
+          | Ctrl_dec (ide, ar, _) ->
+            Hashtbl.add env ide (A_ctrl (Base.Ctrl.Ctrl (ide, ar)))
+          | Ctrl_dec_f (ide, forms, ar, _) ->
+            Hashtbl.add env ide (A_ctrl_fun (ar, forms)))
+      | Non_atomic c -> (
+          match c with
+          | Ctrl_dec (ide, ar, _) ->
+            Hashtbl.add env ide (Ctrl (Base.Ctrl.Ctrl (ide, ar)))
+          | Ctrl_dec_f (ide, forms, ar, _) ->
+            Hashtbl.add env ide (Ctrl_fun (ar, forms)))
+      | Int_dec (ide, exp, _) ->
+        Hashtbl.add env ide (Int (eval_int exp env))
+      | Float_dec (ide, exp, _) ->
+        Hashtbl.add env ide (Float (eval_float exp env))
+      | Big_dec (ide, exp, _) ->
+        Hashtbl.add env ide (Big (eval_big exp env))
+      | Big_dec_f (ide, forms, exp, _) ->
+        ignore (eval_big exp (scope env forms (_dummy_acts forms)));
+        Hashtbl.add env ide (Big_fun (exp, forms))
+      | React_dec (ide, lhs, rhs, p) ->
+        Hashtbl.add env ide (React (eval_react lhs rhs env p))
+      | React_dec_f (ide, forms, lhs, rhs, p) ->
+        ignore (eval_react lhs rhs (scope env forms (_dummy_acts forms)) p);
+        Hashtbl.add env ide (React_fun (lhs, rhs, forms))
+      | Sreact_dec (ide, lhs, rhs, exp, p) ->
+        Hashtbl.add env ide (Sreact (eval_sreact lhs rhs exp env p))
+      | Sreact_dec_f (ide, forms, lhs, rhs, exp, p) ->
+        ignore (eval_sreact lhs rhs exp (scope env forms (_dummy_acts forms)) p);
+        Hashtbl.add env ide (Sreact_fun (lhs, rhs, exp, forms))) decs
 
 let get_react p env ide =
   try 
-    let v = Hashtbl.find env ide in 
-    match v with
-    | Store_react r -> r
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_ctrl_fun _ 
-    | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _ -> type_err v "react" p
+    match Hashtbl.find env ide with
+    | React r -> r
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | Ctrl _ | Ctrl_fun _ | A_ctrl _ | A_ctrl_fun _ 
+    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ as v -> type_err v "react" p
   with
   | Not_found -> unbound_err ide p
 
@@ -434,58 +462,57 @@ let _scope env forms acts =
   
 let get_react_fun acts p env ide =
   try 
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_react_fun (lhs, rhs, forms) ->
+    match Hashtbl.find env ide with
+    | React_fun (lhs, rhs, forms) ->
       eval_react lhs rhs (_scope env forms acts) p
-    | Store_react _ -> 
+    | React _ -> 
       args_err ide 0 (List.length acts) p  
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_ctrl_fun _ 
-    | Store_sreact _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _  -> type_err v "react" p
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | Ctrl _ | Ctrl_fun _ 
+    | Sreact _ | Sreact_fun _ | Int_param _ | A_ctrl _ | A_ctrl_fun _
+    | Float_param _ as v -> type_err v "react" p
   with
   | Not_found -> unbound_err ide p
 
 let get_sreact p env ide =
   try 
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_sreact r -> r
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_ctrl_fun _ 
-    | Store_react_fun _ | Store_react _ | Store_sreact_fun _ | Store_int_param _ 
-    | Store_float_param _ -> type_err v "sreact" p
+    match Hashtbl.find env ide with
+    | Sreact r -> r
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | Ctrl _ | Ctrl_fun _ 
+    | React_fun _ | React _ | Sreact_fun _ | Int_param _ 
+    | Float_param _ | A_ctrl _ 
+    | A_ctrl_fun _ as v -> type_err v "sreact" p
   with
   | Not_found -> unbound_err ide p
 
 let get_sreact_fun acts p env ide =
   try 
-    let v = Hashtbl.find env ide in
-    match v with
-    | Store_sreact_fun (lhs, rhs, exp, forms) ->
+    match Hashtbl.find env ide with
+    | Sreact_fun (lhs, rhs, exp, forms) ->
       eval_sreact lhs rhs exp (_scope env forms acts) p
-    | Store_sreact _ -> 
+    | Sreact _ -> 
       args_err ide 0 (List.length acts) p  
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_ctrl_fun _ 
-    | Store_react _ | Store_react_fun _ | Store_int_param _ 
-    | Store_float_param _ -> type_err v "react" p
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | Ctrl _ | Ctrl_fun _ 
+    | React _ | React_fun _ | Int_param _ 
+    | Float_param _ | A_ctrl _ 
+    | A_ctrl_fun _ as v -> type_err v "react" p
   with
   | Not_found -> unbound_err ide p
 
 let store_params env =
   let store_param p env =
     match p with
-    | Int_param (ide, [exp], _) -> 
-      Hashtbl.add env ide (Store_int_param [eval_int exp env])
-    | Int_param (ide, exps, _) -> 
-      Hashtbl.add env ide (Store_int_param (List.map (fun exp ->
+    | Syntax.Int_param (ide, [exp], _) -> 
+      Hashtbl.add env ide (Int_param [eval_int exp env])
+    | Syntax.Int_param (ide, exps, _) -> 
+      Hashtbl.add env ide (Int_param (List.map (fun exp ->
 	eval_int exp env) exps))
-    | Float_param (ide, [exp], _) -> 
-      Hashtbl.add env ide (Store_float_param [eval_float exp env])
-    | Float_param (ide, exps, _) -> 
-      Hashtbl.add env ide (Store_float_param (List.map (fun exp ->
+    | Syntax.Float_param (ide, [exp], _) -> 
+      Hashtbl.add env ide (Float_param [eval_float exp env])
+    | Syntax.Float_param (ide, exps, _) -> 
+      Hashtbl.add env ide (Float_param (List.map (fun exp ->
 	eval_float exp env) exps)) in
   List.iter (fun p -> store_param p env)
 
@@ -498,14 +525,14 @@ let eval_init init env =
 let get_param_m ide p env =
   try 
     match Hashtbl.find env ide with
-    | Store_int_param ints -> 
-      List.map (fun x -> Store_int x) ints 
-    | Store_float_param	 floats -> 
-      List.map (fun x -> Store_float x) floats
-    | Store_int _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-    | Store_big_fun _ | Store_float _ | Store_ctrl _ | Store_ctrl_fun _ 
-    | Store_react _ | Store_react_fun _ | Store_sreact _ 
-    | Store_sreact_fun _ ->
+    | Int_param ints -> 
+      List.map (fun x -> Int x) ints 
+    | Float_param	 floats -> 
+      List.map (fun x -> Float x) floats
+    | Int _ | Int_fun _ | Float_fun _ | Big _ 
+    | Big_fun _ | Float _ | Ctrl _ | Ctrl_fun _ 
+    | React _ | React_fun _ | Sreact _ 
+    | Sreact_fun _ | A_ctrl _ | A_ctrl_fun _ ->
       raise WRONG_TYPE
   with
   | Not_found -> unbound_err ide p
@@ -514,11 +541,11 @@ let get_param_m ide p env =
 let _build_react_ide ide params =
   sprintf "%s(%s)" ide (String.concat "," (List.map (fun p ->
   match p with
-  | Store_int x -> sprintf "%d" x 
-  | Store_float x -> sprintf "%g" x
-  | Store_int_param _ | Store_int_fun _ | Store_float_fun _ | Store_big _ 
-  | Store_big_fun _ | Store_float_param _ | Store_ctrl _ | Store_ctrl_fun _ 
-  | Store_react _ | Store_react_fun _ | Store_sreact _ | Store_sreact_fun _ ->
+  | Int x -> sprintf "%d" x 
+  | Float x -> sprintf "%g" x
+  | Int_param _ | Int_fun _ | Float_fun _ | Big _ 
+  | Big_fun _ | Float_param _ | Ctrl _ | Ctrl_fun _ | A_ctrl _ | A_ctrl_fun _ 
+  | React _ | React_fun _ | Sreact _ | Sreact_fun _ ->
     raise WRONG_TYPE) params)) 
 
 let rec par_comb pars = 
@@ -542,9 +569,9 @@ let _build_params ides env p =
       with
       | WRONG_TYPE -> 
         try
-	  [Store_int (get_int_m ide p env)]
+	  [Int (get_int_m ide p env)]
         with
-        | WRONG_TYPE -> [Store_float (get_float ide p env)]) ides)
+        | WRONG_TYPE -> [Float (get_float ide p env)]) ides)
 
 let store_rule r env =
   match r with
@@ -556,7 +583,7 @@ let store_rule r env =
       List.map (fun acts ->
 	_build_react_ide ide acts, get_react_fun acts p env ide) params in
     (* Update store  - check performances *)
-    List.iter (fun (ide, v) -> Hashtbl.add env ide (Store_react v)) reacts_store;
+    List.iter (fun (ide, v) -> Hashtbl.add env ide (React v)) reacts_store;
       fst (List.split reacts_store)
      end
   | Rul (ide, p) -> ignore (get_react p env ide); [ide]
@@ -571,7 +598,7 @@ let store_srule r env =
       List.map (fun acts ->
 	_build_react_ide ide acts, get_sreact_fun acts p env ide) params in
     (* Update store - check performances *)
-    List.iter (fun (ide, v) -> Hashtbl.add env ide (Store_sreact v)) reacts_store;
+    List.iter (fun (ide, v) -> Hashtbl.add env ide (Sreact v)) reacts_store;
     fst (List.split reacts_store)
   end
   | Rul (ide, p) -> ignore (get_sreact p env ide); [ide]
@@ -629,7 +656,7 @@ let export decs env path verb =
   and svg = ".svg" in 
   List.iter (fun d ->
     match d with
-  | Ctrl_dec _ | Ctrl_dec_f _ | Int_dec _ | Float_dec _ -> ()
+  | Atomic _ | Non_atomic _ | Int_dec _ | Float_dec _ -> ()
   | Big_dec (ide, exp, _) -> 
     Export.write_big (eval_big exp env) (ide ^ svg) path verb
   | Big_dec_f (ide, forms, exp, _) ->

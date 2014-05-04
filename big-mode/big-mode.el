@@ -29,6 +29,7 @@
        "sbrs"
        "endsbrs"
        "init"
+       "atomic"
        "rules")))
   "BigraphER mode keywords.")
 

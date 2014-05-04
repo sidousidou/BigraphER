@@ -78,6 +78,28 @@ dec_list
   ;
 
 dec 
+  : dec_ctrl_a                                { $1 }
+  | INT IDE EQUAL num_exp                   { Int_dec ($2, $4, add_pos ()) }
+  | FLOAT IDE EQUAL num_exp                 { Float_dec ($2, $4, add_pos ()) }
+  | BIG IDE EQUAL bexp                      { Big_dec ($2, $4, add_pos ()) }
+  | FUN BIG IDE LPAR forms RPAR EQUAL bexp  { Big_dec_f ($3, $5, $8, add_pos ()) }
+  | REACT IDE EQUAL bexp ARR bexp           { React_dec ($2, $4, $6, add_pos ()) }
+  | FUN REACT IDE LPAR forms RPAR EQUAL bexp ARR bexp
+	                                    { React_dec_f ($3, $5, $8, $10, add_pos ()) }
+  | SREACT IDE EQUAL bexp ARR bexp AT num_exp
+                                            { Sreact_dec ($2, $4, $6, $8, add_pos ()) }
+  | FUN SREACT IDE LPAR forms RPAR EQUAL bexp ARR bexp AT num_exp
+                                            { Sreact_dec_f ($3, $5, $8, $10, $12, add_pos ()) }
+  | error                                   { parse_error_msg "Invalid declaration" ""; 
+                                              raise PARSE_ERROR}		   
+  ;
+
+dec_ctrl_a
+  : ATOMIC dec_ctrl                         { Atomic $2 }
+  | dec_ctrl                                { Non_atomic $1 }
+  ;
+
+dec_ctrl
   : CTRL CIDE EQUAL NUM 		    { try
 						let n = int_of_string $4 in
 						if n >= 0 then Ctrl_dec ($2, n, add_pos ())
@@ -98,19 +120,6 @@ dec
                                                   parse_error_msg "Invalid ctrl arity" $8; 
                                                   raise Parsing.Parse_error
                                             }
-  | INT IDE EQUAL num_exp                   { Int_dec ($2, $4, add_pos ()) }
-  | FLOAT IDE EQUAL num_exp                 { Float_dec ($2, $4, add_pos ()) }
-  | BIG IDE EQUAL bexp                      { Big_dec ($2, $4, add_pos ()) }
-  | FUN BIG IDE LPAR forms RPAR EQUAL bexp  { Big_dec_f ($3, $5, $8, add_pos ()) }
-  | REACT IDE EQUAL bexp ARR bexp           { React_dec ($2, $4, $6, add_pos ()) }
-  | FUN REACT IDE LPAR forms RPAR EQUAL bexp ARR bexp
-	                                    { React_dec_f ($3, $5, $8, $10, add_pos ()) }
-  | SREACT IDE EQUAL bexp ARR bexp AT num_exp
-                                            { Sreact_dec ($2, $4, $6, $8, add_pos ()) }
-  | FUN SREACT IDE LPAR forms RPAR EQUAL bexp ARR bexp AT num_exp
-                                            { Sreact_dec_f ($3, $5, $8, $10, $12, add_pos ()) }
-  | error                                   { parse_error_msg "Invalid declaration" ""; 
-                                              raise PARSE_ERROR}		   
   ;
 
 brs
