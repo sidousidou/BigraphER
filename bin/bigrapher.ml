@@ -23,15 +23,15 @@ let print_header () =
 let print_stats_store env stoch t0 =
   let t = (Unix.gettimeofday ()) -. t0 
   and ty = if stoch then "Stochastic BRS" else "BRS" in
-  printf "%s   %-4gs\n\
-          %s         %s\n\
+  if defaults.debug then () else 
+    printf "%s   %-4gs\n" (colorise `cyan "Build time:") t;
+  printf "%s         %s\n\
           %s     %d\n"
-    (colorise `cyan "Build time:") t
     (colorise `cyan "Type:") ty
     (colorise `cyan "Bindings:") (Hashtbl.length env)
 
 let print_stats_brs stats lim =
-  printf " in %.3gs.\n" stats.Brs.t;
+  if defaults.debug then () else printf " in %.3gs.\n" stats.Brs.t;
   printf
     "%s       %s\n\
      %s    %-8d\n\
@@ -42,7 +42,7 @@ let print_stats_brs stats lim =
     (colorise `green "Occurrences:") stats.Brs.o   
 
 let print_stats_sbrs stats t_lim s_lim =
-  printf " in %.3gs.\n" stats.Sbrs.t;
+  if defaults.debug then () else printf " in %.3gs.\n" stats.Sbrs.t;
   if defaults.sim then
     printf  
       "%s     %s\n"
@@ -58,7 +58,8 @@ let print_stats_sbrs stats t_lim s_lim =
     (colorise `green "Occurrences:") stats.Sbrs.o
 
 let print_loop v_flag i _ = 
-  if v_flag then printf "\r%3d states found%!" (i + 1)
+  if defaults.debug then () 
+  else if v_flag then printf "\r%3d states found%!" (i + 1)
   else () 
 
 (* Raise Sys_error if the file could not be opened *)
@@ -174,13 +175,14 @@ let () =
   try
     let iter_f = print_loop true in
     parse Sys.argv;
-    print_header ();
+    if defaults.debug then () else print_header ();
     let (decs, brs) =
-      print_endline (
-        (colorise `yellow "Parsing model file ") ^ 
-        (colorise `bold (colorise `yellow (_to_string defaults.model))) ^
-        (colorise `yellow " ...")
-      ); 
+      if defaults.debug then () else 
+        print_endline (
+          (colorise `yellow "Parsing model file ") ^ 
+          (colorise `bold (colorise `yellow (_to_string defaults.model))) ^
+          (colorise `yellow " ...")
+        ); 
       let (lexbuf, file) = 
         open_lex (_to_string defaults.model) in
       let out = Parser_main.model Lexer_main.lex lexbuf in 
