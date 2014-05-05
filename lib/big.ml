@@ -808,3 +808,23 @@ let equal a b =
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
        equal_SAT a b
+
+(* Instantiation map *)
+let instantiate_aux l = List.map (fun index ->
+    List.nth l index
+  ) 
+
+let prime_components b =
+  let (pgs, isos) =
+    List.split (Place.prime_components b.p) in
+  let lgs = Link.prime_components b.l isos in
+  List.map (fun ((p, l), iso) ->
+      { p = p;
+        l = l;
+        n = Nodes.filter_apply_iso b.n iso;
+      }
+    ) (List.combine (List.combine pgs lgs) isos)
+
+let instantiate map b =
+  let bs = prime_components b in
+  ppar_of_list (instantiate_aux bs map)

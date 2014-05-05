@@ -755,4 +755,17 @@ let match_ports_eq p t n_p n_t clauses : Cnf.clause list list =
   _match_ports array_t array_p n_t n_p clauses
 
 
+(* Prime components decomposition *)
+let prime_components lg =
+  List.map (fun iso ->
+      Lg.fold (fun edg acc ->
+          Lg.add { edg with
+                   p = Ports.fold (fun (i, p) acc ->
+                     try
+                       Ports.add (Iso.find i iso, p) acc
+                     with
+                     | Not_found -> acc) Ports.empty edg.p;
+                 } acc
+        ) lg Lg.empty 
+    ) 
  

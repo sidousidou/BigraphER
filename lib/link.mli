@@ -193,6 +193,9 @@ val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t ->
     identities.*)
 val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
 
+
+val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
+
 (** {6 Matching constraints} *)
 
 exception NOT_TOTAL
