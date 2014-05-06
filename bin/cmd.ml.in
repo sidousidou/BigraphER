@@ -12,7 +12,8 @@ exception UNKNOWN_OPTION of string
 exception NOT_OPTION of string
 
 type arg = 
-  [ `verbose 
+  [ `debug
+  | `verbose 
   | `sim 
   | `s_max
   | `version 
@@ -34,6 +35,7 @@ type err =
   | `not_opt ]
 
 type env = {
+  mutable debug : bool;
   mutable verbose : bool;
   mutable sim : bool;
   mutable t_max : float;
@@ -49,6 +51,7 @@ type env = {
 }
 
 let defaults = {
+  debug = false;
   verbose = false;
   sim = false;
   t_max = 10000.0;
@@ -65,6 +68,7 @@ let defaults = {
 
 let msg (a: arg) =
   match a with
+  | `debug ->      ""
   | `verbose ->    "Be more verbose."
   | `sim ->        "Simulate the model. The optional argument sets the maximum simulation time."  
   | `s_max ->      "Set the maximum number of states."
@@ -79,6 +83,7 @@ let msg (a: arg) =
 
 let flags (a: arg) =
   match a with
+  | `debug ->      ["--debug"]
   | `verbose ->    ["-v"; "--verbose"]
   | `sim ->        ["-s"; "--simulation"]
   | `s_max ->      ["-m"; "--max-states"]
@@ -97,6 +102,7 @@ let is_option s =
 let parse_option s =
   if is_option s then 
     match s with
+    | "--debug" ->                `debug
     | "-v" | "--verbose" ->       `verbose
     | "-s" | "--simulation" ->    `sim
     | "-m" | "--max-states" ->    `s_max
@@ -113,7 +119,7 @@ let parse_option s =
 
 let usage_str =
   "USAGE: bigrapher [--version]\n\
-  \                 [--help |-h]\n\
+  \                 [--help|-h]\n\
   \                 <model.big> [predicates.bilog] [options]\n"
 
 let usage =
@@ -126,7 +132,9 @@ let options_str =
   ] 
   and format a =
     match a with
-    | `version -> sprintf "       %s     %s"
+    | `debug -> ""
+    | `version -> sprintf "       %s\n\
+                          \              %s"
                     (String.concat ", " (flags a))
                     (msg a) 
     | `sim -> sprintf "       %s <float>\n\
@@ -204,7 +212,7 @@ let parse_file a args i =
     | `out_prism -> defaults.out_prism <- Some (args.(i))
     | `out_store -> defaults.out_store <- Some (args.(i))
     | `verbose | `sim | `s_max | `version | `out_states
-    | `consts | `help -> assert false
+    | `consts | `help | `debug -> assert false
   with
   | _ -> raise (MALFORMED_OPTION a)
   
@@ -225,6 +233,7 @@ let parse_options args =
     if i < Array.length args then (
       try
         match parse_option args.(i) with
+        | `debug -> defaults.debug <- true; _parse args (i + 1)
         | `verbose -> defaults.verbose <- true; _parse args (i + 1)
         | `version -> print_endline version; exit 0
         | `help -> print_endline help; exit 0 
@@ -258,7 +267,7 @@ let parse_model str =
     | `version -> print_endline version; exit 0
     | `help -> print_endline help; exit 0
     | `verbose | `sim | `s_max  | `consts  | `out_csl
-    | `out_dot | `out_states | `out_prism  
+    | `out_dot | `out_states | `out_prism | `debug  
     | `out_store -> error `big (Some str)         
   with
   | NOT_OPTION _ -> (* Model *)

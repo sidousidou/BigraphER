@@ -196,7 +196,10 @@ let close f b =
   and cs = tens_of_list (List.map (fun n ->
     closure (Link.Face.singleton n)) (Link.Face.elements f)) in
   comp (tens cs (id (Inter (n, g)))) b
-    
+
+let atom f c = 
+  comp (ion f c) one
+
 let is_mono b =
   (Place.is_mono b.p) && (Link.is_mono b.l)
   

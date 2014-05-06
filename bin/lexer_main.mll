@@ -8,25 +8,34 @@ exception UNKNOWN_CHAR of char * position
 let incr_linenum lexbuf =
   let pos = lexbuf.lex_curr_p in 
   lexbuf.lex_curr_p <- 
-    { pos with
-      pos_lnum = pos.pos_lnum + 1;
-      pos_bol = pos.pos_cnum
+    { pos with pos_lnum = pos.pos_lnum + 1;
+               pos_bol = lexbuf.lex_curr_pos
     }
 
 }
 
 (* REGULAR DEFINITIONS *)
 
+let digit = ['0'-'9']
+let int = digit+
+let frac = '.' digit*
+let exp = ['e' 'E'] ['-' '+']? digit+
+let float = digit+ frac? exp? | "inf"
+let num = int | float
+
+let white = [' ' '\t']+
+let newline = '\r' | '\n' | "\r\n"
+
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
-let identifier = ['a'-'z']['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
-let comment = '#' [^'\n']* ('\n' | eof )  
-let num =   ((['0'-'9']+ | (['0'-'9']+ '.'['0'-'9']+))
-		(['E' 'e'](['+' '-']?)['0'-'9']+)?) 
-  | "inf"
+let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
+
+let comment = '#' [^'\r' '\n']* (newline | eof)  
  
 (* RULES *)
 
 rule lex =  parse 
+  | white                   { lex lexbuf }
+  | newline                 { incr_linenum lexbuf; lex lexbuf }
   | "["                     { LSBR }
   | "]"                     { RSBR }
   | "{"                     { LCBR }
@@ -73,10 +82,8 @@ rule lex =  parse
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | comment                 { incr_linenum lexbuf; lex lexbuf } 
-  | [' ' '\t']              { lex lexbuf }
-  | ['\n' '\r']             { incr_linenum lexbuf; lex lexbuf }
-  | eof                     { EOF }
   | _ as c                  { raise (UNKNOWN_CHAR (c, Lexing.lexeme_start_p lexbuf)) }
+  | eof                     { EOF }
 
 {
 

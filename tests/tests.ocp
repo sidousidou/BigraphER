@@ -52,3 +52,20 @@ begin test "brs"
     "sym_sbrs"
   ]
 end
+
+begin test "parser"
+  test_benchmark = true
+  test_byte = false
+  files = [ ]
+  requires = [
+    "bigraph"
+    "bigrapher"
+  ]
+  test_stdout = [ "%{sources}%/files/%{variant}%.reference" ]
+  test_args = [ "%{sources}%/../examples/%{variant}%.big" "--debug" ] 
+  test_variants = [
+    "rts_cts"
+    "actors"
+  ]	    
+end
+
