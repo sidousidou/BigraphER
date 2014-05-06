@@ -31,25 +31,29 @@ let off i s =
 let norm s = 
   of_int (cardinal s)
 
-let apply s iso =
+let apply_exp s iso =
   assert (Iso.cardinal iso >= cardinal s);
   fold (fun i acc ->
-      add (Iso.find i iso) acc) s empty
+      add (Iso.find_exp i iso) acc) s empty
 
 (* Generates an isomorphism to fix the numbering of a set of int. 
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                           *)
 let fix s =
-  let img = of_int (cardinal s)
-  in Iso.of_list (List.combine (elements s) (elements img))
+  try
+    Iso.of_list_exp 
+      (List.combine (elements s) (elements (of_int (cardinal s))))
+  with
+  | Iso.NOT_BIJECTIVE -> assert false
 
-let union_list l = 
+let union_list = 
   List.fold_left (fun acc s ->
-      union s acc) empty l
+      union s acc) empty
 
 let rec augment s l =
-  let (l1, l2) = List.partition (fun s' -> 
-      is_empty (inter s s')
-    ) l in
+  let (l1, l2) = 
+    List.partition (fun s' -> 
+        is_empty (inter s s')
+      ) l in
   match l2 with
   | [] -> (s, l1)
   | _ -> augment (union_list (s :: l2)) l1

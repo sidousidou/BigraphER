@@ -51,7 +51,7 @@ val norm : t -> t
 val fix : t -> int Iso.t
 
 (** Apply an isomorphism *)
-val apply : t -> int Iso.t -> t
+val apply_exp : t -> int Iso.t -> t
 
 (** Merge sets with common elements. *)
 val merge : t list -> t list

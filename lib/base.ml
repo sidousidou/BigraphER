@@ -106,10 +106,9 @@ module Nodes = struct
       (fold (fun _ c acc ->
 	c :: acc) s [])
 
-  let apply_iso s iso =
-    assert (Iso.cardinal iso >= s.size);
+  let apply_exp s iso =
     fold (fun i c acc ->
-      add acc (Iso.find i iso) c) s (empty ())
+      add acc (Iso.find_exp i iso) c) s (empty ())
   
   (* Only nodes in the domain of the isomorphism are transformed. Other nodes are discarded. *)    
   let filter_apply_iso s iso =    
@@ -205,9 +204,9 @@ module Ports = struct
     fold (fun (i, _) acc -> 
       IntSet.add i acc) ps IntSet.empty
 
-  let apply s iso =
+  let apply_exp s iso =
     fold (fun (i, p) acc ->
-        add (Iso.find i iso, p) acc
+        add (Iso.find_exp i iso, p) acc
       ) s empty
 
   (* Compute the arities of the nodes within a port set. The output is a map 
@@ -215,7 +214,7 @@ module Ports = struct
   let arities p =
     List.map (fun (i, js) ->
         (i, IntSet.cardinal js)
-      ) (Rel.bindings (fold (fun (i, p) r ->
+      ) (Rel.to_list (fold (fun (i, p) r ->
         Rel.add i (IntSet.singleton p) r
       ) p Rel.empty))
         

@@ -80,9 +80,8 @@ val inner : bg -> inter
 (** [outer b] returns the outer face of bigraph [b].*)
 val outer : bg -> inter
 
-(** [apply_iso i b] applies isomorphism [i] to bigraph [b].
-    @raise ISO_ERROR when [i] is not total over the nodes of [b].*)
-val apply_iso : int Iso.t -> bg -> bg
+(** [apply_exp i b] applies isomorphism [i] to bigraph [b].*)
+val apply_exp : int Iso.t -> bg -> bg
 
 (** [placing l r f] builds a placing with [r] roots by parsing list [l]. The
     format of [l] is the same as the input for {!Place.parse_placing}.
@@ -197,7 +196,7 @@ val is_solid : bg -> bool
     are from [p] to [t]. The elements in the result are the context, the 
     parameter and the identity of the decomposition. Argument [f_e] is a total
     function from links in the pattern to links in the target. *)
-val decomp :  bg -> bg -> int Iso.t -> int Iso.t -> IntSet.t Rel.t -> 
+val decomp :  bg -> bg -> int Iso.t -> int Iso.t -> int Fun.t -> 
   bg * bg * bg
 
 (*(** [levels b] computes the decomposition in levels of [b]. *)
@@ -220,11 +219,11 @@ val occurs : bg -> bg ->  bool
     [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
     @raise NO_MATCH when there is no match. 
     @raise NODE_FREE when [p] has an empty node set.*)
-val occurrence : bg -> bg ->  int Iso.t * int Iso.t * IntSet.t Rel.t
+val occurrence : bg -> bg ->  int Iso.t * int Iso.t * int Fun.t
 
 (** [occurrences t p] returns a list of pairs of isomorphisms.
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrences : bg -> bg -> (int Iso.t * int Iso.t * IntSet.t Rel.t) list
+val occurrences : bg -> bg -> (int Iso.t * int Iso.t * int Fun.t) list
 
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
 val auto : bg -> (int Iso.t * int Iso.t) list

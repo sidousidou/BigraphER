@@ -278,9 +278,9 @@ let ppar a b n =
     tens (elementary_id (Face.diff f_in shared_in)) (dup_in shared_in) 0 in
   comp wiring_out (comp a_b wiring_in n) 0
 
-let apply_iso i l =
+let apply_exp i l =
   Lg.fold (fun e acc ->
-      Lg.add { i = e.i; o= e.o; p = Ports.apply e.p i } acc) l Lg.empty
+      Lg.add { i = e.i; o= e.o; p = Ports.apply_exp e.p i } acc) l Lg.empty
 
 (* Is e a hyperedge? An extra node is not required when it is an edge or an
    idle name.*)   
@@ -289,7 +289,7 @@ let is_hyp e =
   ((Ports.cardinal e.p) = 1 && (Face.is_empty e.i) && (Face.is_empty e.o)) ||
   (* idle alias on two names *)
   ((Face.is_empty e.i) && (Ports.is_empty e.p) && (Face.cardinal e.o = 2)) ||  
-  (* closure on two names *)
+  (* closure xon two names *)
   ((Face.is_empty e.o) && (Ports.is_empty e.p) && (Face.cardinal e.i = 2)) ||  
   (* more than 2 ports or names *)
   ((Ports.cardinal e.p) + (Face.cardinal e.i) + (Face.cardinal e.o) > 2)
@@ -366,6 +366,10 @@ let get_dot l =
       ) l (0, "", "", "", "edge [ color=green, arrowhead=none, arrowsize=0.5 ];\n") with
   | (_, a, b, c, d) -> (a, b, c, d)
 
+let safe f = 
+  try f with
+  | Not_found -> assert false
+
 (* decompose t. p is assumed epi and mono. Ports are normalised.
    i_c and i_d are isos from t to c and d.*)
 let decomp t p i_e i_c i_d f_e =
@@ -377,7 +381,7 @@ let decomp t p i_e i_c i_d f_e =
   and p_a = Array.of_list (Lg.elements p) 
   (* Inverse isos: T -> P *)
   and i_e' = Iso.inverse i_e
-  and f_e' = Rel.inverse f_e in (* Not a function *) 
+  and f_e' = Fun.inverse f_e in (* Not a function *) 
   (* Domains: disjoint subsets of T *)
   let closed_t = IntSet.of_list (Iso.dom i_e')
   and non_empty_t = IntSet.of_list (Rel.dom f_e') 
@@ -412,13 +416,20 @@ let decomp t p i_e i_c i_d f_e =
           if Face.is_empty e.o && Ports.is_empty p_c &&
              Face.is_empty in_c then
             (acc_c, 
-             Lg.add { i = e.i; o = out_d; p = Ports.apply p_d i_d} acc_d, 
+             Lg.add { i = e.i; 
+                      o = out_d; 
+                      p = safe (Ports.apply_exp p_d i_d);
+                    } acc_d, 
              acc_id, 
              n + 1)
           else 
           (* c and p *)
           if Face.is_empty e.i && Ports.is_empty p_d then
-            (Lg.add { i = in_c; o = e.o; p = Ports.apply p_c i_c} acc_c, 
+            (Lg.add { 
+                i = in_c; 
+                o = e.o; 
+                p = safe (Ports.apply_exp p_c i_c);
+              } acc_c, 
              acc_d,
              acc_id, 
              n + 1)
@@ -427,10 +438,12 @@ let decomp t p i_e i_c i_d f_e =
             let name = Face.singleton (Nam (sprintf "~%d" n)) in
             (Lg.add { i = Face.union name in_c; 
                       o = e.o; 
-                      p = Ports.apply p_c i_c } acc_c, 
+                      p = safe (Ports.apply_exp p_c i_c);
+                    } acc_c, 
              Lg.add { i = e.i; 
                       o = Face.union name out_d; 
-                      p = Ports.apply p_d i_d } acc_d, 
+                      p = safe (Ports.apply_exp p_d i_d)
+                    } acc_d, 
              Lg.add { i = name; o = name; p = Ports.empty } acc_id, 
              n + 1)
           )
@@ -475,7 +488,13 @@ let closed_edges l = Lg.filter is_closed l
 let filter_iso f l =
   let (l', _, _, iso) =
     Lg.fold (fun e (acc, i, i', iso) ->
-        if f e then (Lg.add e acc, i + 1, i' + 1, Iso.add i' i iso)
+        if f e then 
+          ( Lg.add e acc, 
+            i + 1, 
+            i' + 1, 
+            try Iso.add_exp i' i iso with
+            | Iso.NOT_BIJECTIVE -> assert false
+          )
         else (acc, i + 1, i', iso)
       ) l (Lg.empty, 0, 0, Iso.empty) in
   (l', iso)
@@ -754,17 +773,16 @@ let match_ports_eq p t n_p n_t clauses : Cnf.clause list list =
     Array.of_list (List.map (fun e -> e.p) (Lg.elements p)) in
   _match_ports array_t array_p n_t n_p clauses
 
-
 (* Prime components decomposition *)
 let prime_components lg =
   List.map (fun iso ->
       Lg.fold (fun edg acc ->
           Lg.add { edg with
                    p = Ports.fold (fun (i, p) acc ->
-                     try
-                       Ports.add (Iso.find i iso, p) acc
-                     with
-                     | Not_found -> acc) Ports.empty edg.p;
+                       match Iso.find i iso with
+                       | Some i' -> Ports.add (i', p) acc
+                       | None -> acc
+                     ) Ports.empty edg.p;
                  } acc
         ) lg Lg.empty 
     ) 

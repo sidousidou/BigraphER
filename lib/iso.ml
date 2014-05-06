@@ -1,6 +1,9 @@
+let int_compare a b = a - b
+let int_equal (a : int) (b : int) = a = b
+ 
 include Map.Make (struct
     type t = int
-    let compare a b = a - b
+    let compare = int_compare
   end)
 
 let dom iso =
@@ -9,24 +12,25 @@ let dom iso =
 let codom iso = 
   snd (List.split (bindings iso))
 
-(* Must be a bijection: e.g. 1 -> 2 , 3 -> 2 is not allowed *)
-exception NOT_BIJECTIVE
-  
-let add i j iso = 
-  if List.mem j (codom iso) then raise NOT_BIJECTIVE
-  else add i j iso
-      
 let inverse iso =
   fold (fun i j iso' ->
       add j i iso'
     ) iso empty
 
+(* Must be a bijection: e.g. 1 -> 2 , 3 -> 2 is not allowed *)
+exception NOT_BIJECTIVE
+
+let add_exp i j iso = 
+  if List.mem j (codom iso) then raise NOT_BIJECTIVE
+  else add i j iso
+
 let to_list = bindings
 
 (* In case of clashing bindings only the right-most is stored. *)
-let of_list l =
-   List.fold_left (fun acc (i, j) ->
-    add i j acc) empty l
+(* raise NOT_BIJECTIVE *)
+let of_list_exp =
+  List.fold_left (fun acc (i, j) ->
+      add_exp i j acc) empty
 
 let to_string iso =
   Printf.sprintf "{%s}" 
@@ -34,26 +38,36 @@ let to_string iso =
          Printf.sprintf "(%d, %d)" i j
        ) (bindings iso)))
 
-let is_id = for_all (fun i j -> i = j)
+let is_id = for_all int_equal
 
-let equal = equal (fun a b -> a = b)
+let equal = equal int_equal
 
-let compare = compare (fun a b -> a - b)
+let compare = compare int_compare
 
 (* Disjoint input isos are assumed *)
-let union = fold add  
+(* raise NOT_BIJECTIVE *)
+let union_exp = fold add_exp  
 
-(* Apply an iso to domain and codomain. Replaces map in lib/big.ml 
-   Raise: Not_found *)
-let transform iso i_dom i_codom =
+(* Apply an iso to domain and codomain.
+   raise: Not_found *)
+let transform_exp iso i_dom i_codom =
   fold (fun i j iso' ->
-      add (find i i_dom) (find j i_codom) iso'
+      add_exp (find i i_dom) (find j i_codom) iso'
     ) iso empty
 
 (* input:  i : P -> T  autos : P -> P *)
-let gen_isos i autos =
+(* raise: Not_found *)
+let gen_isos_exp i autos =
   List.map (fun a ->
       fold (fun i j iso' -> 
-          add (find i a) j iso'
+          add_exp (find i a) j iso'
         ) i empty
     ) autos
+
+(* raise: Not_found *)
+let find_exp = find
+
+let find i iso =
+  try Some (find_exp i iso)
+  with
+  | Not_found -> None
