@@ -47,7 +47,7 @@ val get_dot : pg -> string * string * string * string
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying 
     isomorphism [i] to [p].*)
-val apply_iso : int Iso.t -> pg -> pg
+val apply_exp : int Iso.t -> pg -> pg
 
 (** [parse_placing l r] returns the placing with [r] roots defined by list
     [l] in which each element is a site's parent set.*)
@@ -104,6 +104,8 @@ val compare_placing : pg -> pg -> int
 (** [tens p0 p1] returns the tensor product of place graphs [p0] and [p1]. *)
 val tens : pg -> pg -> pg
 
+val tens_of_list : pg list -> pg
+
 (** [comp p0 p1] returns the composition of place graphs [p0] and [p1].
     @raise COMP_ERROR when mediating interfaces mismatch*)
 val comp : pg -> pg -> pg
@@ -136,6 +138,10 @@ val is_guard : pg -> bool
     mono. The result is context [c], identity [id], parameter [d], and nodes 
     in [c] and [d] expressed as rows of [t]. *)
 val decomp : pg -> pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
+
+exception NOT_PRIME 
+
+val prime_components : pg -> (pg * int Iso.t) list
 
 (*
 (** [levels p] returns the levels of place graph [p]. The first component is the

@@ -215,14 +215,11 @@ let is_solid b =
 (* TO DO *)
 (*let latex_of_big = function | Bg (ns, p, l) -> "latex representation"*)
   
-let apply_iso i b =
-  let (x, y) = ((Iso.cardinal i), b.n.Nodes.size) in
-  if x = y then
-    { n = Nodes.apply_iso b.n i;
-      p = Place.apply_iso i b.p;
-      l = Link.apply_iso i b.l;
+let apply_exp i b =
+    { n = Nodes.apply_exp b.n i;
+      p = Place.apply_exp i b.p;
+      l = Link.apply_exp i b.l;
     }
-  else raise (ISO_ERROR (y, x))
 
 let get_dot b ide =
   let build_rank i flag =
@@ -323,24 +320,32 @@ let snf b =
   | _ -> ""
     *)
 
+let safe_exp f =
+  try f with
+  | Iso.NOT_BIJECTIVE -> assert false
+
+let safe = function
+  | Some v -> v
+  | None -> assert false
+
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver m =
   snd (Array.fold_left (fun (i, iso) r ->
       (i + 1, snd (Array.fold_left (fun (j, iso) x ->
            match solver#value_of x with
-           | Minisat.True -> (j + 1, Iso.add i j iso)
+           | Minisat.True -> (j + 1, safe_exp (Iso.add_exp i j iso))
            | Minisat.False | Minisat.Unknown -> (j + 1, iso)
          ) (0, iso) r))
     ) (0, Iso.empty) m)
 
-let get_rel solver m =
+let get_fun solver m =
   snd (Array.fold_left (fun (i, f) r ->
       (i + 1, snd (Array.fold_left (fun (j, f) x ->
            match solver#value_of x with
-           | Minisat.True -> (j + 1, Rel.add i (IntSet.singleton j) f)
+           | Minisat.True -> (j + 1, Fun.add i j f)
            | Minisat.False | Minisat.Unknown -> (j + 1, f)
          ) (0, f) r))
-    ) (0, Rel.empty) m)
+    ) (0, Fun.empty) m)
 
 (************************** DEBUG *************************)
 let string_of_SAT solver m =
@@ -509,7 +514,7 @@ let add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w =
   (* T index -> W' index *)
   let inv_w' = Iso.inverse iso_w' in
   let convert_j j =
-    Iso.find (Iso.find j iso_w) inv_w' 
+    safe (Iso.find (safe (Iso.find j iso_w)) inv_w') 
   and vars_of_col j m =
     snd (
       Array.fold_left (fun (i, acc) _ ->
@@ -631,10 +636,10 @@ let occurrence t p =
       let t_trans = Sparse.trans t.p.Place.nn in
       let (s, vars) = aux_match t p t_trans in
       let i_v = get_iso s vars.iso_nodes
-      and i_e = 
-        Iso.transform (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c 
-      and i_h = 
-        Rel.transform (get_rel s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c in
+      and i_e = safe_exp ( 
+          Iso.transform_exp (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c) 
+      and i_h = safe_exp (
+        Fun.transform_exp (get_fun s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c) in
       (i_v, i_e, i_h)
     )
   )
@@ -671,7 +676,7 @@ let clause_of_iso iso m =
     Array.fold_left (fun (i, acc) r ->
         (i + 1, snd (
             Array.fold_left (fun (j, acc) x ->
-	        if Iso.find i iso = j then 
+	        if safe (Iso.find i iso) = j then 
                   (j + 1, neg_lit x :: acc)
 	        else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
 	      ) (0, acc) r)
@@ -699,10 +704,10 @@ let occurrences t p =
         (****************AUTOMORPHISMS****************)
 	let gen = 
 	  List.combine 
-            (Iso.gen_isos 
-	       (get_iso s vars.iso_nodes) (List.map fst autos)) 
-	    (Iso.gen_isos 
-	       (get_iso s vars.iso_edges) (List.map snd autos)) in
+            (safe_exp (Iso.gen_isos_exp 
+	       (get_iso s vars.iso_nodes) (List.map fst autos))) 
+	    (safe_exp (Iso.gen_isos_exp 
+	       (get_iso s vars.iso_edges) (List.map snd autos))) in
 	List.iter (fun (iso_i, iso_e) ->
 	    s#add_clause (
 	      (clause_of_iso iso_i vars.iso_nodes) @ 
@@ -714,16 +719,28 @@ let occurrences t p =
           ignore (filter_loop s t p vars t_trans);
 	  loop_occur (
             (get_iso s vars.iso_nodes, 
-             Iso.transform (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
-             Rel.transform (get_rel s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c
+             safe_exp (Iso.transform_exp 
+                         (get_iso s vars.iso_edges) 
+                         vars.map_edges_r 
+                         vars.map_edges_c),
+             safe_exp (Fun.transform_exp 
+                         (get_fun s vars.iso_hyp) 
+                         vars.map_hyp_r 
+                         vars.map_hyp_c)
             ) :: res 
           )
 	with
 	| NO_MATCH -> res in
       loop_occur [
         (get_iso s vars.iso_nodes, 
-         Iso.transform (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c,
-         Rel.transform (get_rel s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c)
+         safe_exp (Iso.transform_exp 
+                     (get_iso s vars.iso_edges) 
+                     vars.map_edges_r 
+                     vars.map_edges_c),
+         safe_exp (Fun.transform_exp 
+                     (get_fun s vars.iso_hyp) 
+                     vars.map_hyp_r 
+                     vars.map_hyp_c))
       ]
     with
     | NO_MATCH -> []
@@ -811,3 +828,23 @@ let equal a b =
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
        equal_SAT a b
+
+(* Instantiation map *)
+let instantiate_aux l = List.map (fun index ->
+    List.nth l index
+  ) 
+
+let prime_components b =
+  let (pgs, isos) =
+    List.split (Place.prime_components b.p) in
+  let lgs = Link.prime_components b.l isos in
+  List.map (fun ((p, l), iso) ->
+      { p = p;
+        l = l;
+        n = Nodes.filter_apply_iso b.n iso;
+      }
+    ) (List.combine (List.combine pgs lgs) isos)
+
+let instantiate map b =
+  let bs = prime_components b in
+  ppar_of_list (instantiate_aux bs map)

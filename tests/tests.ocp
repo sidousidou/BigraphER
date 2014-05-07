@@ -18,6 +18,21 @@ begin test "matching"
   ]	    
 end
 
+
+begin test "dec"
+  test_benchmark = false
+  test_byte = false
+  files = [
+    "../utils/utils.ml"
+    "test_decomp.ml"
+  ]
+  requires = [
+    "bigraph"
+  ]
+  test_stdout = [ "%{sources}%/files/dec.reference" ]
+  test_args = [ "%{sources}%/files/match/" ] 	    
+end
+
 begin test "brs"
   test_benchmark = true
   test_byte = false
@@ -28,7 +43,7 @@ begin test "brs"
   requires = [
     "bigraph"
   ]
-  test_stdout = [ "%{sources}%/files/stdout.reference" ]
+  test_stdout = [ "%{sources}%/files/brs.reference" ]
   test_args = [ "%{test}%" ]
   tests = [
     "brs"

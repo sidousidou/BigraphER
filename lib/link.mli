@@ -48,7 +48,7 @@ type edg = {
   i: Face.t; (** Inner face *)
   o: Face.t; (** Outer face *)
   p: Base.Ports.t; (** Set of ports *)
-  }
+}
   
 (** This module provides set operations for link graphs. *)
 module Lg :
@@ -120,7 +120,7 @@ val ports : Lg.t -> Base.Ports.t
 (** [apply_iso i l] returns a link graph obtained by applying isomorphism [i]
     to [l].
     @raise Not_found when a node is not defined in the iso. *)
-val apply_iso: int Iso.t -> Lg.t -> Lg.t
+val apply_exp : int Iso.t -> Lg.t -> Lg.t
 
 (** {6 Elementary link graphs} *)
 
@@ -186,12 +186,15 @@ val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
     edges in [p] to edges in [t]. Isos [i_c] and [i_d] are obtained by 
     {!Place.decomp}. The results are link graph [c], [d] and [id].*)
 val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t -> 
-  int Iso.t -> IntSet.t Rel.t -> Lg.t * Lg.t * Lg.t
+  int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
 
 (** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained 
     by {!Place.levels}. The output is a wiring and a list of
     identities.*)
 val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
+
+
+val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
 
 (** {6 Matching constraints} *)
 
