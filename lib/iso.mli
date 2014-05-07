@@ -20,7 +20,7 @@ val fold : (key -> int -> 'b -> 'b) -> int t -> 'b -> 'b
 (* val filter : (key -> 'a -> bool) -> 'a t -> 'a t *)
 (* val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t *)
 
-val cardinal : 'a t -> int
+val cardinal : int t -> int
 
 (* val bindings : 'a t -> (key * 'a) list *)
 (* val min_binding : 'a t -> key * 'a *)
@@ -44,7 +44,7 @@ exception NOT_BIJECTIVE
 
 (** Add a new binding. Old binding on the same key is replaced.
     @raise NOT_BIJECTIVE if image is already in the isomorphism. *)
-val add_exp : key -> 'a -> 'a t -> 'a t
+val add_exp : key -> int -> int t -> int t
 
 val to_list : int t -> (key * int) list
 

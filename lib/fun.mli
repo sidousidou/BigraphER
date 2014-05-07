@@ -21,7 +21,7 @@ val fold : (key -> int -> 'b -> 'b) -> int t -> 'b -> 'b
 (* val filter : (key -> 'a -> bool) -> 'a t -> 'a t *)
 (* val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t *)
 
-val cardinal : 'int t -> int
+val cardinal : int t -> int
 
 (* val bindings : 'a t -> (key * 'a) list *)
 (* val min_binding : 'a t -> key * 'a *)
