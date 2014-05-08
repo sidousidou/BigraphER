@@ -30,7 +30,7 @@ val cardinal : IntSet.t t -> int
 (* val map : ('a -> 'b) -> IntSet.t t -> 'b t *)
 (* val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t *)
 
-val find_exp : key -> IntSet.t t -> IntSet.t
+val find_exn : key -> IntSet.t t -> IntSet.t
 val find : key -> IntSet.t t -> IntSet.t
 
 val add : key -> IntSet.t -> IntSet.t t -> IntSet.t t
@@ -44,4 +44,4 @@ val to_list : IntSet.t t -> (key * IntSet.t) list
 val of_list : (key * int list) list -> IntSet.t t
 val union : IntSet.t t -> IntSet.t t -> IntSet.t t
 val inverse : IntSet.t t -> IntSet.t t
-val transform_exp : IntSet.t t -> int Iso.t -> int Iso.t -> IntSet.t t
+val transform_exn : IntSet.t t -> int Iso.t -> int Iso.t -> IntSet.t t

@@ -157,8 +157,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T1" bgs;
       pattern = List.assoc "P1" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 2) ]), safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 0); (1, 3) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 2) ]), safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 0); (1, 3) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 2 *)
     {
@@ -170,7 +170,7 @@ let tests bgs = (* TEST 1 *)
     {
       target = List.assoc "T2" bgs;
       pattern = List.assoc "P2" bgs;
-      exp_res = [ (safe_exp (Iso.of_list_exp [ (0, 0) ]), safe_exp (Iso.of_list_exp [])) ];
+      exp_res = [ (safe_exp (Iso.of_list_exn [ (0, 0) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 4 *)
     {
@@ -183,7 +183,7 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T3" bgs;
       pattern = List.assoc "P5" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 1); (1, 0) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 1); (1, 0) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 6 *)
     {
@@ -208,45 +208,45 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T5" bgs;
       pattern = List.assoc "P9" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 10 *)
     {
       target = List.assoc "T6" bgs;
       pattern = List.assoc "P10" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1) ]),
-           safe_exp (Iso.of_list_exp [ (0, 0) ])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1) ]),
+           safe_exp (Iso.of_list_exn [ (0, 0) ])) ];
       res = [];
     }; (* TEST 11 *)
     {
       target = List.assoc "T7" bgs;
       pattern = List.assoc "P11" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 12 *)
     {
       target = List.assoc "T8" bgs;
       pattern = List.assoc "P12" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1) ]),
-           safe_exp (Iso.of_list_exp [ (0, 0) ])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1) ]),
+           safe_exp (Iso.of_list_exn [ (0, 0) ])) ];
       res = [];
     }; (* TEST 13 *)
     {
       target = List.assoc "T9" bgs;
       pattern = List.assoc "P13" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 14 *)
     {
       target = List.assoc "T9" bgs;
       pattern = List.assoc "P14" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1) ]),
-           safe_exp (Iso.of_list_exp [ (0, 1) ])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1) ]),
+           safe_exp (Iso.of_list_exn [ (0, 1) ])) ];
       res = [];
     }; (* TEST 15 *)
     {
@@ -266,8 +266,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T11" bgs;
       pattern = List.assoc "P17" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0) ]), safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 1) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0) ]), safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 1) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 18 *)
     {
@@ -280,8 +280,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T12" bgs;
       pattern = List.assoc "P19" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 2) ]), safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 1) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 2) ]), safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 1) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 20 *)
     {
@@ -293,7 +293,7 @@ let tests bgs = (* TEST 1 *)
     {
       target = List.assoc "T12" bgs;
       pattern = List.assoc "P21" bgs;
-      exp_res = [ (safe_exp (Iso.of_list_exp [ (0, 0) ]), safe_exp (Iso.of_list_exp [])) ];
+      exp_res = [ (safe_exp (Iso.of_list_exn [ (0, 0) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 22 *)
     {
@@ -312,48 +312,48 @@ let tests bgs = (* TEST 1 *)
     {
       target = List.assoc "T13" bgs;
       pattern = List.assoc "P24" bgs;
-      exp_res = [ (safe_exp (Iso.of_list_exp [ (0, 0) ]), safe_exp (Iso.of_list_exp [])) ];
+      exp_res = [ (safe_exp (Iso.of_list_exn [ (0, 0) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 25 *)
     {
       target = List.assoc "T14" bgs;
       pattern = List.assoc "P25" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 2); (1, 3) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 2); (1, 3) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 26 *)
     {
       target = List.assoc "T15" bgs;
       pattern = List.assoc "P26" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 2); (1, 3); (2, 5); (3, 4); (4, 6) ]),
-           safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 2); (1, 3); (2, 4); (3, 5); (4, 6) ]),
-           safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 2); (1, 3); (2, 5); (3, 4); (4, 6) ]),
+           safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 2); (1, 3); (2, 4); (3, 5); (4, 6) ]),
+           safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 27 *)
     {
       target = List.assoc "T16" bgs;
       pattern = List.assoc "T16" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1); (2, 2); (3, 3); (4, 4) ]),
-           safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1); (2, 2); (3, 3); (4, 4) ]),
+           safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 28 *)
     {
       target = List.assoc "T17" bgs;
       pattern = List.assoc "P27" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 1); (1, 2) ]),
-           safe_exp (Iso.of_list_exp [ (0, 0) ])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 1); (1, 2) ]),
+           safe_exp (Iso.of_list_exn [ (0, 0) ])) ];
       res = [];
     }; (* TEST 29 *)
     {
       target = List.assoc "T18" bgs;
       pattern = List.assoc "P27" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 1); (1, 5) ]),
-           safe_exp (Iso.of_list_exp [ (0, 0) ])) ];(* or (0,1)? *)
+        [ (safe_exp (Iso.of_list_exn [ (0, 1); (1, 5) ]),
+           safe_exp (Iso.of_list_exn [ (0, 0) ])) ];(* or (0,1)? *)
       
       res = [];
     }; (* TEST 30 *) (* closed edges have to be iso *)
@@ -361,8 +361,8 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T19" bgs;
       pattern = List.assoc "P27" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 4); (1, 8) ]),
-           safe_exp (Iso.of_list_exp [ (0, 2) ])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 4); (1, 8) ]),
+           safe_exp (Iso.of_list_exn [ (0, 2) ])) ];
       res = [];
     }; (* TEST 31 *)
     {
@@ -370,23 +370,23 @@ let tests bgs = (* TEST 1 *)
       pattern = List.assoc "P28" bgs;(* no edges *)
       
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0) ]), safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 4) ]), safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 5) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0) ]), safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 4) ]), safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 5) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 32 *)
     {
       target = List.assoc "T20" bgs;
       pattern = List.assoc "P29" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 2); (1, 3) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 2); (1, 3) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 33 *)
     {
       target = List.assoc "T21" bgs;
       pattern = List.assoc "P30" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 1); (1, 2) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 1); (1, 2) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (*vvvvvvvvvvvvvvvvvvvv   EXAMPLES from the THESIS    vvvvvvvvvvvvvvvvv*)
     (* TEST 34 *)
@@ -394,17 +394,17 @@ let tests bgs = (* TEST 1 *)
       target = List.assoc "T22" bgs;
       pattern = List.assoc "P31" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 3); (1, 6) ]), safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 3); (1, 6) ]), safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 35 *)
     {
       target = List.assoc "T22" bgs;
       pattern = List.assoc "P32" bgs;
       exp_res =
-        [ (safe_exp (Iso.of_list_exp [ (0, 0); (1, 1); (2, 4) ]),
-           safe_exp (Iso.of_list_exp []));
-          (safe_exp (Iso.of_list_exp [ (0, 0); (1, 2); (2, 5) ]),
-           safe_exp (Iso.of_list_exp [])) ];
+        [ (safe_exp (Iso.of_list_exn [ (0, 0); (1, 1); (2, 4) ]),
+           safe_exp (Iso.of_list_exn []));
+          (safe_exp (Iso.of_list_exn [ (0, 0); (1, 2); (2, 5) ]),
+           safe_exp (Iso.of_list_exn [])) ];
       res = [];
     }; (* TEST 36 *)
     {

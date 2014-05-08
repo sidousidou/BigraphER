@@ -278,9 +278,9 @@ let ppar a b n =
     tens (elementary_id (Face.diff f_in shared_in)) (dup_in shared_in) 0 in
   comp wiring_out (comp a_b wiring_in n) 0
 
-let apply_exp i l =
+let apply_exn i l =
   Lg.fold (fun e acc ->
-      Lg.add { i = e.i; o= e.o; p = Ports.apply_exp e.p i } acc) l Lg.empty
+      Lg.add { i = e.i; o= e.o; p = Ports.apply_exn e.p i } acc) l Lg.empty
 
 (* Is e a hyperedge? An extra node is not required when it is an edge or an
    idle name.*)   
@@ -418,7 +418,7 @@ let decomp t p i_e i_c i_d f_e =
             (acc_c, 
              Lg.add { i = e.i; 
                       o = out_d; 
-                      p = safe (Ports.apply_exp p_d i_d);
+                      p = safe (Ports.apply_exn p_d i_d);
                     } acc_d, 
              acc_id, 
              n + 1)
@@ -428,7 +428,7 @@ let decomp t p i_e i_c i_d f_e =
             (Lg.add { 
                 i = in_c; 
                 o = e.o; 
-                p = safe (Ports.apply_exp p_c i_c);
+                p = safe (Ports.apply_exn p_c i_c);
               } acc_c, 
              acc_d,
              acc_id, 
@@ -438,11 +438,11 @@ let decomp t p i_e i_c i_d f_e =
             let name = Face.singleton (Nam (sprintf "~%d" n)) in
             (Lg.add { i = Face.union name in_c; 
                       o = e.o; 
-                      p = safe (Ports.apply_exp p_c i_c);
+                      p = safe (Ports.apply_exn p_c i_c);
                     } acc_c, 
              Lg.add { i = e.i; 
                       o = Face.union name out_d; 
-                      p = safe (Ports.apply_exp p_d i_d)
+                      p = safe (Ports.apply_exn p_d i_d)
                     } acc_d, 
              Lg.add { i = name; o = name; p = Ports.empty } acc_id, 
              n + 1)
@@ -492,7 +492,7 @@ let filter_iso f l =
           ( Lg.add e acc, 
             i + 1, 
             i' + 1, 
-            try Iso.add_exp i' i iso with
+            try Iso.add_exn i' i iso with
             | Iso.NOT_BIJECTIVE -> assert false
           )
         else (acc, i + 1, i', iso)

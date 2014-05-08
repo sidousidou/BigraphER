@@ -80,8 +80,8 @@ val inner : bg -> inter
 (** [outer b] returns the outer face of bigraph [b].*)
 val outer : bg -> inter
 
-(** [apply_exp i b] applies isomorphism [i] to bigraph [b].*)
-val apply_exp : int Iso.t -> bg -> bg
+(** [apply_exn i b] applies isomorphism [i] to bigraph [b].*)
+val apply_exn : int Iso.t -> bg -> bg
 
 (** [placing l r f] builds a placing with [r] roots by parsing list [l]. The
     format of [l] is the same as the input for {!Place.parse_placing}.

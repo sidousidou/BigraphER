@@ -47,7 +47,7 @@ val get_dot : pg -> string * string * string * string
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying 
     isomorphism [i] to [p].*)
-val apply_exp : int Iso.t -> pg -> pg
+val apply_exn : int Iso.t -> pg -> pg
 
 (** [parse_placing l r] returns the placing with [r] roots defined by list
     [l] in which each element is a site's parent set.*)

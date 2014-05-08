@@ -55,11 +55,11 @@ val append : bmatrix -> bmatrix -> bmatrix
 
 val stack : bmatrix -> bmatrix -> bmatrix
 
-val apply_rows_exp : int Iso.t -> bmatrix -> bmatrix
+val apply_rows_exn : int Iso.t -> bmatrix -> bmatrix
 
-val apply_cols_exp : int Iso.t -> bmatrix -> bmatrix
+val apply_cols_exn : int Iso.t -> bmatrix -> bmatrix
 
-val apply_exp : int Iso.t -> bmatrix -> bmatrix
+val apply_exn : int Iso.t -> bmatrix -> bmatrix
 
 val parse_vector : int list list -> int -> bmatrix
 

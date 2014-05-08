@@ -125,31 +125,31 @@ let stack a b =
     Hashtbl.add m.c_major j (i + a.r)) b.r_major;
   m
 
-let apply_rows_exp iso m =
+let apply_rows_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
-    let i' = Iso.find_exp i iso in
+    let i' = Iso.find_exn i iso in
     Hashtbl.add m'.r_major i' j;
     Hashtbl.add m'.c_major j i') m.r_major;
    m'
 
-let apply_cols_exp iso m =
+let apply_cols_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.c);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
-    let j' = Iso.find_exp j iso in
+    let j' = Iso.find_exn j iso in
     Hashtbl.add m'.r_major i j';
     Hashtbl.add m'.c_major j' i) m.r_major;
   m'
 
-let apply_exp iso m =
+let apply_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   assert (Pervasives.(=) m.r m.c);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let (i', j') = 
-      (Iso.find_exp i iso, Iso.find_exp j iso) in
+      (Iso.find_exn i iso, Iso.find_exn j iso) in
     Hashtbl.add m'.r_major i' j';
     Hashtbl.add m'.c_major j' i') m.r_major;
   m'

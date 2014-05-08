@@ -5,10 +5,10 @@ include Map.Make (struct
     let compare = int_compare
   end)
 
-let find_exp = find
+let find_exn = find
 
 let find i r =
-  try find_exp i r
+  try find_exn i r
   with
   | Not_found -> IntSet.empty
 
@@ -47,7 +47,7 @@ let inverse r =
           add j (IntSet.singleton i) acc) js acc
     ) r empty
 
-let transform_exp r i_dom i_codom =
+let transform_exn r i_dom i_codom =
   fold (fun i js r' ->
-      add (Iso.find_exp i i_dom) (IntSet.apply_exp js i_codom) r'
+      add (Iso.find_exn i i_dom) (IntSet.apply_exn js i_codom) r'
     ) r empty

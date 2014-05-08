@@ -10,6 +10,8 @@
     controls, nodes and ports.
     @author Michele Sevegnani *)
 
+val safe : 'a option -> 'a
+
 (** {6 Controls} *)
 
 (** The module of bigraphical controls. *)
@@ -78,7 +80,7 @@ sig
   val to_dot: t -> string
     
   (** Apply an isomorphism *)
-  val apply_exp : t -> int Iso.t -> t
+  val apply_exn : t -> int Iso.t -> t
 
   (** Apply an isomorphism only to nodes in the domain of the isomorphism. 
       Other nodes are discarded. *)
@@ -139,7 +141,7 @@ sig
 	val to_IntSet : t -> IntSet.t
 
 	(** Apply an isomorphism *)
-	val apply_exp : t -> int Iso.t -> t
+	val apply_exn : t -> int Iso.t -> t
 	
 	(* (\** [sub_multiset a b] returns [true] if [a] is a submultiset of [b].  *)
 	(*     Port identifiers are ignored. *\)   *)

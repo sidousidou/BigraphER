@@ -31,16 +31,16 @@ let off i s =
 let norm s = 
   of_int (cardinal s)
 
-let apply_exp s iso =
+let apply_exn s iso =
   assert (Iso.cardinal iso >= cardinal s);
   fold (fun i acc ->
-      add (Iso.find_exp i iso) acc) s empty
+      add (Iso.find_exn i iso) acc) s empty
 
 (* Generates an isomorphism to fix the numbering of a set of int. 
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                           *)
 let fix s =
   try
-    Iso.of_list_exp 
+    Iso.of_list_exn 
       (List.combine (elements s) (elements (of_int (cardinal s))))
   with
   | Iso.NOT_BIJECTIVE -> assert false

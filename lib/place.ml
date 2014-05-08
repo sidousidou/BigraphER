@@ -63,11 +63,11 @@ let parse r n s lines =
   }
 
 (* Apply isomorphism *)  
-let apply_exp i p =
+let apply_exn i p =
   { p with 
-    rn = Sparse.apply_cols_exp i p.rn;
-    nn = Sparse.apply_exp i p.nn;
-    ns = Sparse.apply_rows_exp i p.ns;
+    rn = Sparse.apply_cols_exn i p.rn;
+    nn = Sparse.apply_exn i p.nn;
+    ns = Sparse.apply_rows_exn i p.ns;
   }
 
 (* Elementary place graphs *)
@@ -218,10 +218,6 @@ let is_epi p =
 (* Is p guarded: no root has sites as children *)
 let is_guard p = 
   (Sparse.entries p.rs) = 0
-
-let safe = function
-   | Some v -> v
-   | None -> assert false
 
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d 
@@ -722,7 +718,7 @@ let match_trans t p : Cnf.clause list =
     blocks @ acc
   ) t.nn [] 
 
-let safe_exp f =
+let safe_exn f =
   try f with
   | Not_found -> assert false
 
@@ -739,7 +735,7 @@ let check_sites t p v_p' c_set iso =
        (* Construct a candidate set of sites *)
        let candidate =
          IntSet.fold (fun s acc ->
-	     let prn_s = safe_exp (IntSet.apply_exp 
+	     let prn_s = safe_exn (IntSet.apply_exn 
 	                             (IntSet.of_list (Sparse.prn p.ns s)) iso) in
              if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
              else acc
@@ -753,7 +749,7 @@ let check_sites t p v_p' c_set iso =
        (* Construct a candidate set of sites *)
        let candidate =
          IntSet.fold (fun s acc ->
-	     let prn_s' = safe_exp (IntSet.apply_exp 
+	     let prn_s' = safe_exn (IntSet.apply_exn 
 	                       (IntSet.of_list (Sparse.prn p.ns s)) iso) in
 	     if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
 	     else acc
@@ -780,7 +776,7 @@ let check_roots t p v_p' iso =
        (* Construct a candidate set of roots *)
        let candidate =
          IntSet.fold (fun r acc ->
-	     let chl_r = safe_exp (IntSet.apply_exp 
+	     let chl_r = safe_exn (IntSet.apply_exn 
 	                      (IntSet.of_list (Sparse.chl p.rn r)) iso) in
       if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
 	     else acc
@@ -795,7 +791,7 @@ let check_roots t p v_p' iso =
        (* Construct a candidate set of roots *)
        let candidate =
 	 IntSet.fold (fun r acc ->
-	     let chl_r' = safe_exp (IntSet.apply_exp 
+	     let chl_r' = safe_exn (IntSet.apply_exn 
 	                       (IntSet.of_list (Sparse.chl p.rn r)) iso) in
 	     if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
 	     else acc

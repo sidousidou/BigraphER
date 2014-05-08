@@ -44,13 +44,13 @@ exception NOT_BIJECTIVE
 
 (** Add a new binding. Old binding on the same key is replaced.
     @raise NOT_BIJECTIVE if image is already in the isomorphism. *)
-val add_exp : key -> int -> int t -> int t
+val add_exn : key -> int -> int t -> int t
 
 val to_list : int t -> (key * int) list
 
 (** [of_list l] returns an isomorphism with the elements in list [l]. 
     @raise NOT_BIJECTIVE *)
-val of_list_exp : (key * int) list -> int t
+val of_list_exn : (key * int) list -> int t
 
 val to_string : int t -> string
 
@@ -63,16 +63,16 @@ val compare : int t -> int t -> int
 
 (** Union of two disjoint isomorphisms. 
     @raise NOT_BIJECTIVE *)
-val union_exp : int t -> int t -> int t
+val union_exn : int t -> int t -> int t
 
 (** Apply an iso to domain and one to codomain.
     @raise Not_found *)
-val transform_exp : int t -> int t -> int t -> int t
+val transform_exn : int t -> int t -> int t -> int t
 
 (** Generate the equivalent isomorphisms by using a list of automorphisms. *)
-val gen_isos_exp : int t -> key t list -> int t list
+val gen_isos_exn : int t -> key t list -> int t list
 
 (** @raise Not_found *)
-val find_exp : key -> int t -> int
+val find_exn : key -> int t -> int
 
 val find : key -> int t -> int option

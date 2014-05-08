@@ -41,6 +41,6 @@ val equal : int t -> int t -> bool
 val compare : int t -> int t -> int
 
 val union : int t -> int t -> int t
-val transform_exp : int t -> int Iso.t -> int Iso.t -> int t
-val find_exp : key -> int t -> int
+val transform_exn : int t -> int Iso.t -> int Iso.t -> int t
+val find_exn : key -> int t -> int
 val find : key -> int t -> int option

@@ -1,5 +1,9 @@
 open Printf
 
+let safe = function
+  | Some v -> v
+  | None -> assert false
+
 module Ctrl = struct
 
   type t = Ctrl of string * int
@@ -106,9 +110,9 @@ module Nodes = struct
       (fold (fun _ c acc ->
 	c :: acc) s [])
 
-  let apply_exp s iso =
+  let apply_exn s iso =
     fold (fun i c acc ->
-      add acc (Iso.find_exp i iso) c) s (empty ())
+      add acc (Iso.find_exn i iso) c) s (empty ())
   
   (* Only nodes in the domain of the isomorphism are transformed. Other nodes are discarded. *)    
   let filter_apply_iso s iso =    
@@ -204,9 +208,9 @@ module Ports = struct
     fold (fun (i, _) acc -> 
       IntSet.add i acc) ps IntSet.empty
 
-  let apply_exp s iso =
+  let apply_exn s iso =
     fold (fun (i, p) acc ->
-        add (Iso.find_exp i iso, p) acc
+        add (Iso.find_exn i iso, p) acc
       ) s empty
 
   (* Compute the arities of the nodes within a port set. The output is a map 

@@ -117,10 +117,10 @@ val outer : Lg.t -> Face.t
 (** [ports l] returns the set of ports of link graph [l]. *)
 val ports : Lg.t -> Base.Ports.t
 
-(** [apply_iso i l] returns a link graph obtained by applying isomorphism [i]
+(** [apply_exn i l] returns a link graph obtained by applying isomorphism [i]
     to [l].
     @raise Not_found when a node is not defined in the iso. *)
-val apply_exp : int Iso.t -> Lg.t -> Lg.t
+val apply_exn : int Iso.t -> Lg.t -> Lg.t
 
 (** {6 Elementary link graphs} *)
 

@@ -39,16 +39,16 @@ let union = fold add
 
 (* Apply an iso to domain and codomain.
    raise: Not_found *)
-let transform_exp f i_dom i_codom =
+let transform_exn f i_dom i_codom =
   fold (fun i j f' ->
-      add (Iso.find_exp i i_dom) (Iso.find_exp j i_codom) f'
+      add (Iso.find_exn i i_dom) (Iso.find_exn j i_codom) f'
     ) f empty
 
 (* raise: Not_found *)
-let find_exp = find
+let find_exn = find
 
 let find i f =
-  try Some (find_exp i f)
+  try Some (find_exn i f)
   with
   | Not_found -> None
 
