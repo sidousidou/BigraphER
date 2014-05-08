@@ -215,6 +215,8 @@ val equal : bg -> bg -> bool
 
 (** {6 Matching} *)
 
+type occ = int Iso.t * int Iso.t * int Fun.t
+
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false] otherwise.*)
 val occurs : bg -> bg ->  bool
 
@@ -222,11 +224,11 @@ val occurs : bg -> bg ->  bool
     [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
     @raise NO_MATCH when there is no match. 
     @raise NODE_FREE when [p] has an empty node set.*)
-val occurrence : bg -> bg ->  int Iso.t * int Iso.t * int Fun.t
+val occurrence : bg -> bg -> occ 
 
 (** [occurrences t p] returns a list of pairs of isomorphisms.
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrences : bg -> bg -> (int Iso.t * int Iso.t * int Fun.t) list
+val occurrences : bg -> bg -> occ list
 
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
 val auto : bg -> (int Iso.t * int Iso.t) list
@@ -234,5 +236,7 @@ val auto : bg -> (int Iso.t * int Iso.t) list
 type bg_key = int * int * int * int * string * string * string
 
 val key : bg -> bg_key
+
+val rewrite : occ -> bg -> bg -> bg -> int Fun.t option -> bg
 
 (**/**)

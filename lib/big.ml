@@ -10,6 +10,8 @@ type bg = {
 
 type inter = Inter of int * Link.Face.t
 
+type occ = int Iso.t * int Iso.t * int Fun.t
+
 exception SHARING_ERROR
 exception CTRL_ERROR of int * Link.Face.t
 exception ISO_ERROR of int * int (* number of nodes, size domain *)
@@ -829,11 +831,6 @@ let equal a b =
     else 
        equal_SAT a b
 
-(* Instantiation map *)
-let instantiate_aux l = List.map (fun index ->
-    List.nth l index
-  ) 
-
 let prime_components b =
   let (pgs, isos) =
     List.split (Place.prime_components b.p) in
@@ -845,6 +842,15 @@ let prime_components b =
       }
     ) (List.combine (List.combine pgs lgs) isos)
 
-let instantiate map b =
+let instantiate eta b =
   let bs = prime_components b in
-  ppar_of_list (instantiate_aux bs map)
+  Fun.fold (fun s' s acc ->
+      try ppar acc (List.nth bs s) with
+      | Failure _ | Invalid_argument _ -> assert false (* eta is assumed total *)
+    ) eta id_eps
+    
+let rewrite (i_n, i_e, f_e) b r0 r1 eta =
+  let (c, d, id) = decomp b r0 i_n i_e f_e in
+  match eta with
+  | Some eta' -> comp c (comp (tens r1 id) (instantiate eta' d))
+  | None -> comp c (comp (tens r1 id) d)
