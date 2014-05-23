@@ -44,3 +44,4 @@ val union : int t -> int t -> int t
 val transform_exn : int t -> int Iso.t -> int Iso.t -> int t
 val find_exn : key -> int t -> int
 val find : key -> int t -> int option
+val is_total : key -> int t -> bool

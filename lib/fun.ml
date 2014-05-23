@@ -6,11 +6,11 @@ include Map.Make (struct
     let compare = int_compare
   end)
 
-let dom iso =
-  fst (List.split (bindings iso))
+let dom f =
+  fst (List.split (bindings f))
 
-let codom iso = 
-  snd (List.split (bindings iso))
+let codom f = 
+  snd (List.split (bindings f))
 
 let inverse f =
   fold (fun i j rel ->
@@ -52,7 +52,11 @@ let find i f =
   with
   | Not_found -> None
 
-
-
-
-
+(* check if there is a binding for each 0 ... (n - 1) *)
+let is_total n f =
+  let rec aux i f =
+    if i < 0 then true
+    else match find i f with
+      | Some _ -> aux (i - 1) f
+      | None -> false in
+  aux (n - 1) f
