@@ -18,9 +18,10 @@
 
 (** The type of bigraphs.*)
 type bg = {
-  p : Place.pg;  (** Place graph *)
-  l : Link.Lg.t; (** Link graph *)
-  n : Base.Nodes.t; (** Set of nodes *)
+  p : Place.pg;      (** Place graph *)
+  l : Link.Lg.t;     (** Link graph *)
+  n : Ctrl.t Node.t; (** Set of nodes *)
+  k : int Sig.t;     (** Signature *)
 }
 
 (** The type of interfaces.*)
@@ -113,10 +114,10 @@ val sym : inter -> inter -> bg
 
 (** [ion ns c] returns an ion of control [c]. It's outer names are [ns].
     @raise CONTROL_ERROR when [ns] has size different than the arity of [c].*)
-val ion : Link.Face.t -> Base.Ctrl.t -> bg
+val ion : Link.Face.t -> Ctrl.t -> int Sig.t -> bg
 
 (** Same as [ion] but without the site. *)
-val atom : Link.Face.t -> Base.Ctrl.t -> bg
+val atom : Link.Face.t -> Ctrl.t -> int Sig.t -> bg
 
 (** [sub n m] returns a substitution where [n] and [m] are the inner and outer 
     faces, respectively.*)

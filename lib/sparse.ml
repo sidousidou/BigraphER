@@ -1,5 +1,3 @@
-open Base
-
 type bmatrix =
   { r: int;
     c: int;

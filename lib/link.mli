@@ -9,13 +9,10 @@
 (** This module provides operations on link graphs.
     @author Michele Sevegnani *)
 
-(** The type of names.*)
-type name = Nam of string
-
 (** This module provides set operations for faces.*)
 module Face :
   sig
-    type elt = name
+    type elt = string
     type t
     val empty : t
     val is_empty : t -> bool
@@ -45,9 +42,9 @@ module Face :
 	
 (** The type of edges.*)	
 type edg = {
-  i: Face.t; (** Inner face *)
-  o: Face.t; (** Outer face *)
-  p: Base.Ports.t; (** Set of ports *)
+  i: Face.t;      (** Inner face *)
+  o: Face.t;      (** Outer face *)
+  p: int Port.t;  (** Set of ports *)
 }
   
 (** This module provides set operations for link graphs. *)
@@ -99,8 +96,8 @@ val string_of_face : Face.t -> string
 (** [to_string l] returns a string representation of link graph [l]. *)
 val to_string : Lg.t -> string
 
-(** Parse a list of strings. An Hashtbl node -> arity is also returned. *) 
-val parse : string list -> (Lg.t * (int, int) Hashtbl.t)
+(** Parse a list of strings. *)
+val parse : string list -> Lg.t
 
 (** [get_dot l] returns four strings for the dot representation of link graph
     [l]. The first two elements represent inner and outer names shape
@@ -114,8 +111,8 @@ val inner : Lg.t -> Face.t
 (** [outer l] returns the outer face of link graph [l]. *)
 val outer : Lg.t -> Face.t
 
-(** [ports l] returns the set of ports of link graph [l]. *)
-val ports : Lg.t -> Base.Ports.t
+(* (\** [ports l] returns the set of ports of link graph [l]. *\) *)
+(* val ports : Lg.t -> int Port.t *)
 
 (** [apply_exn i l] returns a link graph obtained by applying isomorphism [i]
     to [l].
@@ -170,7 +167,10 @@ val is_epi: Lg.t -> bool
     outer names. *)
 val is_guard: Lg.t -> bool    
 
-val max_ports : Lg.t -> int
+(* Compare lists of int instead :
+   Two edges (3->4; 2-> 1) and (1-> 1; 0 -> 4) are equal only if
+   [1;4] = [1;4] 
+   val max_ports : Lg.t -> int *)
 
 val closed_edges : Lg.t -> Lg.t
 
@@ -188,36 +188,34 @@ val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
 val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t -> 
   int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
 
-(** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained 
-    by {!Place.levels}. The output is a wiring and a list of
-    identities.*)
-val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
-
+(* (\** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained  *)
+(*     by {!Place.levels}. The output is a wiring and a list of *)
+(*     identities.*\) *)
+(* val levels : Lg.t -> int Port.t list -> Lg.t * Lg.t list *)
 
 val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
 
 (** {6 Matching constraints} *)
 
-exception NOT_TOTAL
 
 (** Closed edges in the pattern can be matched only to closed edges in the 
     target. The output is a list of clauses a set of blocked columns and 
     a set of blocking pairs. *)
-val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_edges_exn : Lg.t -> Lg.t -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   Cnf.clause list * IntSet.t * Cnf.clause list
 
 (** Ports in matched closed edges have to be isomorphic *)
-val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_ports : Lg.t -> Lg.t -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   Cnf.clause list -> Cnf.clause list list
 
-val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_peers_exn : Lg.t -> Lg.t -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   int * int * Cnf.clause list list * (int * int) list * 
   Cnf.clause list * int Iso.t * int Iso.t
 
-val match_list_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_list_eq : Lg.t -> Lg.t -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   Cnf.clause list * Cnf.clause list
 
-val match_ports_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
-  Cnf.clause list -> Cnf.clause list list
+(* val match_ports_eq : Lg.t -> Lg.t -> Ctrl.t Node.t -> Ctrl.t Node.t -> *)
+(*   Cnf.clause list -> Cnf.clause list list *)
 
 (**/**)

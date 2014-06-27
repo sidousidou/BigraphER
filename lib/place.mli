@@ -28,7 +28,7 @@ exception COMP_ERROR of (int * int)
 val to_string : pg -> string
 
 (** Compute the number of edges in the DAG. *)
-val edges : pg -> int
+val edges : pg -> int * int * int * int
 
 (** [parse r n s lines] builds a place graph with [r] roots, [n] nodes and [s]
     sites. Each element in [lines] is a string in the same format of the output
@@ -86,9 +86,6 @@ val elementary_sym : int -> int -> pg
 (** [elementary_ion] creates a ion.*)
 val elementary_ion : pg
 
-(*
-(** [elementary_ions n] creates [n] ions in parallel. *)
-val elementary_ions: int -> pg *)
 
 (** {6 Comparison} *)
 
@@ -153,25 +150,21 @@ val levels : pg -> pg * (Base.IntSet.t * int * pg) list
 
 (** {6 Matching constraints} *)
 
-(** Raised when a node in the pattern cannot be matched to any node in the
-    target. *)
-exception NOT_TOTAL
-
 (** Compute constraints for matching edges in the DAG. 
-    @raise NOT_TOTAL when there are nodes in the pattern that are impossible
+    @raise Exit when there are nodes in the pattern that are impossible
     to match. *)
-val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_list_exn : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
-(** @raise NOT_TOTAL when there are nodes in the pattern that are impossible
+(** @raise Exit when there are nodes in the pattern that are impossible
     to match. *)
-val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+val match_leaves_exn : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t -> 
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_leaves}.
-    @raise NOT_TOTAL when there are nodes in the pattern that are impossible
+    @raise Exit when there are nodes in the pattern that are impossible
     to match. *)
-val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+val match_orphans_exn : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t -> 
   Cnf.clause list * IntSet.t
 
 (* val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> *)
@@ -180,24 +173,24 @@ val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 (* val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> *)
 (*   Cnf.clause list *)
 
-val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_roots_exn : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   Cnf.clause list * IntSet.t
 
-val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_sites_exn : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t ->
   Cnf.clause list * IntSet.t
 
 val match_trans : pg -> pg -> Cnf.clause list
 
 val check_match : pg -> pg -> Sparse.bmatrix -> int Iso.t -> bool
 
-val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * IntSet.t
+val match_root_nodes : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t -> 
+  Cnf.clause list
 
-val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
-  Cnf.clause list * IntSet.t
+val match_nodes_sites : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t -> 
+  Cnf.clause list
 
-val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
+val match_list_eq_exn : pg -> pg -> Ctrl.t Node.t -> Ctrl.t Node.t ->
+  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list
 
 val deg_roots : pg -> int list
 

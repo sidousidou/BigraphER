@@ -1,6 +1,5 @@
-let int_compare a b = a - b
-let int_equal (a : int) (b : int) = a = b
- 
+open Utils
+
 include Map.Make (struct
     type t = int
     let compare = int_compare

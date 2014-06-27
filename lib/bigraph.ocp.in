@@ -8,11 +8,15 @@ install = true
 begin library "bigraph"
   
   files = [
+    "../utils/utils.ml"
     "iso.ml"
     "intSet.ml"
     "rel.ml"
     "fun.ml"
-    "base.ml"
+    "ctrl.ml"
+    "sig.ml"
+    "node.ml"
+    "port.ml"
     "cnf.ml"
     "sparse.ml"
     "link.ml"

@@ -1,5 +1,5 @@
+open Utils
 open Printf
-open Base
 
 (* Type for concrete place graphs. The elements are roots, nodes, sites and
    for adjacency matrices: roots to nodes, roots to sites, nodes to nodes and
@@ -505,23 +505,52 @@ let get_dot p =
 
 (* Number of edges in the DAG *)
 let edges p =
-  (Sparse.entries p.rn) + (Sparse.entries p.rs) + 
-    (Sparse.entries p.nn) + (Sparse.entries p.ns)
+  ((Sparse.entries p.rn), (Sparse.entries p.rs), 
+   (Sparse.entries p.nn), (Sparse.entries p.ns))
+
+module PairSet = Set.Make (
+  struct
+    type t = int * int
+    let compare (a, b) (a', b') =
+      match int_compare a a' with
+      | 0 -> int_compare b b'
+      | x -> x
+  end)
+
+module TypeMap = struct
+
+  include Map.Make (
+    struct
+      type t = Ctrl.t * Ctrl.t
+      let compare (a, b) (a', b') =
+        match Ctrl.compare a a' with
+        | 0 -> Ctrl.compare b b'
+        | x -> x
+    end)
+
+  let find_exn = find
+
+  let find k m =
+    try find_exn k m
+    with
+    | Not_found -> PairSet.empty
+
+  let add k pair m =
+    add k (PairSet.add pair (find k m)) m
+
+end
 
 (* given an edge of control A -> B, find all the edges with the same type.
-   return a hash table (string * string) -> (int * int) *)
+   return a map (ctrl * ctrl) -> 2^(int * int) *)
 let partition_edges p n =
-  let h = Hashtbl.create (Sparse.entries p.nn) in
-  Sparse.iter (fun i j ->
-    let (a, b) = (Nodes.find n i, Nodes.find n j) in
-    match (a, b) with 
-    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
-      Hashtbl.add h (a_string, b_string) (i, j)) p.nn;
-  h
+  Sparse.fold (fun i j acc ->
+      let (c, c') = (safe (Node.ctrl i n), safe (Node.ctrl j n)) in
+      TypeMap.add (c, c') (i, j) acc
+    ) p.nn TypeMap.empty
 
 type deg =
-| V of int (* only vertices *)
-| S of int (* with sites or roots *)
+  | V of int (* only vertices *)
+  | S of int (* with sites or roots *)
 
 let indeg p i =
   assert (i >= 0);
@@ -541,60 +570,52 @@ let outdeg p i =
 let compat_deg t p =
   match p with
   | V d -> begin match t with
-    | V d' -> d = d' 
-    | S _ -> false
+      | V d' -> d = d' 
+      | S _ -> false
     end
   | S d -> begin match t with
-    | V d' -> d' >= d
-    | S d' -> d' >= d
-  end
+      | V d' -> d' >= d
+      | S d' -> d' >= d
+    end
 
 let compat t p t_i p_i =
   (compat_deg (indeg t t_i) (indeg p p_i)) && 
-    (compat_deg (outdeg t t_i) (outdeg p p_i))
+  (compat_deg (outdeg t t_i) (outdeg p p_i))
 
 let eq t p t_i p_i =
   ((indeg t t_i) = (indeg p p_i)) && ((outdeg t t_i) = (outdeg p p_i))
 
-exception NOT_TOTAL
-
 (* Match nodes in compatible DAG edges *)    
-let match_list t p n_t n_p =
-  let h = partition_edges t n_t in
-  let (clauses, clauses_exc, cols) = 
-    Sparse.fold (fun i j (acc, exc, acc_c) ->
-      let (a, b) = 
-	(Nodes.find n_p i, Nodes.find n_p j) in
-      match (a, b) with 
-      | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> (
-	let t_edges = 
-	  List.filter 
-	    (fun (i', j') ->
-	      (* Degree check *)
-	      (compat t p i' i) && (compat t p j' j)
-	    ) (Hashtbl.find_all h (a_string, b_string)) in
-	if List.length t_edges = 0 then 
-	  (* No compatible edges found *)
-	  raise NOT_TOTAL
-	else (
-	  let new_c = List.fold_left (fun acc (i', j') ->
-	    i' :: j' :: acc
-	  ) [] t_edges in
-	  try
-	    let (clause, pairs) = 
-	      Cnf.tseitin (
-		List.map (fun (i', j') ->
-		  (Cnf.M_lit (i, i'), Cnf.M_lit (j, j'))
-		) t_edges
-	      ) in
-	    ((clause, pairs) :: acc, exc, new_c @ acc_c)
-	  with
-	  | Cnf.TSEITIN clauses ->
-	    (acc, clauses @ exc, new_c @ acc_c)
-	)
+let match_list_exn t p n_t n_p =
+  let m = partition_edges t n_t in
+  Sparse.fold (fun i j (acc, exc, acc_c) ->
+      let (c, c') = (safe (Node.ctrl i n_p), safe (Node.ctrl j n_p)) in
+      let t_edges = 
+        PairSet.filter 
+	  (fun (i', j') ->
+	     (* Degree check *)
+	     (compat t p i' i) && (compat t p j' j)
+          ) (TypeMap.find (c, c') m) in
+      if PairSet.is_empty t_edges then 
+	(* No compatible edges found *)
+        raise Exit
+      else (
+        let new_c = PairSet.fold (fun (i', j') acc ->
+            IntSet.add i' (IntSet.add j' acc)
+          ) t_edges acc_c in
+        try
+          let (clause, pairs) = 
+            Cnf.tseitin (
+	      PairSet.fold (fun (i', j') acc ->
+	          (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')) :: acc
+	        ) t_edges []
+            ) in
+          ((clause, pairs) :: acc, exc, new_c)
+        with
+        | Cnf.TSEITIN clauses ->
+          (acc, clauses @ exc, new_c)
       )
-    ) p.nn ([], [], []) in
-  (clauses, clauses_exc, IntSet.of_list cols) (* matched columns *)
+    ) p.nn ([], [], IntSet.empty) 
 
 (* Nodes with no children (both nodes and sites). *)
 let leaves p =
@@ -610,90 +631,78 @@ let orphans p =
 
 (* leaves (orphans) in p are matched to leaves (orphans) in t.
    C5: ij0 or ij1 or ..... *)
-let match_leaves t p n_t n_p =
+let match_leaves_exn t p n_t n_p =
   let l_p = leaves p
   and l_t = leaves t in
-  let (clauses, c) =
-    IntSet.fold (fun i (acc, acc_c) ->
-      let c = Nodes.find n_p i in
+  IntSet.fold (fun i (acc, acc_c) ->
+      let c = safe (Node.ctrl i n_p) in
       let compat_t = 
-	IntSet.inter
-	  (IntSet.of_list (Nodes.find_all n_t c))
-	  l_t in
+	IntSet.inter (Node.same_ctrl c n_t) l_t in
       if IntSet.is_empty compat_t then 
-	raise NOT_TOTAL
+	raise Exit
       else (
 	((IntSet.fold (fun j acc ->
-	  Cnf.P_var (Cnf.M_lit (i, j)) :: acc
-	  ) compat_t []) :: acc,
+	     Cnf.P_var (Cnf.M_lit (i, j)) :: acc
+	   ) compat_t []) :: acc,
 	 IntSet.union acc_c compat_t)
       )
-    ) l_p ([], IntSet.empty) in
-  (clauses, c)
+    ) l_p ([], IntSet.empty)
 
 (* Dual *)
-let match_orphans t p n_t n_p =
+let match_orphans_exn t p n_t n_p =
   let o_p = orphans p 
   and o_t = orphans t in
-  let (clauses, c) =
-    IntSet.fold (fun i (acc, acc_c) ->
-      let c = Nodes.find n_p i in
+  IntSet.fold (fun i (acc, acc_c) ->
+      let c = safe (Node.ctrl i n_p) in
       let compat_t =
-	IntSet.inter
-	  (IntSet.of_list (Nodes.find_all n_t c))
-	  o_t in
+	IntSet.inter (Node.same_ctrl c n_t) o_t in
       if IntSet.is_empty compat_t then 
-	raise NOT_TOTAL
+	raise Exit
       else (
 	((IntSet.fold (fun j acc ->
-	  Cnf.P_var (Cnf.M_lit (i, j)) :: acc
-	  ) compat_t []) :: acc,
+	     (Cnf.P_var (Cnf.M_lit (i, j))) :: acc
+	   ) compat_t []) :: acc,
 	 IntSet.union acc_c compat_t)
       )
-    ) o_p ([], IntSet.empty) in
-  (clauses, c)
-  
-(* Only ctrl and deg check *)
-let match_sites t p n_t n_p =
-  let (clauses, c) =
-    Sparse.fold (fun i _ (acc, acc_c) -> 
-      let c = Nodes.find n_p i in
-      let js = 
-	List.filter (fun j ->
-	  compat_deg (indeg t j) (indeg p i)
-	) (Nodes.find_all n_t c) in
-      match js with
-      | [] -> raise NOT_TOTAL
-      | _ -> (
-	let clause = 
-	  List.map (fun j ->
-	    Cnf.P_var (Cnf.M_lit (i, j))
-	  ) js in
-	(clause :: acc, js @ acc_c)
-      )
-    ) p.ns ([], []) in
-  (clauses, IntSet.of_list c)
-    
-let match_roots t p n_t n_p =
-  let (clauses, c) =
-    Sparse.fold (fun _ i (acc, acc_c) -> 
-      let c = Nodes.find n_p i in
-      let js = 
-	List.filter (fun j ->
-	  compat_deg (outdeg t j) (outdeg p i)
-	) (Nodes.find_all n_t c) in
-      match js with
-      | [] -> raise NOT_TOTAL
-      | _ -> (
-	let clause = 
-	  List.map (fun j ->
-	    Cnf.P_var (Cnf.M_lit (i, j))
-	  ) js in
-	(clause :: acc, js @ acc_c)
-      )
-    ) p.rn ([], []) in
-  (clauses, IntSet.of_list c)
+    ) o_p ([], IntSet.empty)
 
+(* Only ctrl and deg check *)
+let match_sites_exn t p n_t n_p =
+  Sparse.fold (fun i _ (acc, acc_c) -> 
+      let c = safe (Node.ctrl i n_p) in
+      let js = 
+	IntSet.filter (fun j ->
+	    compat_deg (indeg t j) (indeg p i)
+	  ) (Node.same_ctrl c n_t) in
+      if IntSet.is_empty js then
+        raise Exit
+      else (
+	let clause = 
+          IntSet.fold (fun j acc ->
+              (Cnf.P_var (Cnf.M_lit (i, j))) :: acc
+	    ) js [] in
+	(clause :: acc, IntSet.union js acc_c)
+      )
+    ) p.ns ([], IntSet.empty)
+
+let match_roots_exn t p n_t n_p =
+  Sparse.fold (fun _ i (acc, acc_c) -> 
+      let c = safe (Node.ctrl i n_p) in
+      let js = 
+	IntSet.filter (fun j ->
+	  compat_deg (outdeg t j) (outdeg p i)
+	) (Node.same_ctrl c  n_t) in
+      if IntSet.is_empty js then
+        raise Exit
+      else (
+	let clause = 
+	  IntSet.fold (fun j acc ->
+	    (Cnf.P_var (Cnf.M_lit (i, j))) :: acc
+	  ) js [] in
+	(clause :: acc, IntSet.union js acc_c)
+      )
+    ) p.rn ([], IntSet.empty)
+  
 (* Block unconnected pairs of nodes with sites and nodes with roots. *)
 let match_trans t p : Cnf.clause list =
   let n_s = Sparse.dom p.ns (* index i *)
@@ -838,72 +847,62 @@ let deg_sites p =
       nodes :: acc
     ) (IntSet.of_int p.s) [] 
 
-let match_list_eq p t n_p n_t =
-  let h = partition_edges t n_t in
-  let (clauses, clauses_exc, cols) = 
-    Sparse.fold (fun i j (acc, exc, acc_c) ->
-        let (a, b) = 
-	  (Nodes.find n_p i, Nodes.find n_p j) in
-        match (a, b) with 
-        | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> (
-	    let t_edges = 
-	      List.filter 
-	        (fun (i', j') ->
-	           (* Degree equality *)
-	           (eq t p i' i) && (eq t p j' j)
-	        ) (Hashtbl.find_all h (a_string, b_string)) in
-	    if List.length t_edges = 0 then 
-	      (* No compatible edges found *)
-	      raise NOT_TOTAL
-	    else (
-	      (* let new_c = List.fold_left (fun acc (i', j') -> *)
-	      (*   i' :: j' :: acc *)
-	      (* ) [] t_edges in *)
-	      try
-	        let (clause, pairs) = 
-	          Cnf.tseitin (
-		    List.map (fun (i', j') ->
-		        (Cnf.M_lit (i, i'), Cnf.M_lit (j, j'))
-		      ) t_edges
-	          ) in
-	        ((clause, pairs) :: acc, exc, (*new_c @*) acc_c)
-	      with
-	      | Cnf.TSEITIN clauses ->
-	        (acc, clauses @ exc, (*new_c @*) acc_c)
-	    )
-          )
-      ) p.nn ([], [], []) in
-  (clauses, clauses_exc, IntSet.of_list cols) (* matched columns *)  
+let match_list_eq_exn p t n_p n_t =
+  let m = partition_edges t n_t in
+  Sparse.fold (fun i j (acc, exc) ->
+      let (a, b) = 
+	(safe (Node.ctrl i n_p), safe (Node.ctrl j n_p)) in
+      let t_edges = 
+	PairSet.filter (fun (i', j') ->
+	    (* Degree equality *)
+	    (eq t p i' i) && (eq t p j' j)
+	  ) (TypeMap.find (a, b) m) in
+      if PairSet.is_empty t_edges then 
+        (* No compatible edges found *)
+        raise Exit
+      else (
+	(* let new_c = List.fold_left (fun acc (i', j') -> *)
+	(*   i' :: j' :: acc *)
+        (* ) [] t_edges in *)
+	try
+	  let (clause, pairs) = 
+	    Cnf.tseitin (
+	      PairSet.fold (fun (i', j') acc ->
+		  (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')) :: acc
+		) t_edges []
+	    ) in
+	  ((clause, pairs) :: acc, exc)
+	with
+	| Cnf.TSEITIN clauses ->
+	  (acc, clauses @ exc)
+      )
+    ) p.nn ([], [])
 
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
 let match_root_nodes a b n_a n_b =
-  Sparse.fold (fun r i (acc, acc_c) ->
-      let c = Nodes.find n_a i in 
+  Sparse.fold (fun r i acc ->
+      let c = safe (Node.ctrl i n_a) in 
       let children = 
         List.filter (fun i -> 
-	    Ctrl.(=) c (Nodes.find n_b i)
+	    Ctrl.(=) c (safe (Node.ctrl i n_b))
           ) (Sparse.chl b.rn r) in
-      ((List.map (fun j -> 
+      (List.map (fun j -> 
            Cnf.P_var (Cnf.M_lit (i, j))
-         ) children) :: acc,
-       (*IntSet.union acc_c (IntSet.of_list children)*)
-       acc_c)
-    ) a.rn ([], IntSet.empty)
+         ) children) :: acc
+    ) a.rn []
 
 (*Dual*)
 let match_nodes_sites a b n_a n_b =
-  Sparse.fold (fun i s (acc, acc_c) ->
-      let c = Nodes.find n_a i in 
+  Sparse.fold (fun i s acc ->
+      let c = safe (Node.ctrl i n_a) in 
       let parents = 
         List.filter (fun i -> 
-	    Ctrl.(=) c (Nodes.find n_b i)
+	    Ctrl.(=) c (safe (Node.ctrl i n_b))
           ) (Sparse.prn b.ns s) in
-      ((List.map (fun j -> 
+      (List.map (fun j -> 
            Cnf.P_var (Cnf.M_lit (i, j))
-         ) parents) :: acc, 
-       (* IntSet.union acc_c (IntSet.of_list parents) *)
-       acc_c)
-    ) a.ns ([], IntSet.empty)
+         ) parents) :: acc
+    ) a.ns []
 
 (*******************************************************************************)
 (* Compute the reachable set via Depth First Search. *)

@@ -1,3 +1,11 @@
+let int_compare a b = a - b
+
+let int_equal (a : int) (b : int) = a = b
+
+let safe = function
+  | Some v -> v
+  | None -> assert false
+
 type text_style =
   [ `bold
   | `underline
