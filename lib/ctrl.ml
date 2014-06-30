@@ -1,3 +1,5 @@
+open Utils
+
 (* Actual parameters *)
 type act = 
   | I of int 
@@ -50,16 +52,6 @@ let param_compare p0 p1 =
   | (A a0, A a1) -> act_compare a0 a1
   | (A _, _) | (F _, _) -> 0 
 
-let rec list_compare f l0 l1 =
-  match (l0, l1) with
-  | ([], []) -> 0
-  | ([], _) -> -1
-  | (_, []) -> 1
-  | (l :: l0, l' :: l1) -> (
-      match f l l' with
-      | 0 -> list_compare f l0 l1
-      | x -> x)
-
 (* Functional controls act like regular expressions: formals match anything. *)
 let compare c0 c1 =
   match (c0, c1) with
@@ -84,9 +76,6 @@ let compare c0 c1 =
       | x -> x
     )
 
-let (=) c0 c1 =
-  (compare c0 c1) = 0
-
 let actuals = function
   | Ctrl (_, l) -> Some l
   | Fun_ctrl _ -> None
@@ -100,12 +89,37 @@ let norm = function
   | Ctrl _ as c -> c
   | Fun_ctrl (ide, params) -> Fun_ctrl (ide, p_norm 0 params)
 
-(* let parse t = *)
-(*   match t.[0] with *)
-(*   | '?' -> ( *)
-(*     ) *)
-(*   | _ ->    *)
-(* let il = String.index s '(' and ir = String.index s ')' in *)
-(* 	let s_acts = String.sub s (il + 1) ((ir - il) - 1) *)
-(* 	in Str.split (Str.regexp ",") s_acts *)
-  
+let parse (s : string) =
+  try
+    let i = String.index s '(' in
+    let c = String.sub s 0 (i + 1) in 
+    assert (s.[(String.length s) - 1] = ')');
+    let params = 
+      Str.split (Str.regexp ",") 
+        (String.sub s (i + 1) ((String.length s) - i - 2)) in
+    let p = List.map (fun token ->
+        try
+          A (I (int_of_string token))
+        with
+        | Failure _ -> (
+            try
+              A (R (float_of_string token))
+            with
+            | Failure _ -> F token
+          )
+      ) params in
+    if List.exists (function
+        | F _ -> true
+        | A _ -> false
+      ) p then Fun_ctrl (c, p)
+    else 
+      Ctrl (c, List.map (function
+        | A a -> a
+        | F _ -> assert false
+      ) p
+      )
+  with
+  | Not_found -> Ctrl (s, [])
+
+let (=) c0 c1 =
+  (compare c0 c1) = 0

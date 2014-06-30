@@ -2,6 +2,17 @@ let int_compare a b = a - b
 
 let int_equal (a : int) (b : int) = a = b
 
+let rec list_compare f l0 l1 =
+  match (l0, l1) with
+  | ([], []) -> 0
+  | ([], _) -> -1
+  | (_, []) -> 1
+  | (l :: l0, l' :: l1) -> (
+      match f l l' with
+      | 0 -> list_compare f l0 l1
+      | x -> x
+    )
+
 let safe = function
   | Some v -> v
   | None -> assert false

@@ -114,7 +114,7 @@ let step s srules =
        ) [] l), 
      (List.length l)) in
   filter_iso (List.fold_left (fun acc r ->
-      let occs = occurrences s r.rdx in 
+      let occs = occurrences_exn s r.rdx in 
       (List.map (fun o ->
            let s' = aux_apply o s r.rdx r.rct in
            (s', r.rate)
@@ -154,7 +154,7 @@ let fix s srules =
           (* just an occurrence in order to minimise the number of match
              instances *)
           (*printf "s = %s\nrdx = %s\n" (to_string s) (to_string r.rdx);*)
-          aux_apply (occurrence s r.rdx) s r.rdx r.rct
+          aux_apply (occurrence_exn s r.rdx) s r.rdx r.rct
         with
         | NO_MATCH -> _step s rs
       ) in

@@ -37,3 +37,4 @@ val not_sub : Ctrl.t t -> Ctrl.t t -> bool
 val norm : Ctrl.t t -> Ctrl.t list
 val equal : Ctrl.t t -> Ctrl.t t -> bool
 val same_ctrl : Ctrl.t -> Ctrl.t t -> IntSet.t
+val parse : string -> Ctrl.t t

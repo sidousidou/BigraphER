@@ -488,7 +488,8 @@ let post_impl2 vars_w vars_w' s w w' =
   let pairs = 
     List.fold_left (fun acc j ->
         List.fold_left (fun acc j' ->
-          (j, j') :: acc) acc vars_w'     
+            (j, j') :: acc
+          ) acc vars_w'     
       ) [] vars_w in
   List.iter (fun (j, j') ->
       s#add_clause [convert_m j w; convert_m j' w']

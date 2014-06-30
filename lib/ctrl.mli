@@ -19,4 +19,4 @@ val ( = ) : t -> t -> bool
 val actuals : t -> act list option
 val norm : t -> t
 val name : t -> ide
-(* val parse : string -> t *)
+val parse : string -> t

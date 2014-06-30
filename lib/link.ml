@@ -74,7 +74,8 @@ let parse_edge s i =
 let parse lines = 
   fst (List.fold_left (fun (acc, i) s -> 
       (Lg.add (parse_edge s i) acc, i + 1)
-    ) (Lg.empty, 0) lines)
+    ) (Lg.empty, 0) lines
+    )
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub f_i f_o =

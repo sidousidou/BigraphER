@@ -21,7 +21,7 @@ type bg = {
   p : Place.pg;      (** Place graph *)
   l : Link.Lg.t;     (** Link graph *)
   n : Ctrl.t Node.t; (** Set of nodes *)
-  k : int Sig.t;     (** Signature *)
+  (* k : int Sig.t;     (\** Signature *\) *)
 }
 
 (** The type of interfaces.*)
@@ -223,20 +223,21 @@ val occurs : bg -> bg ->  bool
 
 (** [occurrence t p] returns a pair of isomorphisms [(i,j)] if pattern [p] occurs in target 
     [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
-    @raise NO_MATCH when there is no match. 
     @raise NODE_FREE when [p] has an empty node set.*)
-val occurrence : bg -> bg -> occ 
+val occurrence_exn : bg -> bg -> occ option 
 
 (** [occurrences t p] returns a list of pairs of isomorphisms.
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrences : bg -> bg -> occ list
+val occurrences_exn : bg -> bg -> occ list
 
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
-val auto : bg -> (int Iso.t * int Iso.t) list
+val auto_exn : bg -> (int Iso.t * int Iso.t) list
 
-type bg_key = int * int * int * int * string * string * string
+type bg_key = int * int * int * int * int * int * int * string * string * Ctrl.t list
 
 val key : bg -> bg_key
+
+val key_compare : bg_key -> bg_key -> int
 
 val rewrite : occ -> bg -> bg -> bg -> int Fun.t option -> bg
 

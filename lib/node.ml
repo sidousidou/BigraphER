@@ -38,11 +38,12 @@ let filter_apply_iso s iso =
       | None -> acc
     ) s empty
   
-(* let parse s = *)
-(*   let tokens = Str.split (Str.regexp_string " ") s in *)
-(*   fst (List.fold_left (fun (acc, i) t -> *)
-(*       (Map.add i (Ctrl.parse t) acc, i + 1) *)
-(*     ) (Map.empty, 0) tokens) *)
+let parse s =
+  let tokens = Str.split (Str.regexp_string " ") s in
+  fst (List.fold_left (fun (acc, i) t ->
+      (add i (Ctrl.parse t) acc, i + 1)
+    ) (empty, 0) tokens
+    )
 
 (* There exists a control in a that is not in b *)
 let not_sub a b =

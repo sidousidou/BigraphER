@@ -117,7 +117,7 @@ let step s rules =
   filter_iso (
     List.fold_left (fun acc r ->
         (List.map (fun o ->
-             aux_apply o s r.rdx r.rct) (occurrences s r.rdx)
+             aux_apply o s r.rdx r.rct) (occurrences_exn s r.rdx)
         ) @ acc
       ) [] rules
   ) 
@@ -138,7 +138,7 @@ let fix s rules =
 	try
 	  (* just an occurrence in order to minimise the number of match
 	     instances *)
-	  aux_apply (occurrence s r.rdx) s r.rdx r.rct
+	  aux_apply (occurrence_exn s r.rdx) s r.rdx r.rct
 	with
 	| NO_MATCH -> _step s rs
       end in
