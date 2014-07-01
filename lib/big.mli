@@ -43,8 +43,8 @@ exception CTRL_ERROR of int * Link.Face.t
     domain of definition. *)
 exception ISO_ERROR of int * int
 
-(** Raised when there are no matches.*)
-exception NO_MATCH
+(* (\** Raised when there are no matches.*\) *)
+(* exception NO_MATCH *)
 
 (** Raised when the matching pattern has no nodes. *)
 exception NODE_FREE
@@ -83,6 +83,8 @@ val outer : bg -> inter
 
 (** [apply_exn i b] applies isomorphism [i] to bigraph [b].*)
 val apply_exn : int Iso.t -> bg -> bg
+
+val apply_subs : (Ctrl.ide * Ctrl.act) list -> bg -> bg
 
 (** [placing l r f] builds a placing with [r] roots by parsing list [l]. The
     format of [l] is the same as the input for {!Place.parse_placing}.
@@ -192,6 +194,8 @@ val is_guard : bg -> bool
 
 (** [is_solid b] returns [true] if bigraph [b] is solid, [false] otherwise.*)
 val is_solid : bg -> bool
+
+val is_fun : bg -> bool
 
 (** {6 Decompositions} *)
 

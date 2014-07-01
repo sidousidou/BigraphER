@@ -98,28 +98,30 @@ let rec is_class_enabled b rs =
       if occurs b r.rdx then true
       else is_class_enabled b rs
 
-let aux_apply (i_n, i_e, f_e) b r0 r1 =
-  let (c, d, id) = decomp b r0 i_n i_e f_e in
-  comp c (comp (tens r1 id) d)
+(* let aux_apply (i_n, i_e, f_e) b r0 r1 = *)
+(*   let (c, d, id) = decomp b r0 i_n i_e f_e in *)
+(*   comp c (comp (tens r1 id) d) *)
 
 let step s srules =
-  let filter_iso l =
-    ((List.fold_left (fun acc (s, rho) ->
-         let (iso, non_iso) = 
-           List.partition (fun (a, _) -> Big.equal a s) acc in
-         match iso with
-         | [] -> (s, rho) :: acc
-         | [(a, lambda)] -> (a, lambda +. rho) :: non_iso
-         | _ -> assert false
-       ) [] l), 
-     (List.length l)) in
-  filter_iso (List.fold_left (fun acc r ->
-      let occs = occurrences_exn s r.rdx in 
-      (List.map (fun o ->
-           let s' = aux_apply o s r.rdx r.rct in
-           (s', r.rate)
-         ) occs) @ acc
-    ) [] srules) 
+  let filter_iso l = (
+    List.fold_left (fun acc (s, rho) ->
+        let (iso, non_iso) = 
+          List.partition (fun (a, _) -> Big.equal a s) acc in
+        match iso with
+        | [] -> (s, rho) :: acc
+        | [(a, lambda)] -> (a, lambda +. rho) :: non_iso
+        | _ -> assert false
+      ) [] l, 
+    List.length l
+  ) in
+  filter_iso (
+    List.fold_left (fun acc r ->
+        (List.map (fun o ->
+             (Big.rewrite o s r.rdx r.rct None, r.rate)
+           ) (occurrences_exn s r.rdx)
+        ) @ acc
+      ) [] srules
+  ) 
 
 (* rule selection: second step of SSA 
    raise DEAD *)
@@ -148,21 +150,20 @@ let select_sreact (s : Big.bg) srules m =
 let fix s srules =
   let rec _step s srules =
     match srules with
-    | [] -> raise NO_MATCH
+    | [] -> raise Exit
     | r :: rs -> (
         try
-          (* just an occurrence in order to minimise the number of match
-             instances *)
-          (*printf "s = %s\nrdx = %s\n" (to_string s) (to_string r.rdx);*)
-          aux_apply (occurrence_exn s r.rdx) s r.rdx r.rct
+          match occurrence_exn s r.rdx with
+          | None -> _step s rs
+          | Some o -> Big.rewrite o s r.rdx r.rct None  (* Instantiation map not implemented *)          
         with
-        | NO_MATCH -> _step s rs
+        | Big.NODE_FREE -> assert false 
       ) in
   let rec _fix s srules i =
     try
       _fix (_step s srules) srules (i + 1)
     with
-    | NO_MATCH -> (s, i) in
+    | Exit -> (s, i) in
   _fix s srules 0
 
 let is_new b v =
@@ -171,7 +172,8 @@ let is_new b v =
     Hashtbl.find_all v k in
   try 
     let (old, _) = List.find (fun (_, b') ->
-        Big.equal b b') k_buket in
+        Big.equal b b'
+      ) k_buket in
     raise (OLD old)
   with
   | Not_found -> true

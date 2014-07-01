@@ -888,3 +888,10 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   match eta with
   | Some eta' -> comp c (comp (tens r1 id) (instantiate eta' d))
   | None -> comp c (comp (tens r1 id) d)
+
+let is_fun b = Node.is_fun b.n
+
+let apply_subs subs b =
+  { b with
+    n = Node.apply_subs b.n subs;
+  }

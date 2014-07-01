@@ -88,20 +88,6 @@ let rec is_class_enabled b rs =
     if occurs b r.rdx then true
     else is_class_enabled b rs
 
-let aux_apply (i_n, i_e, f_e) b r0 r1 =
-  let (c, d, id) = decomp b r0 i_n i_e f_e in
-  (* Debug *)
-  (* printf "\n\ *)
-  (*         Decomposition\n\ *)
-  (*         c ---------------\n\ *)
-  (*         %s\n\ *)
-  (*         d ---------------\n\ *)
-  (*         %s\n\ *)
-  (*         state -----------\n\ *)
-  (*         %s\n\n" (to_string c) (to_string d)  *)
-  (*   (to_string (comp c (comp (tens r1 id) d))); *)
-  comp c (comp (tens r1 id) d) 
-  
 (* Compute all the possible evolutions in one step. *)
 (* No checks for solid redex *)
 (* Iso states are merged *)
@@ -114,39 +100,43 @@ let step s rules =
       ) [] l, 
     List.length l
   ) in
-  filter_iso (
-    List.fold_left (fun acc r ->
-        (List.map (fun o ->
-             aux_apply o s r.rdx r.rct) (occurrences_exn s r.rdx)
-        ) @ acc
-      ) [] rules
-  ) 
+  try
+    filter_iso (
+      List.fold_left (fun acc r ->
+          (List.map (fun o ->
+               Big.rewrite o s r.rdx r.rct None (* Instantiation map not implemented *)
+             ) (occurrences_exn s r.rdx)
+          ) @ acc
+        ) [] rules
+    ) 
+  with
+  | Big.NODE_FREE | Link.FACES_MISMATCH _ 
+  | Link.NAMES_ALREADY_DEFINED _ | Place.COMP_ERROR _ -> assert false 
 
 let random_step s rules =
   let (ss, l) = step s rules in
-  if (List.length ss) = 0 then raise NO_MATCH
-  else (List.nth ss (Random.int (List.length ss)), l)
+  if (List.length ss) = 0 then (None, l)
+  else (Some (List.nth ss (Random.int (List.length ss))), l)
 
 (* Reduce a reducible class to the fixed point. Return the input state if no
    rewriting is performed. *)    
 let fix s rules =
   let rec _step s rules =
     match rules with
-    | [] -> raise NO_MATCH
-    | r :: rs -> 
-      begin
-	try
-	  (* just an occurrence in order to minimise the number of match
-	     instances *)
-	  aux_apply (occurrence_exn s r.rdx) s r.rdx r.rct
-	with
-	| NO_MATCH -> _step s rs
-      end in
+    | [] -> raise Exit
+    | r :: rs -> (
+        try
+          match occurrence_exn s r.rdx with
+          | None -> _step s rs
+          | Some o -> Big.rewrite o s r.rdx r.rct None (* Instantiation map not implemented *)
+        with
+        | Big.NODE_FREE -> assert false
+      ) in
   let rec _fix s rules i =
     try
       _fix (_step s rules) rules (i + 1)
     with
-      | NO_MATCH -> (s, i) in
+    | Exit -> (s, i) in
   _fix s rules 0
 
 let is_new b v =
@@ -327,12 +317,10 @@ let bfs_ide s0 p_classes get_react limit ts_size iter_f =
   _bfs ts q 0 m consts 
 
 let _sim_step x y =
-  try
-    let (s, l) = random_step x y in
-    ([s], l)
-  with
-  | NO_MATCH -> ([], 0)
-
+  match random_step x y with
+  | (None, l) -> ([], l)
+  | (Some s, l) -> ([s], l)
+ 
 let sim s0 rules limit ts_size iter_f =
   let (ts, s0', q, m, consts) =
     _init_bfs 

@@ -81,4 +81,10 @@ let same_ctrl c s =
       else acc
     ) s IntSet.empty
 
-(* abs same as norm *)
+let apply_subs s subs =
+  fold (fun i c acc ->
+      add i (Ctrl.apply c subs) acc      
+    ) s empty
+
+let is_fun =
+  exists (fun _ c -> Ctrl.is_fun c)

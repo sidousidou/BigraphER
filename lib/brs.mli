@@ -76,9 +76,8 @@ val is_class_enabled : Big.bg -> react list -> bool
     also returned. *)
 val step : Big.bg -> react list -> Big.bg list * int
 
-(** Compute a random reaction.
-    @raise Big.NO_MATCH when no reaction can be computed.*)
-val random_step : Big.bg -> react list -> Big.bg * int
+(** Compute a random reaction.*)
+val random_step : Big.bg -> react list -> Big.bg option * int
 
 (** Reduce a reducible class to the fixed point. Return the input state if no
     rewriting is performed. The fixed point and the number of rewriting steps

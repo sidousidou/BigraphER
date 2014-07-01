@@ -89,6 +89,12 @@ let norm = function
   | Ctrl _ as c -> c
   | Fun_ctrl (ide, params) -> Fun_ctrl (ide, p_norm 0 params)
 
+let is_fun_par =
+  List.exists (function
+      | F _ -> true
+      | A _ -> false
+    )
+
 let parse (s : string) =
   try
     let i = String.index s '(' in
@@ -108,10 +114,7 @@ let parse (s : string) =
             | Failure _ -> F token
           )
       ) params in
-    if List.exists (function
-        | F _ -> true
-        | A _ -> false
-      ) p then Fun_ctrl (c, p)
+    if is_fun_par p then Fun_ctrl (c, p)
     else 
       Ctrl (c, List.map (function
         | A a -> a
@@ -120,6 +123,34 @@ let parse (s : string) =
       )
   with
   | Not_found -> Ctrl (s, [])
+
+(* Substitution *)
+let sub (form : ide) (actual : act) = function
+  | Ctrl _ as c -> c (* unaffected *)
+  | Fun_ctrl (s, l) -> (
+      let l' =
+        List.map (function
+            | A _ as a -> a
+            | F ide as f -> (
+                if form = ide then A actual
+                else f
+              )
+          ) l in
+      if is_fun_par l' then Fun_ctrl (s, l')
+      else Ctrl (s, List.map (function
+          | A a -> a
+          | F _ -> assert false
+        ) l')
+    )
+
+let apply c =
+  List.fold_left (fun acc (x, v) ->
+      sub x v acc
+    ) c 
+
+let is_fun = function
+  | Ctrl _ -> false
+  | Fun_ctrl _ -> false
 
 let (=) c0 c1 =
   (compare c0 c1) = 0

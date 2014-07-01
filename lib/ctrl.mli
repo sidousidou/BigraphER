@@ -20,3 +20,5 @@ val actuals : t -> act list option
 val norm : t -> t
 val name : t -> ide
 val parse : string -> t
+val is_fun : t -> bool
+val apply : t -> (ide * act) list -> t
