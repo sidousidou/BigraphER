@@ -91,6 +91,8 @@ val apply_subs : (Ctrl.ide * Ctrl.act) list -> bg -> bg
     The link graph is the idendity over face [f].*)
 val placing : int list list -> int -> Link.Face.t -> bg
 
+val actuals : bg -> Ctrl.act list
+
 (** {6 Elementary bigraphs graphs} *)
 
 (** [id i] returns an identity over interface [i].*)

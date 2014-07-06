@@ -88,3 +88,8 @@ let apply_subs s subs =
 
 let is_fun =
   exists (fun _ c -> Ctrl.is_fun c)
+
+let actuals s =
+  fold (fun _ c acc ->
+      (Ctrl.actuals c) @ acc
+    ) s []

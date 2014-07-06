@@ -50,7 +50,7 @@ let act_compare a0 a1 =
 let param_compare p0 p1 = 
   match (p0, p1) with
   | (A a0, A a1) -> act_compare a0 a1
-  | (A _, _) | (F _, _) -> 0 
+  | (A _, _) | (F _, _) -> 0
 
 (* Functional controls act like regular expressions: formals match anything. *)
 let compare c0 c1 =
@@ -77,8 +77,14 @@ let compare c0 c1 =
     )
 
 let actuals = function
-  | Ctrl (_, l) -> Some l
-  | Fun_ctrl _ -> None
+  | Ctrl (_, l) -> l
+  | Fun_ctrl (_, l) -> List.map (function
+      | A a -> a
+      | F _ -> assert false
+    ) (List.filter (function
+      | A _ -> true
+      | F _ -> false
+    ) l)
 
 let rec p_norm i = function
   | [] -> []

@@ -16,7 +16,7 @@ val ide_compare : ide -> ide -> int
 (* val list_compare : ('a -> 'b -> int) -> 'a list -> 'b list -> int *)
 val compare : t -> t -> int
 val ( = ) : t -> t -> bool
-val actuals : t -> act list option
+val actuals : t -> act list
 val norm : t -> t
 val name : t -> ide
 val parse : string -> t

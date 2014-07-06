@@ -40,3 +40,4 @@ val same_ctrl : Ctrl.t -> Ctrl.t t -> IntSet.t
 val parse : string -> Ctrl.t t
 val apply_subs : Ctrl.t t -> (Ctrl.ide * Ctrl.act) list -> Ctrl.t t
 val is_fun : Ctrl.t t -> bool
+val actuals : Ctrl.t t -> Ctrl.act list

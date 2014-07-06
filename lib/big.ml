@@ -895,3 +895,5 @@ let apply_subs subs b =
   { b with
     n = Node.apply_subs b.n subs;
   }
+
+let actuals b = Node.actuals b.n
