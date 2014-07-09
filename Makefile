@@ -3,7 +3,7 @@
 INSTALL = install
 OCPBUILD ?= ocp-build
 
-.PHONY: all install clean distclean test uninstall emacs
+.PHONY: all install clean distclean test uninstall emacs doc
 
 all:
 ifeq (,$(wildcard ocp-build.root))
@@ -59,6 +59,9 @@ uninstall:
 configure: configure.ac m4/*.m4
 	aclocal -I m4
 	autoconf
+
+doc: 
+	ocamldoc -html -short-functors -d doc/ -I _obuild/bigraph/ lib/*.mli
 
 .PHONY: prepare-archive complete-archive dist
 
