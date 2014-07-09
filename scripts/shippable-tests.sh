@@ -1,9 +1,14 @@
 #!/bin/sh
+# Compile & run tests 
 
 eval `opam config -env`
 
-# Compile & run tests 
+echo CLEANING ...
 make distclean
+
+echo COMPILING ...
 ./configure
 make
+
+echo RUNNING TESTS ... 
 make test
