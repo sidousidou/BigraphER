@@ -4,6 +4,7 @@
 eval `opam config -env`
 
 echo CLEANING ...
+ocp-build uninstall bigraph
 make distclean
 
 echo COMPILING ...
