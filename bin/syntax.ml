@@ -53,6 +53,7 @@ type id_exp =
     id_loc : Loc.t;
   }
 
+(* Atomic if ctrl is atomic *)
 type ion_exp =
   | Big_ion of id * id list * Loc.t                         (* K{f, g} *)
   | Big_ion_fun of id * num_exp list * id list * Loc.t      (* K(2.46, 1){f, g} *) 
@@ -76,12 +77,12 @@ type big_exp =
   | Big_tens of big_exp * big_exp * Loc.t                   (* A + B *) 
   | Big_par of big_exp * big_exp * Loc.t                    (* A | B *)
   | Big_ppar of big_exp * big_exp * Loc.t                   (* A || B *)
-  | Big_share of big_exp * place_exp * big_exp * Loc.t      (* share A by psi in B *)
+  | Big_share of big_exp * big_exp * big_exp * Loc.t        (* share A by psi in B *)
   | Big_num of int * Loc.t                                  (* 0 or 1 *)
   | Big_id of id_exp                                        (* id, id(1), id(3, {a, c, f}) *)
   | Big_plc of place_exp
   | Big_nest of ion_exp * big_exp * Loc.t                   (* A . B *)
-  | Big_ion of ion_exp                                       
+  | Big_ion of ion_exp                                      
   | Big_close of closure_exp                                (* closure *)
   | Big_closures of closure_exp list * big_exp  * Loc.t     (* /x/y/z A *)
 
@@ -105,7 +106,7 @@ type dec =
   | Dfloat of dfloat
   | Dbig of dbig
   | Dreact of dreact
-  | Dsreaact of dsreact
+  | Dsreact of dsreact
 
 type init_exp =
   | Init of id * Loc.t
@@ -164,14 +165,3 @@ type model =
     model_rs : ts;
     model_loc : Loc.t;
   }
-
-(* let int_of_num_exn = function *)
-(*   | Num_int_val (v, l) -> Int_val (v, l) *)
-(*   | Num_var (id, l) -> Int_var (id, l) *)
-(*   | Num_plus (lhs, rhd, l) -> Int_plus (lhs, rhd, l) *)
-(*   | Num_minus (lhs, rhd, l) -> Int_minus (lhs, rhd, l) *)
-(*   | Num_prod (lhs, rhd, l) -> Int_prod (lhs, rhd, l) *)
-(*   | Num_div (lhs, rhd, l) -> Int_div (lhs, rhd, l) *)
-(*   | Num_pow (_, _, l) | Num_float_val (_, l) -> *)
-
-

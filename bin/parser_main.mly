@@ -159,14 +159,14 @@ dec_react
 
 eta_exp_opt
   : /* EMPTY */                             { None }
-  | AT eta_exp                              { $2 } 
+  | AT eta_exp                              { Some $2 } 
 
 eta_exp
   : LSBR int_list RSBR                      { ($2, loc $startpos $endpos) }
 
 int_list
-  : /* EMPTY */                             { [] }
-  | CINT COMMA int_list                     { $2 :: $3 } 
+  : /* EMPTY */                             { [ ] }
+  | CINT COMMA int_list                     { $1 :: $3 } 
 
 dec_sreact  
   : SREACT IDE EQUAL bexp LARR float_exp RARR bexp eta_exp_opt 
@@ -184,10 +184,10 @@ brs
 
 sbrs 
   : SBRS params init srules ENDSBRS
-    { {dbrs_pri = $4;
-       dbrs_init = $3;
-       dbrs_params = $2;
-       dbrs_loc = loc $startpos $endpos;
+    { {dsbrs_pri = $4;
+       dsbrs_init = $3;
+       dsbrs_params = $2;
+       dsbrs_loc = loc $startpos $endpos;
       } }
 
 init
@@ -308,9 +308,11 @@ bexp
   | closure_list LPAR bexp RPAR
     { Big_closures ($1, $3, loc $startpos $endpos) }
   | closure_list ion_exp
-    { Big_closures ($1, $2, loc $startpos $endpos) }
+    { Big_closures ($1, Big_ion $2, loc $startpos $endpos) }
   | closure_list ion_exp DOT simple_bexp
-    { Big_closures ($1, Big_nest ($2, $4, loc $startpos $endpos), loc $startpos $endpos) }
+    { Big_closures ($1, Big_nest ($2, $4, loc $startpos $endpos), 
+                    loc $startpos $endpos
+                   ) }
   | bexp PROD bexp 
     { Big_comp ($1, $3, loc $startpos $endpos) }
   | bexp PLUS bexp
@@ -340,7 +342,7 @@ simple_bexp
   | IDE LPAR num_list RPAR                    
     { Big_var_fun ($1, $3, loc $startpos $endpos) }
   | ion_exp                                 
-    { $1 }
+    { Big_ion $1 }
   | ion_exp DOT simple_bexp
     { Big_nest ($1, $3, loc $startpos $endpos) }
 
@@ -355,12 +357,12 @@ id_exp
         id_link = $3;
         id_loc = loc $startpos $endpos;
       } }
-  | ID LPAR CIDE RPAR
+  | ID LPAR CINT RPAR
     { { id_place = $3;
         id_link = [];
         id_loc = loc $startpos $endpos;
       } }
-  | ID LPAR CIDE COMMA LCBR ide_list RCBR RPAR  
+  | ID LPAR CINT COMMA LCBR ide_list RCBR RPAR  
     { { id_place = $3;
         id_link = $6;
         id_loc = loc $startpos $endpos;

@@ -15,9 +15,10 @@ begin program "bigrapher"
     "cmd.ml"  
     "loc.ml"
     "syntax.ml"
-    "store.ml"
     "lexer_main.mll"
     "parser_main.mly"
+    "env.ml"
+    "eval.ml"
     "bigrapher.ml"
   ]
 
