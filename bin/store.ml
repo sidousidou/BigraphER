@@ -9,39 +9,38 @@ exception INVALID_PRI
 exception WRONG_TYPE
 exception NO_IDE
 
-type form = string
+type form = Ctrl.ide
 
 type store_val =
   | Int of int
   | Float of float
-  | Int_fun of num_exp * form list
   | Float_fun of num_exp * form list
   | Big of Big.bg
-  | Big_fun of bexp * form list
-  | Ctrl of Base.Ctrl.t
-  | Ctrl_fun of int * form list
-  | A_ctrl of Base.Ctrl.t
-  | A_ctrl_fun of int * form list
+  | Big_fun of Big.bg * form list
+  | Ctrl of Ctrl.t
+  | Ctrl_fun of Ctrl.t * form list
+  | A_ctrl of Ctrl.t
+  | A_ctrl_fun of Ctrl.t * form list
   | React of Brs.react
-  | React_fun of bexp * bexp * form list
+  | React_fun of Big.bg * Big.bg * form list
   | Sreact of Sbrs.sreact
-  | Sreact_fun of bexp * bexp * num_exp * form list
+  | Sreact_fun of Big.bg * Big.bg * num_exp * form list
   | Int_param of int list
   | Float_param of float list
 
-type p_class_ide = 
-  | P_class_ide of string list  (** Priority class *)
-  | P_rclass_ide of string list (** Reducable priority class *)
+(* type p_class_ide =  *)
+(*   | P_class_ide of string list  (\** Priority class *\) *)
+(*   | P_rclass_ide of string list (\** Reducable priority class *\) *)
 
-let p_to_brs c =
-  match c with
-  | P_class_ide x -> Brs.P_class_ide x 
-  | P_rclass_ide x -> Brs.P_rclass_ide x
+(* let p_to_brs c = *)
+(*   match c with *)
+(*   | P_class_ide x -> Brs.P_class_ide x  *)
+(*   | P_rclass_ide x -> Brs.P_rclass_ide x *)
 
-let p_to_sbrs c =
-  match c with
-  | P_class_ide x -> Sbrs.P_class_ide x 
-  | P_rclass_ide x -> Sbrs.P_rclass_ide x
+(* let p_to_sbrs c = *)
+(*   match c with *)
+(*   | P_class_ide x -> Sbrs.P_class_ide x  *)
+(*   | P_rclass_ide x -> Sbrs.P_rclass_ide x *)
 
 let init_env decs =
   Hashtbl.create (List.length decs)
@@ -50,7 +49,6 @@ let get_type v =
   match v with
   | Int _ -> "int"
   | Float _ -> "float"
-  | Int_fun _ -> "int"
   | Float_fun _ -> "float"
   | Big _ -> "big"
   | Big_fun _ -> "big"
@@ -65,127 +63,126 @@ let get_type v =
   | Int_param _ -> "int param"
   | Float_param _ -> "float param"
 
-let _is_int f = 
-  f -. (float (int_of_float f)) = 0.0 
+(* let _is_int f =  *)
+(*   f -. (float (int_of_float f)) = 0.0  *)
 
 let print_err msg p =
   print_pos p;
   prerr_endline msg
 
-let type_err v f p =
-  print_pos p;
-  eprintf "Error: This expression has type %s\n\t\
-           but an expression was expected of type %s\n!" (get_type v) f;
+let type_err_exn v f ?(verb = true) p =
+  if verb then (
+    print_pos p;
+    eprintf "Error: This expression has type %s\n\t\
+             but an expression was expected of type %s\n!" (get_type v) f;
+  );
   raise WRONG_TYPE
 
-let unbound_err ide p  =
-  print_pos p;
-  eprintf "Error: Unbound value %s\n!" ide;
+let unbound_err_exn ide ?(verb = true) p =
+  if verb then (
+    print_pos p;
+    eprintf "Error: Unbound value %s\n!" ide;
+  );
   raise NO_IDE
 
-let args_err ide forms acts p =
-  print_pos p;
-  eprintf "Error: %s expects %d argument(s)\n\t\
-           but is here used with %d argument(s)\n!" ide forms acts;
+let args_err_exn ide forms acts ?(verb = true) p =
+  if verb then (
+    print_pos p;
+    eprintf "Error: %s expects %d argument(s)\n\t\
+             but is here used with %d argument(s)\n!" ide forms acts;
+  );
   raise WRONG_TYPE
 
-let pri_err p  =
-  print_pos p;
-  prerr_endline "Error: Invalid priority classes";
+let pri_err_exn ?(verb = true) p =
+   if verb then (
+     print_pos p;
+     prerr_endline "Error: Invalid priority classes";
+   );
   raise INVALID_PRI
 
 (* -consts a=2,b=3.4,c=inf*)
-let parse_consts pairs env =
+let parse_consts_exn pairs env =
   List.iter (fun (ide, v) -> 
       try
 	Hashtbl.add env ide (Int (int_of_string v))
       with
-      | Failure _ -> 
-	try
-	  Hashtbl.add env ide (Float (float_of_string v))
-        with
-	| Failure _ -> prerr_endline ("Error: invalid constant \"" ^ ide ^ "\""); 
-          raise INVALID_CONSTS
+      | Failure _ -> (
+	  try
+            Hashtbl.add env ide (Float (float_of_string v))
+          with
+          | Failure _ -> prerr_endline ("Error: invalid constant \"" ^ ide ^ "\""); 
+            raise INVALID_CONSTS
+        )
     ) pairs
 
-let get_int ide p env =
-  try 
-    match Hashtbl.find env ide with
-    | Int v -> v
-    | Float _ | Int_fun _ | Float_fun _ | Big _ 
-    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl _ | Ctrl_fun _ as v -> type_err v "int" p
-  with
-  | Not_found -> unbound_err ide p
+let get_int_exn ide p ?(verb = true) env =
+  let v = (try
+             Hashtbl.find env ide
+           with
+           | Not_found -> unbound_err_exn ide ~verb:verb p
+          ) in
+  match v with
+  | Int v -> v
+  | Float _ | Float_fun _ | Big _ 
+  | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
+  | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+  | Float_param _ | Ctrl _ 
+  | Ctrl_fun _ as v -> type_err_exn v "int" ~verb:verb p
 
-let get_int_m ide p env =
-  try 
-    match Hashtbl.find env ide with
-    | Int v -> v
-    | Float _ | Int_fun _ | Float_fun _ | Big _ 
-    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl _ | Ctrl_fun _ -> raise WRONG_TYPE
-  with
-  | Not_found -> unbound_err ide p
+let get_float_exn ide p ?(verb = true) env =
+  let v = (try
+             Hashtbl.find env ide
+           with
+           | Not_found -> unbound_err_exn ide ~verb:verb p
+          ) in
+  match v with
+  | Float v -> v
+  | Int _ | Float_fun _ | Big _ | Big_fun _ | A_ctrl _ | A_ctrl_fun _ 
+  | React _ | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+  | Float_param _ | Ctrl _ 
+  | Ctrl_fun _ as v -> type_err_exn v "float" ~verb:verb p
 
-let get_float ide p env =
-  try
-    match Hashtbl.find env ide with
-    | Float v -> v
-    | Int _ | Int_fun _ | Float_fun _ | Big _ 
-    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl _ | Ctrl_fun _ as v -> type_err v "float" p
-  with
-  | Not_found -> unbound_err ide p
+let get_ctrl_exn ide p ?(verb = true) env =
+  let v = (try
+             Hashtbl.find env ide
+           with
+           | Not_found -> unbound_err_exn ide ~verb:verb p
+          ) in
+  match v with
+  | A_ctrl c | Ctrl c -> c
+  | Int _ | Float_fun _ | Big _ 
+  | Big_fun _ | Float _ | A_ctrl_fun _ | React _ 
+  | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+  | Float_param _ | Ctrl_fun _ as v -> type_err_exn v "ctrl" ~verb:verb p
 
-let get_float_m ide p env =
-  try 
-    match Hashtbl.find env ide with
-    | Float v -> v
-    | Int _ | Int_fun _ | Float_fun _ | Big _ 
-    | Big_fun _ | A_ctrl _ | A_ctrl_fun _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl _ | Ctrl_fun _ -> raise WRONG_TYPE
-  with
-  | Not_found -> unbound_err ide p
+let is_atomic_exn ide p ?(verb = true) env =
+  let v = (try
+             Hashtbl.find env ide
+           with
+           | Not_found -> unbound_err_exn ide ~verb:verb p
+          ) in
+  match v with
+  | A_ctrl _ |  A_ctrl_fun _ -> true
+  | Int _ | Float_fun _ | Big _ 
+  | Big_fun _ | Float _ | Ctrl _ | React _ 
+  | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+  | Float_param _ | Ctrl_fun _ -> false
 
-let get_ctrl ide p env =
-  try 
-    match Hashtbl.find env ide with
-    | A_ctrl c | Ctrl c -> c
-    | Int _ | Int_fun _ | Float_fun _ | Big _ 
-    | Big_fun _ | Float _ | A_ctrl_fun _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl_fun _ as v -> type_err v "ctrl" p
-  with
-  | Not_found -> unbound_err ide p
-
-let is_atomic ide p env =
-  try 
-    match Hashtbl.find env ide with
-    | A_ctrl _ |  A_ctrl_fun _ -> true
-    | Int _ | Int_fun _ | Float_fun _ | Big _ 
-    | Big_fun _ | Float _ | Ctrl _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl_fun _ -> false
-  with
-  | Not_found -> unbound_err ide p
-
-let get_big ide p env =
-  try
-    match Hashtbl.find env ide with
-    | Big v -> v
-    | Int _ | Int_fun _ | Float_fun _ | A_ctrl _ 
-    | Big_fun _ | Float _ | A_ctrl_fun _ | React _ 
-    | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
-    | Float_param _ | Ctrl _ | Ctrl_fun _ as v -> type_err v "big" p
-  with
-  | Not_found -> unbound_err ide p
-
-let rec eval_int exp env =
+let get_big_exn ide p ?(verb = true) env =
+  let v = (try
+             Hashtbl.find env ide
+           with
+           | Not_found -> unbound_err_exn ide ~verb:verb p
+          ) in
+  match v with
+  | Big v -> v
+  | Int _ | Float_fun _ | A_ctrl _ 
+  | Big_fun _ | Float _ | A_ctrl_fun _ | React _ 
+  | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
+  | Float_param _ | Ctrl _ 
+  | Ctrl_fun _ as v -> type_err_exn v "big" ~verb:verb p
+ 
+let rec eval_int_exn exp ?(verb = true) env =
   match exp with
   | Num_val (v, _) -> int_of_float v
   | Num_ide (ide, p) -> 
@@ -202,25 +199,6 @@ let rec eval_int exp env =
     with
     | Division_by_zero -> print_err "Error: Division by zero" p; raise INVALID_VAL)
   | Num_pow (l, r, _) -> int_of_float ((float (eval_int l env)) ** (float (eval_int r env))) 
-
-(* No msg on WRONG_TYPE*)
-let eval_int_m exp env =
-  match exp with
-  | Num_val (v, _) -> int_of_float v
-  | Num_ide (ide, p) -> 
-    (try get_int_m ide p env
-     with
-     | WRONG_TYPE -> 
-       let v = get_float ide p env in
-       if _is_int v then int_of_float v
-       else raise WRONG_TYPE) 
-  | Num_plus (l, r, _) -> (eval_int l env) + (eval_int r env)
-  | Num_minus (l, r, _) -> (eval_int l env) - (eval_int r env)
-  | Num_prod (l, r, _) -> (eval_int l env) * (eval_int r env)
-  | Num_div (l, r, p) -> (try (eval_int l env) / (eval_int r env)
-    with
-    | Division_by_zero -> print_err "Error: Division by zero" p; raise INVALID_VAL)
-  | Num_pow (l, r, _) -> int_of_float ((float (eval_int l env)) ** (float (eval_int r env)))
 
 let rec eval_float exp env =
   match exp with
@@ -249,7 +227,7 @@ let get_ctrl_fun ide acts p env =
 	     sprintf "%d" (eval_int_m exp env) (* MUTE *)
 	   with
 	   | WRONG_TYPE -> sprintf "%g" (eval_float exp env)) acts) in
-	 Base.Ctrl.Ctrl (sprintf "%s(%s)" ide acts_s, ar))
+	 Ctrl.Ctrl (sprintf "%s(%s)" ide acts_s, ar))
     | Int _ | Int_fun _ | Float_fun _ | Big _ 
     | Big_fun _ | Float _ | A_ctrl _ | React _ 
     | React_fun _ | Sreact _ | Sreact_fun _ | Int_param _ 
@@ -272,7 +250,7 @@ let eval_ion_aux f c names p =
   | Big.CTRL_ERROR (n, _) -> 
     (print_err (sprintf "Error: ctrl %s has arity %d\n\t\
                          but is here used with %d name(s)"
-		  (Base.Ctrl.name c) n (List.length names)) p; 
+		  (Ctrl.name c) n (List.length names)) p; 
      raise INVALID_VAL)
  
 let eval_ion = eval_ion_aux Big.ion
@@ -414,7 +392,7 @@ let store_decs decs env =
       | Atomic c -> (
           match c with
           | Ctrl_dec (ide, ar, _) ->
-            Hashtbl.add env ide (A_ctrl (Base.Ctrl.Ctrl (ide, ar)))
+            Hashtbl.add env ide (A_ctrl (Ctrl.Ctrl (ide, ar)))
           | Ctrl_dec_f (ide, forms, ar, _) ->
             Hashtbl.add env ide (A_ctrl_fun (ar, forms)))
       | Non_atomic c -> (

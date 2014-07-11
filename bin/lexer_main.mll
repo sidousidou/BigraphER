@@ -1,41 +1,42 @@
 {
 
-open Lexing
 open Parser_main
 
-exception UNKNOWN_CHAR of char * position
+type error =
+  | Unknown_char of char
+  | Int_overflow of string
 
-let incr_linenum lexbuf =
-  let pos = lexbuf.lex_curr_p in 
-  lexbuf.lex_curr_p <- 
-    { pos with pos_lnum = pos.pos_lnum + 1;
-               pos_bol = lexbuf.lex_curr_pos
-    }
+exception ERROR of error * Loc.t
+
+let int_literal s =
+  - int_of_string ("-" ^ s)
 
 }
 
 (* REGULAR DEFINITIONS *)
 
-let digit = ['0'-'9']
-let int = digit+
-let frac = '.' digit*
-let exp = ['e' 'E'] ['-' '+']? digit+
-let float = digit+ frac? exp? | "inf"
-let num = int | float
-
-let white = [' ' '\t']+
-let newline = '\r' | '\n' | "\r\n"
-
+let blank = [' ' '\009' '\012']
+let newline = ('\r' | '\n' | "\r\n")
+let int_literal = ['0'-'9'] ['0'-'9' '_']*
+let float_literal =
+  ("inf" | (
+      ['0'-'9'] ['0'-'9' '_']*
+      ('.' ['0'-'9' '_']*)?
+      (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
+    )
+  )
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
-
-let comment = '#' [^'\r' '\n']* (newline | eof)  
+let comment = '#' [^'\r' '\n']* newline  
  
 (* RULES *)
 
-rule lex =  parse 
-  | white                   { lex lexbuf }
-  | newline                 { incr_linenum lexbuf; lex lexbuf }
+rule token =  parse 
+  | blank+                  { token lexbuf }
+  | (newline | comment)     { Lexing.new_line lexbuf;
+                              token lexbuf }
+  | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
+  | identifier              { IDE (Lexing.lexeme lexbuf) }
   | "["                     { LSBR }
   | "]"                     { RSBR }
   | "{"                     { LCBR }
@@ -64,7 +65,9 @@ rule lex =  parse
   | ";"                     { SEMICOLON }
   | "="                     { EQUAL }  
   | ","                     { COMMA }    
-  | "->"                    { ARR }  
+  | ("->" | "-->")          { ARR }
+  | "-["                    { LARR }
+  | "]->"                   { RARR }
   | "@"                     { AT }
   | "."                     { DOT } 
   | "||"                    { DPIPE }  
@@ -74,18 +77,37 @@ rule lex =  parse
   | "*"                     { PROD }
   | "/"                     { SLASH }
   | "^"                     { CARET }
-  | "true"                  { TRUE }
-  | "false"                 { FALSE }
-  | "not"                   { NOT }
-  | "sort"                  { SORT }
-  | num                     { NUM (Lexing.lexeme lexbuf) }
-  | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
-  | identifier              { IDE (Lexing.lexeme lexbuf) }
-  | comment                 { incr_linenum lexbuf; lex lexbuf } 
-  | _ as c                  { raise (UNKNOWN_CHAR (c, Lexing.lexeme_start_p lexbuf)) }
+  (* | "true"                  { TRUE } *)
+  (* | "false"                 { FALSE } *)
+  (* | "not"                   { NOT } *)
+  (* | "sort"                  { SORT } *)
   | eof                     { EOF }
+  | int_literal
+    { let s = Lexing.lexeme lexbuf in
+      try
+        CINT (int_literal s)
+      with
+      | Failure _ -> 
+        raise (ERROR (Int_overflow s, Loc.curr lexbuf))
+    }
+  | float_literal
+    { try
+        CFLOAT (float_of_string (Lexing.lexeme lexbuf))
+      with
+      | Failure _ -> assert false
+    }
+  | _ as c                  
+    { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
 {
 
+open Format
+
+let report_error fmt = function
+  | Unknown_char c ->
+    fprintf fmt "unknown character %c" c
+  | Int_overflow s ->
+    fprintf fmt "integer out of bounds: %s is not in [%i, %i]" 
+      s min_int max_int
 
 }

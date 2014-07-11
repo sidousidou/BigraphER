@@ -21,9 +21,9 @@ if test "$OCAMLLEX" = "no"; then
    AC_MSG_ERROR([You must install the OCaml lexer (the ocamllex command)])
 fi
 
-AC_PROG_OCAMLYACC
-if test "$OCAMLYACC" = "no"; then
-   AC_MSG_ERROR([You must install the OCaml parser (the ocamlyacc command)])
+AC_PROG_MENHIR
+if test "$MENHIR" = "no"; then
+   AC_MSG_ERROR([You must install the menhir])
 fi
 
 AC_PROG_OCPBUILD
@@ -56,10 +56,6 @@ AC_OUTPUT
 if test "$prefix" = "NONE"; then
   prefix=$ac_default_prefix
 fi
-
-#bindir="`eval echo ${bindir}`"
-#mandir="`eval echo ${mandir}`"
-#OCPBUILD="`eval echo ${OCPBUILD}`"
 
 echo
 echo Executables will be installed in ${bindir}

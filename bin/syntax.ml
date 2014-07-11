@@ -1,120 +1,177 @@
-open Utils
-open Printf
+type id = string
 
-(*****************************************************************************)
-(******************************* PRIORITIES **********************************)
-(*****************************************************************************)
-type pp = (Lexing.position * Lexing.position)
+type int_exp =
+  | Int_val of int * Loc.t
+  | Int_var of id * Loc.t
+  | Int_plus of int_exp * int_exp * Loc.t
+  | Int_minus of int_exp * int_exp * Loc.t
+  | Int_prod of int_exp * int_exp * Loc.t
+  | Int_div of int_exp * int_exp * Loc.t
 
-type rule = 
-  | Rul of string * pp
-  | Rul_fun of string * string list * pp
-
-(*****************************************************************************)
-(********************************** MODEL ************************************)
-(*****************************************************************************)
+type float_exp =
+  | Float_val of float * Loc.t
+  | Float_var of id * Loc.t
+  | Float_plus of float_exp * float_exp * Loc.t
+  | Float_minus of float_exp * float_exp * Loc.t
+  | Float_prod of float_exp * float_exp * Loc.t
+  | Float_div of float_exp * float_exp * Loc.t
+  | Float_pow of float_exp * float_exp * Loc.t
 
 type num_exp =
-  | Num_val of float * pp
-  | Num_ide of string * pp
-  | Num_plus of num_exp * num_exp * pp
-  | Num_minus of num_exp * num_exp * pp
-  | Num_prod of num_exp * num_exp * pp
-  | Num_div of num_exp * num_exp * pp
-  | Num_pow of num_exp * num_exp * pp
+  | Num_int_val of int * Loc.t
+  | Num_float_val of float * Loc.t
+  | Num_var of id * Loc.t
+  | Num_plus of num_exp * num_exp * Loc.t
+  | Num_minus of num_exp * num_exp * Loc.t
+  | Num_prod of num_exp * num_exp * Loc.t
+  | Num_div of num_exp * num_exp * Loc.t
+  | Num_pow of num_exp * num_exp * Loc.t
 
-type param = 
-  | Int_param of string * num_exp list * pp
-  | Float_param of string * num_exp list * pp
+type ctrl_exp =
+  | Ctrl_exp of id * int * Loc.t
+  | Ctrl_fun_exp of id * id list * int * Loc.t
 
-type pri_class =
-  | Pri_class of rule list * pp
-  | Pri_classr of rule list* pp
+type dctrl = 
+  | Atomic of ctrl_exp * Loc.t
+  | Non_atomic of ctrl_exp * Loc.t 
 
-type init =
-  | Init of string * pp
-  | Init_fun of string * num_exp list * pp
+type dint =
+  { dint_id : id;
+    dint_exp: int_exp;
+    dint_loc: Loc.t;
+  }
 
-type brs = 
-  | Brs of param list * init * pri_class list * pp
-  | Sbrs of param list * init * pri_class list * pp
+type dfloat =
+  { dfloat_id : id;
+    dfloat_exp: float_exp;
+    dfloat_loc: Loc.t;
+  }
 
-type bexp =
-  | Big_ide of string * pp                                   (* b *)
-  | Big_name of string * pp                                  (* name *)
-  | Big_ide_fun of string * num_exp list * pp                (* b(1, 5.67) *)
-  | Big_plac of int list list * int * pp                     (* ({{0,2,3}, {}}, 5) *)
-  | Big_comp_c of bexp * bexp * pp                           (* composition (lhs is a closure)*)    
-  | Big_comp of bexp * bexp * pp                             (* composition *)
-  | Big_close of string list * pp                            (* closure *)
-  | Big_par of bexp * bexp * pp                              (* merge parallel *)
-  | Big_ppar of bexp * bexp * pp                             (* parallel *)
-  | Big_nest of bexp * bexp * pp                             (* nesting *)
-  | Big_el of int * pp                                       (* 0 or 1 *)
-  | Big_id of int * string list * pp                         (* id(1) id(3, {a, c, f}) *)
-  | Big_ion of string * string list * pp                     (* K{f, g} *)
-  | Big_ion_fun of string * string list * num_exp list * pp  (* K(2.46, 1){f, g} *)
-  | Big_share of bexp * bexp * bexp * pp                     (* share A by psi in B *)
-  | Big_tens of bexp * bexp * pp                             (* tensor product *) 
+type id_exp =
+  { id_place : int;
+    id_link : id list;
+    id_loc : Loc.t;
+  }
 
-(* Only for debugging *)
-let string_of_bexp b =
-  match b with
-  | Big_ide _ -> "Big_ide"
-  | Big_name _ -> "Big_name"
-  | Big_ide_fun _ -> "Big_ide_fun"
-  | Big_plac _ -> "Big_plac"
-  | Big_comp_c _ -> "Big_comp_c"
-  | Big_comp _ -> "Big_comp"
-  | Big_close _ -> "Big_close"
-  | Big_par _ -> "Big_par"
-  | Big_ppar _ -> "Big_ppar"
-  | Big_nest _ -> "Big_nest"
-  | Big_el _ -> "Big_el"
-  | Big_id _ -> "Big_id"
-  | Big_ion _ -> "Big_ion"
-  | Big_ion_fun _ -> "Big_ion_fun"
-  | Big_share _ -> "Big_share"
-  | Big_tens _ -> "Big_tens"  
+type ion_exp =
+  | Big_ion of id * id list * Loc.t                         (* K{f, g} *)
+  | Big_ion_fun of id * num_exp list * id list * Loc.t      (* K(2.46, 1){f, g} *) 
 
-let string_of_num_exp n =
-  match n with
-  | Num_val (f, _) -> Printf.sprintf "%g" f
-  | Num_ide (ide, _) -> ide
-  | Num_plus _ -> "Plus"
-  | Num_minus _ -> "Minus"
-  | Num_prod _ -> "Prod"
-  | Num_div _ -> "Div"
-  | Num_pow _ -> "Pow"
+type place_exp =                                            (* ({{0,2,3}, {}}, 5) *)
+  { plc_parents : int list list;
+    plc_roots : int;
+    plc_loc : Loc.t;
+  }         
+                                         
+type closure_exp =                                          (* /x *)
+  { cl_name : id;
+    cl_loc : Loc.t;
+  }
 
-type ctrl_dec =
-  | Ctrl_dec of string * int * pp	                   (* ctrl c = 3 *)
-  | Ctrl_dec_f of string * string list * int * pp          (* fun ctrl c(a, b) = 2 *)
+type big_exp =
+  | Big_var of id * Loc.t                                   (* b *)
+  | Big_var_fun of id * num_exp list * Loc.t                (* b(1, 5.67) *)
+  | Big_new_name of id * Loc.t                              (* {n} *)
+  | Big_comp of big_exp * big_exp * Loc.t                   (* A * B *) 
+  | Big_tens of big_exp * big_exp * Loc.t                   (* A + B *) 
+  | Big_par of big_exp * big_exp * Loc.t                    (* A | B *)
+  | Big_ppar of big_exp * big_exp * Loc.t                   (* A || B *)
+  | Big_share of big_exp * place_exp * big_exp * Loc.t      (* share A by psi in B *)
+  | Big_num of int * Loc.t                                  (* 0 or 1 *)
+  | Big_id of id_exp                                        (* id, id(1), id(3, {a, c, f}) *)
+  | Big_plc of place_exp
+  | Big_nest of ion_exp * big_exp * Loc.t                   (* A . B *)
+  | Big_ion of ion_exp                                       
+  | Big_close of closure_exp                                (* closure *)
+  | Big_closures of closure_exp list * big_exp  * Loc.t     (* /x/y/z A *)
+
+type eta_exp = int list * Loc.t
+  
+type dbig =
+  | Big_exp of id * big_exp * Loc.t 
+  | Big_fun_exp of id * id list * big_exp * Loc.t
+
+type dreact =
+  | React_exp of id * big_exp * big_exp * eta_exp option * Loc.t 
+  | React_fun_exp of id * id list * big_exp * big_exp * eta_exp option * Loc.t
+
+type dsreact =
+  | Sreact_exp of id * big_exp * big_exp * eta_exp option * float_exp * Loc.t 
+  | Sreact_fun_exp of id * id list * big_exp * big_exp * eta_exp option * float_exp * Loc.t
 
 type dec =
-  | Atomic of ctrl_dec
-  | Non_atomic of ctrl_dec
-  | Int_dec of string * num_exp * pp 
-  | Float_dec of string * num_exp * pp
-  | Big_dec of string * bexp * pp                          (* big b = ... *)
-  | Big_dec_f of string * string list * bexp * pp 	   (* fun big b(a, b) = ... *)
-  | React_dec of string * bexp * bexp * pp 	           (* react r = ... -> ... *)
-  | React_dec_f of string * string list * bexp * bexp * pp (* react r(a, b) = ... -> ... *)
-  | Sreact_dec of string * bexp * bexp * num_exp  * pp     (* react r = ... -> ... @ 3.4 *)
-  | Sreact_dec_f of string * string list * bexp * bexp * num_exp * pp
+  | Dctrl of dctrl
+  | Dint of dint
+  | Dfloat of dfloat
+  | Dbig of dbig
+  | Dreact of dreact
+  | Dsreaact of dsreact
 
-let print_pos (p0, p1) =
-  eprintf "File \"%s\", line %d, charachters %d-%d:\n"
-    p0.Lexing.pos_fname p0.Lexing.pos_lnum (p0.Lexing.pos_cnum - p0.Lexing.pos_bol)
-    (p1.Lexing.pos_cnum - p1.Lexing.pos_bol)
+type init_exp =
+  | Init of id * Loc.t
+  | Init_fun of id * num_exp list * Loc.t
 
-(*****************************************************************************)
-(********************************** BILOG ************************************)
-(*****************************************************************************)
-(* type pred =  *)
-(*   | Pred of string * string list *)
+type param_int_exp =
+  | Param_int_val of int_exp * Loc.t
+  | Param_int_range of int_exp * int_exp * int_exp * Loc.t 
+  | Param_int_set of int_exp list * Loc.t
 
-(* type bilog =  *)
-(*   | B_null *)
-  (*   | Bilog of var_dec list * pred list  ~path_out: !out_path*)
+type param_float_exp =
+  | Param_float_val of float_exp * Loc.t
+  | Param_float_range of float_exp * float_exp * float_exp * Loc.t 
+  | Param_float_set of float_exp list * Loc.t
+
+type param_exp =
+  | Param_int of id * param_int_exp * Loc.t
+  | Param_float of id * param_float_exp * Loc.t
+
+type rul_ide =
+  | Rul_ide of id * Loc.t
+  | Rul_ide_fun of id * num_exp list * Loc.t
+
+type pr_exp =
+  | Pr_red of rul_ide list * Loc.t 
+  | Pr of rul_ide list * Loc.t
+
+type dbrs =
+  { dbrs_pri : pr_exp list;
+    dbrs_init: init_exp;
+    dbrs_params: param_exp list;
+    dbrs_loc: Loc.t;
+  }
+
+type srul_ide =
+  | Srul_ide of id * Loc.t
+  | Srul_ide_fun of id * num_exp list * Loc.t
+
+type spr_exp =
+  | Spr_red of srul_ide list * Loc.t 
+  | Spr of srul_ide list * Loc.t
+
+type dsbrs =
+  { dsbrs_pri : spr_exp list;
+    dsbrs_init: init_exp;
+    dsbrs_params: param_exp list;
+    dsbrs_loc: Loc.t;
+  }
+
+type ts =
+  | Dbrs of dbrs
+  | Dsbrs of dsbrs
+
+type model =
+  { model_decs : dec list;
+    model_rs : ts;
+    model_loc : Loc.t;
+  }
+
+(* let int_of_num_exn = function *)
+(*   | Num_int_val (v, l) -> Int_val (v, l) *)
+(*   | Num_var (id, l) -> Int_var (id, l) *)
+(*   | Num_plus (lhs, rhd, l) -> Int_plus (lhs, rhd, l) *)
+(*   | Num_minus (lhs, rhd, l) -> Int_minus (lhs, rhd, l) *)
+(*   | Num_prod (lhs, rhd, l) -> Int_prod (lhs, rhd, l) *)
+(*   | Num_div (lhs, rhd, l) -> Int_div (lhs, rhd, l) *)
+(*   | Num_pow (_, _, l) | Num_float_val (_, l) -> *)
+
 

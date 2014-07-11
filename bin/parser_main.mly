@@ -1,389 +1,402 @@
 %{
- 
+
+open Loc 
 open Syntax
 
-exception PARSE_ERROR
-exception INVALID_INTERVAL
+%}
 
-let int_interval s h e =
-  if e <= s || h <=0 then raise INVALID_INTERVAL
-  else let rec aux s h e res =
-    if s < e then aux (s + h) h e (s :: res)
-    else e :: res
-    in List.fast_sort (fun x y -> x - y) (aux s h e [])
-
-let float_interval s h e =
-  if e <= s || h <=0.0 then raise INVALID_INTERVAL
-  else let rec aux s h e res =
-    if s < e then aux (s +. h) h e (s :: res)
-    else e :: res
-    in List.fast_sort compare (aux s h e [])
-
-let add_pos () =
-  Parsing.symbol_start_pos (), Parsing.symbol_end_pos ()
-
-let parse_error_msg msg tok =
-  let start_pos = Parsing.symbol_start_pos ()
-  and end_pos = Parsing.symbol_end_pos () in
-  print_pos (start_pos, end_pos);
-  prerr_string ("Syntax error: " ^ msg);
-  match tok with
-  | "" -> prerr_newline ()
-  | _ -> prerr_endline (" " ^ tok)
-
-let add_closure n c =
-  match c with
-  | Big_close (l, pos) -> Big_close (n :: l, pos)
-  | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
-  | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
-  | Big_ion_fun _ | Big_share _ | Big_tens _ | Big_name _ ->
-    parse_error_msg "Invalid closure" n; 
-    raise Parsing.Parse_error
-
-    %}
+%token            EOF
 
 %token <string>   CIDE
 %token <string>   IDE       
-%token <string>   NUM      
+%token <int>      CINT
+%token <float>    CFLOAT     
+
+%token 	          CTRL 
+%token            ATOMIC
+%token            BIG
+%token            REACT
+%token            SREACT
+%token            INIT
+%token            RULES
+%token            INT
+%token            FLOAT
+%token            FUN
+%token            BRS
+%token            ENDBRS
+%token            SBRS
+%token            ENDSBRS 
+(* %token            SORT TRUE FALSE NOT *)
+%token            SHARE
+%token            BY
+%token            IN
+%token            ID 
+%token            ARR
+%token            LARR
+%token            RARR
+%token            AT
+%token            EQUAL
+%token            PLUS
+%token            MINUS
+%token            PROD
+%token            SLASH
+%token            CARET
 
 %token            LSBR RSBR LCBR RCBR LPAR RPAR 
-%token 	          CTRL BIG REACT SREACT INIT INT FLOAT FUN BRS ENDBRS SBRS ENDSBRS RULES SORT ATOMIC
-%token            TRUE FALSE NOT
-%token            SHARE BY IN
-%token            ID 
-%token            COLON SEMICOLON EQUAL COMMA ARR AT
+%token            COLON SEMICOLON COMMA 
 
-%token            PIPE DPIPE PLUS MINUS
-%token            DOT PROD SLASH
-%token            CARET 
-%token            EOF
- 
-%start model
-%type <(Syntax.dec list * Syntax.brs)> model
+%token            PIPE DPIPE
+%token            DOT 
 
 %left  PIPE DPIPE 
 %left  PLUS MINUS
 %left  PROD SLASH
 %right CARET
+ 
+%start model
+%type <Syntax.model> model
 
 %%
 
 model
-  : dec_list brs EOF                        { $1, $2 }
-  ;
+  : dec_list rs EOF
+    { { model_decs = $1;
+        model_rs = $2;
+        model_loc = loc $startpos $endpos;
+      } }
 
 dec_list
   : dec SEMICOLON                           { [ $1 ] }
   | dec SEMICOLON dec_list                  {  $1 :: $3 }   
-  ;
 
 dec 
-  : dec_ctrl_a                                { $1 }
-  | INT IDE EQUAL num_exp                   { Int_dec ($2, $4, add_pos ()) }
-  | FLOAT IDE EQUAL num_exp                 { Float_dec ($2, $4, add_pos ()) }
-  | BIG IDE EQUAL bexp                      { Big_dec ($2, $4, add_pos ()) }
-  | FUN BIG IDE LPAR forms RPAR EQUAL bexp  { Big_dec_f ($3, $5, $8, add_pos ()) }
-  | REACT IDE EQUAL bexp ARR bexp           { React_dec ($2, $4, $6, add_pos ()) }
-  | FUN REACT IDE LPAR forms RPAR EQUAL bexp ARR bexp
-	                                    { React_dec_f ($3, $5, $8, $10, add_pos ()) }
-  | SREACT IDE EQUAL bexp ARR bexp AT num_exp
-                                            { Sreact_dec ($2, $4, $6, $8, add_pos ()) }
-  | FUN SREACT IDE LPAR forms RPAR EQUAL bexp ARR bexp AT num_exp
-                                            { Sreact_dec_f ($3, $5, $8, $10, $12, add_pos ()) }
-  | error                                   { parse_error_msg "Invalid declaration" ""; 
-                                              raise PARSE_ERROR}		   
-  ;
+  : dec_int                                 { Dint $1 }
+  | dec_float                               { Dfloat $1 }
+  | dec_ctrl                                { Dctrl $1 }
+  | dec_big                                 { Dbig $1 }
+  | dec_react                               { Dreact $1 }
+  | dec_sreact                              { Dsreact $1 }
 
-dec_ctrl_a
-  : ATOMIC dec_ctrl                         { Atomic $2 }
-  | dec_ctrl                                { Non_atomic $1 }
-  ;
+rs
+  : brs                                     { Dbrs $1 }
+  | sbrs                                    { Dsbrs $1 }
+
+dec_int
+  : INT IDE EQUAL int_exp                   
+    { { dint_id = $2;
+        dint_exp = $4;
+        dint_loc = loc $startpos $endpos;
+      } }
+
+dec_float
+  : FLOAT IDE EQUAL float_exp
+    { { dfloat_id = $2;
+          dfloat_exp = $4;
+          dfloat_loc = loc $startpos $endpos;
+      } }
 
 dec_ctrl
-  : CTRL CIDE EQUAL NUM 		    { try
-						let n = int_of_string $4 in
-						if n >= 0 then Ctrl_dec ($2, n, add_pos ())
-						else (parse_error_msg "Invalid ctrl arity" $4;
-						      raise Parsing.Parse_error)
-                                              with
-                                              | Failure _ -> 
-                                                  parse_error_msg "Invalid ctrl arity" $4; 
-                                                  raise Parsing.Parse_error
-                                            }
-  | FUN CTRL CIDE LPAR forms RPAR EQUAL NUM { try
-						let n = int_of_string $8 in
-						if n >= 0 then Ctrl_dec_f ($3, $5, n, add_pos ())
-						else (parse_error_msg "Invalid ctrl arity" $8;
-						      raise Parsing.Parse_error)  
-                                              with
-                                              | Failure _ -> 
-                                                  parse_error_msg "Invalid ctrl arity" $8; 
-                                                  raise Parsing.Parse_error
-                                            }
-  ;
+  : ATOMIC ctrl_exp                         
+      { Atomic ($2, loc $startpos $endpos) }
+  | ctrl_exp
+      { Non_atomic ($1, loc $startpos $endpos) }
+
+ctrl_exp
+  : CTRL CIDE EQUAL CINT 		    
+    { Ctrl_exp ($2, $4, loc $startpos $endpos) }
+  | FUN CTRL CIDE LPAR ide_list RPAR EQUAL CINT 
+    { Ctrl_fun_exp ($3, $5, $8, loc $startpos $endpos) }
+
+ide_list
+  : IDE                                     { [ $1 ] }
+  | IDE COMMA ide_list                      { $1 :: $3 }
+ 
+int_exp
+  : CINT                                    
+    { Int_val ($1, loc $startpos $endpos) }
+  | IDE                                     
+    { Int_var ($1, loc $startpos $endpos) } 
+  | LPAR int_exp RPAR                       
+    { $2 }
+  | int_exp PROD int_exp                    
+    { Int_prod ($1, $3, loc $startpos $endpos) }     
+  | int_exp SLASH int_exp                    
+    { Int_div ($1, $3, loc $startpos $endpos) }     
+  | int_exp PLUS int_exp                    
+    { Int_plus ($1, $3, loc $startpos $endpos) }     
+  | int_exp MINUS int_exp                    
+    { Int_minus ($1, $3, loc $startpos $endpos) }     
+
+float_exp
+  : CFLOAT                                    
+    { Float_val ($1, loc $startpos $endpos) }
+  | IDE                                     
+    { Float_var ($1, loc $startpos $endpos) } 
+  | LPAR float_exp RPAR                       
+    { $2 }
+  | float_exp CARET float_exp
+    { Float_pow ($1, $3, loc $startpos $endpos) }
+  | float_exp PROD float_exp                    
+    { Float_prod ($1, $3, loc $startpos $endpos) }     
+  | float_exp SLASH float_exp                    
+    { Float_div ($1, $3, loc $startpos $endpos) }     
+  | float_exp PLUS float_exp                    
+    { Float_plus ($1, $3, loc $startpos $endpos) }     
+  | float_exp MINUS float_exp                    
+    { Float_minus ($1, $3, loc $startpos $endpos) }
+
+dec_big
+  : BIG IDE EQUAL bexp                      
+    { Big_exp ($2, $4, loc $startpos $endpos) }
+  | FUN BIG IDE LPAR ide_list RPAR EQUAL bexp  
+    { Big_fun_exp ($3, $5, $8, loc $startpos $endpos) }
+
+dec_react
+  : REACT IDE EQUAL bexp ARR bexp eta_exp_opt 
+    { React_exp ($2, $4, $6, $7, loc $startpos $endpos) }
+  | FUN REACT IDE LPAR ide_list RPAR EQUAL bexp ARR bexp eta_exp_opt
+    { React_fun_exp ($3, $5, $8, $10, $11, loc $startpos $endpos) }
+
+eta_exp_opt
+  : /* EMPTY */                             { None }
+  | AT eta_exp                              { $2 } 
+
+eta_exp
+  : LSBR int_list RSBR                      { ($2, loc $startpos $endpos) }
+
+int_list
+  : /* EMPTY */                             { [] }
+  | CINT COMMA int_list                     { $2 :: $3 } 
+
+dec_sreact  
+  : SREACT IDE EQUAL bexp LARR float_exp RARR bexp eta_exp_opt 
+    { Sreact_exp ($2, $4, $8, $9, $6, loc $startpos $endpos) }
+  | FUN SREACT IDE LPAR ide_list RPAR EQUAL bexp LARR float_exp RARR bexp eta_exp_opt
+    { Sreact_fun_exp ($3, $5, $8, $12, $13, $10, loc $startpos $endpos) }
 
 brs
-  : BRS params init rule_set ENDBRS         { Brs ($2, $3, $4, add_pos ()) }
-  | SBRS params init rule_set ENDSBRS       { Sbrs ($2, $3, $4, add_pos ()) }
-  /*| error                                   { parse_error_msg "Invalid brs" ""; 
-                                              raise Parsing.Parse_error}*/		    
-  ;
+  : BRS params init rules ENDBRS
+    { {dbrs_pri = $4;
+       dbrs_init = $3;
+       dbrs_params = $2;
+       dbrs_loc = loc $startpos $endpos;
+      } }
+
+sbrs 
+  : SBRS params init srules ENDSBRS
+    { {dbrs_pri = $4;
+       dbrs_init = $3;
+       dbrs_params = $2;
+       dbrs_loc = loc $startpos $endpos;
+      } }
+
+init
+  : INIT IDE SEMICOLON                      
+    { Init ($2, loc $startpos $endpos) }
+  | INIT IDE LPAR num_list RPAR SEMICOLON       
+    { Init_fun ($2, $4, loc $startpos $endpos) }
+
+num_list
+  : num_exp                                 { [ $1 ] }
+  | num_exp COMMA num_list                  { $1 :: $3 }
+
+num_exp
+  : CINT                                    
+    { Num_int_val ($1, loc $startpos $endpos) }
+  | CFLOAT                                    
+    { Num_float_val ($1, loc $startpos $endpos) }
+  | IDE                                     
+    { Num_var ($1, loc $startpos $endpos) } 
+  | LPAR num_exp RPAR                       
+    { $2 }
+  | num_exp CARET num_exp
+    { Num_pow ($1, $3, loc $startpos $endpos) }
+  | num_exp PROD num_exp                    
+    { Num_prod ($1, $3, loc $startpos $endpos) }     
+  | num_exp SLASH num_exp                    
+    { Num_div ($1, $3, loc $startpos $endpos) }     
+  | num_exp PLUS num_exp                    
+    { Num_plus ($1, $3, loc $startpos $endpos) }     
+  | num_exp MINUS num_exp                    
+    { Num_minus ($1, $3, loc $startpos $endpos) }
 
 params
   : /* EMPTY */                             { [ ] }
   | param SEMICOLON params                  { $1 :: $3 }
-  ;
 
 param
-  : INT IDE EQUAL num_exp                   { Int_param ($2, [ $4 ], add_pos ()) }
-  | INT IDE EQUAL LCBR acts RCBR            { Int_param ($2, $5, add_pos ()) }
-  | INT IDE EQUAL LSBR NUM COLON NUM COLON NUM RSBR		
-                                            { let start =
-						try
-						  int_of_string $5
-						with
-						| Failure _ -> 
-                                                    parse_error_msg "Invalid int" $5; 
-                                                    raise Parsing.Parse_error
-					      and step =
-						try
-						  int_of_string $7
-						with
-						| Failure _ -> 
-                                                    parse_error_msg "Invalid int" $7; 
-                                                    raise Parsing.Parse_error
-					      and stop =
-						try
-						  int_of_string $9
-						with
-						| Failure _ -> 
-                                                    parse_error_msg "Invalid int" $9; 
-                                                    raise Parsing.Parse_error in
-					      try
-						Int_param ($2, List.map (fun x -> 
-						  Num_val (float_of_int x, add_pos())) (int_interval start step stop), add_pos ())
-					      with
-					      | INVALID_INTERVAL ->
-						  parse_error_msg "Invalid interval for parameter" $2; 
-                                                  raise Parsing.Parse_error
-                                            }
-  | FLOAT IDE EQUAL num_exp                 { Float_param ($2, [ $4 ], add_pos ()) }
-  | FLOAT IDE EQUAL LCBR acts RCBR          { Float_param ($2, $5, add_pos ()) }
-  | FLOAT IDE EQUAL LSBR NUM COLON NUM COLON NUM RSBR
-                                            { let start =
-						try
-						  float_of_string $5
-						with
-						| Failure _ -> 
-                                                    parse_error_msg "Invalid float" $5; 
-                                                    raise Parsing.Parse_error
-					      and step =
-						try
-						  float_of_string $7
-						with
-						| Failure _ -> 
-                                                    parse_error_msg "Invalid float" $7; 
-                                                    raise Parsing.Parse_error
-					      and stop =
-						try
-						  float_of_string $9
-						with
-						| Failure _ -> 
-                                                    parse_error_msg "Invalid float" $9; 
-                                                    raise Parsing.Parse_error in
-					      try
-						Float_param ($2, List.map (fun x -> Num_val (x, add_pos ())) (float_interval start step stop), add_pos ())
-					      with
-					      | INVALID_INTERVAL ->
-						  parse_error_msg "Invalid interval for parameter" $2; 
-                                                  raise Parsing.Parse_error
-                                            }
-  | error                                   { parse_error_msg "Invalid parameter" ""; 
-                                              raise PARSE_ERROR}	    
-  ;	
+  : INT IDE EQUAL param_int_exp                       
+    { Param_int ($2, $4, loc $startpos $endpos) }
+  | FLOAT IDE EQUAL param_float_exp
+    { Param_float ($2, $4, loc $startpos $endpos) }
 
-init
-  : INIT IDE SEMICOLON                      { Init ($2, add_pos ()) }
-  | INIT IDE LPAR acts RPAR SEMICOLON       { Init_fun ($2, $4, add_pos ()) }
- /* | error                                   { parse_error_msg "Invalid init" ""; 
-                                              raise Parsing.Parse_error}*/		    
-  ;
+int_exp_list
+  : int_exp                                 { [ $1 ] }
+  | int_exp COMMA int_exp_list              { $1 :: $3 }
 
-rule_set
-  : RULES EQUAL LSBR p_classes RSBR SEMICOLON
-                                            { $4 }
-  | error                                   { parse_error_msg "Invalid rules" ""; 
-                                              raise PARSE_ERROR}	    
-  ;
+float_exp_list
+  : float_exp                               { [ $1 ] }
+  | float_exp COMMA float_exp_list          { $1 :: $3 }
 
-p_classes
- : p_class                                  { [ $1 ] }
- | p_class COMMA p_classes                  { $1 :: $3 }
- ;
+param_int_exp
+  : int_exp                                 
+    { Param_int_val ($1, loc $startpos $endpos) }
+  | LCBR int_exp_list RCBR
+    { Param_int_set ($2, loc $startpos $endpos) }
+  | LSBR int_exp COLON int_exp COLON int_exp RSBR		
+    { Param_int_range ($2, $4, $6, loc $startpos $endpos) }
 
-p_class
- : LCBR rules RCBR                          { Pri_class ($2, add_pos ()) }
- | LPAR rules RPAR                          { Pri_classr ($2, add_pos ()) }
- ;
+param_float_exp
+  : float_exp                                 
+    { Param_float_val ($1, loc $startpos $endpos) }
+  | LCBR float_exp_list RCBR
+    { Param_float_set ($2, loc $startpos $endpos) }
+  | LSBR float_exp COLON float_exp COLON float_exp RSBR		
+    { Param_float_range ($2, $4, $6, loc $startpos $endpos) }
+
+priority_list
+  : priority_class                          { [ $1 ] }
+  | priority_class COMMA priority_list      { $1 :: $3 }
+
+spriority_list
+  : spriority_class                         { [ $1 ] }
+  | spriority_class COMMA spriority_list    { $1 :: $3 }
+
+priority_class
+  : LCBR rule_ide_list RCBR 
+    { Pr ($2, loc $startpos $endpos) }
+  | LPAR rule_ide_list RPAR
+    { Pr_red ($2, loc $startpos $endpos) }
 
 rules
-  : rule                                    { [ $1 ] }
-  | rule COMMA rules                        { $1 :: $3 }
-  ;
+  : RULES EQUAL LSBR priority_list RSBR SEMICOLON
+    { $4 }
 
-rule
-  : IDE                                     { Rul ($1, add_pos ()) }
-  | IDE LPAR forms RPAR                     { Rul_fun ($1, $3, add_pos ()) }
-  ; 		
+srules
+  : RULES EQUAL LSBR spriority_list RSBR SEMICOLON
+    { $4 }
 
-forms
-  : IDE                                     { [ $1 ] }
-  | IDE COMMA forms                         { $1 :: $3 }
-  ;
+rule_ide_list
+  : rule_ide                                { [ $1 ] }
+  | rule_ide COMMA rule_ide_list            { $1 :: $3 }
 
-num_exp
-  : NUM                                     { try
-						Num_val (float_of_string $1, add_pos ())
-                                              with
-                                              | Failure _ -> 
-                                                  parse_error_msg "Invalid numerical expression" $1; 
-                                                  raise Parsing.Parse_error 
-					    }
-  | IDE                                     { Num_ide ($1, add_pos ()) } 
-  | LPAR num_exp RPAR                       { $2 }
-  | num_exp PROD num_exp                    { Num_prod ($1, $3, add_pos ()) }     
-  | num_exp CARET num_exp                   { Num_pow ($1, $3, add_pos ()) }
-  | num_exp SLASH num_exp                   { Num_div ($1, $3, add_pos ()) }
-  | num_exp PLUS num_exp                    { Num_plus ($1, $3, add_pos ()) }   
-  | num_exp MINUS num_exp                   { Num_minus ($1, $3, add_pos ()) }
-  | error                                   { parse_error_msg "Invalid numerical expression" ""; 
-                                              raise Parsing.Parse_error}		    
-  ;		
+rule_ide
+  : IDE
+    { Rul_ide ($1, loc $startpos $endpos) }
+  | IDE LPAR num_list RPAR 
+    { Rul_ide_fun ($1, $3, loc $startpos $endpos) }
 
-acts
-  : num_exp                                 { [ $1 ] }
-  | num_exp COMMA acts                      { $1 :: $3 }
-  ;
+spriority_class
+  : LCBR srule_ide_list RCBR 
+    { Spr ($2, loc $startpos $endpos) }
+  | LPAR srule_ide_list RPAR
+    { Spr_red ($2, loc $startpos $endpos) }
+
+srule_ide_list
+  : srule_ide                               { [ $1 ] }
+  | srule_ide COMMA srule_ide_list          { $1 :: $3 }
+
+srule_ide
+  : IDE
+    { Srul_ide ($1, loc $startpos $endpos) }
+  | IDE LPAR num_list RPAR 
+    { Srul_ide_fun ($1, $3, loc $startpos $endpos) }
 
 bexp
-  : simple_exp                              { $1 } 
-  | closures                                { $1 }
-  | bexp PROD bexp                          { Big_comp ($1, $3, add_pos ()) }
-  | bexp PLUS bexp                          { Big_tens ($1, $3, add_pos ()) }
-  | bexp PIPE bexp                          { Big_par ($1, $3, add_pos ()) }
-  | bexp DPIPE bexp                         { Big_ppar ($1, $3, add_pos ()) }
-  | SHARE simple_exp BY simple_exp IN simple_exp
-                                            { Big_share ($2, $4, $6, add_pos ()) }
-  | error                                   { parse_error_msg "Invalid bigraph" ""; 
-                                              raise Parsing.Parse_error}		    
-  ;
+  : simple_bexp
+    { $1 }
+  | closure_list LPAR bexp RPAR
+    { Big_closures ($1, $3, loc $startpos $endpos) }
+  | closure_list ion_exp
+    { Big_closures ($1, $2, loc $startpos $endpos) }
+  | closure_list ion_exp DOT simple_bexp
+    { Big_closures ($1, Big_nest ($2, $4, loc $startpos $endpos), loc $startpos $endpos) }
+  | bexp PROD bexp 
+    { Big_comp ($1, $3, loc $startpos $endpos) }
+  | bexp PLUS bexp
+    { Big_tens ($1, $3, loc $startpos $endpos) }
+  | bexp PIPE bexp
+    { Big_par ($1, $3, loc $startpos $endpos) }
+  | bexp DPIPE bexp  
+    { Big_ppar ($1, $3, loc $startpos $endpos) }
+  | SHARE simple_bexp BY simple_bexp IN simple_bexp
+    { Big_share ($2, $4, $6, loc $startpos $endpos) }  
 
-simple_exp
-  : IDE                                     { Big_ide ($1, add_pos ()) }
-  | IDE LPAR acts RPAR                      { Big_ide_fun ($1, $3, add_pos ()) }
-  | LCBR IDE RCBR                           { Big_name ($2, add_pos ()) }
-  | ion_exp                                 { $1 }
-  | ion_exp DOT simple_exp                  { Big_nest ($1, $3, add_pos ()) }	
-  | LPAR LSBR places RSBR COMMA NUM RPAR    { try
-						let n = int_of_string $6 in
-						if n < 0 then (parse_error_msg "Invalid placing" $6; 
-							       raise Parsing.Parse_error)
-						else Big_plac ($3, n, add_pos ())
-                                              with
-					      | Failure _ ->
-						  parse_error_msg "Invalid int" $6; 
-                                                  raise Parsing.Parse_error
-					    }
-  | LPAR bexp RPAR                          { $2 }				
-  | NUM                                     { try
-						let n = int_of_string $1 in
-						if (n != 0) && (n != 1) then (parse_error_msg "Invalid elementary bigraph" $1; 
-									      raise Parsing.Parse_error)
-						else Big_el (n, add_pos ())
-                                              with
-					      | Failure _ ->
-						  parse_error_msg "Invalid int" $1; 
-                                                  raise Parsing.Parse_error
-					    }
-  | id_exp                                  { $1 }
-  ;
-
-plc_vals
-  : NUM                                     { try 
-						let n = int_of_string $1 in
-						if n < 0 then (parse_error_msg "Invalid placing" $1; 
-							       raise Parsing.Parse_error)
-						else [ n ]
-                                              with
-					      | Failure _ ->
-						  parse_error_msg "Invalid int" $1; 
-                                                  raise Parsing.Parse_error
-					    }
-  | NUM COMMA plc_vals                      { try 
-						let n = int_of_string $1 in
-						if n < 0 then (parse_error_msg "Invalid placing" $1; 
-							       raise Parsing.Parse_error)
-						else n :: $3 
-                                              with
-					      | Failure _ ->
-						  parse_error_msg "Invalid int" $1; 
-                                                  raise Parsing.Parse_error
-					    }
-  ;
-
-places
-  : /* EMPTY */                             { [ ] }
-  | LCBR plc_vals RCBR                      { [ $2 ] }				
-  | LCBR plc_vals RCBR COMMA places         { $2 :: $5 }
-  | error                                   { parse_error_msg "Invalid vector" ""; 
-                                               raise Parsing.Parse_error}		    	
-  ;
-
-ion_exp
-  : CIDE                                    { Big_ion ($1, [], add_pos ()) }
-  | CIDE LCBR forms RCBR                    { Big_ion ($1, $3, add_pos ()) }	
-  | CIDE LPAR acts RPAR                     { Big_ion_fun ($1, [], $3, add_pos ()) }
-  | CIDE LPAR acts RPAR LCBR forms RCBR     { Big_ion_fun ($1, $6, $3, add_pos ()) }
-/*  | error                                   { parse_error_msg "Invalid ion" ""; 
-                                              raise Parsing.Parse_error}		*/    
-  ;
+simple_bexp
+  : LPAR bexp RPAR
+    { $2 } 
+  | id_exp                                  
+    { Big_id $1 }
+  | closure
+    { Big_close $1 }
+  | CINT
+    { Big_num ($1, loc $startpos $endpos) }
+  | LCBR IDE RCBR                           
+    { Big_new_name ($2, loc $startpos $endpos) }
+  | place_exp
+    { Big_plc $1 }
+  | IDE   
+    { Big_var ($1, loc $startpos $endpos) }
+  | IDE LPAR num_list RPAR                    
+    { Big_var_fun ($1, $3, loc $startpos $endpos) }
+  | ion_exp                                 
+    { $1 }
+  | ion_exp DOT simple_bexp
+    { Big_nest ($1, $3, loc $startpos $endpos) }
 
 id_exp
-  : ID                                      { Big_id (1, [], add_pos ()) }
-  | ID LCBR forms RCBR                      { Big_id (0, $3, add_pos ()) }	
-  | ID LPAR NUM RPAR                        { try
-						let n = int_of_string $3 in
-						if n >= 0 then Big_id (n, [], add_pos ())
-						else (parse_error_msg "Invalid identity" $3;
-						      raise Parsing.Parse_error)
-                                              with
-					      | Failure _ ->
-						  parse_error_msg "Invalid int" $3; 
-                                                  raise Parsing.Parse_error
-					    }
-  | ID LPAR NUM COMMA LCBR forms RCBR RPAR  { try
-						let n = int_of_string $3 in
-						if n >= 0 then Big_id (n, $6, add_pos ())
-						else (parse_error_msg "Invalid identity" $3;
-						      raise Parsing.Parse_error)
-                                              with
-					      | Failure _ ->
-						  parse_error_msg "Invalid int" $3; 
-                                                  raise Parsing.Parse_error
-					    }
- /* | error                                   { parse_error_msg "Invalid identity" ""; 
-                                              raise Parsing.Parse_error}		*/    
-  ;
+  : ID                                      
+    { { id_place = 1;
+        id_link = [];
+        id_loc = loc $startpos $endpos;
+      } } 
+  | ID LCBR ide_list RCBR
+    { { id_place = 0;
+        id_link = $3;
+        id_loc = loc $startpos $endpos;
+      } }
+  | ID LPAR CIDE RPAR
+    { { id_place = $3;
+        id_link = [];
+        id_loc = loc $startpos $endpos;
+      } }
+  | ID LPAR CIDE COMMA LCBR ide_list RCBR RPAR  
+    { { id_place = $3;
+        id_link = $6;
+        id_loc = loc $startpos $endpos;
+      } }
 
-closures
-  : closure                                 { $1 }
-  | closure simple_exp                      { Big_comp_c ($1, $2, add_pos ()) }
-  ; 
+ion_exp
+  : CIDE                                    
+    { Big_ion ($1, [], loc $startpos $endpos) }
+  | CIDE LCBR ide_list RCBR
+    { Big_ion ($1, $3, loc $startpos $endpos) }	
+  | CIDE LPAR num_list RPAR
+    { Big_ion_fun ($1, $3, [], loc $startpos $endpos) }
+  | CIDE LPAR num_list RPAR LCBR ide_list RCBR  
+    { Big_ion_fun ($1, $3, $6, loc $startpos $endpos) }
+
+place_exp
+  : LPAR LSBR int_list_list RSBR COMMA CINT RPAR   
+    { { plc_parents = $3;
+        plc_roots = $6;
+        plc_loc = loc $startpos $endpos;
+      } }
+
+int_list_list
+  : /* EMPTY */                             { [ ] }
+  | LCBR int_list RCBR                      { [ $2 ] }				
+  | LCBR int_list RCBR COMMA int_list_list  { $2 :: $5 }
+    
+closure_list
+  : closure                                 { [ $1 ] } 
+  | closure closure_list                    { $1 :: $2 }
 
 closure
-  : SLASH IDE                               { Big_close ([ $2 ], add_pos ()) }
-  | SLASH IDE closure                       { add_closure $2 $3 }
-  ;
+  : SLASH IDE  
+    { { cl_name = $2; 
+        cl_loc = loc $startpos $endpos;
+      } }
 						 
 %%
 

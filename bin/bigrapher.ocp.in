@@ -4,6 +4,8 @@ license = [ "BSD" ]
 
 comp += [ "-warn-error" "A" ]
 
+ocamlyacc = [ "menhir" "--explain" "--strict" ]
+
 install = false
 
 begin program "bigrapher"
@@ -11,10 +13,11 @@ begin program "bigrapher"
   files = [
     "../utils/utils.ml"
     "cmd.ml"  
+    "loc.ml"
     "syntax.ml"
     "store.ml"
     "lexer_main.mll"
-    "parser_main.mly"  
+    "parser_main.mly"
     "bigrapher.ml"
   ]
 

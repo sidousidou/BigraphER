@@ -1,8 +1,6 @@
 # Ignore dirs
 _obuild/
-ocp-build.root
-ocp-build.root.old
-ocp-build.root.old.old
+ocp-build.*
 
 # Generated files
 aclocal.m4
@@ -16,31 +14,32 @@ opam/url
 config.*
 
 # OCaml 
-*/*.annot
-*/*.cmo
-*/*.cma
-*/*.cmi
-*/*.a
-*/*.o
-*/*.cmx
-*/*.cmxs
-*/*.cmxa
-*/*.byte
-*/*.native
-*/*.p.byte
-*/*.p.native
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
+*.byte
+*.native
+*.p.byte
+*.p.native
+*.conflicts
 
 # profiler
 massif*
 *.out
 */massif*
-*/*.out
+*.out
 prof*
 *.stackdump
 
 # ocamldoc
-*/*.html
-*/*.html
+*.html
+*.html
 
 # archives
 *.gz
