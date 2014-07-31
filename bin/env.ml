@@ -3,22 +3,12 @@ open Format
 type error =
   | Unbound_variable of string
   | Multiple_declaration of string
-  | Wrong_type of string * string
 
 exception ERROR of error * Loc.t
 
 let report_error fmt = function
-  | Unbound_variable s ->
-    fprintf fmt "Unbound variable %s" s
-  | Multiple_declaration s ->
-    fprintf fmt "Variable %s is defined multiple times" s
-  | Wrong_type (curr, exp) ->
-    fprintf fmt "This expression has type %s but an expression was expected of type %s" curr exp
+  
 
-type ptyp = 
-  [ `int
-  | `float
-  | `undef of int ]
 
 type big_value =
   | Big of Big.bg
@@ -30,7 +20,7 @@ type react_value =
                    
 type sreact_value =
   | Sreact of Sbrs.sreact
-  | Sreact_fun of Big.bg * Big.bg * Syntax.float_exp
+  | Sreact_fun of Big.bg * Big.bg * Ast.float_exp
 
 type ctrl_value =
   | Ctrl of Ctrl.t
@@ -48,31 +38,9 @@ type value =
   | Vreact of react_value
   | Vsreact of sreact_value
 
-let get_type = function
-  | Vint _ -> "int"
-  | Vfloat _ -> "float"
-  | Vint_p _ -> "int param"
-  | Vfloat_p _ -> "float param"
-  | Vbig _ -> "big"
-  | Vctrl _ -> "ctrl"
-  | Vreact _ -> "react"
-  | Vsreact _ -> "sreact"
-
-let to_int loc = function
-  | Vint v -> v
-  | Vfloat _| Vint_p _ | Vfloat_p _ | Vbig _ 
-  | Vctrl _ | Vreact _ | Vsreact _ as v -> 
-    raise (ERROR (Wrong_type ("int", get_type v), loc))
-
-let to_float loc = function
-  | Vfloat v -> v
-  | Vint _| Vint_p _ | Vfloat_p _ | Vbig _ 
-  | Vctrl _ | Vreact _ | Vsreact _ as v -> 
-    raise (ERROR (Wrong_type ("float", get_type v), loc))
-
 module Ide = struct
   type t = string
-  let compare = String.compare
+  let compare = String.compare                
 end
 
 module Env = struct
@@ -82,7 +50,7 @@ module Env = struct
 
   type t = 
     { store : value IdeMap.t;
-      types : ptyp list IdeMap.t;
+      types : Type.typ list IdeMap.t;
       atomic : IdeSet.t; 
       signature : int Sig.t;
     }
@@ -107,24 +75,56 @@ module Env = struct
     with
     | Not_found -> 
       raise (ERROR (Unbound_variable ide, loc))
-
+        
+  let find_exn env ide loc =
+    (find_value_exn env ide loc, find_type_exn env ide loc)
+  
   let is_atomic_exn env c = 
     IdeSet.mem c env.atomic
 
   let get_sig env = env.signature
 
-  let add_value env ide v verbose fmt loc =
+  let add_value ide v verbose fmt loc env =
     if IdeMap.mem ide env.store && verbose then (
+      (* No excpetion, just warning *)
       report_error fmt (Multiple_declaration ide));
     { env with store = IdeMap.add ide v env.store; }
+    
+  let add_type ide tyl verbose fmt loc env =
+    if IdeMap.mem ide env.types && verbose then (
+      (* No excpetion, just warning *)
+      report_error fmt (Multiple_declaration ide));
+    { env with types = IdeMap.add ide tyl env.types; }
+    
+  let add_type_exn ide tyl loc env =
+    try 
+      let t = IdeMap.find ide env.types in
+      Type.check t tyl loc;
+      { env with types = IdeMap.add ide tyl env.types; }
+    with
+    | Not_found -> { env with types = IdeMap.add ide tyl env.types; }
 
-  let add_type env ide tyl =
+  let add_type_scope ide tyl loc env =
     { env with types = IdeMap.add ide tyl env.types; }
 
-  let add_atomic env c =
+  let merge_type_exn env env' l =
+    { env with types =  IdeMap.merge (fun id xt xt' ->
+       match (xt, xt') with
+       | (Some t, Some t') -> Some (Type.merge_l_exn t t' l)
+       | (Some t, None) -> xt
+       | (None, Some t') -> xt'
+       | (None, None) -> None
+       ) env.types env'.types; }
+   
+  let to_type_exn env t l =
+    { env with types = IdeMap.map (fun x -> 
+         Type.merge_l_exn t t' l 
+       ) env.types; }
+
+  let add_atomic c env =
     { env with atomic = IdeSet.add c env.atomic; }
 
-  let add_sig env c ar =
+  let add_sig c ar env =
     { env with signature = Sig.add c ar env.signature; }
     
 end

@@ -1,7 +1,7 @@
 %{
 
 open Loc 
-open Syntax
+open Ast
 
 %}
 
@@ -53,8 +53,10 @@ open Syntax
 %left  PROD SLASH
 %right CARET
  
-%start model
-%type <Syntax.model> model
+%start model const_list
+%type <Ast.model> model
+%type <Ast.consts> const_list
+(* %type <Ast.predicates> pred_list *)
 
 %%
 
@@ -282,9 +284,9 @@ rule_ide_list
 
 rule_ide
   : IDE
-    { Rul_ide ($1, loc $startpos $endpos) }
+    { Rul_id ($1, loc $startpos $endpos) }
   | IDE LPAR num_list RPAR 
-    { Rul_ide_fun ($1, $3, loc $startpos $endpos) }
+    { Rul_id_fun ($1, $3, loc $startpos $endpos) }
 
 spriority_class
   : LCBR srule_ide_list RCBR 
@@ -298,9 +300,9 @@ srule_ide_list
 
 srule_ide
   : IDE
-    { Srul_ide ($1, loc $startpos $endpos) }
+    { Srul_id ($1, loc $startpos $endpos) }
   | IDE LPAR num_list RPAR 
-    { Srul_ide_fun ($1, $3, loc $startpos $endpos) }
+    { Srul_id_fun ($1, $3, loc $startpos $endpos) }
 
 bexp
   : simple_bexp
@@ -370,13 +372,13 @@ id_exp
 
 ion_exp
   : CIDE                                    
-    { Big_ion ($1, [], loc $startpos $endpos) }
+    { Big_ion_exp ($1, [], loc $startpos $endpos) }
   | CIDE LCBR ide_list RCBR
-    { Big_ion ($1, $3, loc $startpos $endpos) }	
+    { Big_ion_exp ($1, $3, loc $startpos $endpos) }	
   | CIDE LPAR num_list RPAR
-    { Big_ion_fun ($1, $3, [], loc $startpos $endpos) }
+    { Big_ion_fun_exp ($1, $3, [], loc $startpos $endpos) }
   | CIDE LPAR num_list RPAR LCBR ide_list RCBR  
-    { Big_ion_fun ($1, $3, $6, loc $startpos $endpos) }
+    { Big_ion_fun_exp ($1, $3, $6, loc $startpos $endpos) }
 
 place_exp
   : LPAR LSBR int_list_list RSBR COMMA CINT RPAR   
@@ -399,6 +401,22 @@ closure
     { { cl_name = $2; 
         cl_loc = loc $startpos $endpos;
       } }
-						 
+
+const_list
+  : const EOF                               { [$1] }
+  | const COMMA const_list                  {  $1 :: $3 }
+		
+const
+  : IDE EQUAL CINT
+    { Cint { dint_id = $1;
+             dint_exp = Int_val ($3, loc $startpos $endpos);
+             dint_loc = loc $startpos $endpos;
+           } }
+  | IDE EQUAL CFLOAT
+    { Cfloat { dfloat_id = $1;
+               dfloat_exp = Float_val ($3, loc $startpos $endpos);
+               dfloat_loc = loc $startpos $endpos;
+             } }				 
+
 %%
 

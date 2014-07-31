@@ -1,6 +1,6 @@
 {
 
-open Parser_main
+open Parser
 
 type error =
   | Unknown_char of char

@@ -1,6 +1,6 @@
 open Printf
 open Utils
-open Syntax
+open Ast
 open Filename
 open Cmd
 
@@ -185,7 +185,7 @@ let () =
         ); 
       let (lexbuf, file) = 
         open_lex (_to_string defaults.model) in
-      let out = Parser_main.model Lexer_main.lex lexbuf in 
+      let out = Parser.model Lexer.token lexbuf in 
       close_in file; 
       out
     in
