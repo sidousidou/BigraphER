@@ -1,6 +1,5 @@
 open Format
 open Ast
-open Type
 
 type error =
   | Invalid_priority of string

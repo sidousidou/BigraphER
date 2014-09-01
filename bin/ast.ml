@@ -73,9 +73,9 @@ type closure_exp =                                          (* /x *)
   }
 
 type big_exp =
-  | Big_var of Id.t * Loc.t                                   (* b *)
-  | Big_var_fun of Id.t * num_exp list * Loc.t                (* b(1, 5.67) *)
-  | Big_new_name of Id.t * Loc.t                              (* {n} *)
+  | Big_var of Id.t * Loc.t                                 (* b *)
+  | Big_var_fun of Id.t * num_exp list * Loc.t              (* b(1, 5.67) *)
+  | Big_new_name of Id.t * Loc.t                            (* {n} *)
   | Big_comp of big_exp * big_exp * Loc.t                   (* A * B *) 
   | Big_tens of big_exp * big_exp * Loc.t                   (* A + B *) 
   | Big_par of big_exp * big_exp * Loc.t                    (* A | B *)
@@ -210,3 +210,35 @@ let face_of_ion_exp = function
 
 let loc_of_ion_exp = function
   | Big_ion_exp (_, _, l) | Big_ion_fun_exp (_, _, _, l) -> l
+
+let init_of_ts = function
+  | Dbrs dbrs -> dbrs.dbrs_init 
+  | Dsbrs dsbrs -> dsbrs.dsbrs_init
+
+type rul_call = RulCall of Id.t * int * Loc.t
+
+let ids_of_pr_exps =
+  List.fold_left (fun acc -> function
+      | Pr_red (rules, _) 
+      | Pr (rules, _) -> rules @ acc
+    ) []
+
+let ids_of_spr_exps =
+  List.fold_left (fun acc -> function
+      | Spr_red (rules, _) 
+      | Spr (rules, _) -> rules @ acc
+    ) []
+
+let rul_id_to_rul_call = function
+  | Rul_id (id, loc) -> RulCall (id, 0, loc)
+  | Rul_id_fun (id, acts, loc) -> RulCall (id, List.length acts, loc)
+
+let srul_id_to_rul_call = function
+  | Srul_id (id, loc) -> RulCall (id, 0, loc)
+  | Srul_id_fun (id, acts, loc) -> RulCall (id, List.length acts, loc)
+
+let rules_of_ts = function
+  | Dbrs dbrs -> 
+    List.map rul_id_to_rul_call (ids_of_pr_exps (dbrs.dbrs_pri))
+  | Dsbrs dsbrs -> 
+    List.map srul_id_to_rul_call (ids_of_spr_exps (dsbrs.dsbrs_pri))

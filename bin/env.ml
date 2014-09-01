@@ -29,12 +29,12 @@ type ctrl_value =
   | A_ctrl_fun of Ctrl.t
   
 type value =
+  | Vctrl of ctrl_value
   | Vint of int
   | Vfloat of float
   | Vint_p of int list
   | Vfloat_p of float list
   | Vbig of big_value      
-  | Vctrl of ctrl_value
   | Vreact of react_value
   | Vsreact of sreact_value
 
