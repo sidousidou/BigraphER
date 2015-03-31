@@ -5,7 +5,14 @@ language: java
 before_install: 
  - sudo add-apt-repository -y ppa:avsm/ocaml41+opam12
  - sudo apt-get update -qq 
- - sudo apt-get install -qq ocaml opam graphviz minisat
+ - sudo apt-get install -qq ocaml \
+   			    ocaml-native-compilers \
+			    m4 \
+			    camlp4-extra \
+			    opam \
+			    graphviz \
+			    zlib1g-dev \
+			    minisat
  - ./scripts/shippable-opam.sh
  - opam install -q -y ocp-build
 
