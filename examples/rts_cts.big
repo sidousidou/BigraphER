@@ -245,11 +245,11 @@ sbrs
 
   rules = [ 
             (r_UD(t), r_UP(t)),
-      (r_UC(t)),
-      (r_D(t)),
-      (r_P(t,t)),
-      (r_B(l)),
-      {r_BACK1(z,t,l), r_BACK1E(t,l), r_BACK2(z,t,l), r_BACK2E(t,l)},
-      {r_RTS(t,l), r_CTS(t,t,l), r_DATA(l), r_ACK(t,t,l)}
+	    (r_UC(t)),
+      	    (r_D(t)),
+      	    (r_P(t,t)),
+      	    (r_B(l)),
+      	    {r_BACK1(z,t,l), r_BACK1E(t,l), r_BACK2(z,t,l), r_BACK2E(t,l)},
+      	    {r_RTS(t,l), r_CTS(t,t,l), r_DATA(l), r_ACK(t,t,l)}
           ];  
 endsbrs
