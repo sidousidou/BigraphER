@@ -1,7 +1,7 @@
 #!/bin/sh
 # Compile & run tests 
 
-eval `opam config -env`
+eval `opam config env`
 
 echo CLEANING ...
 ocp-build uninstall bigraph

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-eval `opam config -env`
+eval `opam config env`
 
 echo INSTALLING BIGRAPHER
 ocp-build install bigraph

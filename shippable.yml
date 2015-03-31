@@ -1,4 +1,4 @@
-build_environment: Ubuntu 13.04
+build_environment: Ubuntu 14.04
 
 language: java
 
@@ -6,8 +6,8 @@ before_install:
  - sudo add-apt-repository -y ppa:avsm/ocaml41+opam12
  - sudo apt-get update -qq 
  - sudo apt-get install -qq ocaml opam graphviz minisat
+ - ./scripts/shippable-opam.sh
 
 script: 
- - ./scripts/shippable-opam.sh
  - ./scripts/shippable-tests.sh
  - ./scripts/shippable-link.sh
