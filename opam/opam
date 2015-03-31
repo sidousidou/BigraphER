@@ -14,7 +14,7 @@ remove: [
   ["ocp-build" "uninstall" "bigraph"]
 ]
 depends: [
-  "ocp-build" {<= "1.99.6-beta"}
+  "ocp-build" {> "1.99.6-beta"}
   "minisat"
 ]
 post-messages: [
