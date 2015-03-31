@@ -10,4 +10,3 @@ OPAM_PACKAGES='ocp-build minisat'
 opam init -q -a -y
 eval `opam config env`
 opam repository -q -y add dcs $DCS_REPO
-opam install -q -y minisat

@@ -7,6 +7,7 @@ before_install:
  - sudo apt-get update -qq 
  - sudo apt-get install -qq ocaml ocaml-native-compilers m4 camlp4-extra opam graphviz zlib1g-dev minisat
  - ./scripts/shippable-opam.sh
+ - opam install -q -y minisat
  - opam install -q -y ocp-build
 
 script: 
