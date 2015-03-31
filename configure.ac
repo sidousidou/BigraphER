@@ -1,4 +1,4 @@
-AC_INIT(bigrapher,0.4.6)
+AC_INIT(bigrapher,0.4.7)
 AC_COPYRIGHT(Copyright 2012-2013 Michele Sevegnani)
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -26,10 +26,20 @@ if test "$OCAMLYACC" = "no"; then
    AC_MSG_ERROR([You must install the OCaml parser (the ocamlyacc command)])
 fi
 
+AC_PROG_OCPBUILD
+if test "$OCPBUILD" = "no"; then
+   AC_MSG_ERROR([You must install ocp-build])
+   fi
+
 AC_PROG_FINDLIB
 if test "$OCAMLFIND" = "no"; then
    AC_MSG_ERROR([You must install OCaml findlib (the ocamlfind command)])
-fi
+   fi
+
+AC_CHECK_OCAML_PKG([minisat])
+ if test "$OCAML_PKG_minisat" = "no"; then
+    AC_MSG_ERROR([Please install OCaml findlib module 'minisat'])
+     fi
 
 AC_CHECK_PROG(DOT, dot, "yes")
 

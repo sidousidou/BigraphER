@@ -7,7 +7,7 @@ OCPBUILD ?= ocp-build
 
 all:
 ifeq (,$(wildcard ocp-build.root))
-	$(OCPBUILD) root
+	$(OCPBUILD) init
 endif
 	$(OCPBUILD) -njobs 5
 
