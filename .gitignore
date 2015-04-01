@@ -1,20 +1,14 @@
 # Ignore dirs
-_obuild/
-ocp-build.root
-ocp-build.root.old
-ocp-build.root.old.old
+_build
+*.docdir
+
+setup.data
+setup.log
 
 # Generated files
-aclocal.m4
-autom4te.cache/
-Makefile.config
 bin/cmd.ml
-bin/bigrapher.ocp
 man/bigrapher.1
-lib/bigraph.ocp
-opam/url
-config.*
-*.asm
+opam/*
 
 # OCaml 
 */*.annot
@@ -27,7 +21,7 @@ config.*
 */*.cmxs
 */*.cmxa
 */*.byte
-*/*.native
+*.native
 */*.p.byte
 */*.p.native
 
@@ -53,3 +47,4 @@ prof*
 */*~
 */\#*\#
 */.\#*
+*.old

@@ -1,4 +1,4 @@
-.TH "BIGRAPHER" 1 "" "BigraphER @PACKAGE_VERSION@" "BigraphER Manual"
+.TH "BIGRAPHER" 1 "" "BigraphER ${pkg_version}" "BigraphER Manual"
 .SH NAME
 bigrapher \- implementation of Bigraphical Reactive Systems
 .SH SYNOPSIS

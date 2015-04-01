@@ -4,7 +4,7 @@ open Utils
 open Filename
 open Str
 
-let version = "@PACKAGE_VERSION@"
+let version = "${pkg_version}"
 
 type 'a option = Some of 'a | None
 

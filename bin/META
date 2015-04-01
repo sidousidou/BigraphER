@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 7ab36e2efe0b0f4171b7e3d76d3ee4c1)
+version = "0.5.0"
+description = "Implementation of bigraphical reactive systems"
+requires = "bigraph-utils"
+archive(byte) = "bigrapher-utils.cma"
+archive(byte, plugin) = "bigrapher-utils.cma"
+archive(native) = "bigrapher-utils.cmxa"
+archive(native, plugin) = "bigrapher-utils.cmxs"
+exists_if = "bigrapher-utils.cma"
+# OASIS_STOP
+

@@ -1,0 +1,69 @@
+OASISFormat: 0.4
+Name:        bigrapher
+Version:     0.5.0
+Synopsis:    Implementation of bigraphical reactive systems
+Description: BigraphER is an efficient implementation of Bigraphical Reactive
+ Systems (BRS) that supports bigraphs with sharing, stochastic reaction rules,
+ rule priorities, graphical output and predicate checking. Models can be
+ exported to probabilistic model checker PRISM.
+  
+Authors:     Michele Sevegnani
+Maintainers: Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
+License:     BSD-3-clause
+LicenseFile: LICENSE
+OCamlVersion:	>= 4.00.0
+Plugins:     META (0.4), DevFiles (0.4)
+Homepage:    http://www.dcs.gla.ac.uk/~michele/bigrapher.html
+AlphaFeatures: ocamlbuild_more_args
+FilesAB:       bin/cmd.ml.ab, man/bigrapher.1.ab
+
+
+Executable bigrapher
+  Path:       bin
+  BuildTools: ocamlbuild
+  MainIs:     bigrapher.ml
+  CompiledObject: best
+  BuildDepends:	  bigraph, bigrapher-utils
+  Install:	  true
+  
+Library bigraph
+  Path:            lib
+  BuildTools:      ocamlbuild
+  FindlibName:	   bigraph
+  Modules:         Base, Link, Place, Big, Brs, Sbrs, Export
+  InternalModules: Iso, IntSet, Rel, Fun, Sparse, Cnf
+  BuildDepends:    unix, minisat, bigarray, str
+  XMETARequires:   unix, minisat, bigarray, str
+  Install:	   true
+
+Library "bigraph-utils"
+  Path:            utils
+  BuildTools:      ocamlbuild
+  Modules:         Utils
+  BuildDepends:    unix
+  Install:	   false
+
+Library "bigrapher-utils"
+  Path:            bin
+  BuildTools:      ocamlbuild
+  Modules:         Cmd, Syntax, Store, Lexer_main, Parser_main
+  BuildDepends:    bigraph-utils
+  Install:	   false
+
+SourceRepository master
+  Type:     git
+  Location: https://mseve@bitbucket.org/mseve/bigrapher.git
+  Branch: master
+  Browser: https://bitbucket.org/mseve/bigrapher
+  
+Document bigraph_api
+  Type:	 ocamlbuild (0.4)
+  BuildTools:	    ocamlbuild, ocamldoc
+  Title:      API reference for bigraph library
+  XOCamlbuildPath: lib
+  XOCamlbuildExtraArgs:	"-docflags '-colorize-code -short-functors -charset utf-8'"
+  XOCamlbuildLibraries:	bigraph
+
+Flag "no-graphviz"
+  Description: Build bigrapher without Graphviz support
+  Default: false
