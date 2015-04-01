@@ -1,5 +1,6 @@
-bin:  [
-  "_obuild/bigrapher/bigrapher.asm" { "bigrapher" }
+bin: [
+  "?_build/bin/bigrapher.byte" {"bigrapher"}
+  "?_build/bin/bigrapher.native" {"bigrapher"}
 ]
 man: [
   "man/bigrapher.1" {"man1/bigrapher.1"}

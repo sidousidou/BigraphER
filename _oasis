@@ -14,8 +14,7 @@ LicenseFile: LICENSE
 OCamlVersion:	>= 4.00.0
 Plugins:     META (0.4), DevFiles (0.4)
 Homepage:    http://www.dcs.gla.ac.uk/~michele/bigrapher.html
-AlphaFeatures: ocamlbuild_more_args
-FilesAB:       bin/cmd.ml.ab, man/bigrapher.1.ab
+FilesAB:       bin/cmd.ml.ab, man/bigrapher.1.ab, opam/url.ab, opam/opam.ab
 
 
 Executable bigrapher
@@ -61,7 +60,6 @@ Document bigraph_api
   BuildTools:	    ocamlbuild, ocamldoc
   Title:      API reference for bigraph library
   XOCamlbuildPath: lib
-  XOCamlbuildExtraArgs:	"-docflags '-colorize-code -short-functors -charset utf-8'"
   XOCamlbuildLibraries:	bigraph
 
 Flag "no-graphviz"

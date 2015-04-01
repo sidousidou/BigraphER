@@ -1,0 +1,43 @@
+opam-version: "1.2"
+name: "bigrapher"
+version: "${pkg_version}"
+maintainer: "michele.sevegnani@glasgow.ac.uk"
+authors: [ "Michele Sevegnani" ]
+license: "BSD-3-clause"
+homepage:"http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
+
+build: [
+  ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
+  ["ocaml" "setup.ml" "-build"]
+  ["ocaml" "setup.ml" "-install"]
+]
+
+remove: [
+  ["ocamlfind" "remove" "bigraph"]
+]
+
+build-doc: [ "ocaml" "setup.ml" "-doc" ]
+
+depends: [
+  "base-bigarray"
+  "base-unix"
+  "minisat"
+  "ocamlfind"
+]
+
+ocaml-version: [ >= "4.00.0" ]
+
+post-messages: [
+"bigrapher installed.
+
+Quick setup for EMACS
+-------------------
+Add opam emacs directory to your load-path by appending this to your .emacs:
+  ;; Add opam emacs directory to the load-path
+  (setq opam-share (substring (shell-command-to-string \"opam config var share 2> /dev/null\") 0 -1))
+  (add-to-list 'load-path (concat opam-share \"/bigrapher\"))
+  ;; Load big-mode
+  (require 'big-mode)
+"
+  {success}
+]

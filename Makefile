@@ -39,3 +39,28 @@ configure:
 .PHONY: build doc test all install uninstall reinstall clean distclean configure
 
 # OASIS_STOP
+
+EMACS ?= emacs
+
+emacs-mode: big-mode/big-mode.el
+	$(EMACS) --batch --no-init-file -f batch-byte-compile $<
+
+ARCH = bigrapher-0.5.0
+ARCH_FILES = $(shell git ls-tree --name-only -r HEAD)
+
+prepare-archive:
+	rm -f $(ARCH) $(ARCH_TARGZ)
+	ln -s . $(ARCH)
+
+complete-archive:
+	tar czv $(addprefix $(ARCH)/,$(ARCH_FILES)) > $(ARCH).tar.gz
+	rm -f $(ARCH)
+
+dist:
+	@echo "Preparing files ..."
+	$(MAKE) prepare-archive
+	$(MAKE) complete-archive
+	@echo "Done!"
+
+.PHONY: emacs-mode prepare-archive complete-archive dist
+
