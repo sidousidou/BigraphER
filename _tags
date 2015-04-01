@@ -41,4 +41,5 @@ true: annot, bin_annot
 <bin/*.ml{,i,y}>: use_bigraph-utils
 <bin/*.ml{,i,y}>: use_bigrapher-utils
 # OASIS_STOP
-true: debug, warn_A
+
+true: debug, warn_A, principal, strict_sequence, safe_string
