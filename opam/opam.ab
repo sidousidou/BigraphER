@@ -1,5 +1,5 @@
 opam-version: "1.2"
-name: "bigrapher"
+name: "${pkg_name}"
 version: "${pkg_version}"
 maintainer: "michele.sevegnani@glasgow.ac.uk"
 authors: [ "Michele Sevegnani" ]
