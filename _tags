@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 55d7592d480d5acbc344f095eef837c8)
+# DO NOT EDIT (digest: 8dc14a231929f230483504413c47b04c)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -40,6 +40,8 @@ true: annot, bin_annot
 <bin/*.ml{,i,y}>: use_bigraph
 <bin/*.ml{,i,y}>: use_bigraph-utils
 <bin/*.ml{,i,y}>: use_bigrapher-utils
+# Library junit
+"tests/junit.cmxs": use_junit
 # Executable matching-test
 <tests/test_match.{native,byte}>: package(bigarray)
 <tests/test_match.{native,byte}>: package(minisat)
@@ -47,16 +49,6 @@ true: annot, bin_annot
 <tests/test_match.{native,byte}>: package(unix)
 <tests/test_match.{native,byte}>: use_bigraph
 <tests/test_match.{native,byte}>: use_bigraph-utils
-# Library junit
-"tests/junit.cmxs": use_junit
-# Executable decomp-test
-<tests/test_decomp.{native,byte}>: package(bigarray)
-<tests/test_decomp.{native,byte}>: package(minisat)
-<tests/test_decomp.{native,byte}>: package(str)
-<tests/test_decomp.{native,byte}>: package(unix)
-<tests/test_decomp.{native,byte}>: use_bigraph
-<tests/test_decomp.{native,byte}>: use_bigraph-utils
-<tests/test_decomp.{native,byte}>: use_junit
 # Executable brs-test
 <tests/test_brs.{native,byte}>: package(bigarray)
 <tests/test_brs.{native,byte}>: package(minisat)
@@ -65,6 +57,22 @@ true: annot, bin_annot
 <tests/test_brs.{native,byte}>: use_bigraph
 <tests/test_brs.{native,byte}>: use_bigraph-utils
 <tests/test_brs.{native,byte}>: use_junit
+# Executable decomp-test
+<tests/test_decomp.{native,byte}>: package(bigarray)
+<tests/test_decomp.{native,byte}>: package(minisat)
+<tests/test_decomp.{native,byte}>: package(str)
+<tests/test_decomp.{native,byte}>: package(unix)
+<tests/test_decomp.{native,byte}>: use_bigraph
+<tests/test_decomp.{native,byte}>: use_bigraph-utils
+<tests/test_decomp.{native,byte}>: use_junit
+# Executable parser-test
+<tests/test_parser.{native,byte}>: package(bigarray)
+<tests/test_parser.{native,byte}>: package(minisat)
+<tests/test_parser.{native,byte}>: package(str)
+<tests/test_parser.{native,byte}>: package(unix)
+<tests/test_parser.{native,byte}>: use_bigraph
+<tests/test_parser.{native,byte}>: use_bigraph-utils
+<tests/test_parser.{native,byte}>: use_junit
 <tests/*.ml{,i,y}>: package(bigarray)
 <tests/*.ml{,i,y}>: package(minisat)
 <tests/*.ml{,i,y}>: package(str)

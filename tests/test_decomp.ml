@@ -1,7 +1,5 @@
 (* Tests for various bigraph manipulation functions *)
-open Printf
 open Big
-open Utils
 open Junit
        
 (* parse a .big file *)

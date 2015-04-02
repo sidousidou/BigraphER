@@ -66,6 +66,12 @@ Flag "no-graphviz"
   Description: Build bigrapher without Graphviz support
   Default: false
 
+Library "junit"
+  Path:            tests
+  BuildTools:      ocamlbuild
+  Modules:         Junit
+  Install:	   false
+
 Executable "matching-test"
   Path:       tests
   BuildTools: ocamlbuild
@@ -112,16 +118,16 @@ Test "decomp"
   PreCommand:	mkdir -p ./shippable/testresults
   Command:	./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
 
-Library "junit"
-  Path:            tests
-  BuildTools:      ocamlbuild
-  Modules:         Junit
-  Install:	   false
+Executable "parser-test"
+  Path:       tests
+  BuildTools: ocamlbuild
+  MainIs:     test_parser.ml
+  CompiledObject: best
+  BuildDepends:	  bigraph, bigraph-utils, junit, unix
+  Install:	  false
 
-Test "parser-rts"
-  Run:		false
-  Command:	./bigrapher.native ./examples/rts_cts.big --debug 
-
-Test "parser-actors"
-  Run:		false
-  Command:	./bigrapher.native ./examples/actors.big --debug
+Test "parser"
+  Run:		true
+  TestTools:	mkdir, bigrapher.native	
+  PreCommand:	mkdir -p ./shippable/testresults
+  Command:	./test_parser.native ./tests/files/parser.in ./shippable/testresults parser-junit.xml
