@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite tests="4">
-  <testcase name="brs">
-    <system-out>Output</system-out>
-  </testcase>
-  <testcase name="sim_brs"/>
-  <testcase name="sbrs"/>
-  <testcase name="sim_sbrs">
-    <failure>States: 30 != 20</failure>
-  </testcase>
-</testsuite>
+<testsuites name="BigraphER">
+  <testsuite name="test_brs" tests="4">
+    <testcase name="brs">
+      <system-out>Output</system-out>
+    </testcase>
+    <testcase name="sim_brs"/>
+    <testcase name="sbrs"/>
+    <testcase name="sim_sbrs">
+      <failure type="VALUES_DO_NOT_MATCH">States: 30 != 20</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
