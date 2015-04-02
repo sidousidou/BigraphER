@@ -3,7 +3,7 @@ open Printf
 let header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 
 let string_of_attributes tag attr =
-  String.concat " " (tag :: (List.map (fun (a, v) -> a ^ "=" ^ v) attr))
+  String.concat " " (tag :: (List.map (fun (a, v) -> a ^ "=\"" ^ v ^ "\"") attr))
 		     
 let xml_block tag attr chl_blocks =
   sprintf "<%s>\n\

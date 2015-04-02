@@ -75,12 +75,12 @@ Executable "matching-test"
   Install:	  false
 
 Test "matching-match"
-  Run:		true
+  Run:		false
   Command:	../test_match.native match ./files/match/
   WorkingDirectory:	tests
   
 Test "matching-equality"
-  Run:		true
+  Run:		false
   Command:	../test_match.native equality ./files/match/
   WorkingDirectory:	tests
 
@@ -110,8 +110,7 @@ Test "decomp"
   Run:		true
   TestTools:	mkdir	
   PreCommand:	mkdir -p ./shippable/testresults
-  Command:	../test_decomp.native ./files/match/ ./shippable/testresults decomp-junit.xml
-  WorkingDirectory:	tests
+  Command:	./test_decomp.native ./files/match/ ./shippable/testresults decomp-junit.xml
 
 Library "junit"
   Path:            tests
@@ -120,9 +119,9 @@ Library "junit"
   Install:	   false
 
 Test "parser-rts"
-  Run:		true
+  Run:		false
   Command:	./bigrapher.native ./examples/rts_cts.big --debug 
 
 Test "parser-actors"
-  Run:		true
+  Run:		false
   Command:	./bigrapher.native ./examples/actors.big --debug
