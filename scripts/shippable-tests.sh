@@ -1,15 +1,7 @@
 #!/bin/sh
-# Compile & run tests 
+# Run tests 
 
 eval `opam config env`
 
-echo CLEANING ...
-ocp-build uninstall bigraph
-make distclean
-
-echo COMPILING ...
-./configure
-make
-
 echo RUNNING TESTS ... 
-make test
+ocaml setup.ml -test

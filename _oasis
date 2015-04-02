@@ -65,3 +65,27 @@ Document bigraph_api
 Flag "no-graphviz"
   Description: Build bigrapher without Graphviz support
   Default: false
+
+Executable "link-byte-test"
+  Path:       examples
+  BuildTools: ocamlbuild
+  MainIs:     ex.ml
+  CompiledObject: byte
+  BuildDepends:	  bigraph
+  Install:	  false
+
+Test "byte-link"
+  Run:		true
+  Command:	./ex.byte
+
+Executable "link-native-test"
+  Path:       examples
+  BuildTools: ocamlbuild
+  MainIs:     ex.ml
+  CompiledObject: native
+  BuildDepends:	  bigraph
+  Install:	  false
+
+Test "native-link"
+  Run:		true
+  Command:	./ex.native
