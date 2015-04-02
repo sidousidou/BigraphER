@@ -7,7 +7,7 @@
     <testcase name="sim_brs" class="test_brs.ml">
       <system-out>Output</system-out>
     </testcase>
-    <testcase name="sbrs"class="test_brs.ml">
+    <testcase name="sbrs" class="test_brs.ml">
       <system-out>Output</system-out>
     </testcase>
     <testcase name="sim_sbrs" class="test_brs.ml">
