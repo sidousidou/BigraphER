@@ -110,7 +110,7 @@ Test "decomp"
   Run:		true
   TestTools:	mkdir	
   PreCommand:	mkdir -p ./shippable/testresults
-  Command:	./test_decomp.native ./files/match/ ./shippable/testresults decomp-junit.xml
+  Command:	./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
 
 Library "junit"
   Path:            tests
