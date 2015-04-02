@@ -17,5 +17,5 @@ ocamlfind ocamlc -o $ROOT/ex.byte -package bigraph -linkpkg $ROOT/tmp/ex.ml
 $ROOT/ex.byte | cmp -s -  ./tests/files/ex.reference
 
 echo NATIVE-CODE COMPILATION TEST
-ocamlfind ocamlopt -o $ROOT/ex.asm -package bigraph -linkpkg $ROOT/tmp/ex.ml
+ocamlfind ocamlopt -o $ROOT/ex.native -package bigraph -linkpkg $ROOT/tmp/ex.ml
 $ROOT/ex.native | cmp -s -  ./tests/files/ex.reference
