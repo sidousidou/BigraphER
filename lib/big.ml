@@ -26,11 +26,11 @@ let outer b = Inter (b.p.Place.r, Link.outer b.l)
 let inter_equal (Inter (i, n)) (Inter (j, m)) =
   (i = j) && (Link.Face.equal n m)
 
-let inter_compare (Inter (i, n)) (Inter (j, m)) =
-  let x = i - j in
-  match x with
-  | 0 -> Link.Face.compare n m
-  | _ -> x
+(* let inter_compare (Inter (i, n)) (Inter (j, m)) = *)
+(*   let x = i - j in *)
+(*   match x with *)
+(*   | 0 -> Link.Face.compare n m *)
+(*   | _ -> x *)
 
 let ord_of_inter (Inter (i, _)) = i
 
@@ -346,11 +346,11 @@ let get_fun solver m =
     ) (0, Fun.empty) m)
 
 (************************** DEBUG *************************)
-let string_of_SAT solver m =
-  let r = Array.length m
-  and c = try Array.length m.(0) with _ -> 0
-  and iso = Iso.to_string (get_iso solver m) in
-  sprintf "%d X %d : %s" r c iso
+(* let string_of_SAT solver m = *)
+(*   let r = Array.length m *)
+(*   and c = try Array.length m.(0) with _ -> 0 *)
+(*   and iso = Iso.to_string (get_iso solver m) in *)
+(*   sprintf "%d X %d : %s" r c iso *)
 
 type sat_vars = {
   iso_nodes : Minisat.var array array;
@@ -368,34 +368,34 @@ type sat_vars = {
   z3 : Minisat.var array array;
 }
 
-let print_dump solver v =
-  printf "------ ISO NODES\n\
-          %s\n\
-          ------ Z0 ROWS\n\
-          %s\n\
-          ------ Z0 COLUMNS\n\
-          %s\n\
-          ------ ISO EDGES\n\
-          %s\n\
-          ------ Z1 ROWS\n\
-          %s\n\
-          ------ Z1 COLUMNS\n\
-          %s\n\
-          ------ Z2\n\
-          %s\n\
-          ------ ISO HYPER\n\
-          %s\n\
-          ------ Z3\n\
-          %s\n"
-    (string_of_SAT solver v.iso_nodes) 
-    (string_of_SAT solver v.z0_rows)
-    (string_of_SAT solver v.z0_cols) 
-    (string_of_SAT solver v.iso_edges)
-    (string_of_SAT solver v.z1_rows)
-    (string_of_SAT solver v.z1_cols)
-    (string_of_SAT solver v.z2)
-    (string_of_SAT solver v.iso_hyp)
-    (string_of_SAT solver v.z3)
+(* let print_dump solver v = *)
+(*   printf "------ ISO NODES\n\ *)
+(*           %s\n\ *)
+(*           ------ Z0 ROWS\n\ *)
+(*           %s\n\ *)
+(*           ------ Z0 COLUMNS\n\ *)
+(*           %s\n\ *)
+(*           ------ ISO EDGES\n\ *)
+(*           %s\n\ *)
+(*           ------ Z1 ROWS\n\ *)
+(*           %s\n\ *)
+(*           ------ Z1 COLUMNS\n\ *)
+(*           %s\n\ *)
+(*           ------ Z2\n\ *)
+(*           %s\n\ *)
+(*           ------ ISO HYPER\n\ *)
+(*           %s\n\ *)
+(*           ------ Z3\n\ *)
+(*           %s\n" *)
+(*     (string_of_SAT solver v.iso_nodes)  *)
+(*     (string_of_SAT solver v.z0_rows) *)
+(*     (string_of_SAT solver v.z0_cols)  *)
+(*     (string_of_SAT solver v.iso_edges) *)
+(*     (string_of_SAT solver v.z1_rows) *)
+(*     (string_of_SAT solver v.z1_cols) *)
+(*     (string_of_SAT solver v.z2) *)
+(*     (string_of_SAT solver v.iso_hyp) *)
+(*     (string_of_SAT solver v.z3) *)
   
 (**********************************************************)
    
@@ -475,7 +475,7 @@ let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
     ) unmatch_v
   )
 
-let add_c7 t p t_n p_n f aux rc_w solver w =
+let add_c7 t p t_n p_n aux rc_w solver w =
   let (clauses, b_cols, b_pairs) = 
     Link.match_edges t p t_n p_n in
   Cnf.post_conj_m (clauses @ b_pairs) solver w;
@@ -502,7 +502,7 @@ let add_c9 t p t_n p_n solver v =
       Cnf.post_impl x solver w v
     ) constraints;
   Cnf.post_conj_m blocks_f solver w;
-  let (aux, z_roots) =
+  let (aux, _) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
   Cnf.post_conj_m (Cnf.blocking_pairs blocks) solver w;
   (w, aux, iso_p, iso_open)  
@@ -567,7 +567,7 @@ let aux_match t p t_trans =
     and js2 = add_c6 t.p p.p t.n p.n solver v in
     (* Add C7: edges in the pattern are matched to edges in the target. *)
     let clauses = 
-      add_c7 closed_t closed_p t.n p.n f aux_bij_w_cols rc_w solver w in
+      add_c7 closed_t closed_p t.n p.n aux_bij_w_cols rc_w solver w in
     (* Add C8: ports of matched closed edges have to be isomorphic. *)
     add_c8 closed_t closed_p t.n p.n clauses solver v w;
     (* Add C9: ports of matched open edges have to be isomorphic. 
@@ -840,7 +840,7 @@ let prime_components b =
 
 let instantiate eta b =
   let bs = prime_components b in
-  Fun.fold (fun s' s acc ->
+  Fun.fold (fun _ s acc ->
       try ppar acc (List.nth bs s) with
       | Failure _ | Invalid_argument _ -> assert false (* eta is assumed total *)
     ) eta id_eps

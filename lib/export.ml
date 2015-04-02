@@ -27,7 +27,7 @@ let _write_svg s name path verb =
       (* parent *)
       Unix.close dot_in;    
       if verb then printf "Writing %s\n%!" n_path;
-      let b_w = Unix.write bigmc_out s 0 (String.length s) in
+      let b_w = Unix.write_substring bigmc_out s 0 (String.length s) in
       Unix.close bigmc_out;
       match Unix.waitpid [ Unix.WNOHANG ] pid with
       | (_, Unix.WSTOPPED _) -> 

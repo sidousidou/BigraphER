@@ -6,7 +6,7 @@ open Str
 
 let version = "${pkg_version}"
 
-type 'a option = Some of 'a | None
+(*type 'a option = Some of 'a | None*)
 
 exception UNKNOWN_OPTION of string
 exception NOT_OPTION of string
@@ -171,7 +171,7 @@ let help =
     "\nOPTIONS:\n" ^
     options_str
 
-let _to_string opt =
+let _to_string (opt : string option) =
   match opt with
   | None -> assert false
   | Some str -> str

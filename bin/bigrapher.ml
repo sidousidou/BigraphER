@@ -1,6 +1,5 @@
 open Printf
 open Utils
-open Syntax
 open Filename
 open Cmd
 

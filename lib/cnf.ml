@@ -35,18 +35,18 @@ let to_ij v =
     end
   | N_var _ -> assert false
 
-let string_of_lit l =
-  match l with
-  | M_lit (i, j) -> Printf.sprintf "(%d,%d)" i j
-  | V_lit i -> Printf.sprintf "(%d)" i
+(* let string_of_lit l = *)
+(*   match l with *)
+(*   | M_lit (i, j) -> Printf.sprintf "(%d,%d)" i j *)
+(*   | V_lit i -> Printf.sprintf "(%d)" i *)
     
-let string_of_var v =
-  match v with
-  | P_var l -> string_of_lit l
-  | N_var l -> "!" ^ (string_of_lit l)
+(* let string_of_var v = *)
+(*   match v with *)
+(*   | P_var l -> string_of_lit l *)
+(*   | N_var l -> "!" ^ (string_of_lit l) *)
     
-let string_of_clause c = 
-  "[" ^ (String.concat " V " (List.map string_of_var c)) ^  "]"
+(* let string_of_clause c =  *)
+(*   "[" ^ (String.concat " V " (List.map string_of_var c)) ^  "]" *)
 
 (* Conjunction of clauses *)
 exception TSEITIN of clause list 

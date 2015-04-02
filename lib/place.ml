@@ -1011,7 +1011,7 @@ let rec merge_orphan comps o (res_c, res_o) =
       merge_orphan comps' o (res_c @ [c], res_o)
     else merge_orphan comps' o (res_c @ [IntSet.union c o], [])            
 
-let rec merge_orphans comps o_comps =
+let merge_orphans comps o_comps =
   List.fold_left (fun (acc, acc_o) o ->
       match merge_orphan acc o ([], [o]) with
       | (res_c, []) -> (res_c, acc_o)

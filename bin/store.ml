@@ -1,6 +1,3 @@
-open Syntax
-open Lexing
-open Str
 open Printf
 
 exception INVALID_CONSTS
@@ -14,18 +11,18 @@ type form = string
 type store_val =
   | Int of int
   | Float of float
-  | Int_fun of num_exp * form list
-  | Float_fun of num_exp * form list
+  | Int_fun of Syntax.num_exp * form list
+  | Float_fun of Syntax.num_exp * form list
   | Big of Big.bg
-  | Big_fun of bexp * form list
+  | Big_fun of Syntax.bexp * form list
   | Ctrl of Base.Ctrl.t
   | Ctrl_fun of int * form list
   | A_ctrl of Base.Ctrl.t
   | A_ctrl_fun of int * form list
   | React of Brs.react
-  | React_fun of bexp * bexp * form list
+  | React_fun of Syntax.bexp * Syntax.bexp * form list
   | Sreact of Sbrs.sreact
-  | Sreact_fun of bexp * bexp * num_exp * form list
+  | Sreact_fun of Syntax.bexp * Syntax.bexp * Syntax.num_exp * form list
   | Int_param of int list
   | Float_param of float list
 
@@ -69,28 +66,28 @@ let _is_int f =
   f -. (float (int_of_float f)) = 0.0 
 
 let print_err msg p =
-  print_pos p;
+  Syntax.print_pos p;
   prerr_endline msg
 
 let type_err v f p =
-  print_pos p;
+  Syntax.print_pos p;
   eprintf "Error: This expression has type %s\n\t\
            but an expression was expected of type %s\n!" (get_type v) f;
   raise WRONG_TYPE
 
 let unbound_err ide p  =
-  print_pos p;
+  Syntax.print_pos p;
   eprintf "Error: Unbound value %s\n!" ide;
   raise NO_IDE
 
 let args_err ide forms acts p =
-  print_pos p;
+  Syntax.print_pos p;
   eprintf "Error: %s expects %d argument(s)\n\t\
            but is here used with %d argument(s)\n!" ide forms acts;
   raise WRONG_TYPE
 
 let pri_err p  =
-  print_pos p;
+  Syntax.print_pos p;
   prerr_endline "Error: Invalid priority classes";
   raise INVALID_PRI
 
@@ -185,57 +182,57 @@ let get_big ide p env =
   with
   | Not_found -> unbound_err ide p
 
-let rec eval_int exp env =
+let rec eval_int (exp : Syntax.num_exp) env =
   match exp with
-  | Num_val (v, _) -> int_of_float v
-  | Num_ide (ide, p) -> 
+  | Syntax.Num_val (v, _) -> int_of_float v
+  | Syntax.Num_ide (ide, p) -> 
     (try get_int_m ide p env
      with
      | WRONG_TYPE -> 
        let v = get_float ide p env in
        if _is_int v then int_of_float v
        else type_err (Float 0.0) "int" p) 
-  | Num_plus (l, r, _) -> (eval_int l env) + (eval_int r env)
-  | Num_minus (l, r, _) -> (eval_int l env) - (eval_int r env)
-  | Num_prod (l, r, _) -> (eval_int l env) * (eval_int r env)
-  | Num_div (l, r, p) -> (try (eval_int l env) / (eval_int r env)
+  | Syntax.Num_plus (l, r, _) -> (eval_int l env) + (eval_int r env)
+  | Syntax.Num_minus (l, r, _) -> (eval_int l env) - (eval_int r env)
+  | Syntax.Num_prod (l, r, _) -> (eval_int l env) * (eval_int r env)
+  | Syntax.Num_div (l, r, p) -> (try (eval_int l env) / (eval_int r env)
     with
     | Division_by_zero -> print_err "Error: Division by zero" p; raise INVALID_VAL)
-  | Num_pow (l, r, _) -> int_of_float ((float (eval_int l env)) ** (float (eval_int r env))) 
+  | Syntax.Num_pow (l, r, _) -> int_of_float ((float (eval_int l env)) ** (float (eval_int r env))) 
 
 (* No msg on WRONG_TYPE*)
-let eval_int_m exp env =
+let eval_int_m (exp : Syntax.num_exp) env =
   match exp with
-  | Num_val (v, _) -> int_of_float v
-  | Num_ide (ide, p) -> 
+  | Syntax.Num_val (v, _) -> int_of_float v
+  | Syntax.Num_ide (ide, p) -> 
     (try get_int_m ide p env
      with
      | WRONG_TYPE -> 
        let v = get_float ide p env in
        if _is_int v then int_of_float v
        else raise WRONG_TYPE) 
-  | Num_plus (l, r, _) -> (eval_int l env) + (eval_int r env)
-  | Num_minus (l, r, _) -> (eval_int l env) - (eval_int r env)
-  | Num_prod (l, r, _) -> (eval_int l env) * (eval_int r env)
-  | Num_div (l, r, p) -> (try (eval_int l env) / (eval_int r env)
+  | Syntax.Num_plus (l, r, _) -> (eval_int l env) + (eval_int r env)
+  | Syntax.Num_minus (l, r, _) -> (eval_int l env) - (eval_int r env)
+  | Syntax.Num_prod (l, r, _) -> (eval_int l env) * (eval_int r env)
+  | Syntax.Num_div (l, r, p) -> (try (eval_int l env) / (eval_int r env)
     with
     | Division_by_zero -> print_err "Error: Division by zero" p; raise INVALID_VAL)
-  | Num_pow (l, r, _) -> int_of_float ((float (eval_int l env)) ** (float (eval_int r env)))
+  | Syntax.Num_pow (l, r, _) -> int_of_float ((float (eval_int l env)) ** (float (eval_int r env)))
 
-let rec eval_float exp env =
+let rec eval_float (exp : Syntax.num_exp) env =
   match exp with
-  | Num_val (v, _) -> v
-  | Num_ide (ide, p) -> 
+  | Syntax.Num_val (v, _) -> v
+  | Syntax.Num_ide (ide, p) -> 
     (try get_float_m ide p env
      with
      | WRONG_TYPE -> float (get_int ide p env)) 
-  | Num_plus (l, r, _) -> (eval_float l env) +. (eval_float r env)
-  | Num_minus (l, r, _) -> (eval_float l env) -. (eval_float r env)
-  | Num_prod (l, r, _) -> (eval_float l env) *. (eval_float r env)
-  | Num_div (l, r, p) -> (let v = (eval_float l env) /. (eval_float r env) in
+  | Syntax.Num_plus (l, r, _) -> (eval_float l env) +. (eval_float r env)
+  | Syntax.Num_minus (l, r, _) -> (eval_float l env) -. (eval_float r env)
+  | Syntax.Num_prod (l, r, _) -> (eval_float l env) *. (eval_float r env)
+  | Syntax.Num_div (l, r, p) -> (let v = (eval_float l env) /. (eval_float r env) in
 			  if v = nan then (print_err "Error: nan" p; raise INVALID_VAL)
 			  else v)
-  | Num_pow (l, r, _) -> (eval_float l env) ** (eval_float r env) 
+  | Syntax.Num_pow (l, r, _) -> (eval_float l env) ** (eval_float r env) 
 
 let get_ctrl_fun ide acts p env =
   try
@@ -294,91 +291,95 @@ let rec eval_big exp env =
       | Float_param _  | Ctrl _ | Ctrl_fun _ as v -> type_err v "big" p)
     with
     | Not_found -> unbound_err ide p in
-  match exp with
-  | Big_ide (ide, p) -> get_big ide p env
-  | Big_ide_fun(ide, acts, p) -> get_big_fun ide acts p env
-  | Big_plac (l, roots, p) -> 
+  match (exp : Syntax.bexp) with
+  | Syntax.Big_ide (ide, p) -> get_big ide p env
+  | Syntax.Big_ide_fun(ide, acts, p) -> get_big_fun ide acts p env
+  | Syntax.Big_plac (l, roots, p) -> 
     (try Big.placing l roots Link.Face.empty
      with
      | _ -> 
        print_err ("Error: Invalid placing expression") p; 
        raise INVALID_VAL)
-  | Big_name (n, _) -> 
+  | Syntax.Big_name (n, _) -> 
     Big.sub (Link.Face.empty) (Link.Face.singleton (Link.Nam n))
-  | Big_comp (l, r, p) -> 
+  | Syntax.Big_comp (l, r, p) -> 
     (try Big.comp (eval_big l env) (eval_big r env)
      with
      | _ -> 
        print_err ("Error: Invalid composition expression") p; 
        raise INVALID_VAL)
-  | Big_comp_c (closures, b, p) -> 
+  | Syntax.Big_comp_c (closures, b, p) -> 
     (match closures with
-    | Big_close (names, _) -> 
+    | Syntax.Big_close (names, _) -> 
       (try Big.close (Link.parse_face names) (eval_big b env)
        with
        | _ -> 
 	 print_err ("Error: Invalid composition expression") p; 
 	 raise INVALID_VAL)
-    | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _
-    | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ | Big_ion _
-    | Big_ion_fun _ | Big_share _ | Big_tens _ | Big_name _ -> 
+    | Syntax.Big_ide _ | Syntax.Big_ide_fun _ | Syntax.Big_plac _
+    | Syntax.Big_comp_c _ | Syntax.Big_comp _ | Syntax.Big_par _
+    | Syntax.Big_ppar _ | Syntax.Big_nest _ | Syntax.Big_el _
+    | Syntax.Big_id _ | Syntax.Big_ion _ | Syntax.Big_ion_fun _
+    | Syntax.Big_share _ | Syntax.Big_tens _ | Syntax.Big_name _ -> 
       print_err ("Error: Invalid composition expression") p; 
       raise INVALID_VAL)			
-  | Big_close (names, p) -> 
+  | Syntax.Big_close (names, p) -> 
     (try Big.ppar_of_list (List.map (fun n ->
       Big.closure (Link.Face.singleton (Link.Nam n))) names)
      with
      | _ -> 
        print_err ("Error: Invalid closure") p; 
        raise INVALID_VAL)
-  | Big_tens (l, r, p) -> 
+  | Syntax.Big_tens (l, r, p) -> 
     (try Big.tens (eval_big l env) (eval_big r env)
      with
      | _ -> 
        print_err ("Error: Invalid tensor product expression") p; 
        raise INVALID_VAL)
-  | Big_par (l, r, p) -> 
+  | Syntax.Big_par (l, r, p) -> 
     (try Big.par (eval_big l env) (eval_big r env)
      with
      | _ -> 
        print_err ("Error: Invalid merge product expression") p; 
        raise INVALID_VAL)
-  | Big_ppar (l, r, p) -> 
+  | Syntax.Big_ppar (l, r, p) -> 
     (try Big.ppar (eval_big l env) (eval_big r env)
      with
      | _ -> 
        print_err ("Error: Invalid parallel product expression") p; 
        raise INVALID_VAL)
-  | Big_nest (l, r, p) -> 
+  | Syntax.Big_nest (l, r, p) -> 
     (try match l with
-    | Big_ion _ -> Big.nest (eval_big l env) (eval_big r env)
-    | Big_ion_fun _ -> Big.nest (eval_big l env) (eval_big r env)
-    | Big_ide _ | Big_ide_fun _ | Big_plac _ | Big_comp_c _ | Big_comp _ 
-    | Big_close _ | Big_par _ | Big_ppar _ | Big_nest _ | Big_el _ | Big_id _ 
-    | Big_share _ | Big_tens _ | Big_name _ ->
+    | Syntax.Big_ion _ -> Big.nest (eval_big l env) (eval_big r env)
+    | Syntax.Big_ion_fun _ -> Big.nest (eval_big l env) (eval_big r env)
+    | Syntax.Big_ide _ | Syntax.Big_ide_fun _ | Syntax.Big_plac _
+    | Syntax.Big_comp_c _ | Syntax.Big_comp _ | Syntax.Big_close _
+    | Syntax.Big_par _ | Syntax.Big_ppar _ | Syntax.Big_nest _
+    | Syntax.Big_el _ | Syntax.Big_id _ | Syntax.Big_share _
+    | Syntax.Big_tens _ | Syntax.Big_name _ ->
       print_err ("Error: Invalid nesting expression: Left-hand side is not an ion") p; 
       raise INVALID_VAL
      with
      | _ -> 
        print_err ("Error: Invalid nesting expression") p; 
        raise INVALID_VAL)
-  | Big_el (v, p) -> 
+  | Syntax.Big_el (v, p) -> 
     (match v with
     | 0 -> Big.zero
     | 1 -> Big.one
     | _ -> 
       print_err (sprintf "Error: Expression %d is not a valid bigraph" v) p; 
       raise INVALID_VAL)
-  | Big_id (n, names, _) -> Big.id (Big.Inter (n, (Link.parse_face names)))
-  | Big_ion (c, names, p) -> (
+  | Syntax.Big_id (n, names, _) -> Big.id (Big.Inter (n, (Link.parse_face names)))
+  | Syntax.Big_ion (c, names, p) -> (
       if is_atomic c p env then
         eval_atom (get_ctrl c p env) names p
       else eval_ion (get_ctrl c p env) names p) 
-  | Big_ion_fun (c, names, acts, p) -> (
+  | Syntax.Big_ion_fun (c, names, acts, p) -> (
       if is_atomic c p env then
         eval_atom (get_ctrl_fun c acts p env) names p
       else eval_ion (get_ctrl_fun c acts p env) names p)
-  | Big_share (a, psi, b, p) -> 
+  | Syntax.Big_share (a, psi, b, p) -> 
     (try Big.share (eval_big a env) (eval_big psi env) (eval_big b env)
      with
      | _ -> 
@@ -408,38 +409,38 @@ let dummy_pos = (Lexing.dummy_pos, Lexing.dummy_pos)
 
 let store_decs decs env =
   let _dummy_acts =
-    List.map (fun _ -> Num_val (0.0, dummy_pos)) in
+    List.map (fun _ -> Syntax.Num_val (0.0, dummy_pos)) in
   List.iter (fun d ->
       match d with
-      | Atomic c -> (
+      | Syntax.Atomic c -> (
           match c with
-          | Ctrl_dec (ide, ar, _) ->
+          | Syntax.Ctrl_dec (ide, ar, _) ->
             Hashtbl.add env ide (A_ctrl (Base.Ctrl.Ctrl (ide, ar)))
-          | Ctrl_dec_f (ide, forms, ar, _) ->
+          | Syntax.Ctrl_dec_f (ide, forms, ar, _) ->
             Hashtbl.add env ide (A_ctrl_fun (ar, forms)))
-      | Non_atomic c -> (
+      | Syntax.Non_atomic c -> (
           match c with
-          | Ctrl_dec (ide, ar, _) ->
+          | Syntax.Ctrl_dec (ide, ar, _) ->
             Hashtbl.add env ide (Ctrl (Base.Ctrl.Ctrl (ide, ar)))
-          | Ctrl_dec_f (ide, forms, ar, _) ->
+          | Syntax.Ctrl_dec_f (ide, forms, ar, _) ->
             Hashtbl.add env ide (Ctrl_fun (ar, forms)))
-      | Int_dec (ide, exp, _) ->
+      | Syntax.Int_dec (ide, exp, _) ->
         Hashtbl.add env ide (Int (eval_int exp env))
-      | Float_dec (ide, exp, _) ->
+      | Syntax.Float_dec (ide, exp, _) ->
         Hashtbl.add env ide (Float (eval_float exp env))
-      | Big_dec (ide, exp, _) ->
+      | Syntax.Big_dec (ide, exp, _) ->
         Hashtbl.add env ide (Big (eval_big exp env))
-      | Big_dec_f (ide, forms, exp, _) ->
+      | Syntax.Big_dec_f (ide, forms, exp, _) ->
         ignore (eval_big exp (scope env forms (_dummy_acts forms)));
         Hashtbl.add env ide (Big_fun (exp, forms))
-      | React_dec (ide, lhs, rhs, p) ->
+      | Syntax.React_dec (ide, lhs, rhs, p) ->
         Hashtbl.add env ide (React (eval_react lhs rhs env p))
-      | React_dec_f (ide, forms, lhs, rhs, p) ->
+      | Syntax.React_dec_f (ide, forms, lhs, rhs, p) ->
         ignore (eval_react lhs rhs (scope env forms (_dummy_acts forms)) p);
         Hashtbl.add env ide (React_fun (lhs, rhs, forms))
-      | Sreact_dec (ide, lhs, rhs, exp, p) ->
+      | Syntax.Sreact_dec (ide, lhs, rhs, exp, p) ->
         Hashtbl.add env ide (Sreact (eval_sreact lhs rhs exp env p))
-      | Sreact_dec_f (ide, forms, lhs, rhs, exp, p) ->
+      | Syntax.Sreact_dec_f (ide, forms, lhs, rhs, exp, p) ->
         ignore (eval_sreact lhs rhs exp (scope env forms (_dummy_acts forms)) p);
         Hashtbl.add env ide (Sreact_fun (lhs, rhs, exp, forms))) decs
 
@@ -518,8 +519,8 @@ let store_params env =
 
 let eval_init init env =
   match init with
-  | Init (ide, p) -> eval_big (Big_ide (ide, p)) env
-  | Init_fun (ide, acts, p) -> eval_big (Big_ide_fun (ide, acts, p)) env
+  | Syntax.Init (ide, p) -> eval_big (Syntax.Big_ide (ide, p)) env
+  | Syntax.Init_fun (ide, acts, p) -> eval_big (Syntax.Big_ide_fun (ide, acts, p)) env
 
 (* return a list of store_val: the possible values of ide *)
 let get_param_m ide p env =
@@ -575,7 +576,7 @@ let _build_params ides env p =
 
 let store_rule r env =
   match r with
-  | Rul_fun (ide, ides, p) -> begin
+  | Syntax.Rul_fun (ide, ides, p) -> begin
     (* get param values *)
     let params =_build_params ides env p in
     (* get react_fun *)
@@ -586,11 +587,11 @@ let store_rule r env =
     List.iter (fun (ide, v) -> Hashtbl.add env ide (React v)) reacts_store;
       fst (List.split reacts_store)
      end
-  | Rul (ide, p) -> ignore (get_react p env ide); [ide]
+  | Syntax.Rul (ide, p) -> ignore (get_react p env ide); [ide]
 
 let store_srule r env =
  match r with
-  | Rul_fun (ide, ides, p) -> begin
+  | Syntax.Rul_fun (ide, ides, p) -> begin
     (* get param values *)
     let params = _build_params ides env p in
     (* get react_fun *)
@@ -601,18 +602,18 @@ let store_srule r env =
     List.iter (fun (ide, v) -> Hashtbl.add env ide (Sreact v)) reacts_store;
     fst (List.split reacts_store)
   end
-  | Rul (ide, p) -> ignore (get_sreact p env ide); [ide]
+  | Syntax.Rul (ide, p) -> ignore (get_sreact p env ide); [ide]
 
-let store_pclass (c : pri_class) env =
+let store_pclass (c : Syntax.pri_class) env =
   let _aux c p =
     if Brs.is_valid_p_ide (get_react p env) (p_to_brs c) then c
     else pri_err p in
   match c with
-  | Pri_class (rules, p) -> 
+  | Syntax.Pri_class (rules, p) -> 
     (let c = P_class_ide (List.fold_left (fun acc r ->
     acc @ (store_rule r env)) [] rules) in
      _aux c p)
-  | Pri_classr (rules, p) -> 
+  | Syntax.Pri_classr (rules, p) -> 
     (let c = P_rclass_ide (List.fold_left (fun acc r ->
       acc @ (store_rule r env)) [] rules) in
      _aux c p)
@@ -622,18 +623,18 @@ let store_spclass c env =
     if Sbrs.is_valid_p_ide (get_sreact p env) (p_to_sbrs c) then c
     else pri_err p in
   match c with
-  | Pri_class (rules, p) -> 
+  | Syntax.Pri_class (rules, p) -> 
     (let c = P_class_ide (List.fold_left (fun acc r ->
       acc @ (store_srule r env)) [] rules) in
      _aux c p)
-  | Pri_classr (rules, p) -> 
+  | Syntax.Pri_classr (rules, p) -> 
     (let c = P_rclass_ide (List.fold_left (fun acc r ->
       acc @ (store_srule r env)) [] rules) in
      _aux c p)
 
 let store_brs brs env  =
   match brs with
-  | Brs (params, init, p_classes, p) -> begin
+  | Syntax.Brs (params, init, p_classes, p) -> begin
     store_params env params;
     let p_ide_list = List.fold_left (fun acc c -> 
       acc @ [store_pclass c env]) [] p_classes in
@@ -641,7 +642,7 @@ let store_brs brs env  =
     then (eval_init init env, false, p_ide_list)
     else pri_err p
   end
-  | Sbrs (params, init, p_classes, p) -> begin
+  | Syntax.Sbrs (params, init, p_classes, p) -> begin
     store_params env params;
     let p_ide_list = List.fold_left (fun acc c -> 
       acc @ [store_spclass c env]) [] p_classes in
@@ -652,32 +653,33 @@ let store_brs brs env  =
 
 let export decs env path verb = 
   let _dummy_acts =
-    List.map (fun _ -> Num_val (0.0, dummy_pos))
+    List.map (fun _ -> Syntax.Num_val (0.0, dummy_pos))
   and svg = ".svg" in 
   List.iter (fun d ->
     match d with
-  | Atomic _ | Non_atomic _ | Int_dec _ | Float_dec _ -> ()
-  | Big_dec (ide, exp, _) -> 
-    Export.write_big (eval_big exp env) (ide ^ svg) path verb
-  | Big_dec_f (ide, forms, exp, _) ->
-    let b = eval_big exp (scope env forms (_dummy_acts forms)) in
-    Export.write_big b (ide ^ svg) path verb
-  | React_dec (ide, lhs, rhs, _) ->
-    Export.write_big (eval_big lhs env) (ide ^ "_lhs" ^ svg) path verb;
-    Export.write_big (eval_big rhs env) (ide ^ "_rhs" ^ svg) path verb
-  | React_dec_f (ide, forms, lhs, rhs, _) ->
-    let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
-    and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
-    Export.write_big l (ide ^ "_lhs" ^ svg) path verb;
-    Export.write_big r (ide ^ "_rhs" ^ svg) path verb
-  | Sreact_dec (ide, lhs, rhs, _, _) ->
-    Export.write_big (eval_big lhs env) (ide ^ "_lhs" ^ svg) path verb;
-    Export.write_big (eval_big rhs env) (ide ^ "_rhs" ^ svg) path verb
-  | Sreact_dec_f (ide, forms, lhs, rhs, _, _) ->
-    let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
-    and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
-    Export.write_big l (ide ^ "_lhs" ^ svg) path verb;
-    Export.write_big r (ide ^ "_rhs" ^ svg) path verb) decs
+    | Syntax.Atomic _ | Syntax.Non_atomic _ | Syntax.Int_dec _
+    | Syntax.Float_dec _ -> ()
+    | Syntax.Big_dec (ide, exp, _) -> 
+       Export.write_big (eval_big exp env) (ide ^ svg) path verb
+    | Syntax.Big_dec_f (ide, forms, exp, _) ->
+       let b = eval_big exp (scope env forms (_dummy_acts forms)) in
+       Export.write_big b (ide ^ svg) path verb
+    | Syntax.React_dec (ide, lhs, rhs, _) ->
+       Export.write_big (eval_big lhs env) (ide ^ "_lhs" ^ svg) path verb;
+       Export.write_big (eval_big rhs env) (ide ^ "_rhs" ^ svg) path verb
+    | Syntax.React_dec_f (ide, forms, lhs, rhs, _) ->
+       let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
+       and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
+       Export.write_big l (ide ^ "_lhs" ^ svg) path verb;
+       Export.write_big r (ide ^ "_rhs" ^ svg) path verb
+    | Syntax.Sreact_dec (ide, lhs, rhs, _, _) ->
+       Export.write_big (eval_big lhs env) (ide ^ "_lhs" ^ svg) path verb;
+       Export.write_big (eval_big rhs env) (ide ^ "_rhs" ^ svg) path verb
+    | Syntax.Sreact_dec_f (ide, forms, lhs, rhs, _, _) ->
+       let l = eval_big lhs (scope env forms (_dummy_acts forms)) 
+       and r = eval_big rhs (scope env forms (_dummy_acts forms)) in
+       Export.write_big l (ide ^ "_lhs" ^ svg) path verb;
+       Export.write_big r (ide ^ "_rhs" ^ svg) path verb) decs
   
 
   

@@ -503,11 +503,6 @@ let closed_edges_iso l =
   (* Iso from closed link graph to full link graph *)
   filter_iso is_closed l
 
-let open_edges l = Lg.filter (fun e -> not (is_closed e)) l
-
-let open_edges_iso l =
-  filter_iso (fun e -> not (is_closed e)) l
-
 (* Two edges are compatible if they have the same number of ports with equal
    control. *)
 let compat_edges e_p e_t n_t n_p =
@@ -661,7 +656,7 @@ let compat_sub p t f_e n_t n_p =
   let p_a = Array.of_list (Lg.elements p)
   and t_a = Array.of_list (Lg.elements t) in
   fst (
-    Hashtbl.fold (fun j i (acc, marked) ->
+    Hashtbl.fold (fun j _ (acc, marked) ->
         if List.mem j marked then (acc, marked)
         else (
           let p_i_list = Hashtbl.find_all f_e j in

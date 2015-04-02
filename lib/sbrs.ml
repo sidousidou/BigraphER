@@ -263,7 +263,7 @@ let rec _scan_ide get_sreact curr m ctmc i iter_f pl pl_const =
                        (_partition_aux ctmc i iter_f ss', m + l')
           )
         )
-      | P_rclass_ide rr -> (* skip *)
+      | P_rclass_ide _ -> (* skip *)
         _scan_ide get_sreact curr m ctmc i iter_f cs pl_const 
     )
 

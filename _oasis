@@ -11,7 +11,7 @@ Authors:     Michele Sevegnani
 Maintainers: Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
 License:     BSD-3-clause
 LicenseFile: LICENSE
-OCamlVersion:	>= 4.00.0
+OCamlVersion:	>= 4.02.0
 Plugins:     META (0.4), DevFiles (0.4)
 Homepage:    http://www.dcs.gla.ac.uk/~michele/bigrapher.html
 FilesAB:       bin/cmd.ml.ab, man/bigrapher.1.ab, opam/url.ab, opam/opam.ab
