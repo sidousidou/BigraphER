@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: b7bcce6dc9f73c61112eb885121ffc65) *)
+(* DO NOT EDIT (digest: ff82da311f298fa1ea3e1748d4e08927) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -611,7 +611,8 @@ let package_default =
        [
           ("bigraph", ["lib"], []);
           ("bigraph-utils", ["utils"], []);
-          ("bigrapher-utils", ["bin"], [])
+          ("bigrapher-utils", ["bin"], []);
+          ("junit", ["tests"], [])
        ];
      lib_c = [];
      flags = [];
@@ -623,6 +624,6 @@ let conf = {MyOCamlbuildFindlib.no_automatic_syntax = false}
 
 let dispatch_default = MyOCamlbuildBase.dispatch_default conf package_default;;
 
-# 627 "myocamlbuild.ml"
+# 628 "myocamlbuild.ml"
 (* OASIS_STOP *)
 Ocamlbuild_plugin.dispatch dispatch_default;;

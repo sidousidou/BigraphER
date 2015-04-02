@@ -1,8 +1,8 @@
 open Base
 open Big
 open Printf
-open Utils
-  
+open Junit
+       
 let r_p = 
   comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("B", 1))) one
   
@@ -58,10 +58,6 @@ let sreacts =
       [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; };
         { Sbrs.rdx = g; rct = r; rate = 4.0; } ] ]
 
-let assert_eq_int name reference out =
-  if out = reference then ""
-  else  sprintf "<failure>%s: %-8d != %-8d</failure>" name out reference
-    
 let () =
   Random.self_init ();
   let iter_f _ _ = ()
@@ -69,28 +65,48 @@ let () =
   and reacts_reference = 29
   and occurs_reference = 4495
   and print_res s r o =
-    printf "States              : %s\n\
-            Reactions           : %s\n\
-            Occurrences         : %s\n"
-           (colorise `bold (colorise `blue (sprintf "%-8d" s)))
-           (colorise `bold (colorise `blue (sprintf "%-8d" r)))
-           (colorise `bold (colorise `blue (sprintf "%-8d" o))) in 
-  match Sys.argv.(1) with
-  | "brs" ->
-     let (_, stats) = 
-       Brs.bfs s reacts 1000 50 iter_f in
-     print_res stats.Brs.s stats.Brs.r stats.Brs.o;
-  | "sim_brs" -> 
-     let (_, stats) = 
-       Brs.sim s reacts 1000 50 iter_f in
-     print_res stats.Brs.s stats.Brs.r stats.Brs.o;
-  | "sbrs" ->
-     let (_, stats) = 
-       Sbrs.bfs s sreacts 1000 50 iter_f in
-     print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o;
-  | "sim_sbrs" ->
-     let (_, stats) = 
-       Sbrs.sim s sreacts 5000.0 50 iter_f in 
-     print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o;
-  | _ -> exit 1
+    xml_block "system-out" [] 
+	      [sprintf "States              : %-8d\n\
+			Reactions           : %-8d\n\
+			Occurrences         : %-8d" s r o] in
+  let failures l = List.map (fun (id, reference, out) ->
+			     assert_eq_int id reference out) l
+  and ass_list s r o = [("States", states_reference, s);
+			("Reactions", reacts_reference, r);
+			("Occurrences", occurs_reference, o)] in
+  let testcases =
+    [  begin
+	let (_, stats) = 
+	  Brs.bfs s reacts 1000 50 iter_f in
+	("brs",
+	 "test_brs.ml",
+	 print_res stats.Brs.s stats.Brs.r stats.Brs.o,
+	 failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
+      end;
+       begin
+	 let (_, stats) = 
+	   Brs.sim s reacts 1000 50 iter_f in
+	 ("sim_brs",
+	  "test_brs.ml",
+	  print_res stats.Brs.s stats.Brs.r stats.Brs.o,
+	  failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
+       end;
+       begin
+	 let (_, stats) = 
+	   Sbrs.bfs s sreacts 1000 50 iter_f in
+	 ("sbrs",
+	  "test_brs.ml",
+	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
+	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
+       end;
+       begin
+	 let (_, stats) = 
+	   Sbrs.sim s sreacts 5000.0 50 iter_f in 
+	 ("sim_sbrs",
+	  "test_brs.ml",
+	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
+	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
+       end; ] in
+  write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2)
+
 	      

@@ -97,29 +97,25 @@ Test "decomp"
   Command:	../test_decomp.native ./files/match/
   WorkingDirectory:	tests
 
+Library "junit"
+  Path:            tests
+  BuildTools:      ocamlbuild
+  Modules:         Junit
+  Install:	   false
+
 Executable "brs-test"
   Path:       tests
   BuildTools: ocamlbuild
   MainIs:     test_brs.ml
   CompiledObject: best
-  BuildDepends:	  bigraph, bigraph-utils
+  BuildDepends:	  bigraph, bigraph-utils, junit
   Install:	  false
 
-Test "brs-brs"
+Test "brs"
   Run:		true
-  Command:	./test_brs.native brs
-
-Test "brs-sym-brs"
-  Run:		true
-  Command:	./test_brs.native sim_brs
-
-Test "brs-sbrs"
-  Run:		true
-  Command:	./test_brs.native sbrs
-
-Test "brs-sym-sbrs"
-  Run:		true
-  Command:	./test_brs.native sim_sbrs
+  TestTools:	mkdir
+  PreCommand:	mkdir -p ./shippable/testresults
+  Command:	./test_brs.native ./shippable/testresults brs-junit.xml
 
 Test "parser-rts"
   Run:		true

@@ -10,6 +10,7 @@ bin/cmd.ml
 man/bigrapher.1
 opam/opam
 opam/url
+shippable
 
 # OCaml 
 */*.annot
