@@ -1,7 +1,6 @@
 (* Tests for various bigraph manipulation functions *)
 open Printf
 open Big
-open Export
 open Utils
   
 (* parse a .big file *)

@@ -66,26 +66,65 @@ Flag "no-graphviz"
   Description: Build bigrapher without Graphviz support
   Default: false
 
-Executable "link-byte-test"
-  Path:       examples
+Executable "matching-test"
+  Path:       tests
   BuildTools: ocamlbuild
-  MainIs:     ex.ml
-  CompiledObject: byte
-  BuildDepends:	  bigraph
+  MainIs:     test_match.ml
+  CompiledObject: best
+  BuildDepends:	  bigraph, bigraph-utils
   Install:	  false
 
-Test "byte-link"
+Test "matching-match"
   Run:		true
-  Command:	./ex.byte
+  Command:	../test_match.native match ./files/match/
+  WorkingDirectory:	tests
+  
+Test "matching-equality"
+  Run:		true
+  Command:	../test_match.native equality ./files/match/
+  WorkingDirectory:	tests
 
-Executable "link-native-test"
-  Path:       examples
+Executable "dec-test"
+  Path:       tests
   BuildTools: ocamlbuild
-  MainIs:     ex.ml
-  CompiledObject: native
-  BuildDepends:	  bigraph
+  MainIs:     test_decomp.ml
+  CompiledObject: best
+  BuildDepends:	  bigraph, bigraph-utils
   Install:	  false
 
-Test "native-link"
+Test "decomp"
   Run:		true
-  Command:	./ex.native
+  Command:	../test_decomp.native ./files/match/
+  WorkingDirectory:	tests
+
+Executable "brs-test"
+  Path:       tests
+  BuildTools: ocamlbuild
+  MainIs:     test_brs.ml
+  CompiledObject: best
+  BuildDepends:	  bigraph, bigraph-utils
+  Install:	  false
+
+Test "brs-brs"
+  Run:		true
+  Command:	./test_brs.native brs
+
+Test "brs-sym-brs"
+  Run:		true
+  Command:	./test_brs.native sym_brs
+
+Test "brs-sbrs"
+  Run:		true
+  Command:	./test_brs.native sbrs
+
+Test "brs-sym-sbrs"
+  Run:		true
+  Command:	./test_brs.native sym_sbrs
+
+Test "parser-rts"
+  Run:		true
+  Command:	./bigrapher.native ./examples/rts_cts.big --debug 
+
+Test "parser-actors"
+  Run:		true
+  Command:	./bigrapher.native ./examples/actors.big --debug

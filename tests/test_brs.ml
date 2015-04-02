@@ -60,10 +60,10 @@ let sreacts =
 
 let () =
   Random.self_init ();
-  let iter_f i _ = () in
+  let iter_f _ _ = () in
   match Sys.argv.(1) with
   | "brs" -> (
-      let (ts, stats) = 
+      let (_, stats) = 
         Brs.bfs s reacts 1000 50 iter_f in
       printf "States              : %s\n\
               Reactions           : %s\n\
@@ -83,7 +83,7 @@ let () =
         (colorise `bold (colorise `blue (sprintf "%-8d" stats.Brs.o)));
     )
   | "sbrs" -> (
-      let (ctmc, stats) = 
+      let (_, stats) = 
 	Sbrs.bfs s sreacts 1000 50 iter_f in
       printf "States              : %s\n\
               Reactions           : %s\n\

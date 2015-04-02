@@ -1,7 +1,6 @@
 (* Tests for the matching engine *)
 open Printf
 open Big
-open Export
 open Utils
   
 (* parse a .big file *)

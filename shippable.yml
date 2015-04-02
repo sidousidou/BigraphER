@@ -15,5 +15,6 @@ before_script:
 
 script:
  - ./scripts/shippable-build.sh
+ - ./scripts/shippable-tests.sh 
  - ./scripts/shippable-link.sh
 
