@@ -128,6 +128,6 @@ Executable "parser-test"
 
 Test "parser"
   Run:		true
-  TestTools:	mkdir, bigrapher.native	
+  TestTools:	mkdir
   PreCommand:	mkdir -p ./shippable/testresults
   Command:	./test_parser.native ./tests/files/parser.in ./shippable/testresults parser-junit.xml
