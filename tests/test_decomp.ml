@@ -30,48 +30,43 @@ let test_prime_decomposition b =
             l = b.l;
           }
 
-let do_tests l = 
-  let c =
-    List.fold_left (fun acc (n, b) ->
-        try
-          if test_prime_decomposition b then (
-            (* printf "%s\n" *)
-            (*   (colorise `bold (colorise `green (sprintf "Test %s passed." n))); *)
-            acc + 1
-          ) else (
-            printf "%s\n"
-              (colorise `bold (colorise `red (sprintf "Test %s failed." n)));
-            acc) 
-        with
-        | Place.NOT_PRIME -> ( 
-            (* printf "%s\n" *)
-            (*   (colorise `bold  *)
-            (*      (colorise `green  *)
-            (*         (sprintf "Test %s passed. Place graph not decomposable into prime components." n))); *)
-            acc + 1)
-        | e -> (
-            printf "%s\n"
-              (colorise `bold (colorise `red (sprintf "Test %s failed.\n%s\n" n (Printexc.to_string e))));
-            acc)
-      ) 0 l 
-  and n = (List.length l) in
-  if c = n then
-    printf "%s\n"
-      (colorise `bold (colorise `green (sprintf "%d/%d tests passed." c n)))
-  else
-    printf "%s\n"
-      (colorise `bold (colorise `red (sprintf "%d/%d tests passed." c n)))
-
-(* Args: PATH [INDEX] *)  
+let attr_decomp = [("type", "ASSERT_DECOMP");
+		   ("message", "Bigraphs are not equal")]
+		    		    
+let do_tests =
+  List.map (fun (n, b) ->
+	    try
+              if test_prime_decomposition b then
+		(n,
+		 "test_decomp.ml",
+		 xml_block "system-out" [] ["Test passed."],
+		 [])
+              else
+		(n,
+		 "test_decomp.ml",
+		 xml_block "system-out" [] ["Test failed."],
+		 [xml_block "failure" attr_decomp []])
+            with
+            | Place.NOT_PRIME ->
+	       (n,
+		"test_decomp.ml",
+		xml_block "system-out" [] ["Test passed. Place graph not decomposable into prime components."],
+		[])
+            | e ->
+	       (n,
+		"test_decomp.ml",
+		xml_block "system-out" [] ["Test failed."],
+		[xml_block "error" attr_err [Printexc.to_string e]]))
+	       
+ 
+(* Args: PATH OUT-PATH FNAME *)  
 let () =
   let bg_strings = parse_all Sys.argv.(1) in
   let bgs = 
     List.filter (fun (_, b) -> 
-        b.p.Place.s = 0
-      ) (List.map (fun (n, s) -> (n, Big.parse s)) bg_strings) in
-  try 
-    do_tests [List.nth bgs (int_of_string Sys.argv.(2))]
-  with
-  | _ -> do_tests bgs
+		 b.p.Place.s = 0
+		) (List.map (fun (n, s) -> (n, Big.parse s)) bg_strings) in
+  let testcases = do_tests bgs in
+  write_xml (testsuite "test_decomp" testcases) Sys.argv.(2) Sys.argv.(3)
   
 

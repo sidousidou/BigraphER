@@ -64,9 +64,9 @@ let () =
   and states_reference = 30
   and reacts_reference = 29
   and occurs_reference = 4495
-  and print_res s r o = ""
-    (* xml_block "system-out" []  *)
-    (* 	      [sprintf "States: %-8d     Reactions: %-8d     Occurrences: %-8d" s r o] *) in
+  and print_res s r o =
+    xml_block "system-out" []
+    	      [sprintf "States: %-8d     Reactions: %-8d     Occurrences: %-8d" s r o] in
   let failures l = List.map (fun (id, reference, out) ->
 			     assert_eq_int id reference out) l
   and ass_list s r o = [("States", states_reference, s);

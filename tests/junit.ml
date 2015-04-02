@@ -15,20 +15,23 @@ let xml_block tag attr chl_blocks =
 		     
 let attr_eq_int = [("type", "ASSERT_EQ_INT");
 		   ("message", "Values do not match")]
-  		     
+
+let attr_err = [("type", "INTERNAL_ERROR");
+		("message", "Internal error")]
+
 let assert_eq_int id reference out =
   if out = reference then ""
   else xml_block "failure" attr_eq_int [sprintf "%s: %-8d != %-8d" id out reference]
 
 let testsuite name cases =
-  header ^ "\n" ^
+  header ^ "\n<testsuites name=\"BigraphER\">\n" ^
     (xml_block "testsuite"
 	       [("name", name); ("tests", string_of_int (List.length cases))]
 	       (List.map (fun (name, mod_name, out, fail) ->
 			  xml_block "testcase"
 				    [("name", name); ("class", mod_name)]
 				    (out :: fail))
-			 cases))
+			 cases)) ^ "\n</testsuites>\n"
 
 let write_xml s path name =
   let f_name = Filename.concat path name in
