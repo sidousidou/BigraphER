@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite tests="4">
+  <testcase name="brs">
+    <system-out>Output</system-out>
+  </testcase>
+  <testcase name="sim_brs"/>
+  <testcase name="sbrs"/>
+  <testcase name="sim_sbrs">
+    <failure>States: 30 != 20</failure>
+  </testcase>
+</testsuite>

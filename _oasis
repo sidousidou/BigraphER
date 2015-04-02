@@ -111,7 +111,7 @@ Test "brs-brs"
 
 Test "brs-sym-brs"
   Run:		true
-  Command:	./test_brs.native sym_brs
+  Command:	./test_brs.native sim_brs
 
 Test "brs-sbrs"
   Run:		true
@@ -119,7 +119,7 @@ Test "brs-sbrs"
 
 Test "brs-sym-sbrs"
   Run:		true
-  Command:	./test_brs.native sym_sbrs
+  Command:	./test_brs.native sim_sbrs
 
 Test "parser-rts"
   Run:		true

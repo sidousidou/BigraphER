@@ -18,3 +18,6 @@ script:
  - ./scripts/shippable-tests.sh 
  - ./scripts/shippable-link.sh
 
+after_script:
+ - mv tests/files/brs-junit.xml shippable/testresults/
+  
