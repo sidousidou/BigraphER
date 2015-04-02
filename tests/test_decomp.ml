@@ -2,7 +2,8 @@
 open Printf
 open Big
 open Utils
-  
+open Junit
+       
 (* parse a .big file *)
 let parse path =
   let file = open_in path in
