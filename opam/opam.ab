@@ -41,3 +41,13 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
 "
   {success}
 ]
+
+depexts: [
+  [["debian"] ["graphviz"]]
+  [["ubuntu"] ["graphviz"]]
+  [["freebsd"] ["graphics/graphviz"]]
+  [["openbsd"] ["math/graphviz"]]
+  [["netbsd"] ["graphics/graphviz"]]
+  [["osx" "homebrew"] ["graphviz"]]
+  [["osx" "pkgsrc"] ["graphics/graphviz"]]
+]
