@@ -70,7 +70,7 @@ let () =
         b.p.Place.s = 0
       ) (List.map (fun (n, s) -> (n, Big.parse s)) bg_strings) in
   try 
-    do_tests [List.nth bgs (int_of_string Sys.argv.(3))]
+    do_tests [List.nth bgs (int_of_string Sys.argv.(2))]
   with
   | _ -> do_tests bgs
   
