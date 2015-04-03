@@ -19,6 +19,8 @@ let attr_eq_int = [("type", "ASSERT_EQ_INT");
 let attr_err = [("type", "INTERNAL_ERROR");
 		("message", "Internal error")]
 
+let error_msg = "INTERNAL_ERROR"
+		  
 let assert_eq_int id reference out =
   if out = reference then ""
   else xml_block "failure" attr_eq_int [sprintf "%s: %-8d != %-8d" id out reference]

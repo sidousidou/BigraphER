@@ -53,7 +53,7 @@ let do_tests =
             | e ->
 	       (n,
 		"test_decomp.ml",
-		xml_block "system-out" [] ["Test failed."],
+		xml_block "system-out" [] [error_msg],
 		[xml_block "error" attr_err [Printexc.to_string e]]))
 	       
  

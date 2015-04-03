@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 8dc14a231929f230483504413c47b04c)
+# DO NOT EDIT (digest: eb6c4b4a278f9e5bd6b100086c6be42b)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -49,6 +49,7 @@ true: annot, bin_annot
 <tests/test_match.{native,byte}>: package(unix)
 <tests/test_match.{native,byte}>: use_bigraph
 <tests/test_match.{native,byte}>: use_bigraph-utils
+<tests/test_match.{native,byte}>: use_junit
 # Executable brs-test
 <tests/test_brs.{native,byte}>: package(bigarray)
 <tests/test_brs.{native,byte}>: package(minisat)

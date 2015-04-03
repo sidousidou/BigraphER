@@ -9,7 +9,7 @@ Description: BigraphER is an efficient implementation of Bigraphical Reactive
   
 Authors:     Michele Sevegnani
 Maintainers: Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
-License:     BSD-3-clause
+License:     BSD-2-clause
 LicenseFile: LICENSE
 OCamlVersion:	>= 4.02.0
 Plugins:     META (0.4), DevFiles (0.4)
@@ -77,18 +77,12 @@ Executable "matching-test"
   BuildTools: ocamlbuild
   MainIs:     test_match.ml
   CompiledObject: best
-  BuildDepends:	  bigraph, bigraph-utils
+  BuildDepends:	  bigraph, bigraph-utils, junit 
   Install:	  false
 
-Test "matching-match"
-  Run:		false
-  Command:	../test_match.native match ./files/match/
-  WorkingDirectory:	tests
-  
-Test "matching-equality"
-  Run:		false
-  Command:	../test_match.native equality ./files/match/
-  WorkingDirectory:	tests
+Test "matching"
+  Run:		true
+  Command:	./test_match.native ./tests/files/match/ ./shippable/testresults
 
 Executable "brs-test"
   Path:       tests
