@@ -1,34 +1,34 @@
-OASISFormat: 0.4
-Name:        bigrapher
-Version:     0.5.0
-Synopsis:    Implementation of bigraphical reactive systems
+OASISFormat:	0.4
+Name:		bigrapher
+Version:	0.5.0
+Synopsis:	Implementation of bigraphical reactive systems
 Description: BigraphER is an efficient implementation of Bigraphical Reactive
  Systems (BRS) that supports bigraphs with sharing, stochastic reaction rules,
  rule priorities, graphical output and predicate checking. Models can be
  exported to probabilistic model checker PRISM.
   
-Authors:     Michele Sevegnani
-Maintainers: Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
-License:     BSD-2-clause
-LicenseFile: LICENSE
+Authors:	Michele Sevegnani
+Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
+License:     	BSD-2-clause
+LicenseFile:	LICENSE
 OCamlVersion:	>= 4.02.0
-Plugins:     META (0.4), DevFiles (0.4)
-Homepage:    http://www.dcs.gla.ac.uk/~michele/bigrapher.html
-FilesAB:       bin/cmd.ml.ab, man/bigrapher.1.ab, opam/url.ab, opam/opam.ab
+Plugins:     	META (0.4), DevFiles (0.4)
+Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
+BuildTools:	ocamlbuild, ocamldoc, menhir
+FilesAB:       	bin/cmd.ml.ab, man/bigrapher.1.ab, opam/url.ab, opam/opam.ab
 
 
 Executable bigrapher
-  Path:       bin
-  BuildTools: ocamlbuild
-  MainIs:     bigrapher.ml
+  Path:	bin
+  MainIs:         bigrapher.ml
   CompiledObject: best
   BuildDepends:	  bigraph, bigrapher-utils
   Install:	  true
   
 Library bigraph
   Path:            lib
-  BuildTools:      ocamlbuild
   FindlibName:	   bigraph
+  Pack:            true
   Modules:         Base, Link, Place, Big, Brs, Sbrs, Export
   InternalModules: Iso, IntSet, Rel, Fun, Sparse, Cnf
   BuildDepends:    unix, minisat, bigarray, str
@@ -37,91 +37,84 @@ Library bigraph
 
 Library "bigraph-utils"
   Path:            utils
-  BuildTools:      ocamlbuild
   Modules:         Utils
   BuildDepends:    unix
   Install:	   false
 
 Library "bigrapher-utils"
   Path:            bin
-  BuildTools:      ocamlbuild
   Modules:         Cmd, Syntax, Store, Lexer_main, Parser_main
   BuildDepends:    bigraph-utils
   Install:	   false
 
 SourceRepository master
-  Type:     git
-  Location: https://mseve@bitbucket.org/mseve/bigrapher.git
-  Branch: master
-  Browser: https://bitbucket.org/mseve/bigrapher
+  Type:     	   git
+  Location: 	   https://mseve@bitbucket.org/mseve/bigrapher.git
+  Branch: 	   master
+  Browser: 	   https://bitbucket.org/mseve/bigrapher
   
 Document bigraph_api
-  Type:	 ocamlbuild (0.4)
-  BuildTools:	    ocamlbuild, ocamldoc
-  Title:      API reference for bigraph library
+  Type:		   ocamlbuild (0.4)
+  Title:      	   API reference for bigraph library
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
 
-Flag "no-graphviz"
-  Description: Build bigrapher without Graphviz support
-  Default: false
-
 Library "junit"
   Path:            tests
-  BuildTools:      ocamlbuild
   Modules:         Junit
   Install:	   false
+  Build$:          flag(tests)
 
 Executable "matching-test"
-  Path:       tests
-  BuildTools: ocamlbuild
-  MainIs:     test_match.ml
-  CompiledObject: best
-  BuildDepends:	  bigraph, bigraph-utils, junit 
-  Install:	  false
+  Path:		   tests
+  MainIs:     	   test_match.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit 
+  Install:	   false
+  Build$:          flag(tests)
 
 Test "matching"
-  Run:		true
-  Command:	./test_match.native ./tests/files/match/ ./shippable/testresults
+  Run$:            flag(tests)
+  Command:	   ./test_match.native ./tests/files/match/ ./shippable/testresults
 
 Executable "brs-test"
-  Path:       tests
-  BuildTools: ocamlbuild
-  MainIs:     test_brs.ml
-  CompiledObject: best
-  BuildDepends:	  bigraph, bigraph-utils, junit
-  Install:	  false
-
+  Path:		   tests
+  MainIs:     	   test_brs.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit
+  Install:	   false
+  Build$:          flag(tests)
+  
 Test "brs"
-  Run:		true
-  TestTools:	mkdir
-  PreCommand:	mkdir -p ./shippable/testresults
-  Command:	./test_brs.native ./shippable/testresults brs-junit.xml
+  Run$:            flag(tests)
+  TestTools:	   mkdir
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_brs.native ./shippable/testresults brs-junit.xml
 
 Executable "decomp-test"
-  Path:       tests
-  BuildTools: ocamlbuild
-  MainIs:     test_decomp.ml
-  CompiledObject: best
-  BuildDepends:	  bigraph, bigraph-utils, junit
-  Install:	  false
+  Path:		   tests
+  MainIs:     	   test_decomp.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit
+  Install:	   false
+  Build$:          flag(tests)
 
 Test "decomp"
-  Run:		true
-  TestTools:	mkdir	
-  PreCommand:	mkdir -p ./shippable/testresults
-  Command:	./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
+  Run$:            flag(tests)
+  TestTools:	   mkdir	
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
 
 Executable "parser-test"
-  Path:       tests
-  BuildTools: ocamlbuild
-  MainIs:     test_parser.ml
-  CompiledObject: best
-  BuildDepends:	  bigraph, bigraph-utils, junit, unix
-  Install:	  false
-
+  Path:            tests
+  MainIs:     	   test_parser.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit, unix
+  Install:	   false
+  Build$:          flag(tests)
+  
 Test "parser"
-  Run:		true
-  TestTools:	mkdir
-  PreCommand:	mkdir -p ./shippable/testresults
-  Command:	./test_parser.native ./tests/files/parser.in ./shippable/testresults parser-junit.xml
+  Run$:            flag(tests)
+  TestTools:	   mkdir
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_parser.native ./tests/files/parser.in ./shippable/testresults parser-junit.xml
