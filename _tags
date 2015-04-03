@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: c95079c9450d87e6e13d68c0cd39a7e8)
+# DO NOT EDIT (digest: eb6c4b4a278f9e5bd6b100086c6be42b)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -16,19 +16,6 @@ true: annot, bin_annot
 "_darcs": not_hygienic
 # Library bigraph
 "lib/bigraph.cmxs": use_bigraph
-"lib/base.cmx": for-pack(Bigraph)
-"lib/link.cmx": for-pack(Bigraph)
-"lib/place.cmx": for-pack(Bigraph)
-"lib/big.cmx": for-pack(Bigraph)
-"lib/brs.cmx": for-pack(Bigraph)
-"lib/sbrs.cmx": for-pack(Bigraph)
-"lib/export.cmx": for-pack(Bigraph)
-"lib/iso.cmx": for-pack(Bigraph)
-"lib/intSet.cmx": for-pack(Bigraph)
-"lib/rel.cmx": for-pack(Bigraph)
-"lib/fun.cmx": for-pack(Bigraph)
-"lib/sparse.cmx": for-pack(Bigraph)
-"lib/cnf.cmx": for-pack(Bigraph)
 <lib/*.ml{,i,y}>: package(bigarray)
 <lib/*.ml{,i,y}>: package(minisat)
 <lib/*.ml{,i,y}>: package(str)
