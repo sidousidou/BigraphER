@@ -20,10 +20,13 @@ let inverse f =
 let to_list = bindings
 
 (* In case of clashing bindings only the right-most is stored. *)
-let of_list l =
+let of_list =
   List.fold_left (fun acc (i, j) ->
-      add i j acc) empty l
+      add i j acc) empty
 
+(* [0;0;3;1;2] -> [(0,0);(1,0);(2,3);(3,1);(4,2)] *)		 
+let parse l = of_list (List.mapi (fun i j -> (i, j)) l)
+		 
 let to_string f =
   Printf.sprintf "{%s}" 
     (String.concat ", " (List.map (fun (i, j) ->

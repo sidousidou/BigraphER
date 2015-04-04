@@ -35,6 +35,7 @@ val dom : int t -> key list
 val codom : int t -> int list
 val inverse : int t -> IntSet.t Rel.t
 val to_list : int t -> (key * int) list
+val parse : int list -> int t
 val of_list : (key * int) list -> int t
 val to_string : int t -> string
 val equal : int t -> int t -> bool
