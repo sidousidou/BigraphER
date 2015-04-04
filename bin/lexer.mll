@@ -105,9 +105,9 @@ open Format
 
 let report_error fmt = function
   | Unknown_char c ->
-    fprintf fmt "unknown character %c" c
+     fprintf fmt "unknown character %c" c
   | Int_overflow s ->
-    fprintf fmt "integer out of bounds: %s is not in [%i, %i]" 
-      s min_int max_int
+     fprintf fmt "integer out of bounds: %s is not in [%i, %i]" 
+	     s min_int max_int
 
 }
