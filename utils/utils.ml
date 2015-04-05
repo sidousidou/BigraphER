@@ -1,14 +1,6 @@
 type text_style =
-  [ `bold
-  | `underline
-  | `black
-  | `red
-  | `green
-  | `yellow
-  | `blue
-  | `magenta
-  | `cyan
-  | `white ]
+  [ `bold | `underline | `black | `red | `green
+  | `yellow | `blue | `magenta | `cyan | `white ]
 
 let colorise (c: text_style) s =
   let code = 
