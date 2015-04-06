@@ -164,8 +164,8 @@ init:
   | INIT IDE LPAR num_list RPAR SEMICOLON   { Init_fun ($2, $4, loc $startpos $endpos) };
 
 num_list:
-  nums = separated_nonempty_list(COMMA, num_exp) 
-				            { nums };
+  nums = separated_nonempty_list(COMMA, num_exp)	    { nums };
+
 num_exp:
   | CINT                                    { Num_int_val ($1, loc $startpos $endpos)   }
   | CFLOAT                                  { Num_float_val ($1, loc $startpos $endpos) }
@@ -300,7 +300,7 @@ closure:
 						cl_loc = loc $startpos $endpos; } };
 
 const_list
-  : const EOF                               { [$1] }
+  : const EOF                               { [ $1 ]    }
   | const COMMA const_list                  {  $1 :: $3 }
 		
 const:
