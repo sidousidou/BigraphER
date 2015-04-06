@@ -13,6 +13,7 @@ type inter = Inter of int * Link.Face.t
 type occ = int Iso.t * int Iso.t * int Fun.t
 
 exception SHARING_ERROR
+exception COMP_ERROR of inter * inter
 exception CTRL_ERROR of int * Link.Face.t
 exception ISO_ERROR of int * int (* number of nodes, size domain *)
 exception NO_MATCH
@@ -154,10 +155,14 @@ let tens a b =
   }
 
 let comp a b =
-  { n = Nodes.tens a.n b.n;
-    p = Place.comp a.p b.p;
-    l = Link.comp a.l b.l a.n.Nodes.size;
-  }
+  try { n = Nodes.tens a.n b.n;
+	p = Place.comp a.p b.p;
+	l = Link.comp a.l b.l a.n.Nodes.size;
+      }
+  with
+  | Place.COMP_ERROR (_, _) 
+  | Link.FACES_MISMATCH (_, _) ->
+     raise (COMP_ERROR (inner a, outer b))
  
 let ppar a b =
   { n = Nodes.tens a.n b.n;
@@ -175,8 +180,8 @@ let par a b =
   let p = ppar a b in
   let out_p = outer p in 
   comp (tens (merge (ord_of_inter out_p))
-          (id (Inter (0, face_of_inter out_p)))) 
-    p
+             (id (Inter (0, face_of_inter out_p)))) 
+       p
   
 let par_of_list bs =
   List.fold_left (fun acc b -> par acc b) id_eps bs

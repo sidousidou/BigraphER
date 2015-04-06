@@ -32,6 +32,9 @@ type inter = Inter of int * Link.Face.t
 (** Raised when the composition in a sharing expression fails. *)
 exception SHARING_ERROR
 
+(** Raised when the composition fails. *)
+exception COMP_ERROR of inter * inter
+	    
 (** Raised when the arity of a control does not match the cardinality of a
    face. The first element is the arity while the second is the mismatching
    face. *)
@@ -135,10 +138,7 @@ val intro : Link.Face.t -> bg
 val tens : bg -> bg -> bg
 
 (** [comp a b] computes the composition of bigraphs [a] and [b].
-    @raise Link.FACES_MISMATCH when the names in the mediating interface
-     differ.
-    @raise Place.COMP_ERROR when the number of sites and roots of [a] and [b],
-     respectively do not match. *)
+    @raise  COMP_ERROR when the mediating interfaces do not match. *)
 val comp : bg -> bg -> bg
 
 (** [ppar a b] computes the parallel product of bigraphs [a] and [b].*)
