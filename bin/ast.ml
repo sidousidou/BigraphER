@@ -221,7 +221,10 @@ let loc_of_big_exp = function
   | Big_plc e -> e.plc_loc
   | Big_ion e -> loc_of_ion_exp e
   | Big_close e -> e.cl_loc
- 	   
+
+let names_of_closures =
+  List.fold_left (fun acc c -> c.cl_name :: acc) []
+		     
 let init_of_ts = function
   | Dbrs dbrs -> dbrs.dbrs_init 
   | Dsbrs dsbrs -> dsbrs.dsbrs_init
