@@ -43,7 +43,7 @@ Library "bigraph-utils"
 
 Library "bigrapher-utils"
   Path:            bin
-  Modules:         Cmd, Ast, Store, Loc, Lexer, Parser
+  Modules:         Cmd, Ast, Store, Loc, Lexer, Parser, Unify
   BuildDepends:    bigraph-utils
   Install:	   false
 

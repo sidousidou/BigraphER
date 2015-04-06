@@ -1,8 +1,8 @@
 module Id = struct
-  type t = string
-  let compare = String.compare 
-end
-
+    type t = string
+    let compare = String.compare 
+  end
+	      
 type int_exp =
   | Int_val of int * Loc.t
   | Int_var of Id.t * Loc.t
@@ -10,6 +10,7 @@ type int_exp =
   | Int_minus of int_exp * int_exp * Loc.t
   | Int_prod of int_exp * int_exp * Loc.t
   | Int_div of int_exp * int_exp * Loc.t
+  | Int_pow of int_exp * int_exp * Loc.t   
 
 type float_exp =
   | Float_val of float * Loc.t
