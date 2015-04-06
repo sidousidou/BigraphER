@@ -21,6 +21,8 @@ let string_of_num_t = function
   | `b `float -> "float"
   | `g  s -> s 
 
+let int_or_float = "[ int | float ]"
+	       
 let string_of_num_t_list l =
    "[" ^ (String.concat "," (List.map string_of_num_t l)) ^ "]"
 
@@ -47,7 +49,9 @@ module Gamma = Set.Make(struct
 			   type t = gen_type
 			   let compare = String.compare
 			 end)
-		
+		       
+type store_t = (Gamma.t * base_type option) list
+		       
 let post_exn env (constr, t) =
   let (union_set, disjoint_sets) =
     env
@@ -105,3 +109,5 @@ let resolve_type env (t : gen_type) =
     | Some b -> `b b
   with
   | Not_found -> assert false
+
+let resolve_types env = List.map (fun t -> resolve_type env t)
