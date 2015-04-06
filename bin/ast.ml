@@ -212,6 +212,16 @@ let face_of_ion_exp = function
 let loc_of_ion_exp = function
   | Big_ion_exp (_, _, l) | Big_ion_fun_exp (_, _, _, l) -> l
 
+let loc_of_big_exp = function
+  | Big_var (_, p) | Big_var_fun (_, _, p) | Big_new_name (_, p)
+  | Big_comp (_, _, p) | Big_tens (_, _, p) | Big_par (_, _, p)
+  | Big_ppar (_, _, p) | Big_share (_, _, _, p) | Big_num (_, p)
+  | Big_nest (_, _, p) | Big_closures (_, _, p) -> p
+  | Big_id e -> e.id_loc 
+  | Big_plc e -> e.plc_loc
+  | Big_ion e -> loc_of_ion_exp e
+  | Big_close e -> e.cl_loc
+ 	   
 let init_of_ts = function
   | Dbrs dbrs -> dbrs.dbrs_init 
   | Dsbrs dsbrs -> dsbrs.dsbrs_init
