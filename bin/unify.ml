@@ -100,14 +100,15 @@ let add_types (t_list : gen_type list) env =
 					
 let box_gen_types t_list = List.map (fun t -> `g t) t_list
 		      
-let resolve_type env (t : gen_type) =
-  try
-    let (set, t') =
-      List.find (fun (set, _) -> Gamma.mem t set) env in
-    match t' with
-    | None -> `g (Gamma.min_elt set)
-    | Some b -> `b b
-  with
-  | Not_found -> assert false
+let resolve_type env = function
+  | `g t ->
+     (try
+	 let (set, t') = List.find (fun (set, _) -> Gamma.mem t set) env in
+	 match t' with
+	 | None -> `g (Gamma.min_elt set)
+	 | Some b -> `b b
+       with
+       | Not_found -> assert false)
+  | `b _ as t -> t
 
-let resolve_types env = List.map (fun t -> resolve_type env t)
+let resolve_types env = List.map (resolve_type env)
