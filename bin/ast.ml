@@ -256,3 +256,7 @@ let rules_of_ts = function
     List.map rul_id_to_rul_call (ids_of_pr_exps (dbrs.dbrs_pri))
   | Dsbrs dsbrs -> 
     List.map srul_id_to_rul_call (ids_of_spr_exps (dsbrs.dsbrs_pri))
+
+let params_of_ts = function
+  | Dbrs ts -> ts.dbrs_params
+  | Dsbrs ts -> ts.dsbrs_params
