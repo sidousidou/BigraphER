@@ -18,6 +18,9 @@ let colorise (c: text_style) s =
   in
   Printf.sprintf "\027[%sm%s\027[m" code s
 
+let warn = colorise `yellow "Warning"
+let err = colorise `red "Error"
+	     
 let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
 let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
                 "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec" |]

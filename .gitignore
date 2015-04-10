@@ -6,7 +6,7 @@ setup.data
 setup.log
 
 # Generated files
-bin/cmd.ml
+bin/version.ml
 man/bigrapher.1
 opam/opam
 opam/url

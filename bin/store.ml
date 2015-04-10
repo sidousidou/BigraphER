@@ -86,6 +86,8 @@ let get_type ((_ , t, _) : typed_store_val) = t
 						
 let get_pos ((_, _, p) : typed_store_val) = p
 
+let bindings = Hashtbl.length
+					      
 type p_class_list = P of Brs.p_class list | S of Sbrs.p_class list
 							      
 type error =
@@ -105,33 +107,34 @@ type warning =
 
 exception ERROR of error * Loc.t
 
-let report_error fmt = function
+let report_error_aux fmt = function
   | Wrong_type (curr, exp) ->
-     fprintf fmt "Error: This expression has type %s but an expression was expected of type %s"
+     fprintf fmt "This expression has type %s but an expression was expected of type %s"
 	     (string_of_store_t curr) (string_of_store_t exp)
   | Atomic_ctrl id ->
-     fprintf fmt "Error: Control %s is atomic but it is here used in a nesting expression" id
+     fprintf fmt "Control %s is atomic but it is here used in a nesting expression" id
   | Arity (id, ar, ar_dec) ->
-     fprintf fmt "Error: Control %s has arity %d but a control of arity %d was expected" id ar ar_dec
-  | Unbound_variable s -> fprintf fmt "Error: Unbound variable %s" s
-  | Div_by_zero -> fprintf fmt "Error: Division by zero"
+     fprintf fmt "Control %s has arity %d but a control of arity %d was expected" id ar ar_dec
+  | Unbound_variable s -> fprintf fmt "Unbound variable %s" s
+  | Div_by_zero -> fprintf fmt "Division by zero"
   | Comp (i, j) ->
-     fprintf fmt "Error: Interfaces %s and %s do not match in the composition"
+     fprintf fmt "Interfaces %s and %s do not match in the composition"
 	     (Big.string_of_inter i) (Big.string_of_inter j)
   | Tens (inner, outer) ->
-     fprintf fmt "Error: Tensor product has common inner names %s and outer names %s"
+     fprintf fmt "Tensor product has common inner names %s and outer names %s"
 	     (Link.string_of_face inner) (Link.string_of_face outer)
-  | Share -> fprintf fmt "Error: Invalid sharing expression"
+  | Share -> fprintf fmt "Invalid sharing expression"
   | Unknown_big v ->
-     fprintf fmt "Error: Expression %d is not a valid bigraph" v
-  | Reaction msg ->
-     fprintf fmt "Error: %s" msg
-	     
+     fprintf fmt "Expression %d is not a valid bigraph" v
+  | Reaction msg -> fprintf fmt "%s" msg
+
+let report_error fmt err =
+  fprintf fmt "@[%s: %a@]@." Utils.err report_error_aux err
+  
 let report_warning fmt = function
   | Multiple_declaration (id, p, p') ->
-     (Loc.print_loc fmt p';
-      fprintf fmt "Warning: Identifier %s was already used at " id;
-      Loc.print_pos fmt p)
+     fprintf fmt "%a@[%s: Identifier %s was already used at %s@]@."
+	     Loc.print_loc p' Utils.warn id (Loc.string_of_pos p)
 
 (******** SCOPE *********)
 

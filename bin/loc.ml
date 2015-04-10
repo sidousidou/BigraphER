@@ -11,15 +11,16 @@ let print_loc fmt loc =
   and p1 = loc.lend in
   let off0 = p0.pos_cnum - p0.pos_bol
   and off1 = p1.pos_cnum - p0.pos_bol in (* same line *)
-  fprintf fmt "File \"%s\", line %i, characters %i-%i"
+  fprintf fmt "@[File \"%s\", line %i, characters %i-%i@]@."
 	  p0.pos_fname p0.pos_lnum off0 off1
 
-let print_pos fmt loc =
+let string_of_pos loc =
   let p0 = loc.lstart 
   and p1 = loc.lend in
   let off0 = p0.pos_cnum - p0.pos_bol
   and off1 = p1.pos_cnum - p0.pos_bol in (* same line *)
-  fprintf fmt "line %i, characters %i-%i" p0.pos_lnum off0 off1
+  "line " ^ (string_of_int p0.pos_lnum) ^ ", characters "
+  ^ (string_of_int off0) ^ "-" ^ (string_of_int off1)
 	  
 let curr lexbuf = {
     lstart = lexbuf.lex_start_p;
