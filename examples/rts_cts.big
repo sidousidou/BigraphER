@@ -1,19 +1,19 @@
 #802.11 CSMA/CA with RTS/CTS
 
 # Constants
-int difs = 50;
-int sifs = 10;
-int tau = 20;
-int timeout = sifs + tau;
-int rts = 160;
-int cts = 112;
-int ack = 112;
-int t_min = 15;
+float difs = 50.;
+float sifs = 10.;
+float tau = 20.;
+float timeout = sifs + tau;
+float rts = 160.;
+float cts = 112.;
+float ack = 112.;
+float t_min = 15.;
 
 # Rates
-float rho2 = 1.0/(sifs + cts);
-float rho4 = 1.0/(sifs + ack);
-float rho5 = 1.0/(timeout);
+float rho2 = 1./(sifs + cts);
+float rho4 = 1./(sifs + ack);
+float rho5 = 1./(timeout);
 float inst = inf;
 
 # Signals (default, Locked, Clear, Error)
@@ -70,9 +70,8 @@ fun big m_l(l) =
 
 fun sreact r_RTS(t,l) =
   share (id || m_w(l)) by psi_1 in (id(1, {a, d, q}) || S(t){a})
-  ->
-  share (id || m_l(l)) by psi_1 in (id(1, {a, d, q}) || S_L(t){a})
-  @ (1.0/(difs + tau*t/2.0 + rts));
+  -[ 1.0/(difs + tau*t/2.0 + rts) ]->
+  share (id || m_l(l)) by psi_1 in (id(1, {a, d, q}) || S_L(t){a});
 
 # Reaction rule 2
 big psi_2 = ([{0,2,3}, {1,2,3}, {2}, {3}], 4);
@@ -87,11 +86,10 @@ fun sreact r_CTS(t, u, l) =
   share (m_l(l) || M_D{r,x}.(id | A{d})|| id(2))
   by psi_2
   in (id(2, {x,a,d,q}) || (S_L(t){a} | S(u){d}) || /r)
-  ->
+  -[ rho2 ]->
   share (s(l) || r || id(2))
   by psi_2
-  in (id(2, {x,a,d,q}) ||(S_L(t){a} | S_L(u){d}) || /r)
-  @ rho2;
+  in (id(2, {x,a,d,q}) ||(S_L(t){a} | S_L(u){d}) || /r);
 
 # Reaction rule 3
 fun big s1(l) =
@@ -99,9 +97,8 @@ fun big s1(l) =
 
 fun sreact r_DATA(l) = 
   /r (s(l) || r)
-  ->
-  /r (s1(l) || r)
-  @ (1.0 / (sifs + l));   
+  -[ 1.0 / (sifs + l) ]->
+  /r (s1(l) || r);   
 
 # Reaction rule 4
 fun big s2(l) =
@@ -114,11 +111,10 @@ fun sreact r_ACK(t,u,l) =
   share (s1(l) || r || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(t){a} | S_L(u){d}) || /r)
-  ->  
+  -[ rho4 ]->  
   share (s2(l) || r1 || id(2))
   by psi_2
-  in (id(2,{x,a,q,d}) || (S_C(t_min){a} | S_C(u){d}))
-  @ rho4;
+  in (id(2,{x,a,q,d}) || (S_C(t_min){a} | S_C(u){d}));
 
 # Reaction rule 5
 fun big f(t,u,l) = 
@@ -133,9 +129,8 @@ fun sreact r_BACK1(t,u,l) =
   share (m_b(l) || M_P{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(t){a} | S(u){d}) || /r)
-  ->
-  f(t,u,l)
-  @ rho5;
+  -[ rho5 ]->
+  f(t,u,l);
   
 # After last transmission attempt
 fun big f_E(u,l) =
@@ -147,38 +142,34 @@ fun sreact r_BACK1E(u,l) =
   share (m_b(l) || M_P{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(1023.0){a} | S(u){d}) || /r)
-  ->
-  f_E(u,l)
-  @ rho5;
+  -[ rho5 ]->
+  f_E(u,l);
 
 # Reaction rule 6
 fun sreact r_BACK2(t,u,l) =
   share (m_b(l) || M_D{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(t){a} | S(u){d}) || /r)
-  ->
-  f(t,u,l)
-  @ rho5;
+  -[ rho5 ]->
+  f(t,u,l);
 
 # After last transmission attempt
 fun sreact r_BACK2E(u,l) =
   share (m_b(l) || M_D{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(1023.0){a} | S(u){d}) || /r)
-  ->
-  f_E(u,l)
-  @ rho5;
+  -[ rho5 ]->
+  f_E(u,l);
 
 # Reaction rule 7
 fun sreact r_D(t) =
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_L(t){b} || /r)
-  ->
+  -[ inst ]->
   share (id || M_D{r,x}.(id | A{a}))
   by psi_1
-  in (id(1,{a,x}) || S_L(t){b} || /r)
-  @ inst;  
+  in (id(1,{a,x}) || S_L(t){b} || /r);  
 
 # Reaction rule 8
 big psi_3 = ([{1}, {2}, {0,1,2}], 3);
@@ -187,18 +178,16 @@ fun sreact r_P(t,u) =
   share (id(2) || M_D{r,x}.(id | A{a}))
   by psi_3
   in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r)
-  ->
+  -[ inst ]->
   share (id(2) || M_P{r,x}.(id | A{a}))
   by psi_3
-  in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r)
-  @ inst;  
+  in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r);  
 
 # Reaction rule 9
 fun sreact r_B(l) = 
   m_l(l) || /r M_P{r,x}.(id | A{d})
-  ->
-  m_b(l) || /r M_P{r,x}.(id | A{d})
-  @ inst;
+  -[ inst ]->
+  m_b(l) || /r M_P{r,x}.(id | A{d});
   
 # Reaction rule 10
 fun big clr(t) =
@@ -210,39 +199,36 @@ fun sreact r_UD(t) =
   share (id || M_D{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r)
-  ->
-  clr(t)
-  @ inst;  
+  -[ inst ]->
+  clr(t);  
 
 # Reaction rule 11
 fun sreact r_UP(t) = 
   share (id || M_P{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r)
-  ->
-  clr(t)
-  @ inst;    
+  -[ inst ]->
+  clr(t);    
 
 # Reaction rule 12
 fun sreact r_UC(t) = 
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){a} || /r)
-  ->
+  -[ inst ]->
   share (id || M{r,x}.(id | A{a}))
   by psi_1
-  in (id(1,{a,x}) || S(t){a} || /r)
-  @ inst;
-
+  in (id(1,{a,x}) || S(t){a} || /r);
+    
 sbrs
   # Parameters
-  int t = { 15, 31, 63, 127, 255, 511, 1023 };
-  int z = { 15, 31, 63, 127, 255, 511 };
-  int l = { 8464, 4368 };
+  float t = { 15., 31., 63., 127., 255., 511., 1023. };
+  float z = { 15., 31., 63., 127., 255., 511. };
+  float l = { 8464., 4368. };
   
   # Initial state
-  init n_0(8464, 4368, 15, 15, 15);
-
+  init n_0(8464., 4368., 15., 15., 15.);
+  
   rules = [ 
             (r_UD(t), r_UP(t)),
 	    (r_UC(t)),
