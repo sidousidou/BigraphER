@@ -180,9 +180,12 @@ num_exp:
 params:
   p = list(param)                           { p };
 
+ide_list_nonempty:
+  ides = separated_nonempty_list(COMMA, IDE)                { ides };
+
 param:
-  | INT IDE EQUAL param_int_exp SEMICOLON                   { Param_int ($2, $4, loc $startpos $endpos)   }
-  | FLOAT IDE EQUAL param_float_exp SEMICOLON               { Param_float ($2, $4, loc $startpos $endpos) };
+  | INT ide_list_nonempty EQUAL param_int_exp SEMICOLON     { Param_int ($2, $4, loc $startpos $endpos)   }
+  | FLOAT ide_list_nonempty EQUAL param_float_exp SEMICOLON { Param_float ($2, $4, loc $startpos $endpos) };
 
 int_exp_list:
   l = separated_nonempty_list(COMMA, int_exp)               { l };
@@ -196,7 +199,7 @@ param_int_exp:
   | LSBR int_exp COLON int_exp COLON int_exp RSBR		
                                             { Param_int_range ($2, $4, $6, loc $startpos $endpos) };
 
-param_float_exp:
+ param_float_exp:
   | float_exp                               { Param_float_val ($1, loc $startpos $endpos)           }
   | LCBR float_exp_list RCBR                { Param_float_set ($2, loc $startpos $endpos)           }
   | LSBR float_exp COLON float_exp COLON float_exp RSBR		

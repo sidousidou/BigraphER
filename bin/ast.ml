@@ -127,8 +127,8 @@ type param_float_exp =
   | Param_float_set of float_exp list * Loc.t
 
 type param_exp =
-  | Param_int of Id.t * param_int_exp * Loc.t
-  | Param_float of Id.t * param_float_exp * Loc.t
+  | Param_int of Id.t list * param_int_exp * Loc.t
+  | Param_float of Id.t list * param_float_exp * Loc.t
 
 type rul_id =
   | Rul_id of Id.t * Loc.t

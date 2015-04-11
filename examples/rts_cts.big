@@ -222,7 +222,7 @@ fun sreact r_UC(t) =
     
 sbrs
   # Parameters
-  float t = { 15., 31., 63., 127., 255., 511., 1023. };
+  float t, t' = { 15., 31., 63., 127., 255., 511., 1023. };
   float z = { 15., 31., 63., 127., 255., 511. };
   float l = { 8464., 4368. };
   
@@ -233,9 +233,9 @@ sbrs
             (r_UD(t), r_UP(t)),
 	    (r_UC(t)),
       	    (r_D(t)),
-      	    (r_P(t,t)),
+      	    (r_P(t,t')),
       	    (r_B(l)),
       	    {r_BACK1(z,t,l), r_BACK1E(t,l), r_BACK2(z,t,l), r_BACK2E(t,l)},
-      	    {r_RTS(t,l), r_CTS(t,t,l), r_DATA(l), r_ACK(t,t,l)}
+      	    {r_RTS(t,l), r_CTS(t,t',l), r_DATA(l), r_ACK(t,t',l)}
           ];  
 endsbrs

@@ -5,21 +5,24 @@ open Unify
 type store_type =
   [ `num_val of num_type
   | `big_val of fun_type
-  | `lambda of lambda ]
+  | `lambda of lambda
+  | `param of base_type ]
 
 let string_of_store_t = function
   | `num_val t -> string_of_num_t t
   | `big_val t -> string_of_fun_t t
   | `lambda t -> string_of_lambda t
+  | `param `int -> "int param"
+  | `param `float -> "float param"
 
 let dom_of_lambda = function
-  | `num_val _ | `big_val _ -> assert false
+  | `num_val _ | `big_val _ | `param _ -> assert false
   | `lambda t -> fst t
 
 let resolve_t (env : store_t) = function
   | `num_val t ->  `num_val (resolve_type env t)
-  | `big_val _ as t -> t
   | `lambda (t, t') -> `lambda (resolve_types env t, t')
+  | t -> t
 		     
 type store_val =
   | Int of int
@@ -48,12 +51,10 @@ let string_of_store_val = function
   | React_fun _ -> "<fun react>"
   | Sreact r -> Sbrs.string_of_sreact r
   | Sreact_fun _ -> "<fun sreact>"
-  | Int_param p -> "("
-		   ^ (String.concat "," (List.map string_of_int p))
-		   ^ ")"
-  | Float_param p -> "("
-		     ^ (String.concat "," (List.map string_of_float p))
-		     ^ ")"
+  | Int_param p ->
+     "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
+  | Float_param p ->
+     "(" ^ (String.concat "," (List.map string_of_float p)) ^ ")"
 
 let def_val = function
   | `g _ -> Num_int_val (0, Loc.dummy_loc)
@@ -80,8 +81,8 @@ let assign_type (v : store_val) env_t =
   | React_fun (_, _, _, forms) -> update forms `react
   | Sreact _ -> (`big_val `sreact, env_t)
   | Sreact_fun (_, _, _, _, forms) -> update forms `sreact
-  | Int_param _ -> (`num_val (`b `int), env_t)
-  | Float_param _ -> (`num_val (`b `float), env_t)
+  | Int_param _ -> (`param `int, env_t)
+  | Float_param _ -> (`param `float, env_t)
 
 type store = (Id.t, typed_store_val) Hashtbl.t
 
@@ -780,9 +781,13 @@ let eval_spr env env_t pr =
     (acc @ rs, env_t') in 
   match pr with
   | Spr (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
+		    prerr_endline ("# of rules in the class: "
+				   ^ (string_of_int (List.length rs)));
 		    (Sbrs.P_class rs, env_t')
   | Spr_red (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-			(Sbrs.P_rclass rs, env_t')
+			prerr_endline ("# of rules in the class: "
+				       ^ (string_of_int (List.length rs)));
+			 (Sbrs.P_rclass rs, env_t')
 
 let eval_sprs = eval_p_list eval_spr
 			    
@@ -875,38 +880,47 @@ let store_params fmt (params : param_exp list) env =
   and flatten_float = function
     | [v] -> Float v
     | v -> Float_param v in
+  (* let eval_int_param exp = *)
+  (*   try Int (eval_int exp ScopeMap.empty env) with *)
+  (*   | ERROR (Wrong_type _, _) -> get_int_param  *)
   let aux  = function
-    | Param_int (id, Param_int_val (exp, _), p) ->
-       let v = Int (eval_int exp ScopeMap.empty env) in
-       add_to_store fmt env id (v, fst (assign_type v []), p)
-    | Param_int (id, Param_int_range (start, incr, stop, _), p) ->
+    | Param_int (ids, Param_int_val (exp, _), p) ->
+       let v = Int (eval_int exp ScopeMap.empty env) in 
+       List.iter (fun id ->
+		  add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+    | Param_int (ids, Param_int_range (start, incr, stop, _), p) ->
        (let s = eval_int start ScopeMap.empty env in
 	let v = flatten_int
 		  (eval_int_range s (eval_int incr ScopeMap.empty env)
 				  (eval_int stop ScopeMap.empty env) [s]) in
-	add_to_store fmt env id (v, fst (assign_type v []), p))
-    | Param_int (id, Param_int_set (exps, _), p) ->
+	List.iter (fun id ->
+		   add_to_store fmt env id (v, fst (assign_type v []), p)) ids)
+    | Param_int (ids, Param_int_set (exps, _), p) ->
        let v =
 	 List.map (fun e -> eval_int e ScopeMap.empty env) exps
 	 |> List.sort_uniq (fun a b -> a - b)
  	 |> flatten_int in
-       add_to_store fmt env id (v, fst (assign_type v []), p)
-    | Param_float (id, Param_float_val (exp, _), p) ->
+       List.iter (fun id ->
+		  add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+    | Param_float (ids, Param_float_val (exp, _), p) ->
        let v = Float (eval_float exp ScopeMap.empty env) in
-       add_to_store fmt env id (v, fst (assign_type v []), p)
-    | Param_float (id, Param_float_range (start, incr, stop, _), p) ->
+       List.iter (fun id ->
+		  add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+    | Param_float (ids, Param_float_range (start, incr, stop, _), p) ->
        let s = eval_float start ScopeMap.empty env in
        let v = flatten_float
 		 (eval_float_range s (eval_float incr ScopeMap.empty env)
 				   (eval_float stop ScopeMap.empty env)
 				   [s]) in
-       add_to_store fmt env id (v, fst (assign_type v []), p)
-    | Param_float (id, Param_float_set (exps, _), p) ->
+       List.iter (fun id ->
+		  add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+    | Param_float (ids, Param_float_set (exps, _), p) ->
        let v =
 	 List.map (fun e -> eval_float e ScopeMap.empty env) exps
 	 |> List.sort_uniq compare
 	 |> flatten_float in
-       add_to_store fmt env id (v, fst (assign_type v []), p) in
+       List.iter (fun id ->
+		  add_to_store fmt env id (v, fst (assign_type v []), p)) ids in
   List.iter aux params
 
 (******** INSTANTIATE REACTIVE SYSTEM *********)
