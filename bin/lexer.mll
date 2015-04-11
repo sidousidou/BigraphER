@@ -34,6 +34,12 @@ let comment = '#' [^'\r' '\n']* (newline | eof)
 rule token =  parse 
   | blank+                  { token lexbuf }
   | (newline | comment)     { Lexing.new_line lexbuf; token lexbuf }
+  | int_literal             { let s = Lexing.lexeme lexbuf in
+			      try CINT (int_literal s) with
+			      | Failure _ -> 
+				 raise (ERROR (Int_overflow s, Loc.curr lexbuf)) }
+  | float_literal           { try CFLOAT (float_of_string (Lexing.lexeme lexbuf)) with
+			      | Failure _ -> assert false }
   | "["                     { LSBR }
   | "]"                     { RSBR }
   | "{"                     { LCBR }
@@ -81,22 +87,7 @@ rule token =  parse
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }
-  | int_literal
-    { let s = Lexing.lexeme lexbuf in
-      try
-        CINT (int_literal s)
-      with
-      | Failure _ -> 
-        raise (ERROR (Int_overflow s, Loc.curr lexbuf))
-    }
-  | float_literal
-    { try
-        CFLOAT (float_of_string (Lexing.lexeme lexbuf))
-      with
-      | Failure _ -> assert false
-    }
-  | _ as c                  
-    { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
+  | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
 {
 
