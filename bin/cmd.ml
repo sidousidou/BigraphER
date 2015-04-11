@@ -236,12 +236,12 @@ let parse_bilog str =
 
 let parse cmd =
   if Array.length cmd > 1 then
-    (parse_model cmd.(1);
-     try
-       if parse_bilog cmd.(2) then 
-         parse_options (Array.sub cmd 3 ((Array.length cmd) - 3))
-       else parse_options (Array.sub cmd 2 ((Array.length cmd) - 2)) 
-     with
-     | Invalid_argument _ -> ()
-     | ERROR (_ as e) -> report_error err_formatter e 
+    (try
+	parse_model cmd.(1);
+	if parse_bilog cmd.(2) then 
+          parse_options (Array.sub cmd 3 ((Array.length cmd) - 3))
+	else parse_options (Array.sub cmd 2 ((Array.length cmd) - 2)) 
+      with
+      | Invalid_argument _ -> ()
+      | ERROR (_ as e) -> report_error err_formatter e 
     ) else report_error err_formatter Model_missing
