@@ -15,6 +15,11 @@ let string_of_store_t = function
 let dom_of_lambda = function
   | `num_val _ | `big_val _ -> assert false
   | `lambda t -> fst t
+
+let resolve_t (env : store_t) = function
+  | `num_val t ->  `num_val (resolve_type env t)
+  | `big_val _ as t -> t
+  | `lambda (t, t') -> `lambda (resolve_types env t, t')
 		     
 type store_val =
   | Int of int
@@ -529,7 +534,7 @@ let eval_ion scope env env_t flag = function
 	(check_atomic id p env face c flag, env_t')
       with
       | UNIFICATION ->
-	 raise (ERROR (Wrong_type (`lambda (args_t, `big), t), p)))
+	  raise (ERROR (Wrong_type (`lambda (args_t, `ctrl a), resolve_t env_t t), p)))
        
 let rec eval_big (exp : big_exp) (scope : scope)
 		 (env : store) (env_t : store_t) =
@@ -555,7 +560,7 @@ let rec eval_big (exp : big_exp) (scope : scope)
 	eval_big exp scope' env env_t' 
       with
       | UNIFICATION ->
-	 raise (ERROR (Wrong_type (`lambda (args_t, `big), t), p)))
+	 raise (ERROR (Wrong_type (`lambda (args_t, `big), resolve_t env_t t), p)))
   | Big_new_name (n, _) -> 
      (Big.intro (Link.Face.singleton (Link.Nam n)), env_t)
   | Big_comp (l, r, p) -> 
@@ -726,7 +731,7 @@ let eval_react_fun_app id args env env_t p =
 		       (r :: acc, env_t'')
 		     with
 		     | UNIFICATION ->
-			raise (ERROR (Wrong_type (`lambda (args_t, `react), t), p))
+			raise (ERROR (Wrong_type (`lambda (args_t, `react), resolve_t env_t t), p))
 		    ) ([], env_t)
 
 let eval_sreact_fun_app id args env env_t p =
@@ -742,7 +747,7 @@ let eval_sreact_fun_app id args env env_t p =
 		       (r :: acc, env_t'')
 		     with
 		     | UNIFICATION ->
-			raise (ERROR (Wrong_type (`lambda (args_t, `react), t), p))
+			raise (ERROR (Wrong_type (`lambda (args_t, `react), resolve_t env_t t), p))
 		    ) ([], env_t)
 
 let eval_pr env env_t pr =

@@ -51,7 +51,15 @@ module Gamma = Set.Make(struct
 			 end)
 		       
 type store_t = (Gamma.t * base_type option) list
-		       
+
+let string_of_base_opt = function
+  | None -> "nil"
+  | Some `int -> "int"
+  | Some `float -> "float"
+
+let string_of_gamma set =
+  "{" ^ (Gamma.elements set |> String.concat ", ") ^ "}"
+		     
 let post_exn env (constr, t) =
   let (union_set, disjoint_sets) =
     env
@@ -112,3 +120,9 @@ let resolve_type env = function
   | `b _ as t -> t
 
 let resolve_types env = List.map (resolve_type env)
+
+let string_of_env env =
+  List.map (fun (set, t) ->
+	    (string_of_gamma set) ^ " -> " ^ (string_of_base_opt t)) env
+  |> String.concat "\n"
+  				 
