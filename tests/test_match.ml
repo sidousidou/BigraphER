@@ -88,11 +88,11 @@ let do_tests =
 	       (match (t.t_name, t.p_name) with 
 		| ("T13", "P23") | ("T10", "P16") -> success t
 		| _ -> failure t default_fail_msg)
-	    | Link.FACES_MISMATCH (x, y) -> (* pattern in test 25 is not epi *)
+	    | COMP_ERROR (x, y) -> (* pattern in test 25 is not epi *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T14", "P25") -> success t
 		| _ -> failure t (sprintf "Interfaces %s != %s"
-					  (Link.string_of_face x) (Link.string_of_face y)))
+					  (string_of_inter x) (string_of_inter y)))
             |  e ->
 		(t.t_name ^ " &gt; " ^ t.p_name,
 		 module_name,

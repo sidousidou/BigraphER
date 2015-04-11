@@ -160,8 +160,8 @@ let comp a b =
 	l = Link.comp a.l b.l a.n.Nodes.size;
       }
   with
-  | Place.COMP_ERROR (_, _) 
-  | Link.FACES_MISMATCH (_, _) ->
+  | Place.COMP_ERROR _ 
+  | Link.FACES_MISMATCH _ ->
      raise (COMP_ERROR (inner a, outer b))
  
 let ppar a b =
