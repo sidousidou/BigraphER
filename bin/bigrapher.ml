@@ -252,8 +252,8 @@ let () =
 	Store.report_error Format.err_formatter e;
 	exit 1)
     | Parser.Error ->
-       (Loc.print_loc Format.err_formatter Loc.{lstart = Lexing.(lexbuf.lex_curr_p);
-						lend = Lexing.(lexbuf.lex_start_p)};
+       (Loc.print_loc Format.err_formatter Loc.{lstart = Lexing.(lexbuf.lex_start_p);
+						lend = Lexing.(lexbuf.lex_curr_p)};
 	prerr_endline ((colorise `red "Error: ") ^ "Syntax error near token \""
 		       ^ (Lexing.lexeme lexbuf) ^ "\""); 
 	exit 1)
