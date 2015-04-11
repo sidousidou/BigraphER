@@ -178,11 +178,11 @@ num_exp:
   | num_exp MINUS num_exp                   { Num_minus ($1, $3, loc $startpos $endpos) };
 
 params:
-  p = separated_list(SEMICOLON, param)      { p };
+  p = list(param)                           { p };
 
 param:
-  | INT IDE EQUAL param_int_exp             { Param_int ($2, $4, loc $startpos $endpos)   }
-  | FLOAT IDE EQUAL param_float_exp         { Param_float ($2, $4, loc $startpos $endpos) };
+  | INT IDE EQUAL param_int_exp SEMICOLON                   { Param_int ($2, $4, loc $startpos $endpos)   }
+  | FLOAT IDE EQUAL param_float_exp SEMICOLON               { Param_float ($2, $4, loc $startpos $endpos) };
 
 int_exp_list:
   l = separated_nonempty_list(COMMA, int_exp)               { l };
