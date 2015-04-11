@@ -2,3 +2,4 @@
 
 *  Rate for stochastic reaction rules are now specified by ```-[ rate ]->```.
 *  Instantiation maps for (stochastic) reaction rules are specified by ```@```.
+*  Typing discipline is stricter now (i.e. no implicit casting is performed).
