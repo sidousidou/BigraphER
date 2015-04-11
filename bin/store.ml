@@ -881,9 +881,10 @@ let store_params fmt (params : param_exp list) env =
 				  (eval_int stop ScopeMap.empty env) [s]) in
 	add_to_store fmt env id (v, fst (assign_type v []), p))
     | Param_int (id, Param_int_set (exps, _), p) ->
-       let v = flatten_int
-		 (List.map (fun e ->
-			    eval_int e ScopeMap.empty env) exps) in
+       let v =
+	 List.map (fun e -> eval_int e ScopeMap.empty env) exps
+	 |> List.sort_uniq (fun a b -> a - b)
+ 	 |> flatten_int in
        add_to_store fmt env id (v, fst (assign_type v []), p)
     | Param_float (id, Param_float_val (exp, _), p) ->
        let v = Float (eval_float exp ScopeMap.empty env) in
@@ -896,9 +897,10 @@ let store_params fmt (params : param_exp list) env =
 				   [s]) in
        add_to_store fmt env id (v, fst (assign_type v []), p)
     | Param_float (id, Param_float_set (exps, _), p) ->
-       let v = flatten_float 
-		 (List.map (fun e ->
-			    eval_float e ScopeMap.empty env) exps) in
+       let v =
+	 List.map (fun e -> eval_float e ScopeMap.empty env) exps
+	 |> List.sort_uniq compare
+	 |> flatten_float in
        add_to_store fmt env id (v, fst (assign_type v []), p) in
   List.iter aux params
 
