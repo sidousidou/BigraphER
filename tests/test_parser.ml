@@ -19,11 +19,11 @@ let ext = ".reference"
 let attr_string = [("type", "ASSERT_OUTPUT");
 		   ("message", "Output is not the same")]
 
-let rec compare (out : string list) (reference : string list) =
+let rec diff (out : string list) (reference : string list) =
   match (out, reference) with
   | ([], []) -> []
   | (l :: out, l_ref :: reference) ->
-     (if String.compare l l_ref = 0 then compare out reference
+     (if String.compare l l_ref = 0 then diff out reference
       else [xml_block "failure" attr_string [sprintf "%s != %s" l l_ref]])
   | ([], l_ref :: _) ->
      [xml_block "failure" attr_string [sprintf "nil != %s" l_ref]]
@@ -45,7 +45,7 @@ let () =
 		    Filename.concat path (name ^ ext)
 		    |> open_in
 		    |> read_lines [] in
-		  try compare std_out ref_out with
+		  try diff std_out ref_out with
 		  | e ->
 		     [xml_block "error" attr_err [Printexc.to_string e]])) in
   write_xml (testsuite "test_parser" testcases) Sys.argv.(2) Sys.argv.(3)
