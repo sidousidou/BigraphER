@@ -161,7 +161,8 @@ val nest : bg -> bg -> bg
 
 (** [share f psi g] computes the bigraphs obtained by sharing bigraph [f] in
     bigraph [g] by using placing [psi].
-    @raise SHARING_ERROR if [psi] is not a placing. *)
+    @raise SHARING_ERROR if [psi] is not a placing.
+    @raise COMP_ERROR if one composition cannot be performed. *)
 val share : bg -> bg -> bg -> bg
 
 (** [close f b] closes names in [f].*)
