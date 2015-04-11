@@ -156,7 +156,8 @@ val par : bg -> bg -> bg
 val par_of_list: bg list -> bg
 
 (** [nest a b] computes the bigraph resulting from nesting bigraph [b] in 
-    bigraph [a]. Common names are shared. *)
+    bigraph [a]. Common names are shared.
+    @raise COMP_ERROR if composition cannot be performed. *)
 val nest : bg -> bg -> bg
 
 (** [share f psi g] computes the bigraphs obtained by sharing bigraph [f] in

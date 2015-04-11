@@ -574,13 +574,14 @@ let rec eval_big (exp : big_exp) (scope : scope)
      binary_eval l r scope env env_t Big.par
   | Big_ppar (l, r, _) -> 
      binary_eval l r scope env env_t Big.ppar
-  | Big_share (a, psi, b, _) -> 
+  | Big_share (a, psi, b, p) -> 
      (try
 	 let (a_v, env_t') = eval_big a scope env env_t in
 	 let (psi_v, env_t'') = eval_big psi scope env env_t' in
 	 let (b_v, env_t''') = eval_big b scope env env_t'' in
 	 (Big.share a_v psi_v b_v, env_t''')
        with
+       | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p))
        | Big.SHARING_ERROR -> raise (ERROR (Share, loc_of_big_exp psi)))
   | Big_num (v, p) -> 
      (match v with
@@ -593,10 +594,13 @@ let rec eval_big (exp : big_exp) (scope : scope)
   | Big_plc exp ->
      (Big.placing exp.plc_parents exp.plc_roots Link.Face.empty,
       env_t)
-  | Big_nest (ion, b, _) -> (* No atomic controls allowed here *)
-     (let (i_v, env_t') = eval_ion scope env env_t false ion in
-      let (b_v, env_t'') = eval_big b scope env env_t' in
-      (Big.nest i_v b_v, env_t''))
+  | Big_nest (ion, b, p) -> (* No atomic controls allowed here *)
+     (try
+	 let (i_v, env_t') = eval_ion scope env env_t false ion in
+	 let (b_v, env_t'') = eval_big b scope env env_t' in
+	 (Big.nest i_v b_v, env_t'')
+       with
+       | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
   | Big_ion ion -> eval_ion scope env env_t true ion
   | Big_close exp ->
      (Big.closure (Link.parse_face [exp.cl_name]), env_t)
