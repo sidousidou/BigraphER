@@ -61,22 +61,19 @@ let to_string = function
   | None -> ""
   | Some s -> s
 		 
-let msg_aux = function
-  | `debug ->      ""
-  | `verbose ->    "Be more verbose."
-  | `sim ->        "Simulate the model. The optional argument sets the maximum simulation time."  
-  | `s_max ->      "Set the maximum number of states."
-  | `version ->    "Show version information."
-  | `consts ->     "Specify a list of constants."  
-  | `out_csl ->    "Export the labelling function to PRISM csl format."
-  | `out_dot ->    "Export the transition system to svg format."
-  | `out_states -> "Export each state to svg format. This option may only be use in conjuntion with the -d or --export-dot options."
-  | `out_prism ->  "Export the transition system to PRISM tra format."
-  | `out_store ->  "Export each declaration in the model to svg format. Dummy values are used to instantiate functional values."
-  | `help ->       "Show this help."
-
-let msg fmt a =
-  fprintf fmt "@[%s@]" (msg_aux a)
+let msg fmt = function
+  | `debug ->      fprintf fmt ""
+  | `verbose ->    fprintf fmt "@[Be more verbose.@]"
+  | `sim ->        fprintf fmt "@[Simulate the model.@ The optional@ argument sets@ the maximum@ simulation@ time.@]"  
+  | `s_max ->      fprintf fmt "@[Set the maximum@ number of states.@]"
+  | `version ->    fprintf fmt "@[Show version@ information.@]"
+  | `consts ->     fprintf fmt "@[Specify a list@ of constants.@]"  
+  | `out_csl ->    fprintf fmt "@[Export the labelling@ function to PRISM csl format.@]"
+  | `out_dot ->    fprintf fmt "@[Export the transition@ system@ to svg format.@]"
+  | `out_states -> fprintf fmt "@[Export each state to@ svg format.@ This@ option may@ only be@ use in conjuntion@ with the@ -d or@ --export-dot@ options.@]"
+  | `out_prism ->  fprintf fmt "@[Export the transition@ system to PRISM@ tra@ format.@]"
+  | `out_store ->  fprintf fmt "@[Export each declaration@ in the@ model to@ svg format.@ Dummy@ values are@ used to@ instantiate functional@ values.@]"
+  | `help ->       fprintf fmt "@[Show this help.@]"
 	  
 let flags = function
   | `debug ->      ["--debug"]
@@ -123,7 +120,7 @@ let parse_option s =
 
 let usage_str fmt () =  
   fprintf fmt "@[USAGE: bigrapher @[[--version]@\n\
-[--help|-h]@\n<smodel.big> [predicates.bilog] [options]@]@]@."
+[--help|-h]@\n<model.big> [predicates.bilog] [options]@]@]@."
 	  
 let usage fmt () =
   fprintf fmt "%a@[Try `bigrapher --help' for more information.@]@." usage_str ()
@@ -150,10 +147,10 @@ let options_str fmt () =
     | `help
     | `verbose
     | `out_states as a-> fprintf fmt "%s@\n%a" (flag_str a) msg a in
-  List.iter (fprintf fmt "@[<7>%a@]@\n" format) l 
+  List.iter (fprintf fmt "@[<h 6>%a@]@\n" format) l 
 
 let help fmt () =
-  fprintf fmt "@[%a@\n@[OPTIONS@[:@\n%a@]@]@]" usage_str () options_str ()
+  fprintf fmt "@[<0>%a@\n@[<6>OPTIONS:@\n%a@]@]@." usage_str () options_str ()
 
 let parse_consts consts i =
   let lexbuf = Lexing.from_string consts in

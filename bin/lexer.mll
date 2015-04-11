@@ -27,16 +27,13 @@ let float_literal =
   )
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
-let comment = '#' [^'\r' '\n']* newline  
+let comment = '#' [^'\r' '\n']* (newline | eof)  
  
 (* RULES *)
 
 rule token =  parse 
   | blank+                  { token lexbuf }
-  | (newline | comment)     { Lexing.new_line lexbuf;
-                              token lexbuf }
-  | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
-  | identifier              { IDE (Lexing.lexeme lexbuf) }
+  | (newline | comment)     { Lexing.new_line lexbuf; token lexbuf }
   | "["                     { LSBR }
   | "]"                     { RSBR }
   | "{"                     { LCBR }
@@ -81,6 +78,8 @@ rule token =  parse
   (* | "false"                 { FALSE } *)
   (* | "not"                   { NOT } *)
   (* | "sort"                  { SORT } *)
+  | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
+  | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }
   | int_literal
     { let s = Lexing.lexeme lexbuf in

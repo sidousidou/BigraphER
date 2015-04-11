@@ -254,12 +254,16 @@ let () =
     | Parser.Error ->
        (Loc.print_loc Format.err_formatter Loc.{lstart = Lexing.(lexbuf.lex_curr_p);
 						lend = Lexing.(lexbuf.lex_start_p)};
-	prerr_endline (colorise `red "Parsing unsuccesful"); 
+	prerr_endline ((colorise `red "Error: ") ^ "Syntax error near token \""
+		       ^ (Lexing.lexeme lexbuf) ^ "\""); 
 	exit 1)
   with
   | Lexer.ERROR (e,p) ->
      (Loc.print_loc Format.err_formatter p;
       Lexer.report_error Format.err_formatter e;
+      exit 1)
+  | Sys_error s ->
+     (prerr_endline ((colorise `red "Error: ") ^ s); 
       exit 1)
   | e -> 
      eprintf "%s\n%s" (Printexc.to_string e) (Printexc.get_backtrace ()); exit 1
