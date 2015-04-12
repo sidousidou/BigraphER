@@ -14,9 +14,8 @@ let colorise (c: text_style) s =
     | `blue      -> "1;34"
     | `magenta   -> "35"
     | `cyan      -> "36"
-    | `white     -> "37"
-  in
-  Printf.sprintf "\027[%sm%s\027[m" code s
+    | `white     -> "37" in
+  "\027[" ^ code ^ "m" ^ s ^ "\027[m"
 
 let warn = colorise `yellow "Warning"
 let err = colorise `red "Error"
@@ -52,3 +51,24 @@ let mkdir dir =
       safe_mkdir dir;
     ) in
   aux dir
+
+let dot_installed () =
+  try
+    let (read_in, write_out) = Unix.pipe () in
+    match Unix.fork () with
+    | 0 ->
+      (* child *) 
+       (Unix.close read_in;
+	Unix.dup2 write_out Unix.stdout;
+	Unix.execvp "dot" [| "dot"; "-V" |])
+  | _ ->
+      (* parent *)
+     (Unix.close write_out;
+      let cin = Unix.in_channel_of_descr read_in in
+      ignore (input_line cin);
+      close_in cin;
+      Unix.close read_in;
+      true)
+  with
+  | End_of_file 
+  | Unix.Unix_error _ -> false
