@@ -11,30 +11,29 @@ let _write_svg s name path verb =
   let (dot_in, bigmc_out) = Unix.pipe () 
   and n_path = concat path name in
   match Unix.fork () with
-  | 0 -> (
-      (* child *) 
-      Unix.close bigmc_out;    
+  | 0 ->
+     (* child *) 
+     (Unix.close bigmc_out;    
       Unix.dup2 dot_in Unix.stdin;
       Unix.close dot_in;
       let svg_file =  
-        Unix.openfile 
+	Unix.openfile 
           n_path [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o600 in
       Unix.dup2 svg_file Unix.stdout;
       Unix.close svg_file;
-      Unix.execvp "dot" [| "dot"; "-Tsvg" |]
-    )
-  | pid -> (
-      (* parent *)
-      Unix.close dot_in;    
+      Unix.execvp "dot" [| "dot"; "-Tsvg" |])
+  | pid ->
+     (* parent *)
+     (Unix.close dot_in;    
       if verb then printf "Writing %s\n%!" n_path;
       let b_w = Unix.write_substring bigmc_out s 0 (String.length s) in
       Unix.close bigmc_out;
       match Unix.waitpid [ Unix.WNOHANG ] pid with
       | (_, Unix.WSTOPPED _) -> 
-        eprintf "Warning: process %d \"dot\" was stopped.\n" pid
-      | (_, Unix.WSIGNALED _) | (_, Unix.WEXITED _) ->
-        if verb then printf "%d bytes written\n" b_w
-    )
+	 eprintf "Warning: process %d \"dot\" was stopped.\n" pid
+      | (_, Unix.WSIGNALED _)
+      | (_, Unix.WEXITED _) ->
+	 if verb then printf "%d bytes written\n" b_w)
 
 let _write_string s name path verb =
   let f_name = concat path name in
