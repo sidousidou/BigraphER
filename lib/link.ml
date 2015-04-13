@@ -312,12 +312,12 @@ let get_dot l =
 	  i + 1,
           (* Inner names *)
           Face.fold (fun n buff ->
-	      sprintf "%si%s [ shape=plaintext, label=\"%s\", width=.18,\
+	      sprintf "%s\"i%s\" [ shape=plaintext, label=\"%s\", width=.18,\
                        height=.18, fontname=\"serif\", fontsize=9.0 ];\n"
                 buff (string_of_name n) (string_of_name n)) e.i buff_i,
           (* Outer names *)  
           Face.fold (fun n buff ->
-	      sprintf "%so%s [ shape=plaintext, label=\"%s\", width=.18,\
+	      sprintf "%s\"o%s\" [ shape=plaintext, label=\"%s\", width=.18,\
                        height=.18, fontname=\"serif\", fontsize=9.0 ];\n"
                 buff (string_of_name n) (string_of_name n)) e.o buff_o,
           (* Hyperedges *)   
@@ -329,9 +329,9 @@ let get_dot l =
           (if flag then
 	     (buff_adj ^
               (Face.fold (fun n buff ->
-		   sprintf "%si%s -> e%d;\n" buff (string_of_name n) i) e.i "") ^ 
+		   sprintf "%s\"i%s\" -> e%d;\n" buff (string_of_name n) i) e.i "") ^ 
               (Face.fold (fun n buff ->
-		   sprintf "%so%s -> e%d;\n" buff (string_of_name n) i) e.o "") ^
+		   sprintf "%s\"o%s\" -> e%d;\n" buff (string_of_name n) i) e.o "") ^
               (if (Ports.cardinal e.p) = 1 && (Face.is_empty e.i) &&
 		  (Face.is_empty e.o) then
 		 (* closure from a port *)
@@ -346,7 +346,7 @@ let get_dot l =
              (* edge between two points *)
              (if Ports.is_empty e.p then
 		(* name -> name *)
-		sprintf "%si%s -> o%s;\n" buff_adj (string_of_name (Face.choose e.i))
+		sprintf "%s\"i%s\" -> \"o%s\";\n" buff_adj (string_of_name (Face.choose e.i))
 		  (string_of_name (Face.choose e.o))
               else if Face.is_empty e.o then
 		if Face.is_empty e.i then
@@ -355,11 +355,11 @@ let get_dot l =
 		    buff_adj (fst (Ports.min_elt e.p)) (fst (Ports.max_elt e.p))
 		else   
 		  (* inner name -> port *)
-		  sprintf "%si%s -> v%d [ arrowhead=dot ];\n" 
+		  sprintf "%s\"i%s\" -> v%d [ arrowhead=dot ];\n" 
 		    buff_adj (string_of_name (Face.choose e.i)) (fst (Ports.choose e.p))
               else    
 		(* port -> outer name *)
-		sprintf "%sv%d -> o%s [ dir=back, arrowtail=dot ];\n" 
+		sprintf "%sv%d -> \"o%s\" [ dir=back, arrowtail=dot ];\n" 
 		  buff_adj (fst (Ports.choose e.p)) (string_of_name (Face.choose e.o)))    
           )       
         )

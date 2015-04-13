@@ -238,7 +238,7 @@ let get_dot b ide =
         (List.map (fun i ->
           sprintf "r%d" i) (IntSet.elements (IntSet.of_int ord))) @
         (List.map (fun (Link.Nam n) ->
-          sprintf "o%s" n) (Link.Face.elements f)) in
+          sprintf "\"o%s\"" n) (Link.Face.elements f)) in
       match ss with
        | [] -> ""
        | _ -> sprintf "{ rank=source; %s };\n" (String.concat "; " ss)
@@ -247,7 +247,7 @@ let get_dot b ide =
         (List.map (fun i ->
           sprintf "s%d" i) (IntSet.elements (IntSet.of_int ord))) @
         (List.map (fun (Link.Nam n) ->
-          sprintf "i%s" n) (Link.Face.elements f)) in
+          sprintf "\"i%s\"" n) (Link.Face.elements f)) in
         match xs with
          | [] -> ""
          | _ -> sprintf "{ rank=sink; %s };\n" (String.concat "; " xs) in 
@@ -256,7 +256,7 @@ let get_dot b ide =
   and nodes_shp = Nodes.to_dot b.n
   and rank_out = build_rank (outer b) true
   and rank_in = build_rank (inner b) false in
-  sprintf "digraph \"%s\"{\n%s%s%s%s%s\n%s%s%s%s%s%s}"
+  sprintf "digraph \"%s\"{\nstylesheet = \"style.css\"\n%s%s%s%s%s\n%s%s%s%s%s%s}"
       ide roots_shp outer_shp rank_out hyp_shp nodes_shp sites_shp
       node_ranks inner_shp rank_in place_adj link_adj
 
