@@ -135,11 +135,11 @@ let report_error_aux fmt = function
   | Reaction msg -> fprintf fmt "%s" msg
 
 let report_error fmt err =
-  fprintf fmt "@[%s: %a@]@." Utils.err report_error_aux err
+  fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
   
 let report_warning fmt = function
   | Multiple_declaration (id, p, p') ->
-     fprintf fmt "%a@[%s: Identifier %s was already used at %s@]@."
+     fprintf fmt "%a@[%s: Identifier %s was already used at %s@]@,"
 	     Loc.print_loc p' Utils.warn id (Loc.string_of_pos p)
 
 (******** SCOPE *********)

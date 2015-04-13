@@ -92,8 +92,8 @@ let flags = function
   | `out_store ->  ["-g"; "--export-store"]
   | `help ->       ["-h"; "--help"] 
 
-let dot = false
-  (* dot_installed () *)
+let dot =
+  dot_installed () 
 		     
 let report_error_aux = function
   | Unknown_option s
@@ -183,7 +183,6 @@ let options_str fmt () =
 	fprintf fmt "%a" msg a) in
   pp_open_tbox fmt ();
   List.iter (pp_row fmt) l;
-  (* List.iter (fprintf fmt "@[<h 6>%a@]@," format) l; *)
   pp_close_tbox fmt ()
 
 let help fmt () =

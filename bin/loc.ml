@@ -11,7 +11,7 @@ let print_loc fmt loc =
   and p1 = loc.lend in
   let off0 = p0.pos_cnum - p0.pos_bol
   and off1 = p1.pos_cnum - p0.pos_bol in (* same line *)
-  fprintf fmt "@[File '%s', line %i, characters %i-%i@]@."
+  fprintf fmt "@[File '%s', line %i, characters %i-%i@]@,"
 	  p0.pos_fname p0.pos_lnum off0 off1
 
 let string_of_pos loc =
