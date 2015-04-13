@@ -63,20 +63,20 @@ let to_string = function
 		 
 let msg fmt = function
   | `debug ->      fprintf fmt ""
-  | `verbose ->    fprintf fmt "@[Be more verbose.@]"
-  | `sim ->        fprintf fmt "@[Simulate the model.@ \
-                                  The optional argument sets the maximum simulation time.@]"  
-  | `s_max ->      fprintf fmt "@[Set the maximum number of states.@]"
-  | `version ->    fprintf fmt "@[Show version information.@]"
-  | `consts ->     fprintf fmt "@[Specify a list of constants.@]"  
-  | `out_csl ->    fprintf fmt "@[Export the labelling function to PRISM csl format.@]"
-  | `out_dot ->    fprintf fmt "@[Export the transition system to svg format.@]"
-  | `out_states -> fprintf fmt "@[Export each state to svg format.@ \
-				  This option may only be use in conjuntion with the `-d' or `--export-dot' options.@]"
-  | `out_prism ->  fprintf fmt "@[Export the transition system to PRISM tra format.@]"
-  | `out_store ->  fprintf fmt "@[Export each declaration in the model to svg format.@ \
-				  Dummy values are used to instantiate functional values.@]"
-  | `help ->       fprintf fmt "@[Show this help.@]"
+  | `verbose ->    fprintf fmt "@[<hov>Be more verbose.@]"
+  | `sim ->        fprintf fmt "@[<hov>Simulate the model.@ \
+                                  The@ optional@ argument@ sets@ the@ maximum@ simulation@ time.@]"  
+  | `s_max ->      fprintf fmt "@[<hov>Set the maximum number of states.@]"
+  | `version ->    fprintf fmt "@[<hov>Show version information.@]"
+  | `consts ->     fprintf fmt "@[<hov>Specify a list of constants.@]"  
+  | `out_csl ->    fprintf fmt "@[<hov>Export the labelling@ function@ to@ PRISM@ csl@ format.@]"
+  | `out_dot ->    fprintf fmt "@[<hov>Export the transition@ system@ to@ svg@ format.@]"
+  | `out_states -> fprintf fmt "@[<hov>Export each state@ to@ svg@ format.@ \
+				  This@ option@ may@ only@ be@ use@ in@ conjuntion@ with@ the@ `-d'@ or@ `--export-dot'@ options.@]"
+  | `out_prism ->  fprintf fmt "@[<hov>Export the transition@ system@ to@ PRISM@ tra@ format.@]"
+  | `out_store ->  fprintf fmt "@[<hov>Export each declaration@ in@ the@ model@ to@ svg@ format.@ \
+				  Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
+  | `help ->       fprintf fmt "@[<hov>Show this help.@]"
 	  
 let flags = function
   | `debug ->      ["--debug"]
