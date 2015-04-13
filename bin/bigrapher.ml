@@ -23,21 +23,21 @@ let print_descr fmt (d, c) =
   fprintf fmt "%s" (colorise c d)
 
 let print_float fmt = function
-  | `f f  -> fprintf fmt "%-3gs" f
+  | `f f  -> fprintf fmt "@[<h>%-3gs@]" f
   | `i _
   | `s _ -> assert false
 		   
 let print_string fmt = function
-  | `s s -> fprintf fmt "%s" s
+  | `s s -> fprintf fmt "@[<h>%s@]" s
   | `i _
   | `f _ -> assert false
 		   
 let print_int fmt = function
-  | `i i -> fprintf fmt "%-8d" i
+  | `i i -> fprintf fmt "@[<h>%-8d@]" i
   | `f _
   | `s _ -> assert false
 
-let print_table fmt padding (rows : row list) =
+let print_table fmt (rows : row list) =
   let pp_row fmt r =
     pp_print_tab fmt ();
     fprintf fmt "%a" print_descr r.descr;
@@ -48,17 +48,19 @@ let print_table fmt padding (rows : row list) =
       (pp_open_tbox fmt ();
        (* First row *)
        pp_set_tab fmt ();
-       fprintf fmt "@<23>%s" (colorise (snd r.descr) (fst r.descr));
+       fprintf fmt "@[<h>%s" (colorise (snd r.descr) (fst r.descr));
+       print_break (15 - (String.length (fst r.descr))) 0;
+       fprintf fmt "@]";
        pp_set_tab fmt ();
-       (* padding is required to align the first row *)
-       fprintf fmt "%s%a" padding r.pp_val r.value; 
+       fprintf fmt "%a" r.pp_val r.value; 
        List.iter (pp_row fmt) rows;
        pp_close_tbox fmt ();
        print_cut ())
   | _ -> assert false
 		   
 let print_header fmt () =
-  fprintf fmt "@[<v>@,%s@,%s@,"
+  if not Cmd.(defaults.debug) then
+  (fprintf fmt "@[<v>@,%s@,%s@,"
 	  (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
 	  "========================================";
   [{ descr = ("Version:", `magenta);
@@ -81,11 +83,10 @@ let print_header fmt () =
      value = `s (String.concat " " (Array.to_list Sys.argv));
      pp_val = print_string;
      display = true; }]
-  |> print_table fmt  "       "
+  |> print_table fmt)
+  else fprintf fmt "@[<v>"
 	    
 let print_stats_store fmt env stoch t0 =
-  (* print_endline (Store.string_of_store env); *)
-  (* print_endline (Store.string_of_params env); *)
   let t = (Unix.gettimeofday ()) -. t0 
   and ty = if stoch then "Stochastic BRS" else "BRS" in
   [{ descr = ("Build time:", `cyan);
@@ -100,15 +101,16 @@ let print_stats_store fmt env stoch t0 =
      value = `i (Hashtbl.length env);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt "    "
+  |> print_table fmt
 
 let print_max fmt =
   [{ descr = ("Max # states:", `cyan);
      value = `i Cmd.(defaults.s_max);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt "  ";
-   if Cmd.(defaults.debug) then () else fprintf fmt "@,@[<v 1>["
+  |> print_table fmt;
+  if Cmd.(defaults.debug) then ()
+  else fprintf fmt "@,@[<v 1>["
 		   
 let print_stats_brs fmt stats =
   [{ descr = ("Build time:", `green);
@@ -127,7 +129,7 @@ let print_stats_brs fmt stats =
      value = `i Brs.(stats.o);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt "    "
+  |> print_table fmt
 
 let print_stats_sbrs fmt stats =
   [{ descr = ("Build time:", `green);
@@ -150,7 +152,7 @@ let print_stats_sbrs fmt stats =
      value = `i Sbrs.(stats.o);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt "    "
+  |> print_table fmt
   
 let print_loop fmt _ i _ = 
   if Cmd.(defaults.debug) then () 
@@ -248,8 +250,7 @@ let open_lex path =
     { Lexing.pos_fname = Filename.basename path;
       Lexing.pos_lnum = 1;
       Lexing.pos_bol = 0;
-      Lexing.pos_cnum = 0;
-    };
+      Lexing.pos_cnum = 0; };
   (lexbuf, file)          
        
 let () =
@@ -259,11 +260,10 @@ let () =
   try
     let iter_f = print_loop fmt true in
     Cmd.parse Sys.argv;
-    if Cmd.(defaults.debug) then () else print_header fmt ();
-    if Cmd.(defaults.debug) then ()
-    else print_msg fmt ("Parsing model file "
-			^ (Cmd.(to_string defaults.model))
-			^ " ..."); 
+    print_header fmt ();
+    print_msg fmt ("Parsing model file "
+		   ^ (Cmd.(to_string defaults.model))
+		   ^ " ..."); 
     let (lexbuf, file) = open_lex Cmd.(to_string defaults.model) in
     try
       let m = Parser.model Lexer.token lexbuf in 
@@ -292,7 +292,7 @@ let () =
 	       print_max fmt;
 	       Brs.sim s0 p_classes Cmd.(defaults.s_max) n iter_f)
 	    else
-	      (print_msg fmt "Starting transition system construction ...";
+	      (print_msg fmt "Computing transition system ...";
 	       print_max fmt;
 	       Brs.bfs s0 p_classes Cmd.(defaults.s_max) n iter_f) in
 	  after_brs fmt stats ts)
@@ -305,11 +305,12 @@ let () =
 		  value = `f Cmd.(defaults.t_max);
 		  pp_val = print_float;
 		  display = true; }]
-	       |> print_table fmt "  ";
-	       if Cmd.(defaults.debug) then () else fprintf fmt "@[<v>";
+	       |> print_table fmt;
+	       if Cmd.(defaults.debug) then ()
+	       else fprintf fmt "@,@[<v 1>[";
 	       Sbrs.sim s0 p_classes Cmd.(defaults.t_max) n iter_f)
             else
-	      (print_msg fmt "Starting CTMC construction ...";
+	      (print_msg fmt "Computing CTMC ...";
 	       print_max fmt;
 	       Sbrs.bfs s0 p_classes Cmd.(defaults.s_max) n iter_f) in
 	  after_sbrs fmt stats ctmc)
