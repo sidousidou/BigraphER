@@ -715,13 +715,15 @@ let scan_for_params env args =
 
 (* a = [1.0; 2.0] c = [4; 8] 
    [(a = 1.0; c = 4); (a = 1.0; c = 8); (a = 2.0; c = 4); (a = 2.0; c = 8)] *)		 
-let param_scopes env ids =
-  List.map (fun id -> param_to_vals (Hashtbl.find env id)) ids
-  |> param_comb
-  |> List.map (fun comb ->
-	       List.fold_left2 (fun acc id v ->
-				ScopeMap.add id v acc
-			       ) ScopeMap.empty ids comb)
+let param_scopes env = function
+  | [] -> [ScopeMap.empty]
+  | ids ->
+     List.map (fun id -> param_to_vals (Hashtbl.find env id)) ids
+     |> param_comb
+     |> List.map (fun comb ->
+		  List.fold_left2 (fun acc id v ->
+				   ScopeMap.add id v acc)
+				  ScopeMap.empty ids comb)
 
 let eval_react_fun_app id args env env_t p =
   scan_for_params env args
@@ -952,10 +954,10 @@ let export decs (env : store) (env_t : store_t) path verb =
     Export.write_big rhs (id ^ "_rhs" ^ svg) path verb in
   let dummy_args (args_t : num_type list) =
     resolve_types env_t args_t
-    |> List.map def_val  in
+    |> List.map def_val in
   let aux id = 
     let args_t = dom_of_lambda (get_type (Hashtbl.find env id)) in
-    dummy_args args_t  in
+    dummy_args args_t in
   let aux' eval_f id args p =
     eval_f id args env env_t p |> fst |> List.hd in
   List.iter (fun d ->

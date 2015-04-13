@@ -69,11 +69,11 @@ fun react mov1(a,p,p') =
   ->
   /m (Area(a){m}.(GPS(p'){a} | id(1)) || Locale{m}.(Lion{a} | id(1)));
 
-# Position c in area a, position p' in area a'       
-fun react mov2(a,a',c,d) =
-  /m/m' ((Area(a){m}.(GPS(p){a} | id(1)) | Area(a'){m'}) || (Locale{m}.(Lion{a} | id(1)) | Local{m'}))
+# Position p in area a, position p' in area a'       
+fun react mov2(a,a',p,p') =
+  /m/m' ((Area(a){m}.(GPS(p){a} | id(1)) | Area(a'){m'}) || (Locale{m}.(Lion{a} | id(1)) | Locale{m'}))
   ->
-  /m/m' ((Area(a){m} | Area(a'){m'}.(GPS(p'){a} | id(1))) || (Locale{m} | Local{m'}.(Lion{a} | id(1))));
+  /m/m' ((Area(a){m} | Area(a'){m'}.(GPS(p'){a} | id(1))) || (Locale{m} | Locale{m'}.(Lion{a} | id(1))));
 
 ###### Rules for the human perspective
 
