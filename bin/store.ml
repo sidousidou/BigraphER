@@ -988,33 +988,33 @@ let export decs (env : store) (env_t : store_t) path verb =
 	    
 (******** DEBUG *********)
 	    
-let string_of_store env =
-  Hashtbl.fold (fun id v acc ->
-		(id ^ ": " ^ (string_of_store_t (get_type v))) :: acc)
-	       env []
-  |> List.rev
-  |> String.concat "\n"  
+(* let string_of_store env = *)
+(*   Hashtbl.fold (fun id v acc -> *)
+(* 		(id ^ ": " ^ (string_of_store_t (get_type v))) :: acc) *)
+(* 	       env [] *)
+(*   |> List.rev *)
+(*   |> String.concat "\n"   *)
 
-let string_of_params env =
-  Hashtbl.fold (fun id v acc ->
-		match get_val v with
-		| Int _
-		| Float _
-		| Big _
-		| Big_fun _
-		| Ctrl _
-		| Ctrl_fun _
-		| A_ctrl _
-		| A_ctrl_fun _
-		| React _
-		| React_fun _
-		| Sreact _
-		| Sreact_fun _ -> acc
-		| v -> (id ^ " = " ^ (string_of_store_val v)) :: acc)
-	       env []
-  |> String.concat "\n"
+(* let string_of_params env = *)
+(*   Hashtbl.fold (fun id v acc -> *)
+(* 		match get_val v with *)
+(* 		| Int _ *)
+(* 		| Float _ *)
+(* 		| Big _ *)
+(* 		| Big_fun _ *)
+(* 		| Ctrl _ *)
+(* 		| Ctrl_fun _ *)
+(* 		| A_ctrl _ *)
+(* 		| A_ctrl_fun _ *)
+(* 		| React _ *)
+(* 		| React_fun _ *)
+(* 		| Sreact _ *)
+(* 		| Sreact_fun _ -> acc *)
+(* 		| v -> (id ^ " = " ^ (string_of_store_val v)) :: acc) *)
+(* 	       env [] *)
+(*   |> String.concat "\n" *)
 		   
-let string_of_brs p_classes =
-  List.map (fun c -> "[" ^ (string_of_int (List.length c)) ^ "]") p_classes
-  |> String.concat "\n"
+(* let string_of_brs p_classes = *)
+(*   List.map (fun c -> "[" ^ (string_of_int (List.length c)) ^ "]") p_classes *)
+(*   |> String.concat "\n" *)
 		   
