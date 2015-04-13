@@ -127,7 +127,7 @@ let print_stats_brs fmt stats =
      value = `i Brs.(stats.o);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt "  "
+  |> print_table fmt "    "
 
 let print_stats_sbrs fmt stats =
   [{ descr = ("Build time:", `green);
