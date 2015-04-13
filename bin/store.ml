@@ -768,11 +768,12 @@ let eval_pr env env_t pr =
   | Pr_red (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
 		       (Brs.P_rclass rs, env_t')
 
-let eval_p_list eval_f env env_t =
+let eval_p_list eval_f env env_t l =
   List.fold_left (fun (acc, env_t) pr ->
 		  let (pr_class, env_t') = eval_f env env_t pr in
-		  (pr_class :: acc, env_t')
-		 ) ([], env_t)
+		  (pr_class :: acc, env_t'))
+		 ([], env_t) l
+  |> (fun (l, e) -> (List.rev l, e))
 		 
 let eval_prs = eval_p_list eval_pr
 			   
@@ -784,14 +785,12 @@ let eval_spr env env_t pr =
     let (rs, env_t') = aux env_t id in
     (acc @ rs, env_t') in 
   match pr with
-  | Spr (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-		    prerr_endline ("# of rules in the class: "
-				   ^ (string_of_int (List.length rs)));
+  | Spr (ids, _) -> let (rs, env_t') =
+		      List.fold_left aux' ([], env_t) ids in
 		    (Sbrs.P_class rs, env_t')
-  | Spr_red (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-			prerr_endline ("# of rules in the class: "
-				       ^ (string_of_int (List.length rs)));
-			 (Sbrs.P_rclass rs, env_t')
+  | Spr_red (ids, _) -> let (rs, env_t') =
+			  List.fold_left aux' ([], env_t) ids in
+			(Sbrs.P_rclass rs, env_t')
 
 let eval_sprs = eval_p_list eval_spr
 			    
@@ -943,6 +942,8 @@ let eval_model fmt m env =
 		(b, P p, env_t'')
   | Dsbrs sbrs -> let (p, env_t'') = eval_sprs env env_t' sbrs.dsbrs_pri in
 		  (b, S p, env_t'')  
+
+(******** EXPORT STORE *********)
 		    
 let export decs (env : store) (env_t : store_t) path verb = 
   let svg = ".svg" in
@@ -984,3 +985,36 @@ let export decs (env : store) (env_t : store_t) path verb =
 		 let r = aux' eval_sreact_fun_app id args p in
 		 write_pair id r.Sbrs.rdx r.Sbrs.rct)
 	    ) decs
+	    
+(******** DEBUG *********)
+	    
+let string_of_store env =
+  Hashtbl.fold (fun id v acc ->
+		(id ^ ": " ^ (string_of_store_t (get_type v))) :: acc)
+	       env []
+  |> List.rev
+  |> String.concat "\n"  
+
+let string_of_params env =
+  Hashtbl.fold (fun id v acc ->
+		match get_val v with
+		| Int _
+		| Float _
+		| Big _
+		| Big_fun _
+		| Ctrl _
+		| Ctrl_fun _
+		| A_ctrl _
+		| A_ctrl_fun _
+		| React _
+		| React_fun _
+		| Sreact _
+		| Sreact_fun _ -> acc
+		| v -> (id ^ " = " ^ (string_of_store_val v)) :: acc)
+	       env []
+  |> String.concat "\n"
+		   
+let string_of_brs p_classes =
+  List.map (fun c -> "[" ^ (string_of_int (List.length c)) ^ "]") p_classes
+  |> String.concat "\n"
+		   

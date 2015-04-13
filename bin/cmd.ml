@@ -92,8 +92,8 @@ let flags = function
   | `out_store ->  ["-g"; "--export-store"]
   | `help ->       ["-h"; "--help"] 
 
-let dot =
-  dot_installed () 
+let dot = true
+(* dot_installed () *)
 		     
 let report_error_aux = function
   | Unknown_option s

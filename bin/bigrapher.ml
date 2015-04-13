@@ -84,6 +84,8 @@ let print_header fmt () =
   |> print_table fmt  "       "
 	    
 let print_stats_store fmt env stoch t0 =
+  (* print_endline (Store.string_of_store env); *)
+  (* print_endline (Store.string_of_params env); *)
   let t = (Unix.gettimeofday ()) -. t0 
   and ty = if stoch then "Stochastic BRS" else "BRS" in
   [{ descr = ("Build time:", `cyan);
@@ -106,7 +108,7 @@ let print_max fmt =
      pp_val = print_int;
      display = true; }]
   |> print_table fmt "  ";
-   if Cmd.(defaults.debug) then () else fprintf fmt "@[<v>["
+   if Cmd.(defaults.debug) then () else fprintf fmt "@[<v 1>["
 		   
 let print_stats_brs fmt stats =
   [{ descr = ("Build time:", `green);
@@ -296,7 +298,7 @@ let () =
 	  after_brs fmt stats ts)
       | Store.S p_classes ->
 	 (******** SBRS *********)
-	 (let (ctmc, stats) = 
+	  (let (ctmc, stats) = 
             if Cmd.(defaults.sim) then
 	      (print_msg fmt "Starting stochastic simulation ...";
 	       [{ descr = ("Max sim time:", `cyan);
