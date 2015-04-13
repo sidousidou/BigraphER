@@ -48,7 +48,7 @@ let print_table fmt padding (rows : row list) =
       (pp_open_tbox fmt ();
        (* First row *)
        pp_set_tab fmt ();
-       fprintf fmt "@<23>%a" print_descr r.descr;
+       fprintf fmt "@<23>%s" (colorise (snd r.descr) (fst r.descr));
        pp_set_tab fmt ();
        (* padding is required to align the first row *)
        fprintf fmt "%s%a" padding r.pp_val r.value; 
@@ -108,7 +108,7 @@ let print_max fmt =
      pp_val = print_int;
      display = true; }]
   |> print_table fmt "  ";
-   if Cmd.(defaults.debug) then () else fprintf fmt "@[<v 1>["
+   if Cmd.(defaults.debug) then () else fprintf fmt "@,@[<v 1>["
 		   
 let print_stats_brs fmt stats =
   [{ descr = ("Build time:", `green);
@@ -150,7 +150,7 @@ let print_stats_sbrs fmt stats =
      value = `i Sbrs.(stats.o);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt "  "
+  |> print_table fmt "    "
   
 let print_loop fmt _ i _ = 
   if Cmd.(defaults.debug) then () 
@@ -220,7 +220,7 @@ let export_ts_dot fmt ts =
     )
 
 let after_brs fmt stats ts =
-  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,";
+  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
   print_stats_brs fmt stats; 
   export_ts_dot fmt ts;
   export_ts_prism fmt ts;
@@ -230,7 +230,7 @@ let after_brs fmt stats ts =
   exit 0
 
 let after_sbrs fmt stats ctmc =
-  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,";
+  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
   print_stats_sbrs fmt stats; 
   export_ctmc_dot fmt ctmc;
   export_ctmc_prism fmt ctmc;
