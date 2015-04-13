@@ -1,7 +1,6 @@
-[33mStarting CTMC construction ...
-[m[36mMax # states: [m1000
-[36mType:[m         Stochastic BRS
-[36mBindings:[m     4
-[32mStates:[m       1       
-[32mReactions:[m    0       
-[32mOccurrences:[m  0       
+[36mType:[m          Stochastic BRS
+[36mBindings:[m      4       
+[36mMax # states:[m  1000    
+[32mStates:[m        1       
+[32mReactions:[m     0       
+[32mOccurrences:[m   0       
