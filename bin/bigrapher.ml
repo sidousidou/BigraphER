@@ -315,8 +315,12 @@ let () =
 	       Sbrs.bfs s0 p_classes Cmd.(defaults.s_max) n iter_f) in
 	  after_sbrs fmt stats ctmc)
     with
-    | Sbrs.LIMIT (ctmc, stats) -> after_sbrs fmt stats ctmc 
-    | Brs.LIMIT (ts, stats) -> after_brs fmt stats ts 
+    | Sbrs.LIMIT (ctmc, stats) ->
+       (print_msg fmt "Maximum number of states reached.";
+	after_sbrs fmt stats ctmc) 
+    | Brs.LIMIT (ts, stats) ->
+       (print_msg fmt "Maximum number of states reached.";
+	after_brs fmt stats ts) 
     | Store.ERROR (e, p) ->
        (fprintf fmt "@]@?";
 	Loc.print_loc err_formatter p;
