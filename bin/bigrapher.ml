@@ -221,8 +221,7 @@ let export_ts_dot fmt ts =
         export_ts_states fmt ts (Filename.dirname file);
     )
 
-let after_brs fmt stats ts =
-  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+let after_brs_aux fmt stats ts =
   print_stats_brs fmt stats; 
   export_ts_dot fmt ts;
   export_ts_prism fmt ts;
@@ -230,9 +229,12 @@ let after_brs fmt stats ts =
   fprintf fmt "@]@?";
   fprintf err_formatter "@]@?";
   exit 0
-
-let after_sbrs fmt stats ctmc =
+       
+let after_brs fmt stats ts =
   if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+  after_brs_aux fmt stats ts
+
+let after_sbrs_aux fmt stats ctmc =
   print_stats_sbrs fmt stats; 
   export_ctmc_dot fmt ctmc;
   export_ctmc_prism fmt ctmc;
@@ -240,7 +242,11 @@ let after_sbrs fmt stats ctmc =
   fprintf fmt "@]@?";
   fprintf err_formatter "@]@?";
   exit 0
-
+		
+let after_sbrs fmt stats ctmc =
+  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+  after_sbrs_aux fmt stats ctmc
+		 
 (******** BIGRAPHER *********)
        
 let open_lex path = 
@@ -316,11 +322,13 @@ let () =
 	  after_sbrs fmt stats ctmc)
     with
     | Sbrs.LIMIT (ctmc, stats) ->
-       (print_msg fmt "Maximum number of states reached.";
-	after_sbrs fmt stats ctmc) 
+       (  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+	  print_msg fmt "Maximum number of states reached.";
+	  after_sbrs_aux fmt stats ctmc) 
     | Brs.LIMIT (ts, stats) ->
-       (print_msg fmt "Maximum number of states reached.";
-	after_brs fmt stats ts) 
+       (  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+	  print_msg fmt "Maximum number of states reached.";
+	  after_brs_aux fmt stats ts) 
     | Store.ERROR (e, p) ->
        (fprintf fmt "@]@?";
 	Loc.print_loc err_formatter p;
