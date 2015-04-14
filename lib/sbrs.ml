@@ -445,14 +445,14 @@ let to_dot ctmc =
   let states =
     Hashtbl.fold (fun _ (i, _) buff -> 
         if i = 0 then sprintf 
-            "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+            "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
              fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
              style=\"bold\" ];\n" 
-            buff i i i
+            buff i i i i
         else sprintf 
-            "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+            "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
              fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
-            buff i i i
+            buff i i i i
       ) ctmc.v ""
   and edges =
     Hashtbl.fold (fun v (u, rho) buff -> 
@@ -460,7 +460,7 @@ let to_dot ctmc =
                  arrowhead=\"vee\", arrowsize=0.5 ];\n" 
           buff v u rho
       ) ctmc.e "" in
-  sprintf "digraph ctmc {\n%s\n%s}" states edges
+  sprintf "digraph ctmc {\nstylesheet = \"style_sbrs.css\"\n%s\n%s}" states edges
 
 let to_prism ctmc =
   let dims = 

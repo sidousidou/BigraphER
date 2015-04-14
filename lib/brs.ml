@@ -363,20 +363,20 @@ let to_dot ts =
   let states =
     Hashtbl.fold (fun _ (i, _) buff -> 
       if i = 0 then sprintf 
-	"%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+	"%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
                 fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
                 style=\"bold\" ];\n" 
-	buff i i i
+	buff i i i i
       else sprintf 
-	"%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
+	"%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
                 fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
-	buff i i i
+	buff i i i i
     ) ts.v ""
   and edges =
     Hashtbl.fold (fun v u buff -> 
       sprintf "%s%d -> %d [ arrowhead=\"vee\", arrowsize=0.5 ];\n"
 	buff v u) ts.e "" in
-  sprintf "digraph ts {\n%s\n%s}" states edges
+  sprintf "digraph ts {\nstylesheet = \"style_brs.css\"\n%s\n%s}" states edges
 
 let to_prism ts =
   let dims = 
