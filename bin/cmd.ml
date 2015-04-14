@@ -22,6 +22,7 @@ type error =
   | Malformed_option of string
   | Model_missing
   | Not_big of string
+  | Not_valid_const of string
 
 exception ERROR of error
 
@@ -100,6 +101,7 @@ let report_error_aux = function
   | Malformed_option s -> "Missing argument for option `" ^ s ^ "'"
   | Model_missing -> "Model missing"
   | Not_big s -> "`" ^ s ^ "' is not a valid model"
+  | Not_valid_const s -> s ^ " is not a valid list of constants" 			     
 		   		     
 let is_option s =
   (String.length s >= 1) && (s.[0] = '-') 
@@ -188,19 +190,23 @@ let help fmt () =
   fprintf fmt "@[<v>%a@,@[<v 2>OPTIONS:@,%a@]@]@." usage_str () options_str ();
   exit 0
 
-let parse_consts consts i =
-  let lexbuf = Lexing.from_string consts in
-  lexbuf.Lexing.lex_curr_p <-
-    { Lexing.pos_fname = "Argv " ^ (string_of_int i);
-      Lexing.pos_lnum = 1;
-      Lexing.pos_bol = 0;
-      Lexing.pos_cnum = 0;
-    };
-  Parser.const_list Lexer.token lexbuf          
-
+let parse_consts consts opt =
+  try
+    let lexbuf = Lexing.from_string consts in
+    lexbuf.Lexing.lex_curr_p <-
+      { Lexing.pos_fname = opt;
+	Lexing.pos_lnum = 1;
+	Lexing.pos_bol = 0;
+	Lexing.pos_cnum = 0;
+      };
+    Parser.const_list Lexer.token lexbuf          
+  with
+  | Parser.Error
+  | Lexer.ERROR _ -> raise (ERROR (Not_valid_const consts))
+  
 let parse_int args i =
-  try defaults.s_max <- int_of_string args.(i + 1) with
-  | _ -> raise (ERROR (Malformed_option args.(i)))
+  try defaults.s_max <- int_of_string args.(i) with
+  | _ -> raise (ERROR (Malformed_option args.(i - 1)))
 
 let report_warning_dot fmt a =
   fprintf fmt "@[%s: @[`dot' is not installed on this system.@ Ignoring option `%s'@]@]@."
@@ -226,13 +232,13 @@ let is_big str = Filename.check_suffix (Filename.basename str) ".big"
 
 let is_bilog str = Filename.check_suffix (Filename.basename str) ".bilog"
 
-let check fmt args =
+let check fmt args (flag : string) =
   if args.out_states && 
        (match args.out_dot with | None -> true | Some _ -> false)
-  then fprintf fmt "@[%s: Ignoring option `%s'@]@." 
-	       warn (String.concat "|" (flags `out_states))
+  then fprintf fmt "@[%s: Ignoring option `%s'@]@." warn flag
 
 let parse_options fmt args =
+  let out_flag = ref "" in
   let rec _parse args i =
     if i < Array.length args then
       (match parse_option args.(i) with
@@ -241,23 +247,30 @@ let parse_options fmt args =
        | `version -> fprintf std_formatter "@[%s@]@." version; exit 0
        | `help -> help std_formatter () 
        | `out_states ->
-	  (if dot then defaults.out_states <- true
+	  (if dot then
+	     (defaults.out_states <- true;
+	      out_flag := args.(i))
 	   else report_warning_dot fmt args.(i);
 	   _parse args (i + 1))
        | `s_max -> parse_int args (i + 1); _parse args (i + 2)
        | `sim -> (defaults.sim <- true;
-		  (try defaults.t_max <- float_of_string args.(i + 1) with
-		   | Failure _ -> _parse args (i + 1));
-		  _parse args (i + 2))
-       | `out_csl -> parse_file fmt `out_csl args (i + 1); _parse args (i + 2)
-       | `consts -> (defaults.consts <- parse_consts args.(i + 1) (i + 1);
-		     _parse args (i + 2))
+		  try
+		    defaults.t_max <- float_of_string args.(i + 1);
+		    _parse args (i + 2)
+		  with
+		  | Failure _ -> _parse args (i + 1))
+       | `out_csl ->
+	  (parse_file fmt `out_csl args (i + 1);
+	   _parse args (i + 2))
+       | `consts ->
+	  (defaults.consts <- parse_consts args.(i + 1) args.(i);
+	   _parse args (i + 2))
        | `out_dot -> parse_file fmt `out_dot args (i + 1); _parse args (i + 2)
        | `out_prism -> parse_file fmt `out_prism args (i + 1); _parse args (i + 2)
        | `out_store -> parse_file fmt `out_store args (i + 1); _parse args (i + 2)
       ); in
   _parse args 0;
-  check err_formatter defaults
+  check err_formatter defaults !out_flag
 
 let parse_model str =
   try 
@@ -287,5 +300,5 @@ let parse cmd =
 	else parse_options err_formatter (Array.sub cmd 2 ((Array.length cmd) - 2)) 
       with
       | Invalid_argument _ -> ()
-      | ERROR (_ as e) -> report_error err_formatter e 
-    ) else report_error err_formatter Model_missing
+      | ERROR (_ as e) -> report_error err_formatter e
+      ) else report_error err_formatter Model_missing
