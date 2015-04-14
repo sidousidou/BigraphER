@@ -13,28 +13,32 @@ let _write_svg s name path verb =
   match Unix.fork () with
   | 0 ->
      (* child *) 
-     (Unix.close bigmc_out;    
-      Unix.dup2 dot_in Unix.stdin;
-      Unix.close dot_in;
-      let svg_file =  
-	Unix.openfile 
-          n_path [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o600 in
-      Unix.dup2 svg_file Unix.stdout;
-      Unix.close svg_file;
-      Unix.execvp "dot" [| "dot"; "-Tsvg" |])
+     (try
+	 Unix.close bigmc_out;    
+	 Unix.dup2 dot_in Unix.stdin;
+	 Unix.close dot_in;
+	 let svg_file =  
+	   Unix.openfile 
+             n_path [ Unix.O_CREAT; Unix.O_TRUNC; Unix.O_WRONLY ] 0o600 in
+	 Unix.dup2 svg_file Unix.stdout;
+	 Unix.close svg_file;
+	 Unix.execvp "dot" [| "dot"; "-Tsvg" |]
+       with
+       | _ -> exit 127)
   | pid ->
      (* parent *)
      (Unix.close dot_in;    
       if verb then printf "Writing %s\n%!" n_path;
       let b_w = Unix.write_substring bigmc_out s 0 (String.length s) in
       Unix.close bigmc_out;
-      match Unix.waitpid [ Unix.WNOHANG ] pid with
-      | (_, Unix.WSTOPPED _) -> 
-	 eprintf "Warning: process %d \"dot\" was stopped.\n" pid
-      | (_, Unix.WSIGNALED _)
-      | (_, Unix.WEXITED _) ->
-	 if verb then printf "%d bytes written\n" b_w)
-
+      match snd (Unix.waitpid [] pid) with
+      | Unix.WSTOPPED i
+      | Unix.WSIGNALED i -> 
+	 eprintf "Error: Process %d \"dot\" was stopped/killed by signal %d.\n" pid i
+      | Unix.WEXITED 0 ->
+	 if verb then printf "%d bytes written\n" b_w
+      | Unix.WEXITED _ -> eprintf "Error: dot command not found.\n")
+       
 let _write_string s name path verb =
   let f_name = concat path name in
   if verb then printf "Writing %s\n" f_name; 

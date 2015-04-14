@@ -54,21 +54,22 @@ let mkdir dir =
 
 let dot_installed () =
   try
-    let (read_in, write_out) = Unix.pipe () in
     match Unix.fork () with
     | 0 ->
-      (* child *) 
-       (Unix.close read_in;
-	Unix.dup2 write_out Unix.stdout;
-	Unix.execvp "dot" [| "dot"; "-V" |])
-  | _ ->
-      (* parent *)
-     (Unix.close write_out;
-      let cin = Unix.in_channel_of_descr read_in in
-      ignore (input_line cin);
-      close_in cin;
-      Unix.close read_in;
-      true)
+       (try
+	   let null =
+	     Unix.openfile  "/dev/null"
+			    [ Unix.O_WRONLY; Unix.O_NONBLOCK ] 0o200 in
+	   Unix.dup2 null Unix.stderr;
+	   Unix.dup2 null Unix.stdout;
+	   Unix.execvp "dot" [| "dot"; "-V" |]
+	 with
+	 | _ -> exit 127)
+    | p ->
+       (match snd (Unix.waitpid [] p) with
+	| Unix.WEXITED 0 -> true
+	| Unix.WEXITED _
+	| Unix.WSTOPPED _
+	| Unix.WSIGNALED _ -> false)
   with
-  | End_of_file 
   | Unix.Unix_error _ -> false
