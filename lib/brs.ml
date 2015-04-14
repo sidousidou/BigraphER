@@ -360,6 +360,7 @@ let string_of_stats s =
     s.t s.s s.r s.o
 
 let to_dot ts =
+  let rank = "{ rank=source; 0 };\n" in
   let states =
     Hashtbl.fold (fun _ (i, _) buff -> 
       if i = 0 then sprintf 
@@ -376,7 +377,7 @@ let to_dot ts =
     Hashtbl.fold (fun v u buff -> 
       sprintf "%s%d -> %d [ arrowhead=\"vee\", arrowsize=0.5 ];\n"
 	buff v u) ts.e "" in
-  sprintf "digraph ts {\nstylesheet = \"style_brs.css\"\n%s\n%s}" states edges
+  sprintf "digraph ts {\nstylesheet = \"style_brs.css\"\n%s%s\n%s}" rank states edges
 
 let to_prism ts =
   let dims = 

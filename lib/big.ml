@@ -232,7 +232,7 @@ let get_dot b ide =
   let build_rank i flag =
     let ord = ord_of_inter i
     and f = face_of_inter i in 
-    if  (ord = 0) && (Link.Face.is_empty f) then ""
+    if (ord = 0) && (Link.Face.is_empty f) then ""
     else if flag then
       let ss =
         (List.map (fun i ->
