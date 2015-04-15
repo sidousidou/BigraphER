@@ -161,22 +161,27 @@ let print_loop fmt _ i _ =
        | _ -> fprintf fmt "."
 
 (******** EXPORT FUNCTIONS *********)
-    
+
+let print_fun fmt verb fname i =
+  if verb then
+    print_msg fmt ((string_of_int i) ^ "bytes written to `" ^ fname ^ "'") 
+  else ()
+		      
 let export_csl fmt label =
   match Cmd.(defaults.out_csl) with
   | None -> ()
   | Some file ->
      (print_msg fmt ("Exporting properties to " ^ file ^ " ...");
-      Export.write_csl label (Filename.basename file)
-		       (Filename.dirname file) Cmd.(defaults.verbose))
+      Export.write_csl label (Filename.basename file) (Filename.dirname file)
+     |> print_fun fmt Cmd.(defaults.verbose) file)
 
 let export_ctmc_prism fmt ctmc =
   match Cmd.(defaults.out_prism) with
   | None -> ()
   | Some file ->
      (print_msg fmt ("Exporting CTMC in PRISM format to " ^ file ^ " ...");
-      Export.write_ctmc_prism ctmc (Filename.basename file)
-			      (Filename.dirname file) Cmd.(defaults.verbose))
+      Export.write_ctmc_prism ctmc (Filename.basename file) (Filename.dirname file)
+     |> print_fun fmt Cmd.(defaults.verbose) file)
 
 let export_ts_prism fmt ts =
   match Cmd.(defaults.out_prism) with
@@ -184,42 +189,44 @@ let export_ts_prism fmt ts =
   | Some file ->
      (print_msg fmt ("Exporting transition system in PRISM format to "
 		     ^ file ^ " ...");
-      Export.write_ts_prism ts (Filename.basename file)
-			    (Filename.dirname file) Cmd.(defaults.verbose))
+      Export.write_ts_prism ts (Filename.basename file) (Filename.dirname file)
+     |> print_fun fmt Cmd.(defaults.verbose) file)
 
 let export_ctmc_states fmt ctmc path =
   print_msg fmt ("Exporting states to " ^ path ^ " ...");
   Sbrs.iter_states (fun i s ->
-		    Export.write_big s ((string_of_int i) ^ ".svg")
-				     path Cmd.(defaults.verbose)) ctmc
+		    let fname = (string_of_int i) ^ ".svg" in
+		    Export.write_big s fname path
+		    |> print_fun fmt Cmd.(defaults.verbose) (Filename.concat path fname))
+		   ctmc
 
 let export_ctmc_dot fmt ctmc =
   match Cmd.(defaults.out_dot) with
   | None -> ()
   | Some file ->
      (print_msg fmt ("Exporting CTMC to " ^ file ^ " ...");
-      Export.write_ctmc ctmc (Filename.basename file)
-			(Filename.dirname file) Cmd.(defaults.verbose);
+      Export.write_ctmc ctmc (Filename.basename file) (Filename.dirname file)
+      |> print_fun fmt Cmd.(defaults.verbose) file;
       if Cmd.(defaults.out_states) then 
-        export_ctmc_states fmt ctmc (Filename.dirname file);
-     )
+        export_ctmc_states fmt ctmc (Filename.dirname file))
 
 let export_ts_states fmt ts path =
   print_msg fmt ("Exporting states to " ^ path ^ " ...");
   Brs.iter_states (fun i s ->
-		   Export.write_big s ((string_of_int i) ^ ".svg")
-				    path Cmd.(defaults.verbose)) ts
+		   let fname = (string_of_int i) ^ ".svg" in
+		   Export.write_big s fname path
+		   |> print_fun fmt Cmd.(defaults.verbose) (Filename.concat path fname))
+		  ts
 
 let export_ts_dot fmt ts =
   match Cmd.(defaults.out_dot) with
   | None -> ()
   | Some file ->
      (print_msg fmt ("Exporting transition system to " ^ file ^ " ...");
-      Export.write_ts ts (Filename.basename file)
-		      (Filename.dirname file) Cmd.(defaults.verbose);
+      Export.write_ts ts (Filename.basename file) (Filename.dirname file)
+      |> print_fun fmt Cmd.(defaults.verbose) file;
       if Cmd.(defaults.out_states) then 
-        export_ts_states fmt ts (Filename.dirname file);
-    )
+        export_ts_states fmt ts (Filename.dirname file))
 
 let after_brs_aux fmt stats ts =
   print_stats_brs fmt stats; 
@@ -287,7 +294,8 @@ let () =
        | Some path ->
 	  (print_msg fmt ("Exporting declarations to "
 			  ^ path ^ " ...");
-	   Store.export m.model_decs env env_t path Cmd.(defaults.verbose)));
+	   Store.export m.model_decs env env_t path
+			(print_fun fmt Cmd.(defaults.verbose))));
       print_stats_store fmt env stoch t0;
       match prs with
       | Store.P p_classes ->
@@ -328,7 +336,13 @@ let () =
     | Brs.LIMIT (ts, stats) ->
        (  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
 	  print_msg fmt "Maximum number of states reached.";
-	  after_brs_aux fmt stats ts) 
+	  after_brs_aux fmt stats ts)
+    | Export.ERROR e ->
+       (fprintf fmt "@]@?";
+	Export.report_error e
+	|> fprintf err_formatter "@[%s: %s@]@," Utils.err;
+	fprintf err_formatter "@]@?";
+	exit 1)
     | Store.ERROR (e, p) ->
        (fprintf fmt "@]@?";
 	Loc.print_loc err_formatter p;

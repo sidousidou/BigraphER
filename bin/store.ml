@@ -947,11 +947,17 @@ let eval_model fmt m env =
 
 (******** EXPORT STORE *********)
 		    
-let export decs (env : store) (env_t : store_t) path verb = 
-  let svg = ".svg" in
+let export decs (env : store) (env_t : store_t) path
+	   (print_fun : string -> int -> unit) = 
+  let svg = ".svg"
+  and concat = Filename.concat path in
   let write_pair id lhs rhs =
-    Export.write_big lhs (id ^ "_lhs" ^ svg) path verb;
-    Export.write_big rhs (id ^ "_rhs" ^ svg) path verb in
+    let (lhs_n, rhs_n) =
+      (id ^ "_lhs" ^ svg, id ^ "_rhs" ^ svg) in
+    Export.write_big lhs lhs_n path
+    |> print_fun (concat lhs_n);
+    Export.write_big rhs rhs_n path
+    |> print_fun (concat rhs_n) in
   let dummy_args (args_t : num_type list) =
     resolve_types env_t args_t
     |> List.map def_val in
@@ -966,12 +972,14 @@ let export decs (env : store) (env_t : store_t) path verb =
 	     | Dint _
 	     | Dfloat _ -> ()
 	     | Dbig (Big_exp (id, _, p)) ->
-		Export.write_big (get_big id p env) (id ^ svg) path verb
+		(Export.write_big (get_big id p env) (id ^ svg) path
+		 |> print_fun (concat (id ^ svg)))
 	     | Dbig (Big_fun_exp (id, _, _, p)) ->
 		(let args = aux id in
 		 let b = fst (eval_big (Big_var_fun (id, args, p))
 				       ScopeMap.empty env env_t) in
-		 Export.write_big b (id ^ svg) path verb)
+		 Export.write_big b (id ^ svg) path
+		|> print_fun (concat (id ^ svg)))
 	     | Dreact (React_exp (id, _, _, _, p)) ->
 		(let r = get_react id p env in
 		 write_pair id r.Brs.rdx r.Brs.rct)
