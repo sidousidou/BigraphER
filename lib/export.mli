@@ -1,4 +1,4 @@
-(** This module provides export operations on bigraphs.
+(** Module providing export operations on bigraphs.
     @author Michele Sevegnani *)
 
 (** The type of error *)
