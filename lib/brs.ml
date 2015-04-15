@@ -1,6 +1,6 @@
 open Big
 open Printf
-
+       
 type react = {
     rdx : bg;   (* Redex *)
     rct : bg;   (* Reactum *)
@@ -42,8 +42,9 @@ let init_ts n =
   }
 
 let string_of_react r =
-  sprintf "%s\n---->\n%s" 
-    (to_string r.rdx) (to_string r.rct) 
+  (to_string r.rdx)
+  ^ "\n---->\n"
+  ^ (to_string r.rct) 
 
 let is_valid_react r =
   (inter_equal (inner r.rdx)  (inner r.rct)) 

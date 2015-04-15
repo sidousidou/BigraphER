@@ -1,6 +1,6 @@
 open Big
 open Printf
-
+       
 type sreact = {
   rdx : bg;   (** Redex *)
   rct : bg;   (** Reactum *)
