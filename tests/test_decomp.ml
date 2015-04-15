@@ -36,23 +36,23 @@ let do_tests =
 	    try
               if test_prime_decomposition b then
 		(n,
-		 "test_decomp.ml",
+		 __MODULE__,
 		 xml_block "system-out" [] ["Test passed."],
 		 [])
               else
 		(n,
-		 "test_decomp.ml",
+		 __MODULE__,
 		 xml_block "system-out" [] ["Test failed."],
 		 [xml_block "failure" attr_decomp []])
             with
             | Place.NOT_PRIME ->
 	       (n,
-		"test_decomp.ml",
+		__MODULE__,
 		xml_block "system-out" [] ["Test passed. Place graph not decomposable into prime components."],
 		[])
             | e ->
 	       (n,
-		"test_decomp.ml",
+		__MODULE__,
 		xml_block "system-out" [] [error_msg],
 		[xml_block "error" attr_err [Printexc.to_string e]]))
 	       

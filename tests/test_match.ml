@@ -59,7 +59,7 @@ let test_decomposition t p (i_n, i_e, f_e) =
 let attr_match = [("type", "ASSERT_MATCH");
 		  ("message", "No occurrence of pattern")]
 
-let module_name = "test_match.ml"
+let module_name = __MODULE__
 		    
 let do_tests =
   let success t =

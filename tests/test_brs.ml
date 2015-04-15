@@ -77,7 +77,7 @@ let () =
 	let (_, stats) = 
 	  Brs.bfs s reacts 1000 50 iter_f in
 	("brs",
-	 "test_brs.ml",
+	 __MODULE__,
 	 print_res stats.Brs.s stats.Brs.r stats.Brs.o,
 	 failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
       end;
@@ -85,7 +85,7 @@ let () =
 	 let (_, stats) = 
 	   Brs.sim s reacts 1000 50 iter_f in
 	 ("sim_brs",
-	  "test_brs.ml",
+	  __MODULE__,
 	  print_res stats.Brs.s stats.Brs.r stats.Brs.o,
 	  failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
        end;
@@ -93,7 +93,7 @@ let () =
 	 let (_, stats) = 
 	   Sbrs.bfs s sreacts 1000 50 iter_f in
 	 ("sbrs",
-	  "test_brs.ml",
+	  __MODULE__,
 	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
 	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
        end;
@@ -101,7 +101,7 @@ let () =
 	 let (_, stats) = 
 	   Sbrs.sim s sreacts 5000.0 50 iter_f in 
 	 ("sim_sbrs",
-	  "test_brs.ml",
+	  __MODULE__,
 	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
 	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
        end; ] in

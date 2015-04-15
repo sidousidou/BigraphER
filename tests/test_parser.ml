@@ -39,7 +39,7 @@ let () =
 		 let chan_in = Unix.open_process_in (bin ^ " " ^ f ^ " " ^ flag) in
 		 let std_out = read_lines [] chan_in in	      
 		 (name,
-		  "test_parser.ml",
+		  "__MODULE__",
 		  xml_block "system-out" [] [String.concat "\n" std_out],
 		  let ref_out =
 		    Filename.concat path (name ^ ext)
