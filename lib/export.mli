@@ -1,41 +1,35 @@
-(******************************************************************************)
-(*                                                                            *)
-(*        ______ __                          __     _______ ______            *)
-(*       |   __ \__|.-----.----.---.-.-----.|  |--.|    ___|   __ \           *)
-(*       |   __ <  ||  _  |   _|  _  |  _  ||     ||    ___|      <           *)
-(*       |______/__||___  |__| |___._|   __||__|__||_______|___|__|           *)
-(*                  |_____|          |__|                                     *)
-(*                                                                            *)
-(*       Bigraph Evaluator & Rewriting                                        *)
-(*                                                                            *)
-(*                                                                            *)
-(*     Copyright (c) 2010-2013, Michele Sevegnani - University of Glasgow     *)       
-(*                                                                            *)
-(******************************************************************************)
-
 (** This module provides export operations on bigraphs.
     @author Michele Sevegnani *)
 
-(** [write_big b name path v] writes an svg representation of bigraph
-    [b] on file [name] in directory [path]. Argument [v] is a flag for
-    verbosity.
-    @raise Unix.Unix_error when an underlying system call signals an error. *)
-val write_big : Big.bg -> string -> string -> bool -> unit 
+(** The type of error *)
+type error =
+  | Dot_not_found
+  | Dot_stopped of int
+  | Dot_killed of int
+  | Internal_error of Unix.error * string * string
+  | Sys of string
 
-(** Same as {!Export.write_big} but for transition systems. 
-    @raise Unix.Unix_error when an underlying system call signals an error. *)
-val write_ts: Brs.ts -> string -> string -> bool -> unit
+(** Raised by all the functions of this module when an error is encountered. *)	     
+exception ERROR of error
 
-(** Same as {!Export.write_big} but for Continuous Time Markov Chains. 
-    @raise Unix.Unix_error when an underlying system call signals an error. *)
-val write_ctmc: Sbrs.ctmc -> string -> string -> bool -> unit
+(** Return a string describing the error.*)		     
+val report_error : error -> string
+			      
+(** [write_big b name path ] writes an svg representation of bigraph
+    [b] on file [name] in directory [path]. Return the number of bytes written. *)
+val write_big : Big.bg -> string -> string -> int
 
-(** Export a transition system to a text file in PRISM format. 
-    @raise Unix.Unix_error when an underlying system call signals an error. *)
-val write_ts_prism: Brs.ts -> string -> string -> bool -> unit
+(** Same as {!Export.write_big} but for transition systems. *)
+val write_ts : Brs.ts -> string -> string -> int
+
+(** Same as {!Export.write_big} but for Continuous Time Markov Chains. *)
+val write_ctmc : Sbrs.ctmc -> string -> string -> int
+
+(** Export a transition system to a text file in PRISM format. *)
+val write_ts_prism : Brs.ts -> string -> string -> int
 
 (** Same as {!Export.write_ts_prism} but for Continuous Time Markov Chains. *)
-val write_ctmc_prism: Sbrs.ctmc -> string -> string -> bool -> unit
+val write_ctmc_prism : Sbrs.ctmc -> string -> string -> int
 
 (** Export a labelling function to a text file in PRISM format. *) 
-val write_csl: (int, int) Hashtbl.t -> string -> string -> bool -> unit
+val write_csl : (int, int) Hashtbl.t -> string -> string -> int
