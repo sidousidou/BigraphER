@@ -38,11 +38,11 @@ let ord_of_inter (Inter (i, _)) = i
 let face_of_inter (Inter (_, f)) = f
 
 let string_of_inter (Inter (n, f)) =
-  sprintf "<%d, %s>" n (Link.string_of_face f)
+  "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
 let to_string b =
-  sprintf "%s\n%s%s" (Nodes.to_string b.n) (Place.to_string b.p)
-    (Link.to_string b.l)    
+  (Nodes.to_string b.n) ^ "\n"
+  ^ (Place.to_string b.p) ^ (Link.to_string b.l)    
 
 let parse lines =
   let (r, n, s, e) =
@@ -431,8 +431,8 @@ let rec filter_loop solver t p vars t_trans =
 	  if (Place.check_match t.p p.p t_trans iso_v) then 
 	    (solver, vars)
 	  else begin
-	    eprintf "Warning: invalid match not discarded by SAT. \
-                     Removing it ...\n";
+	    (* eprintf "Warning: invalid match not discarded by SAT. \ *)
+            (*          Removing it ...\n"; *)
 	    add_blocking solver vars.iso_nodes vars.iso_edges;
 	    filter_loop solver t p vars t_trans
 	  end   
