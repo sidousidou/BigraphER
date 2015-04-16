@@ -1,21 +1,24 @@
 #!/bin/sh
 
-ROOT=./shippable
+ROOT=./shippable/linktest
+TEST=./shippable/testresults
+SRC=./tests/files/link
 
 eval `opam config env`
 
-echo INSTALLING BIGRAPH LIBRARY
 ocaml setup.ml -install
-
-echo CLEANING ...
 ocaml setup.ml -distclean
 
-cp ./examples/ex.ml $ROOT/tmp/ex.ml
+cp ./examples/link/ex.ml $ROOT/ex.ml
 
-echo BYTE-CODE COMPILATION TEST
-ocamlfind ocamlc -o $ROOT/ex.byte -package bigraph -linkpkg $ROOT/tmp/ex.ml
-$ROOT/ex.byte | cmp -s -  ./tests/files/ex.reference
+ocamlfind ocamlc -o $ROOT/ex.byte -package bigraph -linkpkg $ROOT/ex.ml
+if $ROOT/ex.byte | cmp -s -  $SRC/ex.reference &> /dev/null
+  then cp $SRC/byte-0.xml $TEST/byte-link.xml
+  else cp $SRC/byte-1.xml $TEST/byte-link.xml
+fi
 
-echo NATIVE-CODE COMPILATION TEST
-ocamlfind ocamlopt -o $ROOT/ex.native -package bigraph -linkpkg $ROOT/tmp/ex.ml
-$ROOT/ex.native | cmp -s -  ./tests/files/ex.reference
+ocamlfind ocamlopt -o $ROOT/ex.native -package bigraph -linkpkg $ROOT/ex.ml
+if $ROOT/ex.native | cmp -s -  $SRC/ex.reference &> /dev/null
+  then echo cp $SRC/native-0.xml $TEST/native-link.xml
+  else echo cp $SRC/native-1.xml $TEST/native-link.xml
+fi

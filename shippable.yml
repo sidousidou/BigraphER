@@ -11,7 +11,7 @@ before_install:
 before_script:
  - mkdir -p shippable/codecoverage
  - mkdir -p shippable/testresults
- - mkdir -p shippable/tmp
+ - mkdir -p shippable/linktest
 
 script:
  - ./scripts/shippable-build.sh
