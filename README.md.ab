@@ -10,10 +10,11 @@ BigraphER is an implementation of [Bigraphical Reactive System (BRS)][milner]
 that supports [bigraphs with sharing][share], stochastic reaction rules, rule
 priorities and functional rules. It consists of:
 
-*  OCaml library **bigraph** to programmatically manipulate bigraphs and BRSs,
-*  the command-line tool **bigrapher** to compute the transition system of a
-   BRS and export it to the stochastic model checker
-   [PRISM](http://www.prismmodelchecker.org/) or to graphical form.
+* `bigraph`, an OCaml library to programmatically manipulate
+  bigraphs and BRSs, and
+* `bigrapher`, a command-line tool to compute the transition system
+  of a BRS and export it to the stochastic model checker
+  [PRISM](http://www.prismmodelchecker.org/) or to graphical form.
 
 To get started, checkout the
 [Install](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#inst) and
@@ -27,8 +28,9 @@ Sevegnani](http://www.dcs.gla.ac.uk/~michele).
 * Make sure you have OCaml >= 4.02.0, ocamlfind, minisat (obtainable
   [here](http://www.dcs.gla.ac.uk/~michele/camlminisat.html)), and optionally
   [Graphviz](http://www.graphviz.org/) to support graphical output.
-* Run `ocaml setup.ml -configure`.  * Run `ocaml setup.ml -build`.  * Run
-  `ocaml setup.ml -install`.
+* Run `ocaml setup.ml -configure`.
+* Run `ocaml setup.ml -build`.
+* Run `ocaml setup.ml -install`.
 	    
 ## Documentation
 
