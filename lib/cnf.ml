@@ -26,13 +26,9 @@ type clause = var list
 type b_clause = var * var
 
 (* Only positive variables *)
-let to_ij v =
-  match v with
-  | P_var l ->
-    begin match l with
-    | M_lit (i, j) -> (i, j)
-    | V_lit _ -> assert false
-    end
+let to_ij = function
+  | P_var (M_lit (i, j)) -> (i, j) 
+  | P_var (V_lit _)
   | N_var _ -> assert false
 
 (* let string_of_lit l = *)
@@ -57,8 +53,7 @@ exception TSEITIN of clause list
    Each pair encodes a conjunction. The first element of the output is a 
    disjunction of auxiliary variables. The second is a conjunctions of 
    (not z or a) (not z or b) ... *)
-let tseitin l =
-  match l with
+let tseitin = function
   | [] -> raise (TSEITIN [ ])
   | [(x, y)] -> raise (TSEITIN [ [P_var x]; [P_var y] ])
   | [(x, y); (w, z)] -> raise (TSEITIN [ [P_var x; P_var w]; [P_var x; P_var z];
@@ -80,7 +75,7 @@ let tseitin l =
 	 (N_var a2, P_var h); (N_var a2, P_var k);
 	 (N_var a3, P_var u); (N_var a3, P_var v)]) 
     end
-  | _ -> fst (List.fold_left (fun ((acc_z, acc), i) ((a : lit), (b : lit)) ->
+  | l -> fst (List.fold_left (fun ((acc_z, acc), i) ((a : lit), (b : lit)) ->
     let z = V_lit i in  
     (((P_var z) :: acc_z, (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
      i + 1)) (([], []), 0) l)
@@ -218,8 +213,7 @@ let at_most l =
  List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_most l []) 
 
 (* Disjunction (clause) of positive literals *)
-let at_least l =
-  List.map (fun x -> P_var x) l
+let at_least = List.map (fun x -> P_var x)
 
 (* Scan the tree and produce constraints:
    1. at most one TRUE in every group
@@ -268,13 +262,9 @@ type cmd_constraint =
 | Cmd_exactly of b_clause list * clause list * b_clause list * clause
 
 let at_most_cmd t =
-  let clauses1 = _scan1 t []
-  and (_, clauses2) = _scan2 t []
-  and (_, clauses3) = _scan3 t [] in
-  Cmd_at_most (clauses1, clauses2, clauses3)
+  Cmd_at_most (_scan1 t [], snd (_scan2 t []), snd (_scan3 t []))
 
-let at_least_cmd t =
-  match t with
+let at_least_cmd = function
   | Leaf g -> at_least g
   | Node cmd_g -> at_least (fst (List.split cmd_g))
 
