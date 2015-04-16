@@ -7,7 +7,7 @@ license: "BSD-3-clause"
 homepage:"http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 
 build: [
-  ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
+  ["ocaml" "setup.ml" "-configure" "--disable-debug" "--prefix" prefix]
   ["ocaml" "setup.ml" "-build"]
   ["ocaml" "setup.ml" "-install"]
 ]
