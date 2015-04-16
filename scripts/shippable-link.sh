@@ -9,7 +9,7 @@ eval `opam config env`
 ocaml setup.ml -install
 ocaml setup.ml -distclean
 
-cp ./examples/link/ex.ml $ROOT/ex.ml
+cp ./examples/ex.ml $ROOT/ex.ml
 
 ocamlfind ocamlc -o $ROOT/ex.byte -package bigraph -linkpkg $ROOT/ex.ml
 if $ROOT/ex.byte | cmp -s -  $SRC/ex.reference &> /dev/null
