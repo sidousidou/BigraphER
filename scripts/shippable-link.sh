@@ -19,6 +19,6 @@ fi
 
 ocamlfind ocamlopt -o $ROOT/ex.native -package bigraph -linkpkg $ROOT/ex.ml
 if $ROOT/ex.native | cmp -s -  $SRC/ex.reference &> /dev/null
-  then echo cp $SRC/native-0.xml $TEST/native-link.xml
-  else echo cp $SRC/native-1.xml $TEST/native-link.xml
+  then cp $SRC/native-0.xml $TEST/native-link.xml
+  else cp $SRC/native-1.xml $TEST/native-link.xml
 fi
