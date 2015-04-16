@@ -87,13 +87,8 @@ let print_header fmt () =
   else fprintf fmt "@[<v>"
 	    
 let print_stats_store fmt env stoch t0 =
-  let t = (Unix.gettimeofday ()) -. t0 
-  and ty = if stoch then "Stochastic BRS" else "BRS" in
-  [{ descr = ("Build time:", `cyan);
-     value = `f t;
-     pp_val = print_float;
-     display = not Cmd.(defaults.debug); };
-   { descr = ("Type:", `cyan);
+  let ty = if stoch then "Stochastic BRS" else "BRS" in
+  [{ descr = ("Type:", `cyan);
      value = `s ty;
      pp_val = print_string;
      display = true; };
