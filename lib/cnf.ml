@@ -401,34 +401,26 @@ let one_to_one n t g =
 (* +++++++++++++++++++++++ Integration with Minisat +++++++++++++++++++++++ *)
 
 (* Convert variables for Minisat *)
-let convert_m v (m : Minisat.var array array) =
-  let convert_lit l =
-    match l with
-    | M_lit (i, j) -> m.(i).(j)
-    | V_lit _ -> assert false in
-  match v with
-  | P_var l -> Minisat.pos_lit (convert_lit l) 
-  | N_var l -> Minisat.neg_lit (convert_lit l)
+let convert_m (m : Minisat.var array array) = function
+  | P_var (M_lit (i, j)) -> Minisat.pos_lit m.(i).(j)
+  | N_var (M_lit (i, j)) -> Minisat.neg_lit m.(i).(j)
+  | P_var (V_lit _)
+  | N_var (V_lit _) -> assert false
 
-let convert_v v (vec : Minisat.var array) =
-  let convert_lit l =
-    match l with
-    | V_lit i -> vec.(i)
-    | M_lit _ -> assert false in
-  match v with
-  | P_var l -> Minisat.pos_lit (convert_lit l) 
-  | N_var l -> Minisat.neg_lit (convert_lit l)
+let convert_v (vec : Minisat.var array) = function   
+  | P_var (V_lit i) -> Minisat.pos_lit vec.(i) 
+  | N_var (V_lit i)  -> Minisat.neg_lit vec.(i)
+  | P_var (M_lit _)
+  | N_var (M_lit _) -> assert false
 
 (* Convert to vector z if V_lit, to matrix m otherwise *)
-let convert v (z : Minisat.var array) (m : Minisat.var array array) =
-  let convert_lit l =
-    match l with
-    | V_lit i -> z.(i)
-    | M_lit (i,j) -> m.(i).(j) in
-  match v with
-  | P_var l -> Minisat.pos_lit (convert_lit l) 
-  | N_var l -> Minisat.neg_lit (convert_lit l)
-
+let convert (z : Minisat.var array)
+	    (m : Minisat.var array array) = function
+  | P_var (V_lit i) -> Minisat.pos_lit z.(i)
+  | P_var (M_lit (i, j)) -> Minisat.pos_lit m.(i).(j)
+  | N_var (V_lit i) -> Minisat.neg_lit z.(i)
+  | N_var (M_lit (i, j)) -> Minisat.neg_lit m.(i).(j)
+					    
 (* Initialise a vector of (auxiliary) variables. *)
 let init_aux_v n s =
   let v = Array.make n 0 in
@@ -452,14 +444,14 @@ let init_aux_m r c s =
 let post_conj_v l s v =
   List.iter (fun clause ->
     s#add_clause (List.map (fun x ->
-      convert_v x v) clause)) l
+      convert_v v x) clause)) l
 
 (* To be used also when TSEITIN is raised. All variables refer to the same
    matrix.*)
 let post_conj_m l s m =
   List.iter (fun clause ->
     s#add_clause (List.map (fun x ->
-      convert_m x m) clause)) l
+      convert_m m x) clause)) l
 
 (* Post Tseitin constraints to solver and return array of auxiliary 
    variables. *)
@@ -467,7 +459,7 @@ let post_tseitin (z_clause, pairs) s m =
   let z = init_aux_v (List.length z_clause) s in
   post_conj_v [z_clause] s z;
   List.iter (fun (a , v) ->
-    s#add_clause [convert_v a z; convert_m v m]) pairs;
+    s#add_clause [convert_v z a; convert_m m v]) pairs;
   z
 
 (* Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
@@ -476,8 +468,8 @@ let post_impl clauses s w v =
     match clause with
     | z :: rhs ->
       let rhs' = 
-	List.map (fun x -> convert_m x v) rhs in
-      s#add_clause ((convert_m z w) :: rhs')
+	List.map (fun x -> convert_m v x) rhs in
+      s#add_clause ((convert_m w z) :: rhs')
     | _ -> assert false
   ) clauses 
 
@@ -491,13 +483,13 @@ let post_impl2 vars_w vars_w' s w w' =
           (j, j') :: acc) acc vars_w'     
       ) [] vars_w in
   List.iter (fun (j, j') ->
-      s#add_clause [convert_m j w; convert_m j' w']
+      s#add_clause [convert_m w j; convert_m w' j']
     ) pairs
 
 (* Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
 let post_equiv (pairs, clauses) s w v =
   List.iter (fun (m, x) ->
-      s#add_clause [convert_m m w; convert_m x v]
+      s#add_clause [convert_m w m; convert_m v x]
     ) pairs;
   post_impl clauses s w v
 
@@ -505,13 +497,13 @@ let post_equiv (pairs, clauses) s w v =
    variables. *)
 let _post_pairs l s a v = 
   List.iter (fun (x, y) ->
-      s#add_clause [ (convert x a v); (convert y a v) ]
+      s#add_clause [ (convert a v x); (convert a v y) ]
     ) l
 
 let _post_list l s a v =
   List.iter (fun clause ->
       s#add_clause (List.map (fun x ->
-          convert x a v
+          convert a v x
         ) clause)
     ) l
 
