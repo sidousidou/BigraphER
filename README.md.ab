@@ -46,7 +46,7 @@ A tutorial is available online at
 <http://www.dcs.gla.ac.uk/~michele/bigrapher.html>.  A more extensive guide is
 available in PDF format as [technical report][tech].
 
-#### API, code documentation and developer manual
+#### API documentation
 
 The API documentation can be generated with command `ocaml setup.ml -doc`. It
 will be available under `bigraph_api.docdir/`.
