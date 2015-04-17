@@ -86,7 +86,7 @@ let print_header fmt () =
   |> print_table fmt)
   else fprintf fmt "@[<v>"
 	    
-let print_stats_store fmt env stoch t0 =
+let print_stats_store fmt env stoch =
   let ty = if stoch then "Stochastic BRS" else "BRS" in
   [{ descr = ("Type:", `cyan);
      value = `s ty;
@@ -159,7 +159,7 @@ let print_loop fmt _ i _ =
 
 let print_fun fmt verb fname i =
   if verb then
-    print_msg fmt ((string_of_int i) ^ "bytes written to `" ^ fname ^ "'") 
+    print_msg fmt ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'") 
   else ()
 		      
 let export_csl fmt label =
@@ -276,7 +276,6 @@ let () =
     try
       let m = Parser.model Lexer.token lexbuf in 
       close_in file; 
-      let t0 = Unix.gettimeofday () in
       let env = Store.init_env fmt Cmd.(defaults.consts) in
       let (s0, prs, env_t) = Store.eval_model fmt m env in
       let n = Store.bindings env in
@@ -291,7 +290,7 @@ let () =
 			  ^ path ^ " ...");
 	   Store.export m.model_decs env env_t path
 			(print_fun fmt Cmd.(defaults.verbose))));
-      print_stats_store fmt env stoch t0;
+      print_stats_store fmt env stoch;
       match prs with
       | Store.P p_classes ->
 	 (******** BRS *********)
