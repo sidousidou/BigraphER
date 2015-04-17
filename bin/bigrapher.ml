@@ -1,5 +1,4 @@
 open Format
-open Utils
 open Ast
 
 (******** PRETTY PRINTING FUNCTIONS *********)
@@ -9,18 +8,18 @@ let max_width = 50
 type val_type = [ `s of string | `i of int | `f of float ]
        
 type row =
-  { descr:   string * text_style;
+  { descr:   string * Utils.text_style;
     value:   val_type;
     pp_val:  formatter -> val_type -> unit;
     display: bool; }
        
 let print_msg fmt msg =
   if not Cmd.(defaults.debug) then
-    fprintf fmt "@[%s@]@," (colorise `yellow msg)
+    fprintf fmt "@[%s@]@," (Utils.colorise `yellow msg)
   else ()
 	 
 let print_descr fmt (d, c) =
-  fprintf fmt "%s" (colorise c d)
+  fprintf fmt "%s" (Utils.colorise c d)
 
 let print_float fmt = function
   | `f f  -> fprintf fmt "@[<h>%-3gs@]" f
@@ -48,7 +47,7 @@ let print_table fmt (rows : row list) =
       (pp_open_tbox fmt ();
        (* First row *)
        pp_set_tab fmt ();
-       fprintf fmt "@[<h>%s" (colorise (snd r.descr) (fst r.descr));
+       fprintf fmt "@[<h>%s" (Utils.colorise (snd r.descr) (fst r.descr));
        print_break (15 - (String.length (fst r.descr))) 0;
        fprintf fmt "@]";
        pp_set_tab fmt ();
@@ -61,14 +60,14 @@ let print_table fmt (rows : row list) =
 let print_header fmt () =
   if not Cmd.(defaults.debug) then
   (fprintf fmt "@[<v>@,%s@,%s@,"
-	  (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
+	  (Utils.colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
 	  "========================================";
   [{ descr = ("Version:", `magenta);
      value = `s (String.trim Version.version);
      pp_val = print_string;
      display = true; };
    { descr = ("Date:", `magenta);
-     value = `s (format_time ());
+     value = `s (Utils.format_time ());
      pp_val = print_string;
      display = true; };
    { descr = ("Hostname:", `magenta);
@@ -104,8 +103,9 @@ let print_max fmt =
      pp_val = print_int;
      display = true; }]
   |> print_table fmt;
-  if Cmd.(defaults.debug) then ()
-  else fprintf fmt "@,@[<v 1>["
+  print_flush ();
+  if Cmd.(defaults.debug) then () 
+  else Pervasives.print_string "\n["
 		   
 let print_stats_brs fmt stats =
   [{ descr = ("Build time:", `green);
@@ -149,11 +149,17 @@ let print_stats_sbrs fmt stats =
      display = true; }]
   |> print_table fmt
   
-let print_loop fmt _ i _ = 
+let print_loop i _ = 
   if Cmd.(defaults.debug) then () 
-  else match (i + 1) mod max_width with
-       | 0 -> fprintf fmt ".@,"
-       | _ -> fprintf fmt "."
+  else (let m = Cmd.(defaults.s_max) / 1000 in
+	match (i + 1) mod (max_width * m) with
+	| 0 -> (Pervasives.print_char '.';
+				 Pervasives.print_newline ();
+				 Pervasives.print_char ' ';
+				 Pervasives.flush stdout)
+	| i when i mod m = 0 -> (Pervasives.print_char '.';
+				 Pervasives.flush stdout)
+	| _ -> ())
 
 (******** EXPORT FUNCTIONS *********)
 
@@ -231,9 +237,16 @@ let after_brs_aux fmt stats ts =
   fprintf fmt "@]@?";
   fprintf err_formatter "@]@?";
   exit 0
-       
+
+let close_progress_bar () =
+  Pervasives.print_char ']';
+  Pervasives.print_newline ();
+  Pervasives.print_newline ()
+  
 let after_brs fmt stats ts =
-  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+  if Cmd.(defaults.debug) then ()
+  else close_progress_bar ();
+  fprintf fmt "@[<v>";
   after_brs_aux fmt stats ts
 
 let after_sbrs_aux fmt stats ctmc =
@@ -246,7 +259,9 @@ let after_sbrs_aux fmt stats ctmc =
   exit 0
 		
 let after_sbrs fmt stats ctmc =
-  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+  if Cmd.(defaults.debug) then ()
+  else close_progress_bar ();
+  fprintf fmt "@[<v>";
   after_sbrs_aux fmt stats ctmc
 		 
 (******** BIGRAPHER *********)
@@ -266,7 +281,7 @@ let () =
   let fmt = std_formatter in (* TEMPORARY *)
   fprintf err_formatter "@[<v>";
   try
-    let iter_f = print_loop fmt true in
+    let iter_f = print_loop in
     Cmd.parse Sys.argv;
     print_header fmt ();
     print_msg fmt ("Parsing model file "
@@ -314,8 +329,9 @@ let () =
 		  pp_val = print_float;
 		  display = true; }]
 	       |> print_table fmt;
+	       print_flush ();
 	       if Cmd.(defaults.debug) then ()
-	       else fprintf fmt "@,@[<v 1>[";
+	       else Pervasives.print_string "\n[";
 	       Sbrs.sim s0 p_classes Cmd.(defaults.t_max) n iter_f)
             else
 	      (print_msg fmt "Computing CTMC ...";
@@ -324,11 +340,13 @@ let () =
 	  after_sbrs fmt stats ctmc)
     with
     | Sbrs.LIMIT (ctmc, stats) ->
-       (  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+       (  if Cmd.(defaults.debug) then () else close_progress_bar ();
+	  fprintf fmt "@[<v>";
 	  print_msg fmt "Maximum number of states reached.";
 	  after_sbrs_aux fmt stats ctmc) 
     | Brs.LIMIT (ts, stats) ->
-       (  if Cmd.(defaults.debug) then () else fprintf fmt "]@]@,@,";
+       (  if Cmd.(defaults.debug) then () else close_progress_bar ();
+	  fprintf fmt "@[<v>";
 	  print_msg fmt "Maximum number of states reached.";
 	  after_brs_aux fmt stats ts)
     | Export.ERROR e ->
@@ -348,7 +366,7 @@ let () =
 	Loc.print_loc err_formatter Loc.{lstart = Lexing.(lexbuf.lex_start_p);
 					 lend = Lexing.(lexbuf.lex_curr_p)};
 	fprintf err_formatter "@[%s: Syntax error near token `%s'@]@,"
-		err (Lexing.lexeme lexbuf);
+		Utils.err (Lexing.lexeme lexbuf);
 	fprintf err_formatter "@]@?";
 	exit 1)
   with
@@ -360,7 +378,7 @@ let () =
       exit 1)
   | Sys_error s ->
      (fprintf fmt "@]@?";
-      fprintf err_formatter "@[%s: %s@]@," err s;
+      fprintf err_formatter "@[%s: %s@]@," Utils.err s;
       fprintf err_formatter "@]@?";
       exit 1)
   | e -> 
