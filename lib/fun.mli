@@ -1,48 +1,74 @@
 (** This module provides an implementation of functions on integers.
     @author Michele Sevegnani *)
 
+(** Type of the elements in the domain. *)
 type key = int
+
+(** Type of the elements in the codomain. *)
 type +'a t
+
+(** {6 Standard map operations} *)	 
+(** These functions are described the {{:
+    http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
+    library}. *)
+
 val empty : int t
 val is_empty : int t -> bool
-val mem : key -> int t -> bool
-val add : key -> int -> int t -> int t
-
-(* val singleton : key -> 'a -> 'a t *)
-(* val remove : key -> 'a t -> 'a t *)
-(* val merge : *)
-(*   (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t *)
-
-val iter : (key -> int -> unit) -> int t -> unit
-val fold : (key -> int -> 'b -> 'b) -> int t -> 'b -> 'b
-
-(* val for_all : (key -> 'a -> bool) -> 'a t -> bool *)
-(* val exists : (key -> 'a -> bool) -> 'a t -> bool *)
-(* val filter : (key -> 'a -> bool) -> 'a t -> 'a t *)
-(* val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t *)
-
+val mem : int -> int t -> bool
+val add : int -> int -> int t -> int t
+val iter : (int -> int -> unit) -> int t -> unit
+val fold : (int -> int -> 'b -> 'b) -> int t -> 'b -> 'b
 val cardinal : int t -> int
 
-(* val bindings : 'a t -> (key * 'a) list *)
-(* val min_binding : 'a t -> key * 'a *)
-(* val max_binding : 'a t -> key * 'a *)
-(* val choose : 'a t -> key * 'a *)
-(* val split : key -> 'a t -> 'a t * 'a option * 'a t *)
-(* val map : ('a -> 'b) -> 'a t -> 'b t *)
-(* val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t *)
+(** {6 Additional functions} *)
 
-val dom : int t -> key list
+(** Return the domain of a function. *)
+val dom : int t -> int list
+
+(** Return the codomain of a function. *)
 val codom : int t -> int list
+
+(** Return the inverse of a function. Note that the inverse of a function is, in
+    the general case, a binary relation. *)
 val inverse : int t -> IntSet.t Rel.t
-val to_list : int t -> (key * int) list
+
+(** Return the list of pairs defined by a function. *)
+val to_list : int t -> (int * int) list
+
+(** Inverse of {!Fun.to_list}. Note that in case of clashing pairs only the
+    right-most is used. *)
+val of_list : (int * int) list -> int t
+
+(** [parse l] returns a function in which the numbers from [0] to [n - 1] (with
+    [n] the length of [l]) are mapped to the elements of [l] in the given
+    order. Example: [0;0;3;1;2] -> [(0,0);(1,0);(2,3);(3,1);(4,2)]. *)
 val parse : int list -> int t
-val of_list : (key * int) list -> int t
+
+(** Return the string representation of a function. Example: ["\{(1, 2), (2, 3),
+    (3, 3)\}"]. *)
 val to_string : int t -> string
+
+(** Equality between functions. *)			   
 val equal : int t -> int t -> bool
+
+(** Comparison between functions. *)
 val compare : int t -> int t -> int
 
-val union : int t -> int t -> int t
+(** [apply_exn f x] returns [f(x)]. 
+    @raise Not_found if [f] is not defined for [x]. *)
+val apply_exn : int t -> int -> int
+
+(** Same as {!Fun.apply_exn} but with error-aware return type. *)				  
+val apply : int t -> int -> int option
+
+(*val union : int t -> int t -> int t*)
+
+(** [transform_exn f iso_d iso_c] returns the function obtained by applying
+    [iso_d] and [iso_c] to the domain and codomain of [f], respectively.
+    @raise Not_found if the isomorphisms are undefined. *)
 val transform_exn : int t -> int Iso.t -> int Iso.t -> int t
-val find_exn : key -> int t -> int
-val find : key -> int t -> int option
-val is_total : key -> int t -> bool
+							   
+(** Return [true] if a function is total, [false] otherwise. *)
+val is_total : int -> int t -> bool
+
+(**/**)

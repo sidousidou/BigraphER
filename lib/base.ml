@@ -216,11 +216,11 @@ module PortSet = struct
       and i_a = to_IntSet a 
       and i_b = to_IntSet b in
       IntSet.fold (fun i acc ->
-		   let ar_i = safe (Fun.find i ar_a)
+		   let ar_i = safe (Fun.apply ar_a i)
 		   and c_i = Nodes.get_ctrl_exn n_a i in
 		   let pairs =
 		     IntSet.filter (fun j ->
-				    (ar_i = safe (Fun.find j ar_b))
+				    (ar_i = safe (Fun.apply ar_b j))
 				    && (Ctrl.(=) c_i (Nodes.get_ctrl_exn n_b j)))
 				   i_b
 		     |> IntSet.elements
