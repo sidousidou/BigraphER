@@ -58,8 +58,6 @@ val apply_exn : int t -> int -> int
 (** Same as {!Fun.apply_exn} but with error-aware return type. *)				  
 val apply : int t -> int -> int option
 
-(*val union : int t -> int t -> int t*)
-
 (** [transform_exn f iso_d iso_c] returns the function obtained by applying
     [iso_d] and [iso_c] to the domain and codomain of [f], respectively.
     @raise Not_found if the isomorphisms are undefined. *)

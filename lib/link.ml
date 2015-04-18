@@ -411,7 +411,7 @@ let decomp t p i_e i_c i_d f_e =
               let match_p = 
                 IntSet.fold (fun i acc ->
                     Lg.add  p_a.(i) acc
-                  ) (Rel.find n f_e') Lg.empty in
+                  ) (Rel.apply f_e' n) Lg.empty in
               (outer match_p, inner match_p)
             ) else
               (Face.empty, Face.empty) 
