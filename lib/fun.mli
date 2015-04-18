@@ -1,10 +1,7 @@
 (** This module provides an implementation of functions on integers.
     @author Michele Sevegnani *)
 
-(** Type of the elements in the domain. *)
-type key = int
-
-(** Type of the elements in the codomain. *)
+(** Type of functions on integers. *)
 type +'a t
 
 (** {6 Standard map operations} *)	 
@@ -40,7 +37,7 @@ val to_list : int t -> (int * int) list
 val of_list : (int * int) list -> int t
 
 (** [parse l] returns a function in which the numbers from [0] to [n - 1] (with
-    [n] the length of [l]) are mapped to the elements of [l] in the given
+    [n] the length of [l]) are mapped to the elements of [l], in the given
     order. Example: [0;0;3;1;2] -> [(0,0);(1,0);(2,3);(3,1);(4,2)]. *)
 val parse : int list -> int t
 
