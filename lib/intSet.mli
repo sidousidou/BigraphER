@@ -1,4 +1,4 @@
-(** This module provides operations for sets of int.
+(** This module provides operations for sets of int.  
     @author Michele Sevegnani *)
 
 type elt = int
