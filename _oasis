@@ -23,16 +23,31 @@ Executable bigrapher
   MainIs:         bigrapher.ml
   CompiledObject: best
   BuildDepends:	  bigraph, bigrapher-utils
-  CCOpt:	  -O3
+  CCOpt+:	  -O3
   Install:	  true
   
 Library bigraph
   Path:            lib
   FindlibName:	   bigraph
 #  Pack:            true
-  Modules:         Base, Link, Place, Big, Brs, Sbrs, Export, Iso, IntSet, Rel, Fun, Sparse, Cnf
+  Modules:
+                   Base,
+                   Link,
+                   Place,
+                   Big,
+                   Brs,
+                   Sbrs,
+                   Export,
+                   Iso,
+                   IntSet,
+                   Rel,
+                   Fun,
+                   Sparse,
+                   Cnf
   BuildDepends:    unix, minisat, bigarray, str
-  CCOpt:	   -O3
+  CCOpt+:	   -O3
+  NativeOpt+:	   -noassert
+  ByteOpt+:	   -noassert
   XMETARequires:   unix, minisat, bigarray, str
   Install:	   true
 
@@ -40,14 +55,21 @@ Library "bigraph-utils"
   Path:            utils
   Modules:         Utils
   BuildDepends:    unix
-  CCOpt:	   -O3
+  CCOpt+:	   -O3
   Install:	   false
 
 Library "bigrapher-utils"
   Path:            bin
-  Modules:         Version, Cmd, Ast, Store, Loc, Lexer, Parser, Unify
+  Modules:	   Version,
+                   Cmd,
+                   Ast,
+                   Store,
+                   Loc,
+                   Lexer,
+                   Parser,
+                   Unify
   BuildDepends:    bigraph-utils
-  CCOpt:	   -O3
+  CCOpt+:	   -O3
   Install:	   false
 
 SourceRepository master
@@ -61,7 +83,7 @@ Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
   Authors:	   Michele Sevegnani
-  BuildTools: 	   ocamlbuild, ocamldoc
+  BuildTools+: 	   ocamldoc
   Format:	   html
   Index:	   API.html
   XOCamlbuildPath: lib

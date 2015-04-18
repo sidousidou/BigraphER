@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: dcbfedad6fbb49197aff05bc84c09278) *)
+(* DO NOT EDIT (digest: 5bd7cff5349f949ad7245268158d664e) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -619,6 +619,18 @@ let package_default =
        [
           (["oasis_library_bigraph_ccopt"; "compile"],
             [(OASISExpr.EBool true, S [A "-ccopt"; A "-O3"])]);
+          (["oasis_library_bigraph_byte"; "ocaml"; "link"; "byte"],
+            [(OASISExpr.EBool true, S [A "-noassert"])]);
+          (["oasis_library_bigraph_native"; "ocaml"; "link"; "native"],
+            [(OASISExpr.EBool true, S [A "-noassert"])]);
+          (["oasis_library_bigraph_byte"; "ocaml"; "ocamldep"; "byte"],
+            [(OASISExpr.EBool true, S [A "-noassert"])]);
+          (["oasis_library_bigraph_native"; "ocaml"; "ocamldep"; "native"],
+            [(OASISExpr.EBool true, S [A "-noassert"])]);
+          (["oasis_library_bigraph_byte"; "ocaml"; "compile"; "byte"],
+            [(OASISExpr.EBool true, S [A "-noassert"])]);
+          (["oasis_library_bigraph_native"; "ocaml"; "compile"; "native"],
+            [(OASISExpr.EBool true, S [A "-noassert"])]);
           (["oasis_library_bigraph_utils_ccopt"; "compile"],
             [(OASISExpr.EBool true, S [A "-ccopt"; A "-O3"])]);
           (["oasis_library_bigrapher_utils_ccopt"; "compile"],
@@ -634,6 +646,6 @@ let conf = {MyOCamlbuildFindlib.no_automatic_syntax = false}
 
 let dispatch_default = MyOCamlbuildBase.dispatch_default conf package_default;;
 
-# 638 "myocamlbuild.ml"
+# 650 "myocamlbuild.ml"
 (* OASIS_STOP *)
 Ocamlbuild_plugin.dispatch dispatch_default;;
