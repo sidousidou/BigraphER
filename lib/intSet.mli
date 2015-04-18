@@ -1,8 +1,17 @@
-(** This module provides operations for sets of int.  
+(** This module implements sets of integers.  
     @author Michele Sevegnani *)
 
+(** Elements of a set. *)
 type elt = int
+
+(** The type of sets. *)	     
 type t
+
+(** {6 Standard set operations} *)	 
+(** These functions are described the {{:
+    http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
+    library}. *)
+   
 val empty : t
 val is_empty : t -> bool
 val mem : elt -> t -> bool
@@ -28,33 +37,37 @@ val max_elt : t -> elt
 val choose : t -> elt
 val split : elt -> t -> t * bool * t
 
-(** [to_string s] gives the string representation of [Int_set s].*)
+(** {6 Additional functions} *)
+				     
+(** Return the string representation of a set. Example: ["\{1,4,7\}"]. *)
 val to_string : t -> string
 
-(** [of_list l] returns a set of int form a list *)
+(** Return a set containing the elements of a list. *)
 val of_list : int list -> t
 
-(** Compute the union of all the sets in the input list. *)
-val union_list : t list -> t
+(** [of_int i] returns a set [{0, 1, ...., i - 1}]. *)
+val of_int : int -> t
 
-(** [of_int i] returns a set [{0, 1, ...., i-1}].*)
-val of_int: int -> t
+(** [off i s] adds offset [i] to all the elements of set [s]. *)
+val off : int -> t -> t
 
-(** [off i s] adds offset [i] to all the elements of set [s].*)
-val off: int -> t -> t
-
-(** [norm s] normalises set [s]: e.g. [{4, 6, 7, 9} --> {0, 1, 2, 3}] *)
-val norm : t -> t
-
-(** [fix s] generates an isomorphism to fix the numbering of [s]: e.g.
-    [{2, 5, 6, 7} --> {(2,0), (5,1), (6,2), (7,3)}]*)
+(** Compute an isomorphism to fix the numbering of a set. For example, the
+    isomorphism for set ["\{2, 5, 6, 7\}"] is ["\{(2,0), (5,1), (6,2),
+    (7,3)\}"]. *)
 val fix : t -> int Iso.t
 
-(** Apply an isomorphism *)
+(** Apply an isomorphism.
+    @raise Not_found if a node identifier is not in the domain of the 
+    isomorphism. *)
 val apply_exn : t -> int Iso.t -> t
 
+(** Compute the union of all the sets in a list. *)
+val union_list : t list -> t
+				    
 (** Merge sets with common elements. *)
 val merge : t list -> t list
 
-(** Check if the intersection of two sets is empty. *)
+(** Test if two sets are disjoint, {e i.e.} if their intersection is empty. *)
 val disjoint : t -> t -> bool
+
+(**/**)

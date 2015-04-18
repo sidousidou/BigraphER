@@ -55,7 +55,7 @@ module Nodes = struct
   let fold f s = 
     Hashtbl.fold f s.ctrl
 
-  let get_ctrl s i =
+  let get_ctrl_exn s i =
     assert (i >= 0);
     Hashtbl.find s.ctrl i
  
@@ -182,19 +182,16 @@ module PortSet = struct
       let h = Hashtbl.create (cardinal p) 
       and aux (Ctrl.Ctrl (s, _)) = s in
       iter (fun (i, _) ->
-            Hashtbl.add h i (aux (Nodes.get_ctrl n i))) p;
-      let l = 
-	fst (
-            Hashtbl.fold (fun i _ (acc, marked) ->
-			  if List.mem i marked then (acc, marked)
-			  else (
-			    let s =
-			      String.concat "" (Hashtbl.find_all h i) in
-			    (s :: acc, i :: marked)
-			  )
-			 ) h ([], [])
-	  ) in
-      List.fast_sort String.compare l
+            Hashtbl.add h i (aux (Nodes.get_ctrl_exn n i))) p;
+      Hashtbl.fold (fun i _ (acc, marked) ->
+		    if List.mem i marked then (acc, marked)
+		    else 
+		      (let s =
+			 String.concat "" (Hashtbl.find_all h i) in
+		       (s :: acc, i :: marked)))
+		   h ([], [])
+      |> fst
+      |> List.fast_sort String.compare
 
     let to_IntSet ps =
       fold (fun (i, _) acc ->
@@ -220,11 +217,11 @@ module PortSet = struct
       and i_b = to_IntSet b in
       IntSet.fold (fun i acc ->
 		   let ar_i = safe (Fun.find i ar_a)
-		   and c_i = Nodes.get_ctrl n_a i in
+		   and c_i = Nodes.get_ctrl_exn n_a i in
 		   let pairs =
 		     IntSet.filter (fun j ->
 				    (ar_i = safe (Fun.find j ar_b))
-				    && (Ctrl.(=) c_i (Nodes.get_ctrl n_b j)))
+				    && (Ctrl.(=) c_i (Nodes.get_ctrl_exn n_b j)))
 				   i_b
 		     |> IntSet.elements
 		     |> List.map (fun j -> Cnf.M_lit (i, j)) in 

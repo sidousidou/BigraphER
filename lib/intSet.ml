@@ -19,11 +19,11 @@ let of_list =
 (* set with cardinality i                                                  *)
 let of_int i =
   assert (i >= 0);
-  let rec fold i acc =
+  let rec loop i acc =
     match i with
     | 0 -> acc
-    | _ -> fold (i - 1) (add (i - 1) acc) in
-  fold i empty
+    | _ -> loop (i - 1) (add (i - 1) acc) in
+  loop i empty
        
 (* add offset i to every element in set s *)
 let off i s =
@@ -31,10 +31,6 @@ let off i s =
 	add (x + i) acc)
        s empty
        
-(* Normalises a set of integers e.g. [2;5;7;8] -- > [0;1;2;3] *)
-let norm s = 
-  of_int (cardinal s)
-
 let apply_exn s iso =
   assert (Iso.cardinal iso >= cardinal s);
   fold (fun i acc ->
@@ -42,7 +38,7 @@ let apply_exn s iso =
        s empty
 
 (* Generates an isomorphism to fix the numbering of a set of int. 
-     [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                           *)
+     [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                       *)
 let fix s =
   try
     elements (of_int (cardinal s))

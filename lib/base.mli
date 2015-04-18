@@ -59,9 +59,9 @@ sig
   (** [to_dot ns] returns a string expressing node shapes in dot format. *)
   val to_dot: t -> string
 			 			
-  (** [get_ctrl ns i] returns the control of node [i] in node set [ns].  
+  (** [get_ctrl_exn ns i] returns the control of node [i] in node set [ns].  
       @raise Not_found if the node identifier is not present in the set. *)
-  val get_ctrl : t -> int -> Ctrl.t 
+  val get_ctrl_exn : t -> int -> Ctrl.t 
 
   (** [find_all ns c] returns the list of nodes of control [c] in node set
       [ns]. *)
