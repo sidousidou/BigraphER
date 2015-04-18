@@ -6,41 +6,23 @@ let safe = function
 
 module Ctrl = struct
 
-  type t = Ctrl of string * int
-  
-  (* Debug - arity to be removed *)
-  let to_string = function 
-    | Ctrl (c, ar) -> sprintf "%s:%d" c ar
-
-  let arity = function 
-    | Ctrl (_, ar) -> ar
-
-  let name = function 
-    | Ctrl (s, _) -> 
-      try 
-	let il = String.index s '(' in 
-	String.sub s 0 il
-      with 
-      | Not_found -> s
-      
-  let compare (Ctrl (c0, ar0)) (Ctrl (c1, ar1)) =
-    match String.compare c0 c1 with
-    | 0 -> ar0 - ar1
-    | x -> x 
-      
-  let (=) c0 c1 =
-    (compare c0 c1) = 0 
-    
-  (* Control(a0,a1,a2) --> [a0;a1;a2]*)
-  let acts (Ctrl (s, _)) =
-      try
-	let il = String.index s '(' and ir = String.index s ')' in
-	let s_acts = String.sub s (il + 1) ((ir - il) - 1)
-	in Str.split (Str.regexp ",") s_acts
-      with 
-      | Not_found -> []
-	
-end
+    type t = Ctrl of string * int
+				
+    let to_string = function 
+      | Ctrl (c, ar) -> c ^ ":" ^ (string_of_int ar)
+				    
+    let arity = function 
+      | Ctrl (_, ar) -> ar
+			  
+    let compare (Ctrl (c0, ar0)) (Ctrl (c1, ar1)) =
+      match String.compare c0 c1 with
+      | 0 -> ar0 - ar1
+      | x -> x 
+	       
+    let (=) c0 c1 =
+      (compare c0 c1) = 0 
+    			  
+  end
 
 let ints_compare (i0, p0) (i1, p1) =
   match i0 - i1 with
@@ -161,85 +143,91 @@ module Nodes = struct
 
 end
 
-module Ports = struct
+module PortSet = struct
 
-  include Set.Make (struct
     (* node id, number of occurrences *) 
-    type t = (int * int)   
-    let compare = ints_compare
-  end)
+    type port = int * int
+			
+    include Set.Make (struct
+			 type t = port
+			 let compare = ints_compare
+		       end)
 
-  let to_string ps = 
-    sprintf "{%s}"
-      (String.concat ", " (List.map (fun (a, b) ->
-	sprintf "(%d, %d)" a b) (elements ps)))  
+    let to_string ps =
+      "{"
+      ^ (elements ps
+	 |> List.map (fun (a, b) ->
+		      "("
+		      ^ (string_of_int a)
+		      ^ ", "
+		      ^ (string_of_int b)
+		      ^ ")")
+	 |> String.concat ", ")
+      ^ "}"
+	       
+    (* Transform a set of nodes in a set of ports *)
+    let of_nodes ns =
+      let of_node (n, c) =
+	assert (n >= 0);
+	let rec fold i acc =
+	  if i < 0 then acc
+	  else fold (i - 1) (add (n, i) acc) in
+	fold ((Ctrl.arity c) - 1) empty in
+      Nodes.fold (fun n c acc -> 
+		  union (of_node (n, c)) acc) ns empty
 
-  let of_node (n, c) =
-    assert (n >= 0);
-    let rec fold i acc =
-      if i < 0 then acc
-      else fold (i - 1) (add (n, i) acc) in
-    fold ((Ctrl.arity c) - 1) empty
+    (* Construct a list of control strings [AA;BBBB;C]*)
+    let types p n =
+      let h = Hashtbl.create (cardinal p) 
+      and aux (Ctrl.Ctrl (s, _)) = s in
+      iter (fun (i, _) ->
+            Hashtbl.add h i (aux (Nodes.find n i))) p;
+      let l = 
+	fst (
+            Hashtbl.fold (fun i _ (acc, marked) ->
+			  if List.mem i marked then (acc, marked)
+			  else (
+			    let s =
+			      String.concat "" (Hashtbl.find_all h i) in
+			    (s :: acc, i :: marked)
+			  )
+			 ) h ([], [])
+	  ) in
+      List.fast_sort String.compare l
 
-  (* Transform a set of nodes in a set of ports *)
-  let of_nodes ns =
-    Nodes.fold (fun n c acc -> 
-        union (of_node (n, c)) acc) ns empty
+    let to_IntSet ps =
+      fold (fun (i, _) acc ->
+	    IntSet.add i acc) ps IntSet.empty
 
-  (* Construct a list of control strings [AA;BBBB;C]*)
-  let types p n =
-    let h = Hashtbl.create (cardinal p) 
-    and aux (Ctrl.Ctrl (s, _)) = s in
-    iter (fun (i, _) ->
-        Hashtbl.add h i (aux (Nodes.find n i))) p;
-    let l = 
-      fst (
-        Hashtbl.fold (fun i _ (acc, marked) ->
-            if List.mem i marked then (acc, marked)
-            else (
-	      let s =
-	        String.concat "" (Hashtbl.find_all h i) in
-              (s :: acc, i :: marked)
-            )
-          ) h ([], [])
-      ) in
-    List.fast_sort String.compare l
+    let apply_exn s iso =
+      fold (fun (i, p) acc ->
+	    add (Iso.find_exn i iso, p) acc) s empty
 
-  let to_IntSet ps =
-    fold (fun (i, _) acc -> 
-      IntSet.add i acc) ps IntSet.empty
+    (* Compute the arities of the nodes within a port set. The output is a map 
+       node -> arity *)
+    let arities p =
+      let rel =
+	fold (fun (i, p) r ->
+	      Rel.add i (IntSet.singleton p) r) p Rel.empty in 
+      Rel.fold (fun i ports acc ->
+		Fun.add i (IntSet.cardinal ports) acc) rel Fun.empty
+		  
+    let compat_list a b n_a n_b =
+      let ar_a = arities a
+      and ar_b = arities b
+      and i_a = to_IntSet a 
+      and i_b = to_IntSet b in
+      IntSet.fold (fun i acc ->
+		   let ar_i = safe (Fun.find i ar_a)
+		   and c_i = Nodes.find n_a i in
+		   let pairs =
+		     IntSet.filter (fun j ->
+				    (ar_i = safe (Fun.find j ar_b))
+				    && (Ctrl.(=) c_i (Nodes.find n_b j)))
+				   i_b
+		     |> IntSet.elements
+		     |> List.map (fun j -> Cnf.M_lit (i, j)) in 
+		   pairs :: acc)
+		  i_a []
 
-  let apply_exn s iso =
-    fold (fun (i, p) acc ->
-        add (Iso.find_exn i iso, p) acc
-      ) s empty
-
-  (* Compute the arities of the nodes within a port set. The output is a map 
-     node -> arity *)
-  let arities p =
-    List.map (fun (i, js) ->
-        (i, IntSet.cardinal js)
-      ) (Rel.to_list (fold (fun (i, p) r ->
-        Rel.add i (IntSet.singleton p) r
-      ) p Rel.empty))
-        
-  let compat_list a b n_a n_b =
-    let ar_a = arities a
-    and ar_b = arities b
-    and i_a = to_IntSet a 
-    and i_b = to_IntSet b in
-    IntSet.fold (fun i acc ->
-        let ar_i = List.assoc i ar_a
-        and c_i = Nodes.find n_a i in
-        let pairs =
-	  List.map (fun j -> 
-	      Cnf.M_lit (i, j)
-            ) (IntSet.elements (
-              IntSet.filter (fun j ->
-	          (ar_i = (List.assoc j ar_b)) && 
-	          (Ctrl.(=) c_i (Nodes.find n_b j))
-                ) i_b)) in 
-        pairs :: acc
-      ) i_a []
-
-end   
+  end   

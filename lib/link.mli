@@ -45,9 +45,9 @@ module Face :
 	
 (** The type of edges.*)	
 type edg = {
-  i: Face.t; (** Inner face *)
-  o: Face.t; (** Outer face *)
-  p: Base.Ports.t; (** Set of ports *)
+  i : Face.t; (** Inner face *)
+  o : Face.t; (** Outer face *)
+  p : Base.PortSet.t; (** Set of ports *)
 }
   
 (** This module provides set operations for link graphs. *)
@@ -115,7 +115,7 @@ val inner : Lg.t -> Face.t
 val outer : Lg.t -> Face.t
 
 (** [ports l] returns the set of ports of link graph [l]. *)
-val ports : Lg.t -> Base.Ports.t
+val ports : Lg.t -> Base.PortSet.t
 
 (** [apply_exn i l] returns a link graph obtained by applying isomorphism [i]
     to [l].
@@ -191,7 +191,7 @@ val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t ->
 (** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained 
     by {!Place.levels}. The output is a wiring and a list of
     identities.*)
-val levels : Lg.t -> Base.Ports.t list -> Lg.t * Lg.t list
+val levels : Lg.t -> Base.PortSet.t list -> Lg.t * Lg.t list
 
 
 val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
