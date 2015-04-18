@@ -513,7 +513,7 @@ let edges p =
 let partition_edges p n =
   let h = Hashtbl.create (Sparse.entries p.nn) in
   Sparse.iter (fun i j ->
-    let (a, b) = (Nodes.find n i, Nodes.find n j) in
+    let (a, b) = (Nodes.get_ctrl n i, Nodes.get_ctrl n j) in
     match (a, b) with 
     | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
       Hashtbl.add h (a_string, b_string) (i, j)) p.nn;
@@ -564,7 +564,7 @@ let match_list t p n_t n_p =
   let (clauses, clauses_exc, cols) = 
     Sparse.fold (fun i j (acc, exc, acc_c) ->
       let (a, b) = 
-	(Nodes.find n_p i, Nodes.find n_p j) in
+	(Nodes.get_ctrl n_p i, Nodes.get_ctrl n_p j) in
       match (a, b) with 
       | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> (
 	let t_edges = 
@@ -615,7 +615,7 @@ let match_leaves t p n_t n_p =
   and l_t = leaves t in
   let (clauses, c) =
     IntSet.fold (fun i (acc, acc_c) ->
-      let c = Nodes.find n_p i in
+      let c = Nodes.get_ctrl n_p i in
       let compat_t = 
 	IntSet.inter
 	  (IntSet.of_list (Nodes.find_all n_t c))
@@ -637,7 +637,7 @@ let match_orphans t p n_t n_p =
   and o_t = orphans t in
   let (clauses, c) =
     IntSet.fold (fun i (acc, acc_c) ->
-      let c = Nodes.find n_p i in
+      let c = Nodes.get_ctrl n_p i in
       let compat_t =
 	IntSet.inter
 	  (IntSet.of_list (Nodes.find_all n_t c))
@@ -657,7 +657,7 @@ let match_orphans t p n_t n_p =
 let match_sites t p n_t n_p =
   let (clauses, c) =
     Sparse.fold (fun i _ (acc, acc_c) -> 
-      let c = Nodes.find n_p i in
+      let c = Nodes.get_ctrl n_p i in
       let js = 
 	List.filter (fun j ->
 	  compat_deg (indeg t j) (indeg p i)
@@ -677,7 +677,7 @@ let match_sites t p n_t n_p =
 let match_roots t p n_t n_p =
   let (clauses, c) =
     Sparse.fold (fun _ i (acc, acc_c) -> 
-      let c = Nodes.find n_p i in
+      let c = Nodes.get_ctrl n_p i in
       let js = 
 	List.filter (fun j ->
 	  compat_deg (outdeg t j) (outdeg p i)
@@ -843,7 +843,7 @@ let match_list_eq p t n_p n_t =
   let (clauses, clauses_exc, cols) = 
     Sparse.fold (fun i j (acc, exc, acc_c) ->
         let (a, b) = 
-	  (Nodes.find n_p i, Nodes.find n_p j) in
+	  (Nodes.get_ctrl n_p i, Nodes.get_ctrl n_p j) in
         match (a, b) with 
         | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> (
 	    let t_edges = 
@@ -878,10 +878,10 @@ let match_list_eq p t n_p n_t =
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
 let match_root_nodes a b n_a n_b =
   Sparse.fold (fun r i (acc, acc_c) ->
-      let c = Nodes.find n_a i in 
+      let c = Nodes.get_ctrl n_a i in 
       let children = 
         List.filter (fun i -> 
-	    Ctrl.(=) c (Nodes.find n_b i)
+	    Ctrl.(=) c (Nodes.get_ctrl n_b i)
           ) (Sparse.chl b.rn r) in
       ((List.map (fun j -> 
            Cnf.P_var (Cnf.M_lit (i, j))
@@ -893,10 +893,10 @@ let match_root_nodes a b n_a n_b =
 (*Dual*)
 let match_nodes_sites a b n_a n_b =
   Sparse.fold (fun i s (acc, acc_c) ->
-      let c = Nodes.find n_a i in 
+      let c = Nodes.get_ctrl n_a i in 
       let parents = 
         List.filter (fun i -> 
-	    Ctrl.(=) c (Nodes.find n_b i)
+	    Ctrl.(=) c (Nodes.get_ctrl n_b i)
           ) (Sparse.prn b.ns s) in
       ((List.map (fun j -> 
            Cnf.P_var (Cnf.M_lit (i, j))

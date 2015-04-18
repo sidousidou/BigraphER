@@ -30,34 +30,32 @@ let ints_compare (i0, p0) (i1, p1) =
   | x -> x
     
 module Nodes = struct
+
+    type t =
+      { ctrl : (int, Ctrl.t) Hashtbl.t;
+	sort : (string, int) Hashtbl.t;
+	size : int; }
   
-  type t = { 
-    ctrl : (int, Ctrl.t) Hashtbl.t;
-    sort : (string, int) Hashtbl.t;
-    size : int;
-  }
-  
-  let empty () = { ctrl = Hashtbl.create 20;
-		   sort = Hashtbl.create 20;
-		   size = 0;
-		 } 
+    let empty () =
+      { ctrl = Hashtbl.create 20;
+	sort = Hashtbl.create 20;
+	size = 0; } 
   
   let is_empty s = s.size = 0
 
-  let add s i c =
-    assert (i >= 0);
-    let aux (Ctrl.Ctrl (n, _)) = n in
-    if Hashtbl.mem s.ctrl i then s
-    else begin
-      Hashtbl.add s.ctrl i c;
-      Hashtbl.add s.sort (aux c) i;
-      { s with size = s.size + 1; }
-    end
+  let add s i = function
+    | Ctrl.Ctrl (n, _) as c ->
+       assert (i >= 0);
+       if Hashtbl.mem s.ctrl i then s
+       else
+	 (Hashtbl.add s.ctrl i c;
+	  Hashtbl.add s.sort n i;
+	  { s with size = s.size + 1; })
   
-  let fold f s acc = 
-    Hashtbl.fold f s.ctrl acc
+  let fold f s = 
+    Hashtbl.fold f s.ctrl
 
-  let find s i =
+  let get_ctrl s i =
     assert (i >= 0);
     Hashtbl.find s.ctrl i
  
@@ -65,11 +63,16 @@ module Nodes = struct
     Hashtbl.find_all s.sort n
  
   let to_string s =
-    sprintf "{%s}" 
-      (String.concat "," 
-	 (fold (fun i c acc ->
-	   acc @ [sprintf "(%d, %s)" i (Ctrl.to_string c)]) 
-	    s []))
+    "{"
+    ^ (fold (fun i c acc ->
+	     acc @ ["("
+		    ^ (string_of_int i)
+		    ^ ", "
+		    ^ (Ctrl.to_string c)
+		    ^ ")"]) 
+	    s []
+       |> String.concat ",")
+    ^ "}" 
       
   let to_dot s =
     fold (fun i (Ctrl.Ctrl (n, _)) acc ->
@@ -81,61 +84,59 @@ module Nodes = struct
     |>  String.concat "\n" 
 	
   let tens a b =
-    let a' = { ctrl = Hashtbl.copy a.ctrl;
-	       sort = Hashtbl.copy a.sort;
-	       size = a.size } in
-    Hashtbl.fold (fun i c res ->
-      add res (i + a.size) c) b.ctrl a'
+    { ctrl = Hashtbl.copy a.ctrl;
+      sort = Hashtbl.copy a.sort;
+      size = a.size }
+    |> Hashtbl.fold (fun i c res ->
+		  add res (i + a.size) c) b.ctrl
       
-  (* is an ordered list of controls with duplicates *)
-  let abs s = 
-    List.fast_sort Ctrl.compare
-      (fold (fun _ c acc ->
-	c :: acc) s [])
-
   let apply_exn s iso =
     fold (fun i c acc ->
-      add acc (Iso.find_exn i iso) c) s (empty ())
+	  add acc (Iso.find_exn i iso) c)
+	 s (empty ())
   
-  (* Only nodes in the domain of the isomorphism are transformed. Other nodes are discarded. *)    
+  (* Only nodes in the domain of the isomorphism are transformed. Other nodes 
+     are discarded. *)
   let filter_apply_iso s iso =    
     Iso.fold (fun i j acc ->
-      try 
-	let c = Hashtbl.find s.ctrl i in
-	add acc j c
-      with
-      | Not_found -> acc) iso (empty ())
+	      try 
+		Hashtbl.find s.ctrl i
+		|> add acc j
+	      with
+	      | Not_found -> acc)
+	     iso (empty ())
 
   let parse s h =
-    let tokens = Str.split (Str.regexp_string " ") s in
-    fst (List.fold_left (fun (acc, i) t ->
-      let ar = 
-	try
-	  Hashtbl.find h i
-	with
-	| Not_found -> 0 in
-      let c = Ctrl.Ctrl (t, ar) in
-      (add acc i c, i + 1)) (empty (), 0) tokens)
-  
+    Str.split (Str.regexp_string " ") s
+    |> List.fold_left (fun (acc, i) t ->
+		       let ar = 
+			 try
+			   Hashtbl.find h i
+			 with
+			 | Not_found -> 0 in
+		       let c = Ctrl.Ctrl (t, ar) in
+		       (add acc i c, i + 1))
+		      (empty (), 0)
+    |> fst
+	
   exception FOUND
       
   (* true when a contains a control that is not present in b *)
   let not_sub a b =
     try 
       Hashtbl.iter (fun c _ -> 
-	if Hashtbl.mem b.sort c then ()
-	else raise FOUND) a.sort;
+		    if Hashtbl.mem b.sort c then ()
+		    else raise_notrace FOUND) a.sort;
       false
     with
     | FOUND -> true
  
   let norm s =
-    String.concat ";"
-      (List.fast_sort String.compare
-	 (fold (fun _ (Ctrl.Ctrl (n, _)) acc ->
-	   n :: acc
-	  ) s [])
-      )
+    fold (fun _ (Ctrl.Ctrl (n, _)) acc ->
+	  n :: acc)
+	 s []
+    |> List.fast_sort String.compare
+    |> String.concat ";"
 
   (* Simple string comparison *)
   let equal a b =
@@ -181,7 +182,7 @@ module PortSet = struct
       let h = Hashtbl.create (cardinal p) 
       and aux (Ctrl.Ctrl (s, _)) = s in
       iter (fun (i, _) ->
-            Hashtbl.add h i (aux (Nodes.find n i))) p;
+            Hashtbl.add h i (aux (Nodes.get_ctrl n i))) p;
       let l = 
 	fst (
             Hashtbl.fold (fun i _ (acc, marked) ->
@@ -219,11 +220,11 @@ module PortSet = struct
       and i_b = to_IntSet b in
       IntSet.fold (fun i acc ->
 		   let ar_i = safe (Fun.find i ar_a)
-		   and c_i = Nodes.find n_a i in
+		   and c_i = Nodes.get_ctrl n_a i in
 		   let pairs =
 		     IntSet.filter (fun j ->
 				    (ar_i = safe (Fun.find j ar_b))
-				    && (Ctrl.(=) c_i (Nodes.find n_b j)))
+				    && (Ctrl.(=) c_i (Nodes.get_ctrl n_b j)))
 				   i_b
 		     |> IntSet.elements
 		     |> List.map (fun j -> Cnf.M_lit (i, j)) in 

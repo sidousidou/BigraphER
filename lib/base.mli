@@ -28,54 +28,71 @@ end
 
 (** {6 Nodes} *)
 
-(** This module provides set operations for nodes of bigraphs. Each element is
-    in the form [(v,c)], where [v] is an unique node identifier and [c] is a
-    control. *)
+(** This module provides operations on bigraphical nodes. *)
 module Nodes :
 sig
-  type t = { ctrl : (int, Ctrl.t) Hashtbl.t;
-	     sort : (string, int) Hashtbl.t;
-	     size : int; 
-	   }
+
+  (** The type of a set of nodes. *)		
+  type t =
+    {
+      ctrl : (int, Ctrl.t) Hashtbl.t; (** Map between node identifiers and controls. *)
+      sort : (string, int) Hashtbl.t; (** Map between controls and node identifiers. *)
+      size : int                      (** Cardinality of the set. *)
+    }
+
+  (** Add a node to the set. *)
   val add : t -> int -> Ctrl.t -> t
+
+  (** Fold over a set. *)				    
   val fold : (int -> Ctrl.t -> 'a -> 'a) -> t -> 'a -> 'a
 
+  (** The empty node set. *)
   val empty : unit -> t
-  
+
+  (** Return [true] if the set is empty. *)			
   val is_empty : t -> bool
-  
-  (** [find ns i] gives the control of node [i] in node set [ns]. *)
-  val find : t -> int -> Ctrl.t 
+
+  (** Return a string representation of a node set. Example: ["\{(2, Ready:0),(0,
+      A:1),(3, Fun:0),(1, Snd:2)\}"]. *)
+  val to_string : t -> string
+
+  (** [to_dot ns] returns a string expressing node shapes in dot format. *)
+  val to_dot: t -> string
+			 			
+  (** [get_ctrl ns i] returns the control of node [i] in node set [ns].  
+      @raise Not_found if the node identifier is not present in the set. *)
+  val get_ctrl : t -> int -> Ctrl.t 
 
   (** [find_all ns c] returns the list of nodes of control [c] in node set
-  [ns]. *)
+      [ns]. *)
   val find_all : t -> Ctrl.t -> int list 
 
   (** [tens n0 n1] returns the disjoint union of name sets [n0] and [n1]. *)
   val tens : t -> t -> t
-    
-  (** [abs ns] returns an ordered list of controls, i.e. node identifiers are
-      dropped. *)
-  val abs : t -> Ctrl.t list
-    
-  val to_string : t -> string
 
+  (** [parse s h] parses the string representation of a node set. Argument [h]
+      is a map between node identifiers and arities. An example for [s] is: ["A
+      A B D"]. *)
   val parse : string -> (int, int) Hashtbl.t -> t
    
-  (** [to_dot ns] returns a string expressing node shapes in dot format. *)
-  val to_dot: t -> string
-    
-  (** Apply an isomorphism *)
+  (** Apply an isomorphism.
+      @raise Not_found if a node identifier is not in the domain of the
+      isomorphism.  *)
   val apply_exn : t -> int Iso.t -> t
 
   (** Apply an isomorphism only to nodes in the domain of the isomorphism.
       Other nodes are discarded. *)
   val filter_apply_iso : t -> int Iso.t -> t
-  
+
+  (** [not_sub a b] returns [true] when node set [a] is not a subset of node set
+      [b]. *)
   val not_sub : t -> t -> bool
 
+  (** Compute the norm of a set. The norm is a defined as a string of sorted
+      controls, separated by [';']. Example: ["A;A;C;D;T"]. *)
   val norm : t -> string
- 
+
+  (** Equality test. Node identities are ignored. *)		    
   val equal : t -> t -> bool
 
 end
@@ -93,8 +110,11 @@ sig
   (** The type of sets of ports *)		      
   type t
 
-  (** {5 Standard set operations} *)	 
-	 
+  (** {6 Standard set operations} *)	 
+  (** These functions are described the {{:
+      http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
+      library}. *)
+
   val empty : t
   val is_empty : t -> bool
   val mem : port -> t -> bool
@@ -120,10 +140,10 @@ sig
   val choose : t -> port
   val split : port -> t -> t * bool * t
 
-  (** {5 Additional functions} *)
+  (** {6 Additional functions} *)
 					
   (** [to_string s] gives the string representation of port set [s]. For
-      example: [{(0, 0), (0, 1)}]. *)
+      example: [\{(0, 0), (0, 1)\}]. *)
   val to_string : t -> string
 
   (** [of_nodes ns] transform a set of nodes into a set of ports. *)

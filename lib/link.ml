@@ -605,13 +605,13 @@ let compat_clauses e_p i t h_t n_t n_p =
       let iso_t = PortSet.arities e_t.p in
       let clauses : Cnf.lit list list = 
         IntSet.fold (fun v acc ->
-	    let c_v = Nodes.find n_p v 
+	    let c_v = Nodes.get_ctrl n_p v 
 	    and arity_v = safe (Fun.find v iso_p) 
 	    and p_t = PortSet.to_IntSet e_t.p in	    
 	    (* find nodes in e_t that are compatible with v *)
 	    let compat_t = 
 	      IntSet.filter (fun u ->
-	          (Ctrl.(=) c_v (Nodes.find n_t u)) &&
+	          (Ctrl.(=) c_v (Nodes.get_ctrl n_t u)) &&
 	          (arity_v <= safe (Fun.find u iso_t))
 	        ) p_t in
 	    let nodes_assign =

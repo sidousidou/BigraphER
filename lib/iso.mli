@@ -1,4 +1,5 @@
-(** This module provides an implementation of isomorphisms on integers.
+(** This module provides an implementation of isomorphisms on
+    integers. 
     @author Michele Sevegnani *)
 
 type key = int
@@ -49,7 +50,7 @@ val add_exn : key -> int -> int t -> int t
 val to_list : int t -> (key * int) list
 
 (** [of_list l] returns an isomorphism with the elements in list [l]. 
-    @raise NOT_BIJECTIVE *)
+    @raise NOT_BIJECTIVE sd *)
 val of_list_exn : (key * int) list -> int t
 
 val to_string : int t -> string
@@ -62,17 +63,17 @@ val equal : int t -> int t -> bool
 val compare : int t -> int t -> int
 
 (** Union of two disjoint isomorphisms. 
-    @raise NOT_BIJECTIVE *)
+    @raise NOT_BIJECTIVE asd *)
 val union_exn : int t -> int t -> int t
 
 (** Apply an iso to domain and one to codomain.
-    @raise Not_found *)
+    @raise Not_found ads *)
 val transform_exn : int t -> int t -> int t -> int t
 
 (** Generate the equivalent isomorphisms by using a list of automorphisms. *)
 val gen_isos_exn : int t -> key t list -> int t list
 
-(** @raise Not_found *)
+(** @raise Not_found ads*)
 val find_exn : key -> int t -> int
 
 val find : key -> int t -> int option
