@@ -14,7 +14,7 @@ LicenseFile:	LICENSE
 OCamlVersion:	>= 4.02.0
 Plugins:     	META (0.4), DevFiles (0.4)
 Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
-BuildTools:	ocamlbuild, ocamldoc, menhir
+BuildTools:	ocamlbuild, menhir
 FilesAB:       	bin/version.ml.ab, man/bigrapher.1.ab, opam/url.ab, opam/opam.ab, README.md.ab
 
 
@@ -23,15 +23,16 @@ Executable bigrapher
   MainIs:         bigrapher.ml
   CompiledObject: best
   BuildDepends:	  bigraph, bigrapher-utils
+  CCOpt:	  -O3
   Install:	  true
   
 Library bigraph
   Path:            lib
   FindlibName:	   bigraph
 #  Pack:            true
-  Modules:         Base, Link, Place, Big, Brs, Sbrs, Export
-  InternalModules: Iso, IntSet, Rel, Fun, Sparse, Cnf
+  Modules:         Base, Link, Place, Big, Brs, Sbrs, Export, Iso, IntSet, Rel, Fun, Sparse, Cnf
   BuildDepends:    unix, minisat, bigarray, str
+  CCOpt:	   -O3
   XMETARequires:   unix, minisat, bigarray, str
   Install:	   true
 
@@ -39,12 +40,14 @@ Library "bigraph-utils"
   Path:            utils
   Modules:         Utils
   BuildDepends:    unix
+  CCOpt:	   -O3
   Install:	   false
 
 Library "bigrapher-utils"
   Path:            bin
   Modules:         Version, Cmd, Ast, Store, Loc, Lexer, Parser, Unify
   BuildDepends:    bigraph-utils
+  CCOpt:	   -O3
   Install:	   false
 
 SourceRepository master
@@ -52,13 +55,19 @@ SourceRepository master
   Location: 	   https://mseve@bitbucket.org/mseve/bigrapher.git
   Branch: 	   master
   Browser: 	   https://bitbucket.org/mseve/bigrapher
-  
+
+AlphaFeatures: ocamlbuild_more_args
 Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
+  Authors:	   Michele Sevegnani
+  BuildTools: 	   ocamlbuild, ocamldoc
+  Format:	   html
+  Index:	   API.html
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
-
+  XOCamlbuildExtraArgs: "-docflags '-colorize-code -short-functors -charset utf-8'"
+  
 Library "junit"
   Path:            tests
   Modules:         Junit

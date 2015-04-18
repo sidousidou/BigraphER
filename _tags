@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: eb6c4b4a278f9e5bd6b100086c6be42b)
+# DO NOT EDIT (digest: 7284c34df4a356272ac15b9f5800e945)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -16,16 +16,20 @@ true: annot, bin_annot
 "_darcs": not_hygienic
 # Library bigraph
 "lib/bigraph.cmxs": use_bigraph
+<lib/*.ml{,i,y}>: oasis_library_bigraph_ccopt
 <lib/*.ml{,i,y}>: package(bigarray)
 <lib/*.ml{,i,y}>: package(minisat)
 <lib/*.ml{,i,y}>: package(str)
 <lib/*.ml{,i,y}>: package(unix)
 # Library bigraph-utils
 "utils/bigraph-utils.cmxs": use_bigraph-utils
+<utils/*.ml{,i,y}>: oasis_library_bigraph_utils_ccopt
 <utils/*.ml{,i,y}>: package(unix)
 # Library bigrapher-utils
 "bin/bigrapher-utils.cmxs": use_bigrapher-utils
+<bin/*.ml{,i,y}>: oasis_library_bigrapher_utils_ccopt
 # Executable bigrapher
+<bin/*.ml{,i,y}>: oasis_executable_bigrapher_ccopt
 <bin/bigrapher.{native,byte}>: package(bigarray)
 <bin/bigrapher.{native,byte}>: package(minisat)
 <bin/bigrapher.{native,byte}>: package(str)
