@@ -67,11 +67,22 @@ let do_tests =
      module_name,
      xml_block "system-out" [] ["Result: " ^ (print_res t.res)],
      [])
-  and failure t msg =
+  and failure t msg occs =
     (t.t_name ^ " &gt; " ^ t.p_name,
      module_name,
      xml_block "system-out" [] ["Result: " ^ (print_res t.res)
-				^ "Expected result: " ^ (print_res t.exp_res)],
+				^ "\nExpected result: " ^ (print_res t.exp_res)
+				^ "\nDecompositions:\n"
+				^ (List.mapi (fun i (i_n, i_e, f_e) ->
+					      let (c, d, id) =
+						decomp t.target t.pattern i_n i_e f_e in
+					     "Occurrence 0:\n"
+					     ^ (to_string t.target)
+					     ^ "\n"		 
+					     ^ (to_string
+						  (comp c (comp (tens t.pattern id) d))))
+					     occs
+				   |> String.concat "\n")],
      [xml_block "failure" attr_match [msg]]) in
   List.map (fun t ->
 	    let default_fail_msg = sprintf "%s cannot be matched in %s." t.p_name t.t_name in
@@ -82,17 +93,17 @@ let do_tests =
 		 && (List.for_all (fun o -> test_decomposition t.target t.pattern o) occs) then
 		success t
               else
-		failure t default_fail_msg
+		failure t default_fail_msg occs
 	    with
 	    | NODE_FREE -> (* tests 23 and 16 are special cases *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T13", "P23") | ("T10", "P16") -> success t
-		| _ -> failure t default_fail_msg)
+		| _ -> failure t default_fail_msg [])
 	    | COMP_ERROR (x, y) -> (* pattern in test 25 is not epi *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T14", "P25") -> success t
 		| _ -> failure t (sprintf "Interfaces %s != %s"
-					  (string_of_inter x) (string_of_inter y)))
+					  (string_of_inter x) (string_of_inter y)) [])
             |  e ->
 		(t.t_name ^ " &gt; " ^ t.p_name,
 		 module_name,
