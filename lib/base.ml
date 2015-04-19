@@ -92,7 +92,7 @@ module Nodes = struct
       
   let apply_exn s iso =
     fold (fun i c acc ->
-	  add acc (Iso.find_exn i iso) c)
+	  add acc (Iso.apply_exn iso i) c)
 	 s (empty ())
   
   (* Only nodes in the domain of the isomorphism are transformed. Other nodes 
@@ -199,7 +199,7 @@ module PortSet = struct
 
     let apply_exn s iso =
       fold (fun (i, p) acc ->
-	    add (Iso.find_exn i iso, p) acc) s empty
+	    add (Iso.apply_exn iso i, p) acc) s empty
 
     (* Compute the arities of the nodes within a port set. The output is a map 
        node -> arity *)

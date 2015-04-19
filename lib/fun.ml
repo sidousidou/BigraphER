@@ -40,7 +40,7 @@ let compare = compare int_compare
 
 let transform_exn f i_dom i_codom =
   fold (fun i j f' ->
-	add (Iso.find_exn i i_dom) (Iso.find_exn j i_codom) f')
+	add (Iso.apply_exn i_dom i) (Iso.apply_exn i_codom j) f')
        f empty
 
 let apply_exn f i = find i f

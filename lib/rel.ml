@@ -52,5 +52,5 @@ let inverse r =
        
 let transform_exn r i_dom i_codom =
   fold (fun i js r' ->
-	add (Iso.find_exn i i_dom) (IntSet.apply_exn js i_codom) r')
+	add (Iso.apply_exn i_dom i) (IntSet.apply_exn js i_codom) r')
        r empty

@@ -778,7 +778,7 @@ let prime_components lg =
       Lg.fold (fun edg acc ->
           Lg.add { edg with
                    p = PortSet.fold (fun (i, p) acc ->
-                       match Iso.find i iso with
+                       match Iso.apply iso i with
                        | Some i' -> PortSet.add (i', p) acc
                        | None -> acc
                      ) PortSet.empty edg.p;

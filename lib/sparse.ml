@@ -127,7 +127,7 @@ let apply_rows_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
-    let i' = Iso.find_exn i iso in
+    let i' = Iso.apply_exn iso i in
     Hashtbl.add m'.r_major i' j;
     Hashtbl.add m'.c_major j i') m.r_major;
    m'
@@ -136,7 +136,7 @@ let apply_cols_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.c);
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
-    let j' = Iso.find_exn j iso in
+    let j' = Iso.apply_exn iso j in
     Hashtbl.add m'.r_major i j';
     Hashtbl.add m'.c_major j' i) m.r_major;
   m'
@@ -147,7 +147,7 @@ let apply_exn iso m =
   let m' = make m.r m.c in
   Hashtbl.iter (fun i j ->
     let (i', j') = 
-      (Iso.find_exn i iso, Iso.find_exn j iso) in
+      (Iso.apply_exn iso i, Iso.apply_exn iso j) in
     Hashtbl.add m'.r_major i' j';
     Hashtbl.add m'.c_major j' i') m.r_major;
   m'

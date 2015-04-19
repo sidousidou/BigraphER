@@ -517,7 +517,7 @@ let add_c12 solver w iso_w w' iso_w' aux_bij_w_cols rc_w =
   (* T index -> W' index *)
   let inv_w' = Iso.inverse iso_w' in
   let convert_j j =
-    safe (Iso.find (safe (Iso.find j iso_w)) inv_w') 
+    safe (Iso.apply inv_w' (safe (Iso.apply iso_w j))) 
   and vars_of_col j m =
     snd (
       Array.fold_left (fun (i, acc) _ ->
@@ -679,7 +679,7 @@ let clause_of_iso iso m =
     Array.fold_left (fun (i, acc) r ->
         (i + 1, snd (
             Array.fold_left (fun (j, acc) x ->
-	        if safe (Iso.find i iso) = j then 
+	        if safe (Iso.apply iso i) = j then 
                   (j + 1, neg_lit x :: acc)
 	        else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
 	      ) (0, acc) r)

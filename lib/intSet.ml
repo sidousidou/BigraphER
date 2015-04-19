@@ -34,7 +34,7 @@ let off i s =
 let apply_exn s iso =
   assert (Iso.cardinal iso >= cardinal s);
   fold (fun i acc ->
-	add (Iso.find_exn i iso) acc)
+	add (Iso.apply_exn iso i) acc)
        s empty
 
 (* Generates an isomorphism to fix the numbering of a set of int. 
