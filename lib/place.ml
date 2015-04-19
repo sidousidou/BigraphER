@@ -88,7 +88,7 @@ let elementary_merge n =
     n = 0;
     s = n;
     rn = Sparse.make 1 0;
-    rs = Sparse.row_1 n; 
+    rs = Sparse.row n; 
     nn = Sparse.make 0 0;
     ns = Sparse.make 0 n;
   }
@@ -99,7 +99,7 @@ let elementary_split n =
     n = 0;
     s = 1;
     rn = Sparse.make n 0;
-    rs = Sparse.col_1 n; 
+    rs = Sparse.col n; 
     nn = Sparse.make 0 0;
     ns = Sparse.make 0 1;
   }
@@ -128,10 +128,10 @@ let elementary_ion =
   { r = 1;
     n = 1;
     s = 1;
-    rn = Sparse.row_1 1;
+    rn = Sparse.row 1;
     rs = Sparse.make 1 1;
     nn = Sparse.make 1 1;
-    ns = Sparse.row_1 1;
+    ns = Sparse.row 1;
   }
 
 (* Parse a placing *)
@@ -141,7 +141,7 @@ let parse_placing l r =
     n = 0; 
     s = List.length l;
     rn = Sparse.make r 0;
-    rs = Sparse.parse_vector l r;
+    rs = Sparse.parse_vectors l r;
     nn = Sparse.make 0 0;      
     ns = Sparse.make 0 (List.length l);
   }
