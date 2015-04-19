@@ -1,14 +1,5 @@
-(******************************************************************************)
-(*                                                                            *)
-(*                                  BigraphER                                 *)
-(*                                                                            *)
-(*                   Michele Sevegnani, University of Glasgow                 *)
-(*                                                                            *)
-(******************************************************************************)
-
 (** This module provides operations on stochastic BRS.
-    @author Michele Sevegnani
-    @version 0.3.0 *)
+    @author Michele Sevegnani *)
 
 (** The type of stochastic bigraphical reaction rules.*)
 type sreact = {

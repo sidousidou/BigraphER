@@ -1,11 +1,3 @@
-(******************************************************************************)
-(*                                                                            *)
-(*                                  BigraphER                                 *)
-(*                                                                            *)
-(*                   Michele Sevegnani, University of Glasgow                 *)
-(*                                                                            *)
-(******************************************************************************)
-
 (** This module provides operations on BRS.
     @author Michele Sevegnani
     @version 0.3.0 *)

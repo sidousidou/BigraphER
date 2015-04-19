@@ -1,11 +1,3 @@
-(******************************************************************************)
-(*                                                                            *)
-(*                                  BigraphER                                 *)
-(*                                                                            *)
-(*                   Michele Sevegnani, University of Glasgow                 *)
-(*                                                                            *)
-(******************************************************************************)
-
 (** This module provides operations on link graphs.
     @author Michele Sevegnani *)
 
