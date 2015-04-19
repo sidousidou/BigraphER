@@ -8,7 +8,7 @@ type elt = int
 type t
 
 (** {6 Standard set operations} *)	 
-(** These functions are described the {{:
+(** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
     library}. *)
    

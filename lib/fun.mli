@@ -5,7 +5,7 @@
 type +'a t
 
 (** {6 Standard map operations} *)	 
-(** These functions are described the {{:
+(** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
 
