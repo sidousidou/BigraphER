@@ -62,7 +62,7 @@ will be available under `bigraph_api.docdir/`.
 
 - [Milner, Robin. The space and motion of communicating agents. Cambridge University Press, 2009.][milner]
 - [Sevegnani, Michele, and Muffy Calder. "Bigraphs with sharing." Theoretical Computer Science 577 (2015): 43-73.][share]
-- [Sevegnani, Michele, BigraphER: rewriting and analysis engine for bigraphs. 2015.][tech]
+- [Sevegnani, Michele. BigraphER: rewriting and analysis engine for bigraphs. 2015.][tech]
 
 [milner]: http://dl.acm.org/citation.cfm?id=1540607 "Milner, Robin. The space and motion of communicating agents. Cambridge University Press, 2009."
 [share]: http://dx.doi.org/10.1016/j.tcs.2015.02.011 "Sevegnani, Michele, and Muffy Calder. "Bigraphs with sharing." Theoretical Computer Science 577 (2015): 43-73."
