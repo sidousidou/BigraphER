@@ -54,18 +54,28 @@ val apply_exn : int Iso.t -> bmatrix -> bmatrix
 v} *)					  
 val parse_vectors : int list list -> int -> bmatrix
 
+(** Return the domain of a matrix, that is the set of rows having at least one
+    [true] element. *)
 val dom : bmatrix -> IntSet.t
 
+(** Return the codomain of a matrix, that is the set of columns having at least
+    one [true] element. *)
 val codom : bmatrix -> IntSet.t
 
+(** Same as [Hashtbl.iter]. *)			 
 val iter : (int -> int -> unit) -> bmatrix -> unit
 
+(** Same as [Hashtbl.fold]. *)						
 val fold : (int -> int -> 'a -> 'a) -> bmatrix -> 'a -> 'a
 
+(** [add m i j] adds [true] element [m.(i).(j)]. Arguments [i] and [j] are
+    assumed to be valid indices. *)
 val add : bmatrix -> int -> int -> unit
 
+(** Add a list of elements as in {!Sparse.add}. *)				     
 val add_list : bmatrix -> (int * int) list -> unit
 
+(** Return the number of [true] elements in a matrix. *)
 val entries : bmatrix -> int
 			 
 (** {6 Matrix operations} *)
@@ -123,8 +133,12 @@ val append : bmatrix -> bmatrix -> bmatrix
 v}*)				     
 val stack : bmatrix -> bmatrix -> bmatrix
 
+(** [mul a b] multiplies (row by column multiplication) matrix [a] by matrix
+    [b]. The number of columns of [a] is assumed to be equal to the number of
+    rows of [b]. *)
 val mul : bmatrix -> bmatrix -> bmatrix
 
+(** Transitive closure. *)
 val trans : bmatrix -> bmatrix
 
 (** {6 Graph operations} *)
@@ -147,14 +161,23 @@ val leaves : bmatrix -> IntSet.t
 (** Returns the set of nodes without parents. *)
 val orphans : bmatrix -> IntSet.t
 
+(** [siblings i m] returns the set of siblings of [i]. Two nodes are siblings if
+    they share a parent. *)
 val siblings : bmatrix -> int -> IntSet.t
 
+(** [siblings_chk m] returns [false] if any two columns in [m] are siblings. 
+    Note that orphans are not considered siblings. *)
 val siblings_chk: bmatrix -> bool
 
+(** Dual of {!Sparse.siblings}. *)
 val partners : bmatrix -> int -> IntSet.t
 
+(** Dual of {!Sparse.siblings_chk}. *)
 val partners_chk : bmatrix -> bool
 
+(** [levels m] returns the level decomposition of [m]. Each level is obtained by
+    iteratively removing the leaves in the graph until no nodes are
+    left. Argument [m] is assumed square. *)
 val levels : bmatrix -> IntSet.t list
 
 (**/**)

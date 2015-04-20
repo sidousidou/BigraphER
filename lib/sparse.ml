@@ -164,9 +164,9 @@ let add m i j =
 let parse_vectors adj rows =
   assert (rows >= 0);
   let m = make rows (List.length adj) in
-  Array.iteri (fun j i_list ->
-	       List.iter (fun i -> 
-			  add m i j) i_list) (Array.of_list adj);
+  List.iteri (fun j i_list ->
+	      List.iter (fun i -> add m i j) i_list)
+	     adj;
   m
     
 let chl m i =
@@ -193,9 +193,9 @@ let mul a b =
      List.iter (fun k ->
 		if List.mem k (Hashtbl.find_all acc i) then () 
 		else 
-		    (Hashtbl.add m.r_major i k;
-		    Hashtbl.add m.c_major k i;
-		    Hashtbl.add acc i k;))
+		  (Hashtbl.add m.r_major i k;
+		   Hashtbl.add m.c_major k i;
+		   Hashtbl.add acc i k;))
 	       vec) 
     a.r_major;
   m
@@ -207,28 +207,30 @@ let trans m =
   let t = copy m in
   let rec fix () =
     let chl_2 = 
-      Hashtbl.fold 
-	(fun i j acc ->
-	 acc @ (List.map (fun c -> (i, c)) (chl m j))) 
-	t.r_major [] in
-    let count = List.fold_left (fun acc (i, c) ->
-				if List.mem c (Hashtbl.find_all t.r_major i) then acc
-				else begin
-				    Hashtbl.add t.r_major i c;
-				    Hashtbl.add t.c_major c i;
-				    acc + 1
-				  end) 0 chl_2 in
+      Hashtbl.fold (fun i j acc ->
+		    acc @ (List.map (fun c -> (i, c)) (chl m j))) 
+		   t.r_major [] in
+    let count =
+      List.fold_left (fun acc (i, c) ->
+		      if List.mem c (Hashtbl.find_all t.r_major i) then acc
+		      else
+			(Hashtbl.add t.r_major i c;
+			 Hashtbl.add t.c_major c i;
+			 acc + 1))
+		     0 chl_2 in
     if count > 0 then fix ()
     else t in
   fix ()
 
 let dom m =
   Hashtbl.fold (fun i _ acc ->
-		IntSet.add i acc) m.r_major IntSet.empty
+		IntSet.add i acc)
+	       m.r_major IntSet.empty
 
 let codom m =
   Hashtbl.fold (fun j _ acc ->
-		IntSet.add j acc) m.c_major IntSet.empty
+		IntSet.add j acc)
+	       m.c_major IntSet.empty
 
 let rec _iter i acc d =
   if i < 0 then acc
@@ -242,24 +244,23 @@ let orphans m =
   _iter (m.c - 1) IntSet.empty (codom m)
 
 let siblings m j = 
-  let p = prn m j in
-  IntSet.remove j 
-		(List.fold_left (fun acc i ->
-				 IntSet.union acc (IntSet.of_list (chl m i))) 
-				IntSet.empty p)
+  prn m j
+  |> List.fold_left (fun acc i ->
+		     IntSet.union acc (IntSet.of_list (chl m i))) 
+		    IntSet.empty
+  |> IntSet.remove j
 		
-(* Return false if any two columns are siblings. Orphans are not considered
-   siblings.*) 
 let siblings_chk m =
   IntSet.for_all (fun j ->
-		  IntSet.is_empty (siblings m j)) (codom m)
+		  IntSet.is_empty (siblings m j))
+		 (codom m)
 		 
 let partners m i =
-  let c = chl m i in
-  IntSet.remove i 
-		(List.fold_left (fun acc j ->
-				 IntSet.union acc (IntSet.of_list (prn m j)))
-				IntSet.empty c)
+  chl m i
+  |> List.fold_left (fun acc j ->
+		     IntSet.union acc (IntSet.of_list (prn m j)))
+		    IntSet.empty
+  |> IntSet.remove i 
 
 let partners_chk m =
   IntSet.for_all (fun i ->
@@ -284,10 +285,10 @@ let levels m =
     (* find nodes with all children in acc *)
     let leaves = 
       IntSet.filter (fun i ->
-		     IntSet.subset (IntSet.of_list (chl m i)) acc) nodes in
+		     IntSet.subset (IntSet.of_list (chl m i)) acc)
+		    nodes in
     if IntSet.is_empty leaves then res
-    else begin
-	fix (IntSet.union acc leaves) (IntSet.diff nodes leaves) 
-	    (leaves :: res) 
-      end in
+    else
+      fix (IntSet.union acc leaves) (IntSet.diff nodes leaves) 
+	  (leaves :: res) in
   fix IntSet.empty (IntSet.of_int m.r) []
