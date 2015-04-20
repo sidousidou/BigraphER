@@ -73,4 +73,4 @@ will be available under `bigraph_api.docdir/`.
 Copyright 2012-2015 Michele Sevegnani
 
 All rights reserved. BigraphER is distributed under the terms of the
-[Simplified BSD License](LICENSE.md).
+Simplified BSD License that can be found in the [LICENSE file](LICENSE.md).
