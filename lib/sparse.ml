@@ -188,11 +188,11 @@ let mul a b =
      let vec = Hashtbl.find_all b.r_major j in
      List.iter (fun k ->
 		if List.mem k (Hashtbl.find_all acc i) then () 
-		else begin 
-		    Hashtbl.add m.r_major i k;
+		else 
+		    (Hashtbl.add m.r_major i k;
 		    Hashtbl.add m.c_major k i;
-		    Hashtbl.add acc i k;
-		  end) vec) 
+		    Hashtbl.add acc i k;))
+	       vec) 
     a.r_major;
   m
 
@@ -226,21 +226,16 @@ let codom m =
   Hashtbl.fold (fun j _ acc ->
 		IntSet.add j acc) m.c_major IntSet.empty
 
+let rec _iter i acc d =
+  if i < 0 then acc
+  else if IntSet.mem i d then _iter (i - 1) acc d
+  else _iter (i - 1) (IntSet.add i acc) d
+	       
 let leaves m =
-  let d = dom m in
-  let rec iter i acc =
-    if i < 0 then acc
-    else if IntSet.mem i d then iter (i - 1) acc
-    else iter (i - 1) (IntSet.add i acc) in
-  iter (m.r - 1) IntSet.empty
+  _iter (m.r - 1) IntSet.empty (dom m)
 
 let orphans m =
-  let c = codom m in
-  let rec iter j acc =
-    if j < 0 then acc
-    else if IntSet.mem j c then iter (j - 1) acc
-    else iter (j - 1) (IntSet.add j acc) in
-  iter (m.c - 1) IntSet.empty
+  _iter (m.c - 1) IntSet.empty (codom m)
 
 let siblings m j = 
   let p = prn m j in
