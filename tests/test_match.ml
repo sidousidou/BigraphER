@@ -76,7 +76,9 @@ let do_tests =
 				^ (List.mapi (fun i (i_n, i_e, f_e) ->
 					      let (c, d, id) =
 						decomp t.target t.pattern i_n i_e f_e in
-					     "Occurrence 0:\n"
+					      "Occurrence "
+					      ^ (string_of_int i)
+					      ^ ":\n"
 					     ^ (to_string t.target)
 					     ^ "\n"		 
 					     ^ (to_string
