@@ -36,15 +36,15 @@ let compare a b =
       | x -> x)
   | x -> x
 
-(*let is_0 m =
-  ( = ) m (make 0 0)*)
-	   
 let to_string m =
   let buff = Array.make_matrix m.r m.c "0" in
   Hashtbl.iter (fun i j -> 
 		buff.(i).(j) <- "1") m.r_major;
-  String.concat "\n" (Array.to_list (Array.map (fun r ->
-						String.concat "" (Array.to_list r)) buff))
+  buff
+  |> Array.map (fun r ->
+		String.concat "" (Array.to_list r))
+  |> Array.to_list 
+  |> String.concat "\n"
 		
 let row n =
   assert (n >= 0);
