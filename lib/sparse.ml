@@ -174,11 +174,15 @@ let chl m i =
   assert (i < m.r);
   Hashtbl.find_all m.r_major i
 
+let chl_set m i = IntSet.of_list (chl m i)		   
+
 let prn m j =
   assert (j >= 0);
   assert (j < m.c);
   Hashtbl.find_all m.c_major j
 
+let prn_set m j = IntSet.of_list (prn m j)
+		   
 let mul a b =
   assert (Pervasives.(=) a.c b.r);
   let m = make a.r b.c 
