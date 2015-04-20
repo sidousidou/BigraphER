@@ -56,21 +56,33 @@ will be available under `bigraph_api.docdir/`.
 - [dcs-opam-repository] is the repository of the University of Glasgow for the
   BigraphER related [OPAM](http://opam.ocaml.org/) packages. Run the following
   command to add this repository to OPAM: `opam repository add glasgow
-  'http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/'`
+  'http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/'`. The latest release
+  of BigraphER can then be installed by running command `opam install
+  bigrapher`. OPAM will take care of downloading and installing all the
+  dependencies.
 
 ## References
 
-- [Milner, Robin. The space and motion of communicating agents. Cambridge University Press, 2009.][milner]
-- [Sevegnani, Michele, and Muffy Calder. "Bigraphs with sharing." Theoretical Computer Science 577 (2015): 43-73.][share]
-- [Sevegnani, Michele. BigraphER: rewriting and analysis engine for bigraphs. 2015.][tech]
+- [Milner, Robin. The space and motion of communicating agents. Cambridge
+  University Press, 2009.][milner]
+- [Sevegnani, Michele, and Muffy Calder. "Bigraphs with sharing." Theoretical
+  Computer Science 577 (2015): 43-73.][share]
+- [Sevegnani, Michele. BigraphER: rewriting and analysis engine for
+  bigraphs. 2015.][tech]
 
-[milner]: http://dl.acm.org/citation.cfm?id=1540607 "Milner, Robin. The space and motion of communicating agents. Cambridge University Press, 2009."
-[share]: http://dx.doi.org/10.1016/j.tcs.2015.02.011 "Sevegnani, Michele, and Muffy Calder. "Bigraphs with sharing." Theoretical Computer Science 577 (2015): 43-73."
-[tech]: http://www.dcs.gla.ac.uk/~michele/papers/tech_BigraphER.pdf "Sevegnani, Michele. BigraphER: rewriting and analysis engine for bigraphs. 2015."
+[milner]: http://dl.acm.org/citation.cfm?id=1540607 "Milner, Robin. The space
+and motion of communicating agents. Cambridge University Press, 2009."
+
+[share]: http://dx.doi.org/10.1016/j.tcs.2015.02.011 "Sevegnani, Michele, and
+Muffy Calder. "Bigraphs with sharing." Theoretical Computer Science 577 (2015):
+43-73."
+
+[tech]: http://www.dcs.gla.ac.uk/~michele/papers/tech_BigraphER.pdf "Sevegnani,
+Michele. BigraphER: rewriting and analysis engine for bigraphs. 2015."
 
 ## Copyright and license
 
 Copyright 2012-2015 Michele Sevegnani
 
-All rights reserved. BigraphER is distributed under the terms of the
-Simplified BSD License that can be found in the [LICENSE file](LICENSE.md).
+All rights reserved. BigraphER is distributed under the terms of the Simplified
+BSD License that can be found in the [LICENSE file](LICENSE.md).
