@@ -200,9 +200,6 @@ let mul a b =
     a.r_major;
   m
 
-(* It seems the same entries are checked too many times.
-   Leaves don't need to be scanned. They can be removed and added again at the
-   end of the recursion. *)
 let trans m =
   let t = copy m in
   let rec fix () =
