@@ -1,7 +1,14 @@
 build_environment: Ubuntu 14.04
+
 archive: true
+
+cache: true
+
 language: java
 
+notifications:
+ email: false
+ 
 before_install: 
  - sudo add-apt-repository -y ppa:avsm/ocaml42+opam12
  - sudo apt-get update -qq 
@@ -17,5 +24,3 @@ script:
  - ./scripts/shippable-build.sh
  - ./scripts/shippable-tests.sh 
  - ./scripts/shippable-link.sh
-
-  

@@ -3,5 +3,4 @@
 
 eval `opam config env`
 
-echo RUNNING TESTS ... 
 ocaml setup.ml -test
