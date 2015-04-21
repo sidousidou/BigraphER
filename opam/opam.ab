@@ -21,8 +21,9 @@ build-doc: [ "ocaml" "setup.ml" "-doc" ]
 depends: [
   "base-bigarray"
   "base-unix"
-  "minisat"
   "ocamlfind"
+  "minisat"
+  "menhir"
 ]
 
 ocaml-version: [ >= "4.02.0" ]
