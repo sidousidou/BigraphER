@@ -1,10 +1,11 @@
-build_environment: Ubuntu 14.04
+#build_environment: Ubuntu 14.04
+build_image: mseve/bigrapher-shippable
 
 archive: true
 
 cache: true
 
-language: java
+#language: java
 
 notifications:
  email: false
@@ -16,6 +17,7 @@ before_install:
  - ./scripts/shippable-opam.sh
 
 before_script:
+ - rm -r shippable
  - mkdir -p shippable/codecoverage
  - mkdir -p shippable/testresults
  - mkdir -p shippable/linktest
