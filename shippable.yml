@@ -1,11 +1,12 @@
-build_environment: Ubuntu 14.04
+#build_environment: Ubuntu 14.04
 #build_image: mseve/bigrapher-shippable
+build_image: shipimg/ubuntu1404_base
 
 archive: true
 
 cache: true
 
-#language: java
+language: java
 
 notifications:
  email: false
