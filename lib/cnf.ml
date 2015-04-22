@@ -1,10 +1,10 @@
 type lit =
-| M_lit of int * int    (* literal stored in a matrix *)
-| V_lit of int          (* literal stored in a vector *)
+  | M_lit of int * int    (* literal stored in a matrix *)
+  | V_lit of int          (* literal stored in a vector *)
 
 type var = 
-| P_var of lit (* Positive literal *)
-| N_var of lit (* Negative literal *)
+  | P_var of lit (* Positive literal *)
+  | N_var of lit (* Negative literal *)
 
 type clause = var list
 
@@ -16,19 +16,42 @@ let to_ij = function
   | P_var (V_lit _)
   | N_var _ -> assert false
 
-(* let string_of_lit l = *)
-(*   match l with *)
-(*   | M_lit (i, j) -> Printf.sprintf "(%d,%d)" i j *)
-(*   | V_lit i -> Printf.sprintf "(%d)" i *)
+let string_of_lit = function
+  | M_lit (i, j) -> "(" ^ (string_of_int i) ^ "," ^ (string_of_int j) ^ ")"
+  | V_lit i -> string_of_int i
     
-(* let string_of_var v = *)
-(*   match v with *)
-(*   | P_var l -> string_of_lit l *)
-(*   | N_var l -> "!" ^ (string_of_lit l) *)
+let string_of_var = function
+  | P_var l -> string_of_lit l
+  | N_var l -> "!" ^ (string_of_lit l)
     
-(* let string_of_clause c =  *)
-(*   "[" ^ (String.concat " V " (List.map string_of_var c)) ^  "]" *)
+let string_of_clause c =
+  "[" ^ (String.concat " V " (List.map string_of_var c)) ^  "]"
 
+(* Boolean encoding of at most one TRUE. Most common cases are hard-coded *)
+let rec _at_most acc = function
+  | []
+  | [_] -> acc
+  | a :: [b] -> (a, b) :: acc
+  | a :: b :: [c] ->
+     (a, b) :: (a, c) :: (b, c) :: acc
+  | a :: b :: c :: [d] ->
+     (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
+  | a :: b :: c :: d :: [e] ->
+     (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c)
+     :: (b, d) :: (b, e) :: (c, d) :: (c, e) :: (d, e) :: acc
+  | a :: b :: c :: d :: e :: [f] ->
+     (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f)
+     :: (b, c) :: (b, d) :: (b, e) :: (b, f) :: (c, d)
+     :: (c, e) :: (c, f) :: (d, e) :: (d, f) :: (e, f) :: acc
+  | x :: rest -> _at_most ((List.map (fun y -> (x, y)) rest) @ acc) rest
+
+(* Disjunctions (all possible pairs) of negative literals *)
+let at_most l =
+ List.map (fun (a, b) -> (N_var a, N_var b)) (_at_most [] l) 
+
+(* Disjunction (clause) of positive literals *)
+let at_least = List.map (fun x -> P_var x)
+							      
 (* Conjunction of clauses *)
 exception TSEITIN of clause list 
   
@@ -90,22 +113,21 @@ let block_rows rows c =
     | 0 -> [N_var (M_lit (i, 0))] :: acc
     | _ -> block_row i (j - 1) ([N_var (M_lit (i, j))] :: acc) in
   List.fold_left (fun acc i ->
-    block_row i (c - 1) acc) [] rows
+		  block_row i (c - 1) acc)
+		 [] rows
 
-let blocking_pairs l = 
-  List.map (fun (i, j) ->
-    [N_var (M_lit (i, j))]) l
+let blocking_pairs = 
+  List.map (fun (i, j) -> [N_var (M_lit (i, j))])
 
 (* Input is a list of root commander variables *)
 let block_cmd : int list -> clause list =
-  List.map (fun i_z ->
-    [N_var (V_lit i_z)])
+  List.map (fun i_z -> [N_var (V_lit i_z)])
 
 (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
 type 'a cmd_tree = 
-| Leaf of 'a list
-| Node of ('a * 'a cmd_tree) list 
+  | Leaf of 'a list
+  | Node of ('a * 'a cmd_tree) list 
 
 exception NO_GROUP
 
@@ -176,29 +198,6 @@ let cmd_roots t =
       | V_lit i -> i
       | M_lit _ -> assert false
     ) cmd_g
-
-(* Boolean encoding of at most one TRUE. Most common cases are hard-coded *)
-let rec _at_most l acc =
-  match l with
-  | [] | [_] -> acc
-  | a :: [b] -> acc @ [(a, b)]
-  | a :: b :: [c] -> acc @ [ (a, b); (a, c); (b, c) ]
-  | a :: b :: c :: [d] -> acc @ [ (a, b); (a, c); (a, d); 
-				  (b, c); (b, d); (c, d) ]
-  | a :: b :: c :: d :: [e] -> acc @ [ (a, b); (a, c); (a, d); (a, e);
-				       (b, c); (b, d); (b, e); (c, d);
-				       (c, e); (d, e) ]
-  | a :: b :: c :: d :: e :: [f] -> acc @ [ (a, b); (a, c); (a, d); (a, e); (a, f);
-					    (b, c); (b, d); (b, e); (b, f); (c, d);
-					    (c, e); (c, f); (d, e); (d, f); (e, f) ]
-  | x :: rest -> _at_most rest (acc @ (List.map (fun y -> (x, y)) rest)) 
-
-(* Disjunctions (all possible pairs) of negative literals *)
-let at_most l =
- List.map (fun (a, b) -> (N_var a, N_var b)) ( _at_most l []) 
-
-(* Disjunction (clause) of positive literals *)
-let at_least = List.map (fun x -> P_var x)
 
 (* Scan the tree and produce constraints:
    1. at most one TRUE in every group

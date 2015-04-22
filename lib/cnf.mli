@@ -1,18 +1,18 @@
-(** This module provides operations for CNF conversion.
-@author Michele Sevegnani *)
+(** This module provides operations for boolean formulae. It includes functions
+    for conversion to {{: https://en.wikipedia.org/wiki/Conjunctive_normal_form
+    } CNF}, optimisation via auxiliary variables and integration with {{:
+    http://www.dcs.gla.ac.uk/~michele/camlminisat.html } MiniSat}.
+    @author Michele Sevegnani *)
 
+(** The type of literal (as index). *)
 type lit =
   | M_lit of int * int   (** Literal stored in a matrix *)
   | V_lit of int         (** Literal stored in a vector *)
 
+(** The type of literals. *)	       
 type var = 
   | P_var of lit         (** Positive literal *)
   | N_var of lit         (** Negative literal *)
-
-(** Unbox a variable stored in a matrix. *)
-val to_ij : var -> int * int
-
-(* val string_of_var : var -> string *)
 
 (** A disjunction of variables *)
 type clause = var list
@@ -20,15 +20,33 @@ type clause = var list
 (** Binary disjunction *)
 type b_clause = var * var
 
-(** At most a literal in the input list is [true]. *)
+(** Return the string representaion of a clause. For example: ["1 V 2 V 3"]. *)
+val string_of_clause : clause -> string
+				   
+(** [to_ij v] unboxes a positive variable stored in a matrix.  
+    @raise Assert_failure when [v] is a negative literal or if it is stored as a
+    vector. *)
+val to_ij : var -> int * int
+
+(** [at_most l] return the boolean encoding of the constraint "at most a literal
+    in [l] must be [true]". For example, [at_most [1;2;3]] returns [[(1,2);
+    (1,3); (2,3)]]. In general, if [l] has length [n], [at_most l] returns a list
+    with [(n-1)n/2] pairs. *)
 val at_most : lit list -> b_clause list
 
-(** At least a literal in the input list is [true]. *)
+(** [at_least l] returns the boolean encoding of the constraint "at least a
+    literal in [l] is [true]". This is simply a disjunction over the elements of
+    [l].*)
 val at_least : lit list -> clause
 
-(** Block any pair having an element in the input list as first component *)
+(** [block_rows rows c] returns the boolean encoding of the constraint "any
+    literal in the form [(i,j)] (with [i] an element of [rows] and [0<j<c]) must
+    be [false]". For example [block_rows [1;4] 2] returns [[!(1,0); !(1,1);
+    !(4,0) ; !(4,1)]]. *)
 val block_rows : int list -> int -> clause list
 
+(** Block a list of pairs. This is a list of clauses formed by one negated
+    literal (stored in a matrix). *)
 val blocking_pairs : (int * int) list -> clause list
 
 exception TSEITIN of clause list
