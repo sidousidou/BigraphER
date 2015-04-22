@@ -563,37 +563,34 @@ let match_list t p n_t n_p =
   let h = partition_edges t n_t in
   let (clauses, clauses_exc, cols) = 
     Sparse.fold (fun i j (acc, exc, acc_c) ->
-      let (a, b) = 
-	(Nodes.get_ctrl_exn n_p i, Nodes.get_ctrl_exn n_p j) in
-      match (a, b) with 
-      | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> (
-	let t_edges = 
-	  List.filter 
-	    (fun (i', j') ->
-	      (* Degree check *)
-	      (compat t p i' i) && (compat t p j' j)
-	    ) (Hashtbl.find_all h (a_string, b_string)) in
-	if List.length t_edges = 0 then 
-	  (* No compatible edges found *)
-	  raise NOT_TOTAL
-	else (
-	  let new_c = List.fold_left (fun acc (i', j') ->
-	    i' :: j' :: acc
-	  ) [] t_edges in
-	  try
-	    let (clause, pairs) = 
-	      Cnf.tseitin (
-		List.map (fun (i', j') ->
-		  (Cnf.M_lit (i, i'), Cnf.M_lit (j, j'))
-		) t_edges
-	      ) in
-	    ((clause, pairs) :: acc, exc, new_c @ acc_c)
-	  with
-	  | Cnf.TSEITIN clauses ->
-	    (acc, clauses @ exc, new_c @ acc_c)
-	)
-      )
-    ) p.nn ([], [], []) in
+		 let (a, b) = 
+		   (Nodes.get_ctrl_exn n_p i, Nodes.get_ctrl_exn n_p j) in
+		 match (a, b) with 
+		 | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+		    (let t_edges = 
+		       List.filter 
+			 (fun (i', j') ->
+			  (* Degree check *)
+			  (compat t p i' i) && (compat t p j' j))
+			 (Hashtbl.find_all h (a_string, b_string)) in
+		     if List.length t_edges = 0 then 
+		       (* No compatible edges found *)
+		       raise NOT_TOTAL
+		     else 
+		       (let new_c = List.fold_left (fun acc (i', j') ->
+						    i' :: j' :: acc
+						   ) [] t_edges in
+			match
+			  Cnf.tseitin (List.map (fun (i', j') ->
+						 (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')))
+						t_edges)
+			with
+			| Cnf.Conj clauses ->
+			   (acc, clauses @ exc, new_c @ acc_c)
+			| Cnf.Enc (clause, pairs) ->   
+			   ((clause, pairs) :: acc, exc, new_c @ acc_c)
+		       )))
+		p.nn ([], [], []) in
   (clauses, clauses_exc, IntSet.of_list cols) (* matched columns *)
 
 (* Nodes with no children (both nodes and sites). *)
@@ -855,24 +852,18 @@ let match_list_eq p t n_p n_t =
 	    if List.length t_edges = 0 then 
 	      (* No compatible edges found *)
 	      raise NOT_TOTAL
-	    else (
-	      (* let new_c = List.fold_left (fun acc (i', j') -> *)
-	      (*   i' :: j' :: acc *)
-	      (* ) [] t_edges in *)
-	      try
-	        let (clause, pairs) = 
-	          Cnf.tseitin (
-		    List.map (fun (i', j') ->
-		        (Cnf.M_lit (i, i'), Cnf.M_lit (j, j'))
-		      ) t_edges
-	          ) in
-	        ((clause, pairs) :: acc, exc, (*new_c @*) acc_c)
-	      with
-	      | Cnf.TSEITIN clauses ->
-	        (acc, clauses @ exc, (*new_c @*) acc_c)
-	    )
-          )
-      ) p.nn ([], [], []) in
+	    else 
+	        (match
+	            Cnf.tseitin
+		      (List.map (fun (i', j') ->
+				 (Cnf.M_lit (i, i'), Cnf.M_lit (j, j')))
+				t_edges)
+		  with
+		  | Cnf.Enc (clause, pairs) ->
+	             ((clause, pairs) :: acc, exc, acc_c)
+		  | Cnf.Conj clauses ->
+	             (acc, clauses @ exc, acc_c))))
+		p.nn ([], [], []) in
   (clauses, clauses_exc, IntSet.of_list cols) (* matched columns *)  
 
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)

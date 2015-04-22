@@ -20,7 +20,18 @@ type clause = var list
 (** Binary disjunction *)
 type b_clause = var * var
 
-(** Return the string representaion of a clause. For example: ["1 V 2 V 3"]. *)
+(** The type of formulae obtained by application of the {{:
+    https://en.wikipedia.org/wiki/Conjunctive_normal_form#Conversion_into_CNF
+    }Tseitin transformation}. *)
+type tseitin_clause =
+  | Conj of clause list            (** A conjunction of clauses when \ 
+                                       the transformation is not applied *)
+  | Enc of clause * b_clause list  (** A clause of auxiliary variables and a \
+                                       list binary disjunctions *)	   
+
+(** {6 Manipulation of boolean formulae} *)
+			     
+(** Return the string representation of a clause. For example: ["1 V 2 V 3"]. *)
 val string_of_clause : clause -> string
 				   
 (** [to_ij v] unboxes a positive variable stored in a matrix.  
@@ -28,44 +39,64 @@ val string_of_clause : clause -> string
     vector. *)
 val to_ij : var -> int * int
 
-(** [at_most l] return the boolean encoding of the constraint "at most a literal
-    in [l] must be [true]". For example, [at_most [1;2;3]] returns [[(1,2);
-    (1,3); (2,3)]]. In general, if [l] has length [n], [at_most l] returns a list
-    with [(n-1)n/2] pairs. *)
+(** [at_most l] return the boolean encoding of the constraint {e "at most a
+    literal in [l] must be [true]"}. For example, [at_most [1;2;3]] returns the
+    following clause:["(1,2) or (1,3) or (2,3)"]. In general, if [l] has length [n],
+    [at_most l] returns a list with [(n-1)n/2] pairs. *)
 val at_most : lit list -> b_clause list
 
-(** [at_least l] returns the boolean encoding of the constraint "at least a
-    literal in [l] is [true]". This is simply a disjunction over the elements of
+(** [at_least l] returns the boolean encoding of the constraint {e "at least a
+    literal in [l] is [true]"}. This is simply a disjunction over the elements of
     [l].*)
 val at_least : lit list -> clause
 
-(** [block_rows rows c] returns the boolean encoding of the constraint "any
-    literal in the form [(i,j)] (with [i] an element of [rows] and [0<j<c]) must
-    be [false]". For example [block_rows [1;4] 2] returns [[!(1,0); !(1,1);
-    !(4,0) ; !(4,1)]]. *)
+(** [block_rows rows c] returns the boolean encoding of the constraint {e "any
+    literal in the form [(i,j)] must be [false]"} (with [i] an element of [rows]
+    and [0<j<c]). For example [block_rows [1;4] 2] returns the following
+    conjunction of clauses: ["!(1,0) and !(1,1) and !(4,0) and !(4,1)"]. Note
+    that each clause consists of only one negated literal. *)
 val block_rows : int list -> int -> clause list
 
-(** Block a list of pairs. This is a list of clauses formed by one negated
+(** Block a list of pairs. This is a conjunction of clauses formed by one negated
     literal (stored in a matrix). *)
 val blocking_pairs : (int * int) list -> clause list
 
-exception TSEITIN of clause list
+(** Apply {{:
+    https://en.wikipedia.org/wiki/Conjunctive_normal_form#Conversion_into_CNF
+    }Tseitin transformation}.  
+  
+    @param l a list of pairs interpreted as ["(X1 and Y1) or (X2 and Y2) or
+             ... or (Xn and Yn)"]
+   
+    @return A clause in the form ["(Z1 or Z2 or ... or Zn)"] for the auxiliary
+            variables, and a conjunction of binary clauses: ["(!Z1 or X1) and
+            (!Z1 or Y1) and ... (!Zn or Xn) and (!Zn or Yn)"].  Note, the
+            encoding is not applied ({e i.e.} the result is in the form
+            {!const:Cnf.tseitin_clause.Conj}) if the input list has length less
+            than three. *)
+val tseitin : (lit * lit) list -> tseitin_clause
 
-(** Apply Tseitin transformation to a boolean formula.
-    Input :  [(X1 and Y1) or (X2 and Y2) or ... or (Xn and Yn)] 
-    Output : [(Z1 or Z2 or ... or Zn) and (!Z1 or X1) and (!Z1 or Y1) and ... 
-             and (!Zn or Xn) and (!Zn or Yn)] *)
-val tseitin : (lit * lit) list -> clause * b_clause list
+(** Return the CNF encoding of boolean implications.
+  
+    @param x is the left-hand side of the implication.
+  
+    @param l is the right-hand side of the implication: ["(clause0 and clause1
+           and ...)"]
 
-(** CNF encoding of  boolean implications.
-    Input :  [ X -> (clause0 and clause1 and ...) ]
-    Output : [ (!X or clause0) and (!X or clause1) and ... ] *)
+    @return a conjunction of binary disjunctions: ["(!X or clause0) and (!X or
+            clause1) and ... "]. *)
 val impl : lit -> lit list list -> clause list 
 
-(** CNF encoding of [if and only if] boolean formulae.
-    Input :  [M <-> ((X0 or X1 or ...) and (Y0 or Y1 or ...) ...)]
-    Output : [(M or !X0) and (M or !X1) and ... and (M or !Y0) 
-             (!M or X0 or X1 or ...) and (!M or Y0 or Y1 or ...) and ...] *)
+(** Return the CNF encoding of {e if and only if} boolean formulae.
+    
+    @param m is the left-hand side of the formula
+    
+    @param clauses is a conjunction of clauses ["(X0 or X1 or ...) and (Y0 or Y1
+           or ...) and ..."]
+    
+    @return a conjunction of binary disjunctions ["(M or !X0) and (M or !X1) and
+            ... (M or !Y0)"] and a conjunction of clauses ["(!M or X0 or X1 or
+            ...) and (!M or Y0 or Y1 or ...) and ..."]. *)
 val equiv : lit -> lit list list -> b_clause list * clause list 
 
 (** {6 Commander-variable Encoding} *)
@@ -89,7 +120,7 @@ val at_most_cmd : lit cmd_tree -> cmd_constraint
 (** At least a literal in the input list is [true]. *)
 val at_least_cmd : lit cmd_tree -> clause
 
-(** Axactly one literal in the input list is [true]. *)
+(** Exactly one literal in the input list is [true]. *)
 val exactly_one_cmd : lit cmd_tree -> cmd_constraint
 
 (** Block the roots of a Commander-variable tree. *)

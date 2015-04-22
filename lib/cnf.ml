@@ -52,9 +52,10 @@ let at_most l =
 (* Disjunction (clause) of positive literals *)
 let at_least = List.map (fun x -> P_var x)
 							      
-(* Conjunction of clauses *)
-exception TSEITIN of clause list 
-  
+type tseitin_clause =
+  | Conj of clause list (* Conjunction of clauses *)
+  | Enc of clause * b_clause list		   
+			
 (* Apply tseitin transformation to a boolean formula. Input is a list of pairs.
    The encoding is not applied if the input list has length less than three.
    Cases with length three and four are hard-coded.
@@ -62,49 +63,52 @@ exception TSEITIN of clause list
    disjunction of auxiliary variables. The second is a conjunctions of 
    (not z or a) (not z or b) ... *)
 let tseitin = function
-  | [] -> raise (TSEITIN [ ])
-  | [(x, y)] -> raise (TSEITIN [ [P_var x]; [P_var y] ])
-  | [(x, y); (w, z)] -> raise (TSEITIN [ [P_var x; P_var w]; [P_var x; P_var z];
-				         [P_var y; P_var w]; [P_var y; P_var z] ])
+  | [] -> Conj []
+  | [(x, y)] -> Conj [ [P_var x]; [P_var y] ]
+  | [(x, y); (w, z)] ->
+     Conj [ [P_var x; P_var w]; [P_var x; P_var z];
+	    [P_var y; P_var w]; [P_var y; P_var z] ]
   | [(x, y); (w, z); (h, k)] -> 
-    begin
-      let (a0, a1, a2) = (V_lit 0, V_lit 1, V_lit 2) in
-      ([ P_var a0; P_var a1; P_var a2 ],
-       [ (N_var a0, P_var x); (N_var a0, P_var y); 
-	 (N_var a1, P_var w); (N_var a1, P_var z); 
-	 (N_var a2, P_var h); (N_var a2, P_var k) ]) 
-    end
+     (let (a0, a1, a2) = (V_lit 0, V_lit 1, V_lit 2) in
+      Enc ([ P_var a0; P_var a1; P_var a2 ],
+	   [ (N_var a0, P_var x); (N_var a0, P_var y); 
+	     (N_var a1, P_var w); (N_var a1, P_var z); 
+	     (N_var a2, P_var h); (N_var a2, P_var k) ]))
   | [(x, y); (w, z); (h, k); (u, v)] -> 
-    begin
-      let (a0, a1, a2, a3) = (V_lit 0, V_lit 1, V_lit 2, V_lit 3) in
-      ([ P_var a0; P_var a1; P_var a2; P_var a3 ],
-       [ (N_var a0, P_var x); (N_var a0, P_var y); 
-	 (N_var a1, P_var w); (N_var a1, P_var z); 
-	 (N_var a2, P_var h); (N_var a2, P_var k);
-	 (N_var a3, P_var u); (N_var a3, P_var v)]) 
-    end
-  | l -> fst (List.fold_left (fun ((acc_z, acc), i) ((a : lit), (b : lit)) ->
-    let z = V_lit i in  
-    (((P_var z) :: acc_z, (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
-     i + 1)) (([], []), 0) l)
+     (let (a0, a1, a2, a3) = (V_lit 0, V_lit 1, V_lit 2, V_lit 3) in
+      Enc ([ P_var a0; P_var a1; P_var a2; P_var a3 ],
+	   [ (N_var a0, P_var x); (N_var a0, P_var y); 
+	     (N_var a1, P_var w); (N_var a1, P_var z); 
+	     (N_var a2, P_var h); (N_var a2, P_var k);
+	     (N_var a3, P_var u); (N_var a3, P_var v)]))
+  | l ->
+     (let ((z, cs), _) =
+	List.fold_left (fun ((acc_z, acc), i) (a, b) ->
+			let z = V_lit i in  
+			(((P_var z) :: acc_z,
+			  (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
+			 i + 1))
+		       (([], []), 0) l in
+      Enc (z, cs))
 
 let equiv (m : lit) (clauses : lit list list) =
   (* a negated *)
-  let pairs = List.map (fun a -> (P_var m, N_var a)) (List.flatten clauses)
+  let pairs =
+    List.map (fun a -> (P_var m, N_var a)) (List.flatten clauses)
   (* m negated *)
-  and l = List.map (fun c -> 
-    (N_var m) :: (List.map (fun v -> P_var v) c)) clauses in
+  and l =
+    List.map (fun c -> 
+	      (N_var m) :: (List.map (fun v -> P_var v) c))
+	     clauses in
   (pairs, l)
 
 (* input: X [ [Y0, Y1]; [Y2]; [Y3, Y4, Y5] ]
    output: X => (Y0 or Y1)
            X => Y2 
            X => (Y3 or Y4 or Y5) *)
-let impl (m : lit) (clauses : lit list list) =
-  (* m negated *)
+let impl (m : lit) =
   List.map (fun c -> 
-    (N_var m) :: (List.map (fun v -> P_var v) c)
-  ) clauses
+	    (N_var m) :: (List.map (fun v -> P_var v) c))
 
 let block_rows rows c =
   assert (c >= 0);
