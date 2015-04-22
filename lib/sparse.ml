@@ -203,18 +203,18 @@ let mul a b =
 let trans m =
   let t = copy m in
   let rec fix () =
-    let chl_2 = 
+    let count =
       Hashtbl.fold (fun i j acc ->
 		    acc @ (List.map (fun c -> (i, c)) (chl m j))) 
-		   t.r_major [] in
-    let count =
-      List.fold_left (fun acc (i, c) ->
-		      if List.mem c (Hashtbl.find_all t.r_major i) then acc
-		      else
-			(Hashtbl.add t.r_major i c;
-			 Hashtbl.add t.c_major c i;
-			 acc + 1))
-		     0 chl_2 in
+		   t.r_major []
+      |> List.fold_left (fun acc (i, c) ->
+			 if List.mem c (Hashtbl.find_all t.r_major i)
+			 then acc
+			 else
+			   (Hashtbl.add t.r_major i c;
+			    Hashtbl.add t.c_major c i;
+			    acc + 1))
+			0 in
     if count > 0 then fix ()
     else t in
   fix ()
