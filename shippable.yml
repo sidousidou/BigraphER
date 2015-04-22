@@ -1,5 +1,3 @@
-#build_environment: Ubuntu 14.04
-#build_image: mseve/bigrapher-shippable
 build_image: shipimg/ubuntu1404_base
 
 archive: true
@@ -11,7 +9,8 @@ language: java
 notifications:
  email: false
  
-before_install: 
+before_install:
+ - sudo rm /var/lib/apt/lists/* -vf
  - sudo add-apt-repository -y ppa:avsm/ocaml42+opam12
  - sudo apt-get update -qq 
  - sudo apt-get install -qq ocaml ocaml-native-compilers m4 camlp4-extra opam graphviz zlib1g-dev minisat
