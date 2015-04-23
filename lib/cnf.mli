@@ -132,7 +132,7 @@ val at_most_cmd : cmd_tree -> cmd_constraint
    [true]}. *)
 val at_least_cmd : cmd_tree -> clause
 
-(** Return econding of constraint {e "exactly one literal in the input tree is
+(** Return encoding of constraint {e "exactly one literal in the input tree is
     [true]"}. *)
 val exactly_one_cmd : cmd_tree -> cmd_constraint
 
@@ -141,24 +141,27 @@ val block_cmd : int list -> clause list
 
 (** {6 Higher level functions} *)
 
+(** The type of a commander-variable constraint. *)				   
 type cmd = {
   length : int;                 (** Number of auxiliary commander variables *)
   roots : int list;             (** Root commander variables *)
   cmd : cmd_constraint array;   (** Constraints *) 
 }
 
-(** Generate constraints for a bijection from n to m. Parameters t and g
-    are used for configure the commander-variable encoding. Auxiliary variables
-    are returned. *)
+(** [bijection n m t g] generates constraints for a bijection from [n] to [m]
+    expressed as a matrix of assignments. Parameters [t] and [g] are used to
+    configure the commander-variable encoding.
+    @return a pair in which the first element encodes constraint {e "exactly one
+    [true] in every row"} while the second elements encodes constraint {e "at
+    most one [true] in every column"}. *)
 val bijection : int -> int -> int -> int -> (cmd * cmd)
 
-(** Generate constraints for a total, non-surjective function n to m. Parameters
-    t and g  are used for configure the commander-variable encoding. Auxiliary 
-    variables are returned. *)
+(** Similar to {!Cnf.bijection} but generates constraints for a total,
+    non-surjective function from [n] to [m]. *)
 val tot_fun : int -> int -> int -> int -> cmd
 
-(** Generate constraints for a one to one function. Parameters
-    t and g  are used for configure the commander-variable encoding. *)
+(** Similar to {!Cnf.bijection} but generates constraints for a one to one
+    function from [n] to [n]. *)
 val one_to_one : int -> int -> int -> 
   (cmd_constraint list * int) * (cmd_constraint list * int)
 
@@ -174,39 +177,46 @@ val init_aux_m : int -> int -> Minisat.solver -> Minisat.var array array
     vector. *)
 val post_conj_v : clause list -> Minisat.solver -> Minisat.var array -> unit
 
-(** To be used also when TSEITIN is raised. All variables refer to the same
+(** Post conjunction of clauses to solver. All variables refer to the same
     matrix.*)
 val post_conj_m : clause list -> Minisat.solver -> Minisat.var array array -> unit
 
 (** Post Tseitin constraints to solver and return array of auxiliary 
     variables. *)
 val post_tseitin : clause * b_clause list -> Minisat.solver -> 
-  Minisat.var array array -> Minisat.var array
+		   Minisat.var array array -> Minisat.var array
 
-(** Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
+(** Post implication constraints to solver. Left hand-sides are stored in
+    matrix w. *)
 val post_impl : clause list -> Minisat.solver ->
-  Minisat.var array array -> Minisat.var array array -> unit
+		Minisat.var array array -> Minisat.var array array -> unit
 
-(** Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
+(** Post equivalence constraints to solver. Left hand-sides are stored in matrix
+    w. *)
 val post_equiv : b_clause list * clause list -> Minisat.solver ->
-  Minisat.var array array -> Minisat.var array array -> unit
+		 Minisat.var array array -> Minisat.var array array -> unit
 
 (** Post bijection constraints to solver and return auxiliary variables. *)
 val post_bij : (cmd * cmd) -> Minisat.solver -> Minisat.var array array ->
-  (Minisat.var array array * int list) * (Minisat.var array array * int list)
+	       (Minisat.var array array * int list) * (Minisat.var array array * int list)
 
-(** Post total non-surjective function to solver and return auxiliary 
-    variables. *)
+(** Post total non-surjective function constraints to solver and return
+    auxiliary variables. *)
 val post_tot : cmd -> Minisat.solver -> Minisat.var array array -> 
-  Minisat.var array array * int list
+	       Minisat.var array array * int list
 
+(** Post one to one function constraints to solver and return auxiliary 
+    variables. *)				
 val post_one_to_one : (cmd_constraint list * int) * (cmd_constraint list * int) -> 
-  Minisat.solver -> Minisat.var array array -> unit
+		      Minisat.solver -> Minisat.var array array -> unit
 
+(** Post constraints to block a commander variable row. *)
 val post_block_cmd : int -> Minisat.solver -> Minisat.var array array -> 
-  int list -> unit
+		     int list -> unit
 
+(** Post constraint to block a column. *)
 val post_block : int -> Minisat.solver -> Minisat.var array array -> unit
 
+(** Post implication constraints to solver. *)
 val post_impl2 : var list -> var list -> Minisat.solver -> 
-  Minisat.var array array -> Minisat.var array array -> unit
+		 Minisat.var array array -> Minisat.var array array -> unit

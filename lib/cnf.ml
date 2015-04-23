@@ -283,10 +283,10 @@ let exactly_one_cmd t =
 (* ++++++++++++++++++++++++ Higher level functions ++++++++++++++++++++++++ *)
 
 let rec _downto f acc i =
-  if i >= 0  then (
-    let acc' = f i acc in
-    _downto f acc' (i - 1)
-  ) else acc
+  if i >= 0  then
+    (let acc' = f i acc in
+     _downto f acc' (i - 1))
+  else acc
     
 let iter f acc n =
   _downto f acc n
@@ -301,17 +301,17 @@ let _exactly_rows n m t g =
   let l = ref 0
   and r = ref [] in
   let c =
-  Array.of_list (
-    iter (fun i acc ->
-      let row_i = iter (fun j acc ->
-	(M_lit (i, j)) :: acc
-      ) [] (m - 1) in
-      let t = cmd_init row_i t g in
-      if i = 0 then (
-	l := cmd_size t;
-	r := cmd_roots t);
-      (exactly_one_cmd t) :: acc
-    ) [] (n - 1)) in
+  Array.of_list
+    (iter (fun i acc ->
+	   let row_i = iter (fun j acc ->
+			     (M_lit (i, j)) :: acc)
+			    [] (m - 1) in
+	   let t = cmd_init row_i t g in
+	   if i = 0 then
+	     (l := cmd_size t;
+	      r := cmd_roots t);
+	   (exactly_one_cmd t) :: acc)
+	  [] (n - 1)) in
   {length = !l; roots = !r; cmd = c}
 
 (* Generate constraints for a bijection from n to m. Parameters t and g
@@ -326,23 +326,22 @@ let bijection n m t g =
   let l = ref 0
   and r = ref [] in
   let res_cols =
-    Array.of_list (
-      iter (fun j acc ->
-	let col_j = 
-	  iter (fun i acc ->
-	    (M_lit (i, j)) :: acc
-	  ) [] (n - 1) in
-	let t = cmd_init col_j t g in
-	if j = 0 then (
-	  l := cmd_size t;
-	  r := cmd_roots t);
-	(at_most_cmd t) :: acc
-      ) [] (m - 1)) in
-  (_exactly_rows n m t g, {
-    length = !l;
+    Array.of_list
+      (iter (fun j acc ->
+	     let col_j = 
+	       iter (fun i acc ->
+		      (M_lit (i, j)) :: acc)
+		    [] (n - 1) in
+	     let t = cmd_init col_j t g in
+	     if j = 0 then
+	       (l := cmd_size t;
+		r := cmd_roots t);
+	     (at_most_cmd t) :: acc)
+	    [] (m - 1)) in
+  (_exactly_rows n m t g,
+   {length = !l;
     roots = !r;
-    cmd = res_cols}
-  )
+    cmd = res_cols})
     
 (* Generate constraints for a total, non-surjective function n to m. Parameters
    t and g  are used for configure the commander-variable encoding. The 
@@ -357,28 +356,28 @@ let tot_fun n m t g =
 let _exactly_rows_eq n t g =
   let ts =
     iter (fun i acc ->
-        let row_i = iter (fun j acc ->
-	    (M_lit (i, j)) :: acc
-          ) [] (n - 1) in
-        (cmd_init row_i t g) :: acc
-      ) [] (n - 1) in
+          let row_i = iter (fun j acc ->
+			    (M_lit (i, j)) :: acc)
+			   [] (n - 1) in
+          (cmd_init row_i t g) :: acc)
+	 [] (n - 1) in
   (List.map exactly_one_cmd ts, 
    try cmd_size (List.hd ts) with _ -> 0)
 
 let _exactly_cols_eq n t g =
   let ts =
     iter (fun j acc ->
-        let col_j = iter (fun i acc ->
-	    (M_lit (i, j)) :: acc
-          ) [] (n - 1) in
-        (cmd_init col_j t g) :: acc
-      ) [] (n - 1) in
+          let col_j = iter (fun i acc ->
+			    (M_lit (i, j)) :: acc)
+			   [] (n - 1) in
+          (cmd_init col_j t g) :: acc)
+	 [] (n - 1) in
   (List.map exactly_one_cmd ts, 
    try cmd_size (List.hd ts) with _ -> 0)
 
 let one_to_one n t g =
   assert (n >= 0);
-  (_exactly_rows_eq n t g,_exactly_cols_eq n t g)
+  (_exactly_rows_eq n t g, _exactly_cols_eq n t g)
 
 (* +++++++++++++++++++++++ Integration with Minisat +++++++++++++++++++++++ *)
 
@@ -391,7 +390,7 @@ let convert_m (m : Minisat.var array array) = function
 
 let convert_v (vec : Minisat.var array) = function   
   | P_var (V_lit i) -> Minisat.pos_lit vec.(i) 
-  | N_var (V_lit i)  -> Minisat.neg_lit vec.(i)
+  | N_var (V_lit i) -> Minisat.neg_lit vec.(i)
   | P_var (M_lit _)
   | N_var (M_lit _) -> assert false
 
@@ -425,15 +424,17 @@ let init_aux_m r c s =
    vector. *)
 let post_conj_v l s v =
   List.iter (fun clause ->
-    s#add_clause (List.map (fun x ->
-      convert_v v x) clause)) l
+	     s#add_clause (List.map (fun x ->
+				     convert_v v x) clause))
+	    l
 
 (* To be used also when TSEITIN is raised. All variables refer to the same
    matrix.*)
 let post_conj_m l s m =
   List.iter (fun clause ->
-    s#add_clause (List.map (fun x ->
-      convert_m m x) clause)) l
+	     s#add_clause (List.map (fun x ->
+				     convert_m m x) clause))
+	    l
 
 (* Post Tseitin constraints to solver and return array of auxiliary 
    variables. *)
@@ -441,19 +442,20 @@ let post_tseitin (z_clause, pairs) s m =
   let z = init_aux_v (List.length z_clause) s in
   post_conj_v [z_clause] s z;
   List.iter (fun (a , v) ->
-    s#add_clause [convert_v z a; convert_m m v]) pairs;
+	     s#add_clause [convert_v z a; convert_m m v])
+	    pairs;
   z
 
 (* Post impl constraints to solver. Left hand-sides are stored in matrix w. *)
 let post_impl clauses s w v =
   List.iter (fun clause ->
-    match clause with
-    | z :: rhs ->
-      let rhs' = 
-	List.map (fun x -> convert_m v x) rhs in
-      s#add_clause ((convert_m w z) :: rhs')
-    | _ -> assert false
-  ) clauses 
+	     match clause with
+	     | z :: rhs ->
+		let rhs' = 
+		  List.map (fun x -> convert_m v x) rhs in
+		s#add_clause ((convert_m w z) :: rhs')
+	     | _ -> assert false)
+	    clauses 
 
 (* Post implication to solver. Clauses are pairs in which the first element 
    refers to matrix w and the second to matrix w'. *)
@@ -461,38 +463,38 @@ let post_impl2 vars_w vars_w' s w w' =
   (* cartesian product *)
   let pairs = 
     List.fold_left (fun acc j ->
-        List.fold_left (fun acc j' ->
-          (j, j') :: acc) acc vars_w'     
-      ) [] vars_w in
+		    List.fold_left (fun acc j' ->
+				    (j, j') :: acc) acc vars_w')     
+		   [] vars_w in
   List.iter (fun (j, j') ->
-      s#add_clause [convert_m w j; convert_m w' j']
-    ) pairs
+	     s#add_clause [convert_m w j; convert_m w' j'])
+	    pairs
 
 (* Post equiv constraints to solver. Left hand-sides are stored in matrix w. *)
 let post_equiv (pairs, clauses) s w v =
   List.iter (fun (m, x) ->
-      s#add_clause [convert_m w m; convert_m v x]
-    ) pairs;
+	     s#add_clause [convert_m w m; convert_m v x])
+	    pairs;
   post_impl clauses s w v
 
 (* V_lit are for auxiliary variables whereas M_lit are for encoding 
    variables. *)
 let _post_pairs l s a v = 
   List.iter (fun (x, y) ->
-      s#add_clause [ (convert a v x); (convert a v y) ]
-    ) l
+	     s#add_clause [ (convert a v x); (convert a v y) ])
+	    l
 
 let _post_list l s a v =
   List.iter (fun clause ->
-      s#add_clause (List.map (fun x ->
-          convert a v x
-        ) clause)
-    ) l
+	     s#add_clause (List.map (fun x ->
+				     convert a v x)
+				    clause))
+	    l
 
 let _post_exactly cmd l solver m =
   match cmd with
-  | Cmd_exactly (cl1, cl2, cl3, cl4) -> (
-      let z = init_aux_v l solver in
+  | Cmd_exactly (cl1, cl2, cl3, cl4) ->
+     (let z = init_aux_v l solver in
       _post_pairs cl1 solver z m;
       _post_list cl2 solver z m;
       _post_pairs cl3 solver z m;
@@ -505,29 +507,20 @@ let _post_exactly cmd l solver m =
 let post_bij (r_cmd, c_cmd) s m =
   let aux_r =
     (Array.map (fun c ->
-      (* match c with *)
-      (* | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
-      (*   let z = init_aux_v r_cmd.length s in *)
-      (*   _post_pairs cl1 s z m; *)
-      (*   _post_list cl2 s z m; *)
-      (*   _post_pairs cl3 s z m; *)
-      (*   _post_list [cl4] s z m; *)
-      (*   z) *)
-      (* | Cmd_at_most _ -> assert false *)
-         _post_exactly c r_cmd.length s m
-     ) r_cmd.cmd,
+		_post_exactly c r_cmd.length s m)
+	       r_cmd.cmd,
      r_cmd.roots) 
   and aux_c =
     (Array.map (fun c ->
-      match c with
-      | Cmd_at_most (cl1, cl2, cl3) -> (
-	let z = init_aux_v c_cmd.length s in
-	_post_pairs cl1 s z m;
-	_post_list cl2 s z m;
-	_post_pairs cl3 s z m;
-	z)
-      | Cmd_exactly _ -> assert false
-     ) c_cmd.cmd,
+		match c with
+		| Cmd_at_most (cl1, cl2, cl3) ->
+		   (let z = init_aux_v c_cmd.length s in
+		    _post_pairs cl1 s z m;
+		    _post_list cl2 s z m;
+		    _post_pairs cl3 s z m;
+		    z)
+		| Cmd_exactly _ -> assert false)
+	       c_cmd.cmd,
      c_cmd.roots) in
   (aux_r, aux_c)
     
@@ -535,52 +528,24 @@ let post_bij (r_cmd, c_cmd) s m =
    variables. *)
 let post_tot r_cmd s m =
   (Array.map (fun c ->
-    (* match c with *)
-    (* | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
-    (*   let z = init_aux_v r_cmd.length s in *)
-    (*   _post_pairs cl1 s z m; *)
-    (*   _post_list cl2 s z m; *)
-    (*   _post_pairs cl3 s z m; *)
-    (*   _post_list [cl4] s z m; *)
-    (*   z) *)
-    (* | Cmd_at_most _ -> assert false *)
-       _post_exactly c r_cmd.length s m
-   ) r_cmd.cmd,
+	      _post_exactly c r_cmd.length s m)
+	     r_cmd.cmd,
    r_cmd.roots) 
 
 let post_one_to_one ((cmd_r, l_r), (cmd_c, l_c)) s m =
   List.iter (fun c ->
-      (* match c with *)
-      (* | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
-      (*     let z = init_aux_v l_r s in *)
-      (*     _post_pairs cl1 s z m; *)
-      (*     _post_list cl2 s z m; *)
-      (*     _post_pairs cl3 s z m; *)
-      (*     _post_list [cl4] s z m *)
-      (*   ) *)
-      (* | Cmd_at_most _ -> assert false *)
-      ignore (_post_exactly c l_r s m)
-    ) cmd_r;
+	     ignore (_post_exactly c l_r s m))
+	    cmd_r;
   List.iter (fun c ->
-      (* match c with *)
-   (*    | Cmd_exactly (cl1, cl2, cl3, cl4) -> ( *)
-   (*        let z = init_aux_v l_c s in *)
-   (*        _post_pairs cl1 s z m; *)
-   (*        _post_list cl2 s z m; *)
-   (*        _post_pairs cl3 s z m; *)
-   (* _post_list [cl4] s z m *)
-   (*        ) *)
-   (*    | Cmd_at_most _ -> assert false *)
-      ignore (_post_exactly c l_c s m)
-    ) cmd_c
+	     ignore (_post_exactly c l_c s m))
+	    cmd_c
 
 (* Block a commander variable row *)
-let post_block_cmd i s m roots =
+let post_block_cmd i s m =
   List.iter (fun r ->
-    s#add_clause [Minisat.neg_lit m.(i).(r)]
-  ) roots
+	     s#add_clause [Minisat.neg_lit m.(i).(r)]) 
 
 let post_block j s m =
- Array.iteri (fun i _ ->
-   s#add_clause [Minisat.neg_lit m.(i).(j)]
- ) m  
+  Array.iteri (fun i _ ->
+	       s#add_clause [Minisat.neg_lit m.(i).(j)])
+	      m
