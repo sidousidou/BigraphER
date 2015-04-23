@@ -28,11 +28,6 @@ type p_class =
 | P_class of sreact list  (** Priority class *)
 | P_rclass of sreact list (** Reducable priority class *)
 
-(** The type of priority classes: lists of reaction rule identifiers. *)
-type p_class_ide = 
-| P_class_ide of string list  (** Priority class *)
-| P_rclass_ide of string list (** Reducable priority class *)
-
 (** Raised when the size of the transition system reaches the limit. *)
 exception LIMIT of ctmc * stats
 
@@ -53,17 +48,9 @@ val is_inst : sreact -> bool
     a non reducible class. Return [false] otherwise. *)
 val is_valid_p : p_class -> bool
 
-(** Same as {!Sbrs.is_valid_p} but the priority class is of type
-    {!Sbrs.p_class}. *)
-val is_valid_p_ide : (string -> sreact) -> p_class_ide -> bool
-
 (** Return [true] if a list of priority classes contains at least a non reducing
     priority class, [false] otherwise. *)
 val is_valid_p_l : p_class list -> bool
-
-(** Same as {!Sbrs.is_valid_p_l} but priority classes are of type
-    {!Sbrs.p_class}. *)
-val is_valid_p_ide_l : p_class_ide list -> bool
 
 (** Return [true] if a reaction can be applied on a bigraph. *)
 val is_sreact_enabled : Big.bg -> sreact -> bool
@@ -90,9 +77,6 @@ val fix : Big.bg -> sreact list -> Big.bg * int
     is the number of rewriting steps performed in the loop. *)
 val rewrite : Big.bg -> p_class list -> int -> Big.bg * int
 
-(** Same as {Sbrs.rewrite} but priority classes are of type {Sbrs.p_class_ide}. *)
-val rewrite_ide : (string -> sreact) -> Big.bg -> p_class_ide list -> int -> Big.bg * int
-
 (** [bfs s p l n f] computes the transition system of the SBRS specified by
     initial state [s] and priority classes [p]. [l] is the maximum number of
     states of the transition system. [n] is the initialisation size for the
@@ -103,22 +87,10 @@ val rewrite_ide : (string -> sreact) -> Big.bg -> p_class_ide list -> int -> Big
 val bfs : Big.bg -> p_class list -> int -> int -> 
   (int -> Big.bg -> unit) -> ctmc * stats
 
-(** Same as {!Sbrs.bfs} but priority classes are of type {!Sbrs.p_class_ide}.*)
-val bfs_ide : Big.bg -> p_class_ide list -> (string -> sreact) -> int -> int -> 
-  (int -> Big.bg -> unit) -> ctmc * stats 
-
 (** Similar to {!Sbrs.bfs} but only one simulation path is computed. 
     @raise Sbrs.LIMIT when the simulation reaches the time limit. *)
 val sim : Big.bg -> p_class list -> float -> int -> 
   (int -> Big.bg -> unit) -> ctmc * stats 
-
-(** Same as {!Sbrs.sim} but priority classes are of type {!Sbrs.p_class_ide}.
-    @raise Sbrs.LIMIT_SIM when the simulation reaches the time limit. *)
-val sim_ide: Big.bg -> p_class_ide list -> (string -> sreact) -> float -> int ->
-    (int -> Big.bg -> unit) -> ctmc * stats
-
-(** String representation of SBRS execution statistics. *)
-val string_of_stats : stats -> string
 
 (** Textual representation of a ctmc. The format is compatible with PRISM input 
     format. *)
