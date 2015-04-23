@@ -210,47 +210,51 @@ let cmd_roots = function
    4. exactly one commander variable is true. *)
 
 (* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
-let rec _scan1 t acc =
-  match t with 
+let rec _scan1 acc = function
   | Leaf g -> acc @ (at_most g)
   | Node cmd_g -> 
-    let (cmd_vars, sub) = List.split cmd_g in
-    acc @ (at_most cmd_vars) @
-      (List.fold_left (fun acc t ->
-	acc @ (_scan1 t [])) [] sub) 
+     let (cmd_vars, sub) = List.split cmd_g in
+     acc @ (at_most cmd_vars) @
+       (List.fold_left (fun acc t ->
+			acc @ (_scan1 [] t))
+		       [] sub) 
 
 (* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)		  
-let rec _scan2 t (acc : var list list) : (lit list * var list list) =
-  match t with
+let rec _scan2 (acc : var list list) = function
   | Leaf g -> (g, acc)
   | Node cmd_g ->
-    let cmd_vars = fst (List.split cmd_g)
-    and acc' = List.fold_left (fun res (cmd_v, sub) ->
-      let (g, acc) = _scan2 sub [] in
-      let clause =
-	(N_var cmd_v) :: (List.map (fun l -> P_var l) g) in	
-      res @ (clause :: acc)) [] cmd_g in
-    (cmd_vars, acc @ acc')
+     let cmd_vars = fst (List.split cmd_g)
+     and acc' = List.fold_left (fun res (cmd_v, sub) ->
+				let (g, acc) = _scan2 [] sub in
+				let clause =
+				  (N_var cmd_v) :: (List.map (fun l ->
+							      P_var l)
+							     g) in	
+				res @ (clause :: acc))
+			       [] cmd_g in
+     (cmd_vars, acc @ acc')
 
 (* (C, [X0, X1, X2]) -> [(C or !X0), (C or !X1), (C or !X2)] *)		  
-let rec _scan3 t acc : (lit list * (var * var) list) =
-    match t with
+let rec _scan3 acc = function
   | Leaf g -> (g, acc)
   | Node cmd_g ->
-    let cmd_vars = fst (List.split cmd_g)
-    and acc' = List.fold_left (fun res (cmd_v, sub) ->
-      let (g, acc) = _scan3 sub [] in
-      let clause =
-	List.map (fun l -> (P_var cmd_v, N_var l)) g in	
-      res @ clause @ acc) [] cmd_g in
-    (cmd_vars, acc @ acc')
+     let cmd_vars = fst (List.split cmd_g)
+     and acc' = List.fold_left (fun res (cmd_v, sub) ->
+				let (g, acc) = _scan3 [] sub in
+				let clause =
+				  List.map (fun l ->
+					    (P_var cmd_v, N_var l))
+					   g in	
+				res @ clause @ acc)
+			       [] cmd_g in
+     (cmd_vars, acc @ acc')
 
 type cmd_constraint =
-| Cmd_at_most of b_clause list * clause list * b_clause list
-| Cmd_exactly of b_clause list * clause list * b_clause list * clause
+  | Cmd_at_most of b_clause list * clause list * b_clause list
+  | Cmd_exactly of b_clause list * clause list * b_clause list * clause
 
 let at_most_cmd t =
-  Cmd_at_most (_scan1 t [], snd (_scan2 t []), snd (_scan3 t []))
+  Cmd_at_most (_scan1 [] t, snd (_scan2 [] t), snd (_scan3 [] t))
 
 let at_least_cmd = function
   | Leaf g -> at_least g
@@ -259,7 +263,7 @@ let at_least_cmd = function
 let exactly_one_cmd t =
   match at_most_cmd t with
   | Cmd_at_most (cl1, cl2, cl3) ->
-    Cmd_exactly (cl1, cl2, cl3, at_least_cmd t)
+     Cmd_exactly (cl1, cl2, cl3, at_least_cmd t)
   | Cmd_exactly _ -> assert false
 
 (* let t_debug = *)

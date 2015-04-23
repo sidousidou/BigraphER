@@ -124,16 +124,19 @@ type cmd_constraint =
     respectively. Typical values are 6 and 3. *)
 val cmd_init : group -> int -> int -> cmd_tree
 
-(** At most a literal in the input list is [true]. *)
+(** Return encoding of constraint {e "at most a literal in the input tree is
+    [true]}. *)
 val at_most_cmd : cmd_tree -> cmd_constraint
 
-(** At least a literal in the input list is [true]. *)
+(** Return encoding of constraint {e "at least a literal in the input tree is
+   [true]}. *)
 val at_least_cmd : cmd_tree -> clause
 
-(** Exactly one literal in the input list is [true]. *)
+(** Return econding of constraint {e "exactly one literal in the input tree is
+    [true]"}. *)
 val exactly_one_cmd : cmd_tree -> cmd_constraint
 
-(** Block the roots of a Commander-variable tree. *)
+(** Block the roots of a tree. *)
 val block_cmd : int list -> clause list
 
 (** {6 Higher level functions} *)
