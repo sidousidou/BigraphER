@@ -79,6 +79,7 @@ SourceRepository master
   Browser: 	   https://bitbucket.org/mseve/bigrapher
 
 AlphaFeatures: ocamlbuild_more_args
+
 Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
@@ -86,6 +87,12 @@ Document bigraph_api
   BuildTools+: 	   ocamldoc
   Format:	   html
   Index:	   API.html
+  Abstract:
+    API reference for library [bigraph]. It provides modules for:
+     * manipulation of place graphs link graphs and bigraphs with sharing,
+     * definition of (stochastic) reaction rules with support for instantiation maps,
+     * full generation of the state space and simulation of (stochastic) bigraphical
+       reactive systems with rule priorities. 
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
   XOCamlbuildExtraArgs: "-docflags '-colorize-code -short-functors -charset utf-8'"
