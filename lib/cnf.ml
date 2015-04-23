@@ -129,79 +129,79 @@ let block_cmd : int list -> clause list =
 
 (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
 
-type 'a cmd_tree = 
-  | Leaf of 'a list
-  | Node of ('a * 'a cmd_tree) list 
-
-exception NO_GROUP
-
+type group = lit list
+	   
+type cmd_tree = 
+  | Leaf of group
+  | Node of (lit * cmd_tree) list 
+				 
 (* Return a list of groups of size at most g + 1.
    If [0;1;2] [3] then [0;1] [2;3] to avoid singletons. Also
    if [0;1] [2] then [0;1;2] *)
 let group l n g =
   assert (g > 1);
   assert (n >= g);
-  if List.length l <= n then raise NO_GROUP
+  if List.length l <= n then None
   else let (x, i, res) = 
 	 List.fold_left (fun (group, i, res)  x ->
-	   if i >= g then ([x], 1, group :: res)
-	   else (x :: group, i + 1, res)) ([], 0, []) l in
-       if i = 1 then if g > 2 then
-	   match res with
-	   | (v :: vs) :: res -> (x @ [v]) :: vs :: res  
-	   | _ -> assert false
+			 if i >= g
+			 then ([x], 1, group :: res)
+			 else (x :: group, i + 1, res))
+			([], 0, []) l in
+       if i = 1 then
+	 if g > 2
+	 then match res with
+	      | (v :: vs) :: res -> Some ((x @ [v]) :: vs :: res)  
+	      | _ -> assert false
 	 else match res with
-	 | v :: res -> (x @ v) :: res  
-	 | _ -> assert false
-       else x :: res 
+	      | v :: res -> Some ((x @ v) :: res)  
+	      | _ -> assert false
+       else Some (x :: res) 
   
 (* Build a tree of commander variables. Input is a tree, output split the root 
    and add a level of variables. *)
 let rec _cmd_init t n g j =
   match t with
   | Node cmd_l -> 
-    (try 
-       let cmd_l' = group cmd_l n g  in
-       let (j', t') = 
-	 List.fold_left (fun (j, acc) g -> 
-	   (j + 1, (V_lit j, Node g) :: acc)) (j, []) cmd_l' in
-       _cmd_init (Node t') n g j'
-     with
-    (* Do not add an additional level of commander variables *)
-     | NO_GROUP -> t)
+     (match group cmd_l n g with
+      | Some cmd_l' ->
+	 let (j', t') = 
+	   List.fold_left (fun (j, acc) g -> 
+			   (j + 1, (V_lit j, Node g) :: acc))
+			  (j, []) cmd_l' in
+	 _cmd_init (Node t') n g j'
+      (* Do not add an additional level of commander variables *)
+      | None -> t)
   | Leaf vars -> 
-    (try 
-       let cmd_l = group vars n g  in
-       let (j', t') = 
-	 List.fold_left (fun (j, acc) g -> 
-	   (j + 1, (V_lit j, Leaf g) :: acc)) (j, []) cmd_l in 
-       _cmd_init (Node t') n g j'
-     with
-    (* Do not add an additional level of commander variables *)
-     | NO_GROUP -> t)
+     (match group vars n g with
+      | Some cmd_l ->
+	 let (j', t') = 
+	   List.fold_left (fun (j, acc) g -> 
+			   (j + 1, (V_lit j, Leaf g) :: acc))
+			  (j, []) cmd_l in 
+	 _cmd_init (Node t') n g j'
+      (* Do not add an additional level of commander variables *)
+      | None -> t)
 
-(* M_lit elements *)
-let cmd_init (l : lit list) n g =
+let cmd_init l n g =
   _cmd_init (Leaf l) n g 0
 
 (* Number of auxiliary variables *)
-let cmd_size t =
-  match t with
+let cmd_size = function
   | Leaf _ -> 0
   | Node cmd_g -> 
-    (match fst (List.hd cmd_g) with
-    | V_lit n -> n + 1
-    | M_lit _ -> assert false)
-    
-let cmd_roots t =
-  match t with
+     (match fst (List.hd cmd_g) with
+      | V_lit n -> n + 1
+      | M_lit _ -> assert false)
+       
+let cmd_roots = function
   | Leaf _ -> []
   | Node cmd_g ->
-    List.map (fun (root, _) ->
-      match root with
-      | V_lit i -> i
-      | M_lit _ -> assert false
-    ) cmd_g
+     List.map (fun (root, _) ->
+	       match root with
+	       | V_lit i -> i
+	       | M_lit _ -> assert false)
+	      cmd_g
 
 (* Scan the tree and produce constraints:
    1. at most one TRUE in every group

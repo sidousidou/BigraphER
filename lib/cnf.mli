@@ -24,9 +24,9 @@ type b_clause = var * var
     https://en.wikipedia.org/wiki/Conjunctive_normal_form#Conversion_into_CNF
     }Tseitin transformation}. *)
 type tseitin_clause =
-  | Conj of clause list            (** A conjunction of clauses when \ 
+  | Conj of clause list            (** A conjunction of clauses when  
                                        the transformation is not applied *)
-  | Enc of clause * b_clause list  (** A clause of auxiliary variables and a \
+  | Enc of clause * b_clause list  (** A clause of auxiliary variables and a 
                                        list binary disjunctions *)	   
 
 (** {6 Manipulation of boolean formulae} *)
@@ -61,10 +61,10 @@ val block_rows : int list -> int -> clause list
     literal (stored in a matrix). *)
 val blocking_pairs : (int * int) list -> clause list
 
-(** Apply {{:
+(** [tseitin l] applies {{:
     https://en.wikipedia.org/wiki/Conjunctive_normal_form#Conversion_into_CNF
-    }Tseitin transformation}.  
-  
+    }Tseitin transformation} to [l].  
+
     @param l a list of pairs interpreted as ["(X1 and Y1) or (X2 and Y2) or
              ... or (Xn and Yn)"]
    
@@ -76,7 +76,7 @@ val blocking_pairs : (int * int) list -> clause list
             than three. *)
 val tseitin : (lit * lit) list -> tseitin_clause
 
-(** Return the CNF encoding of boolean implications.
+(** [impl x l] returns the CNF encoding of boolean implications.
   
     @param x is the left-hand side of the implication.
   
@@ -87,7 +87,7 @@ val tseitin : (lit * lit) list -> tseitin_clause
             clause1) and ... "]. *)
 val impl : lit -> lit list list -> clause list 
 
-(** Return the CNF encoding of {e if and only if} boolean formulae.
+(** [equiv m clauses] returns the CNF encoding of {e if and only if} boolean formulae.
     
     @param m is the left-hand side of the formula
     
@@ -101,27 +101,37 @@ val equiv : lit -> lit list list -> b_clause list * clause list
 
 (** {6 Commander-variable Encoding} *)
 
-(** Data structure (n-ary tree) for the encoding of the auxiliary variables. *)
-type 'a cmd_tree = 
-  | Leaf of 'a list
-  | Node of ('a * 'a cmd_tree) list 
+(** The following type structures and functions implement the encoding defined
+    in this {{:
+    http://www.cs.cmu.edu/~wklieber/papers/2007_efficient-cnf-encoding-for-selecting-1.pdf
+    } paper}. *)
+							   
+(** A group in the encoding corresponds to a list of literals. *)
+type group = lit list
+		 
+(** N-ary tree for the encoding of the auxiliary variables introduced by the encoding. *)	   
+type cmd_tree = 
+  | Leaf of group
+  | Node of (lit * cmd_tree) list 
 
+(** The type of boolean constraints for the encoding *)			       
 type cmd_constraint =
   | Cmd_at_most of b_clause list * clause list * b_clause list
   | Cmd_exactly of b_clause list * clause list * b_clause list * clause
 
-(** Initialisation of a tree of auxiliary variables. The two [int] arguments
-    specify the recursion threshold and the maximum group size, respectively. *)
-val cmd_init : lit list -> int -> int -> lit cmd_tree
+(** [cmd_init l n g] returns a tree of auxiliary variables. Arguments [n] and
+    [g] specify the recursion threshold and the maximum group size,
+    respectively. Typical values are 6 and 3. *)
+val cmd_init : group -> int -> int -> cmd_tree
 
 (** At most a literal in the input list is [true]. *)
-val at_most_cmd : lit cmd_tree -> cmd_constraint
+val at_most_cmd : cmd_tree -> cmd_constraint
 
 (** At least a literal in the input list is [true]. *)
-val at_least_cmd : lit cmd_tree -> clause
+val at_least_cmd : cmd_tree -> clause
 
 (** Exactly one literal in the input list is [true]. *)
-val exactly_one_cmd : lit cmd_tree -> cmd_constraint
+val exactly_one_cmd : cmd_tree -> cmd_constraint
 
 (** Block the roots of a Commander-variable tree. *)
 val block_cmd : int list -> clause list
