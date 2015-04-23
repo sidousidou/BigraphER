@@ -1,25 +1,29 @@
 open Big
 open Printf
-       
-type react = {
-    rdx : bg;   (* Redex *)
-    rct : bg;   (* Reactum *)
-  }
+
+
+include RR_TYPE.Make(struct
+		     type t = {
+			 rdx : bg;   (* Redex *)
+			 rct : bg;   (* Reactum *)
+		       }
+		      end)
+
+include TS_TYPE.make(struct
+			type t =
+			  { v : (bg_key, (int * bg)) Hashtbl.t;
+			    (* p : (int, Bilog) Hashtbl.t Predicates *)
+			    e : (int, int) Hashtbl.t;
+			    l : (int, int) Hashtbl.t; }
+			type stats =
+			  { t : float;   (* Execution time *)
+			    s : int;     (* Number of states *)
+			    r : int;     (* Number of reaction *)
+			    o : int; }   (* Number of occurrences *)
+			
+		      end)		    
   
-type ts = {
-  v : (bg_key, (int * bg)) Hashtbl.t;
-  (* p : (int, Bilog) Hashtbl.t Predicates *)
-  e : (int, int) Hashtbl.t;
-  l : (int, int) Hashtbl.t;  
-}
 
-
-type stats = {
-  t : float;  (** Execution time *)
-  s : int;    (** Number of states *)
-  r : int;    (** Number of reaction *)
-  o : int;    (** Number of occurrences *)
-}
 
 type p_class = 
 | P_class of react list 

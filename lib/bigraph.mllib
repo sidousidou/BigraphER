@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 2e6dd8719e158e693919ecaa52eb82b9)
+# DO NOT EDIT (digest: 894d8ae0a8422784d19392962bf30045)
 Base
 Link
 Place
@@ -13,4 +13,6 @@ Rel
 Fun
 Sparse
 Cnf
+RrType
+TsType
 # OASIS_STOP
