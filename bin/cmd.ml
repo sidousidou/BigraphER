@@ -229,7 +229,9 @@ let parse_int args i =
 let parse_float args i =
   try
     let v = float_of_string args.(i) in
-    if v > 0. then  defaults.t_max <- v 
+    if v > 0. then
+      (defaults.sim <- true;
+       defaults.t_max <- v) 
     else raise (ERROR (Malformed_float (args.(i - 1), v)))
   with
   | ERROR e -> raise (ERROR e)
