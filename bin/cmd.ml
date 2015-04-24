@@ -11,6 +11,7 @@ type arg =
   | `consts
   | `out_csl
   | `out_dot
+  | `out_raw   
   | `out_states
   | `out_prism
   | `out_store
@@ -20,6 +21,8 @@ type error =
   | Unknown_option of string
   | Not_option of string
   | Malformed_option of string
+  | Malformed_int of string * int
+  | Malformed_float of string * float 
   | Model_missing
   | Not_big of string
   | Not_valid_const of string
@@ -37,6 +40,7 @@ type env = {
     mutable consts : Ast.const list;
     mutable out_csl : string option;
     mutable out_dot : string option;
+    mutable out_raw : string option;
     mutable out_states : bool;
     mutable out_prism : string option;
     mutable out_store : string option;
@@ -53,6 +57,7 @@ let defaults = {
     consts = [];
     out_csl = None;
     out_dot = None;
+    out_raw = None;
     out_states = false;
     out_prism = None;
     out_store = None;
@@ -66,14 +71,17 @@ let msg fmt = function
   | `debug ->      fprintf fmt ""
   | `verbose ->    fprintf fmt "@[<hov>Be more verbose.@]"
   | `sim ->        fprintf fmt "@[<hov>Simulate the model.@ \
-                                  The@ optional@ argument@ sets@ the@ maximum@ simulation@ time.@]"  
-  | `s_max ->      fprintf fmt "@[<hov>Set the maximum number of states.@]"
+                                  The@ optional@ argument@ sets@ the@ maximum@ simulation@ time.@ \
+                                  It must be positive.@]"  
+  | `s_max ->      fprintf fmt "@[<hov>Set the maximum number of states.@ Argument@ must@ be positive@]"
   | `version ->    fprintf fmt "@[<hov>Show version information.@]"
   | `consts ->     fprintf fmt "@[<hov>Specify a list of constants.@]"  
   | `out_csl ->    fprintf fmt "@[<hov>Export the labelling@ function@ to@ PRISM@ csl@ format.@]"
   | `out_dot ->    fprintf fmt "@[<hov>Export the transition@ system@ to@ svg@ format.@]"
+  | `out_raw ->    fprintf fmt "@[<hov>Export the transition@ system@ to@ dot@ format.@]"
   | `out_states -> fprintf fmt "@[<hov>Export each state@ to@ svg@ format.@ \
-				  This@ option@ may@ only@ be@ use@ in@ conjuntion@ with@ the@ `-d'@ or@ `--export-dot'@ options.@]"
+				  This@ option@ may@ only@ be@ used@ in@ conjuntion@ with@ options@ \
+                                  `-d|--export-dot'@ or@ `-g|--export-svg'.@]"
   | `out_prism ->  fprintf fmt "@[<hov>Export the transition@ system@ to@ PRISM@ tra@ format.@]"
   | `out_store ->  fprintf fmt "@[<hov>Export each declaration@ in@ the@ model@ to@ svg@ format.@ \
 				  Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
@@ -87,10 +95,11 @@ let flags = function
   | `version ->    ["-V"; "--version"]
   | `consts ->     ["-c"; "--consts"]
   | `out_csl ->    ["-l"; "--export-labels"]
-  | `out_dot ->    ["-d"; "--export-dot"]
-  | `out_states -> ["-o"; "--export-states"]
+  | `out_raw ->    ["-d"; "--export-dot"]
+  | `out_dot ->    ["-g"; "--export-svg"]    (* g for svG         *)
+  | `out_states -> ["-f"; "--export-states"] (* f stands for Full *)
   | `out_prism ->  ["-p"; "--export-prism"]
-  | `out_store ->  ["-g"; "--export-store"]
+  | `out_store ->  ["-i"; "--export-store"]  (* i stands for Info *)
   | `help ->       ["-h"; "--help"] 
 
 let dot = dot_installed ()
@@ -99,6 +108,8 @@ let report_error_aux = function
   | Unknown_option s
   | Not_option s -> "Unknown option: `" ^ s ^ "'"
   | Malformed_option s -> "Missing argument for option `" ^ s ^ "'"
+  | Malformed_int (s, v) -> "Argument `" ^ (string_of_int v) ^ "' is not valid for option `" ^ s ^ "'"
+  | Malformed_float (s, v) -> "Argument `" ^ (string_of_float v) ^ "' is not valid for option `" ^ s ^ "'"
   | Model_missing -> "Model missing"
   | Not_big s -> "`" ^ s ^ "' is not a valid model"
   | Not_valid_const s -> s ^ " is not a valid list of constants" 			     
@@ -116,10 +127,11 @@ let parse_option s =
     | "-V" | "--version" ->       `version
     | "-c" | "--consts" ->        `consts
     | "-l" | "--export-labels" -> `out_csl 
-    | "-d" | "--export-dot" ->    `out_dot
-    | "-o" | "--export-states" -> `out_states
+    | "-d" | "--export-dot" ->    `out_raw
+    | "-g" | "--export-svg" ->    `out_dot
+    | "-f" | "--export-states" -> `out_states
     | "-p" | "--export-prism" ->  `out_prism
-    | "-g" | "--export-store" ->  `out_store
+    | "-i" | "--export-store" ->  `out_store
     | "-h" | "--help" ->          `help
     | _ ->                         raise (ERROR (Unknown_option s))
   else raise (ERROR (Not_option s))
@@ -137,8 +149,8 @@ let report_error fmt e =
 	  
 let options_str fmt () =
   let l =
-    [ `consts; `out_dot; `out_store; `help; `out_csl; `s_max; 
-      `out_states; `out_prism; `sim; `verbose; `version ]
+    [ `consts; `out_raw; `out_states; `out_dot; `help; `out_store; `out_csl; `s_max; 
+      `out_prism; `sim; `verbose; `version ]
   and flag_str a = String.concat ", " (flags a) in	    
   let pp_row fmt = function
     | `consts as a-> (* First row *)
@@ -165,6 +177,7 @@ let options_str fmt () =
 	fprintf fmt "%a" msg a)
     | `out_csl
     | `out_dot
+    | `out_raw
     | `out_prism as a ->
        (pp_print_tab fmt ();
 	fprintf fmt "%s [file]" (flag_str a);
@@ -205,9 +218,23 @@ let parse_consts consts opt =
   | Lexer.ERROR _ -> raise (ERROR (Not_valid_const consts))
   
 let parse_int args i =
-  try defaults.s_max <- int_of_string args.(i) with
+  try
+    let v = int_of_string args.(i) in
+    if v > 0 then defaults.s_max <- v
+    else raise (ERROR (Malformed_int (args.(i - 1), v)))
+  with
+  | ERROR e -> raise (ERROR e)
   | _ -> raise (ERROR (Malformed_option args.(i - 1)))
 
+let parse_float args i =
+  try
+    let v = float_of_string args.(i) in
+    if v > 0. then  defaults.t_max <- v 
+    else raise (ERROR (Malformed_float (args.(i - 1), v)))
+  with
+  | ERROR e -> raise (ERROR e)
+  |  _ -> raise (ERROR (Malformed_option args.(i - 1)))
+	       
 let report_warning_dot fmt a =
   fprintf fmt "@[%s: @[`dot' is not installed on this system.@ Ignoring option `%s'@]@]@."
 	  warn a
@@ -218,6 +245,9 @@ let parse_file fmt a args i =
     | `out_csl -> defaults.out_csl <- Some (args.(i))
     | `out_dot ->
        (if dot then defaults.out_dot <- Some (args.(i))
+	else report_warning_dot fmt args.(i - 1))
+    | `out_raw ->
+       (if dot then defaults.out_raw <- Some (args.(i))
 	else report_warning_dot fmt args.(i - 1))
     | `out_prism -> defaults.out_prism <- Some (args.(i))
     | `out_store ->
@@ -233,8 +263,11 @@ let is_big str = Filename.check_suffix (Filename.basename str) ".big"
 let is_bilog str = Filename.check_suffix (Filename.basename str) ".bilog"
 
 let check fmt args (flag : string) =
-  if args.out_states && 
-       (match args.out_dot with | None -> true | Some _ -> false)
+  let is_set = function
+    | None -> false
+    | Some _ -> true in
+  if args.out_states
+     && (not (is_set args.out_dot || is_set args.out_raw))
   then fprintf fmt "@[%s: Ignoring option `%s'@]@." warn flag
 
 let parse_options fmt args =
@@ -253,12 +286,7 @@ let parse_options fmt args =
 	   else report_warning_dot fmt args.(i);
 	   _parse args (i + 1))
        | `s_max -> parse_int args (i + 1); _parse args (i + 2)
-       | `sim -> (defaults.sim <- true;
-		  try
-		    defaults.t_max <- float_of_string args.(i + 1);
-		    _parse args (i + 2)
-		  with
-		  | Failure _ -> _parse args (i + 1))
+       | `sim -> parse_float args (i + 1); _parse args (i + 2)
        | `out_csl ->
 	  (parse_file fmt `out_csl args (i + 1);
 	   _parse args (i + 2))
@@ -266,6 +294,7 @@ let parse_options fmt args =
 	  (defaults.consts <- parse_consts args.(i + 1) args.(i);
 	   _parse args (i + 2))
        | `out_dot -> parse_file fmt `out_dot args (i + 1); _parse args (i + 2)
+       | `out_raw -> parse_file fmt `out_raw args (i + 1); _parse args (i + 2)
        | `out_prism -> parse_file fmt `out_prism args (i + 1); _parse args (i + 2)
        | `out_store -> parse_file fmt `out_store args (i + 1); _parse args (i + 2)
       ); in
@@ -278,7 +307,7 @@ let parse_model str =
     | `version -> fprintf std_formatter "@[%s@]@." version; exit 0
     | `help -> help std_formatter ()
     | `verbose | `sim | `s_max  | `consts  | `out_csl
-    | `out_dot | `out_states | `out_prism | `debug  
+    | `out_dot | `out_states | `out_prism | `debug | `out_raw 
     | `out_store -> raise (ERROR Model_missing)
   with
   | ERROR (Not_option _) ->

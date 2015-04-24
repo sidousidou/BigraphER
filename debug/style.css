@@ -1,0 +1,42 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto);
+
+text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 600;
+}
+
+[id$=Localeattack] ellipse {
+    stroke-dasharray: "5,5";
+}
+
+[id$=Aura] ellipse {
+    fill: khaki;
+}
+
+[id$=Childattack] ellipse,
+[id$=Lionattack] ellipse,
+[id$=Impalaseen] ellipse {
+    fill: gold;
+}
+
+[id$=group] ellipse {
+    fill: mediumblue;
+}
+
+[id$=Impalaheld] ellipse {
+    fill: red;
+}
+
+[id$=Field] ellipse {
+    fill: saddlebrown;
+}
+
+[id*=GPS] ellipse {
+    fill: darkorange;
+}
+
+[id$=group] text,
+[id$=Impalaheld] text,
+[id$=Field] text {
+    fill: whitesmoke;
+}
