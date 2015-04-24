@@ -631,7 +631,23 @@ let occurs t p =
   with
   | NO_MATCH -> false
 
-let occurrence t p =
+let occurrence t p t_trans =
+  if p.n.Nodes.size = 0 then raise NODE_FREE
+  else if quick_unsat t p then None 
+  else
+    (let (s, vars) = aux_match t p t_trans in
+     let i_v = get_iso s vars.iso_nodes
+	and i_e =
+	  Iso.transform_exn
+	    (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c
+	  |> safe_exn
+	and i_h = 
+	  Fun.transform_exn
+	    (get_fun s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c
+	  |> safe_exn in
+     Some (i_v, i_e, i_h))
+      
+let occurrence_exn t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else (
     if quick_unsat t p then raise NO_MATCH

@@ -1,13 +1,13 @@
 (** This module provides operations on BRS.
-    @author Michele Sevegnani
-    @version 0.3.0 *)
+    @author Michele Sevegnani *)
 
 (** The type of bigraphical reaction rules.*)
-type react = {
-    rdx : Big.bg; (** Redex *)
-    rct : Big.bg; (** Reactum *)
+type react =
+  { rdx : Big.bg;                  (* Redex   --- lhs   *)
+    rct : Big.bg;                  (* Reactum --- rhs   *)
+    eta : int Fun.t option         (* Instantiation map *)
   }
-  
+       
 (** The type of transition systems. *)
 type ts = {
   v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
@@ -31,11 +31,11 @@ type p_class =
 exception LIMIT of ts * stats
 
 (** String representation of a reaction. *)
-val string_of_react : react -> string
+val to_string : react -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal and if the redex is solid. [false] otherwise. *)
-val is_valid_react : react -> bool
+val is_valid : react -> bool
 
 (** Return [true] if all the reaction rules in the priority class are valid,
     [false] otherwise. *)
@@ -46,7 +46,7 @@ val is_valid_p : p_class -> bool
 val is_valid_p_l : p_class list -> bool
 
 (** Return [true] if a reaction can be applied on a bigraph. *)
-val is_react_enabled : Big.bg -> react -> bool
+val is_enabled : Big.bg -> react -> bool
 
 (** Return [true] if there is a reaction rule within the input priority class
     that can be applied. *)
@@ -57,8 +57,8 @@ val is_class_enabled : Big.bg -> react list -> bool
 val step : Big.bg -> react list -> Big.bg list * int
 
 (** Compute a random reaction.
-    @raise Big.NO_MATCH when no reaction can be computed.*)
-val random_step : Big.bg -> react list -> Big.bg * int
+    @raise NODE_FREE when [p] has an empty node set. *)
+val random_step : Big.bg -> react list -> Big.bg option
 
 (** Reduce a reducible class to the fixed point. Return the input state if no
     rewriting is performed. The fixed point and the number of rewriting steps

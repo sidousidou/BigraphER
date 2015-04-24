@@ -2,12 +2,13 @@
     @author Michele Sevegnani *)
 
 (** The type of stochastic bigraphical reaction rules.*)
-type sreact = {
-  rdx : Big.bg; (** Redex *)
-  rct : Big.bg; (** Reactum *)
-  rate : float; (** Rate *)
-}
-  
+type sreact =
+  { rdx : Big.bg;                  (* Redex   --- lhs   *)
+    rct : Big.bg;                  (* Reactum --- rhs   *)
+    eta : int Fun.t option;        (* Instantiation map *)
+    rate : float
+  }
+
 (** The type of Continuous Time Markov Chains. *)
 type ctmc = {
   v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
@@ -32,12 +33,12 @@ type p_class =
 exception LIMIT of ctmc * stats
 
 (** String representation of a reaction. *)
-val string_of_sreact : sreact -> string
+val to_string : sreact -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal, if the redex is solid and if the rate is greater than zero.
     Return [false] otherwise. *)
-val is_valid_sreact : sreact -> bool
+val is_valid : sreact -> bool
 
 (** Return [true] if a reaction rule is instantaneous, [false] otherwise. *)
 val is_inst : sreact -> bool
@@ -53,7 +54,7 @@ val is_valid_p : p_class -> bool
 val is_valid_p_l : p_class list -> bool
 
 (** Return [true] if a reaction can be applied on a bigraph. *)
-val is_sreact_enabled : Big.bg -> sreact -> bool
+val is_enabled : Big.bg -> sreact -> bool
 
 (** Return [true] if there is a reaction rule within the input priority class
     that can be applied. *)

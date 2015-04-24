@@ -37,6 +37,7 @@ Library bigraph
                    Big,
                    Brs,
                    Sbrs,
+                   RrType,
                    Export,
                    Iso,
                    IntSet,

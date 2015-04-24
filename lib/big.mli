@@ -207,11 +207,16 @@ type occ = int Iso.t * int Iso.t * int Fun.t
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false] otherwise.*)
 val occurs : bg -> bg ->  bool
 
-(** [occurrence t p] returns a pair of isomorphisms [(i,j)] if pattern [p] occurs in target 
-    [t]. Isos [i] and [j] are defined over nodes and edges, respectively.
-    @raise NO_MATCH when there is no match. 
+(** [occurrence t p trans] returns a pair of isomorphisms [(i,j)] if pattern [p]
+    occurs in target [t]. Isos [i] and [j] are defined over nodes and edges,
+    respectively. Argument [trans] is the transitive closure of the induced
+    graph of [t].
     @raise NODE_FREE when [p] has an empty node set.*)
-val occurrence : bg -> bg -> occ 
+val occurrence : bg -> bg -> Sparse.bmatrix -> occ option
+
+(** Same as {!Big.occurrence}.
+    @raise NO_MATCH when there is no match.  *)				 
+val occurrence_exn : bg -> bg -> occ
 
 (** [occurrences t p] returns a list of pairs of isomorphisms.
     @raise NODE_FREE when [p] has an empty node set. *)

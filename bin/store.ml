@@ -47,9 +47,9 @@ let string_of_store_val = function
   | Big_fun _ -> "<fun big>" 
   | A_ctrl c | Ctrl c -> Base.Ctrl.to_string c
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
-  | React r -> Brs.string_of_react r
+  | React r -> Brs.to_string r
   | React_fun _ -> "<fun react>"
-  | Sreact r -> Sbrs.string_of_sreact r
+  | Sreact r -> Sbrs.to_string r
   | Sreact_fun _ -> "<fun sreact>"
   | Int_param p ->
      "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
@@ -624,10 +624,10 @@ let eval_react lhs rhs eta scope env env_t p =
     eval_react_aux lhs rhs scope env env_t in
   let r = { Brs.rdx = lhs_v;
 	    Brs.rct = rhs_v;
-	    (* Brs.eta = eval_eta eta; *)
+	    Brs.eta = eta;
 	  } in
   (* Get more informative messages from Brs *)
-  if Brs.is_valid_react r then (r, env_t') 
+  if Brs.is_valid r then (r, env_t') 
   else raise (ERROR (Reaction "Invalid reaction", p))
 
 let eval_sreact lhs rhs eta rate scope env env_t p =
@@ -636,9 +636,10 @@ let eval_sreact lhs rhs eta rate scope env env_t p =
   let r = { Sbrs.rdx = lhs_v;
 	    Sbrs.rct = rhs_v;
 	    Sbrs.rate = eval_float rate scope env;
+	    Sbrs.eta = eta;
 	  } in
   (* Get more informative messages from Sbrs *)
-  if Sbrs.is_valid_sreact r then (r, env_t') 
+  if Sbrs.is_valid r then (r, env_t') 
   else raise (ERROR (Reaction "Invalid stochastic reaction", p))
 
 (* Compute all the combinations of input values *)	  
@@ -847,13 +848,13 @@ let store_decs fmt decs env env_t =
        upd id (Big_fun (exp, forms)) p
     | Dreact (React_exp (id, lhs, rhs, eta, p)) ->
        (let (r_v, env_t') =
-	  eval_react lhs rhs eta ScopeMap.empty env env_t p in
+	  eval_react lhs rhs (eval_eta eta) ScopeMap.empty env env_t p in
 	update fmt id (React r_v) p env env_t')
     | Dreact (React_fun_exp (id, forms, lhs, rhs, eta, p)) ->
        upd id (React_fun (lhs, rhs, eval_eta eta, forms)) p
     | Dsreact (Sreact_exp (id, lhs, rhs, eta, rate, p)) ->
        (let (r_v, env_t') =
-	  eval_sreact lhs rhs eta rate ScopeMap.empty env env_t p in
+	  eval_sreact lhs rhs (eval_eta eta) rate ScopeMap.empty env env_t p in
 	update fmt id (Sreact r_v) p env env_t')
     | Dsreact (Sreact_fun_exp (id, forms, lhs, rhs, eta, rate, p)) ->
        upd id (Sreact_fun (lhs, rhs, eval_eta eta, rate, forms)) p in

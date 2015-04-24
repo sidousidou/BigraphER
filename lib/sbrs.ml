@@ -1,14 +1,31 @@
-open Big
 open Printf
+
+type sreact =
+  { rdx : Big.bg;                  (* Redex   --- lhs   *)
+    rct : Big.bg;                  (* Reactum --- rhs   *)
+    eta : int Fun.t option;        (* Instantiation map *)
+    rate : float
+  }
        
-type sreact = {
-  rdx : bg;   (** Redex *)
-  rct : bg;   (** Reactum *)
-  rate : float; (** Rate *)
-}
+include RrType.Make(
+	    struct
+	      type t = sreact
+	      type label = float 
+	      type occ = Big.bg * float
+
+	      let lhs r = r.rdx
+	      let rhs r = r.rct
+	      let l r = r.rate
+	      let map r = r.eta
+	      let string_of_label l = string_of_float l
+ 	      let val_chk r = r.rate > 0.0
+	      let to_occ b r = (b, r.rate)
+	      let big_of_occ (b, _) = b
+	      let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
+	    end)
 
 type ctmc = {
-  v : (bg_key, (int * bg)) Hashtbl.t;
+  v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
   (* p : (int, Bilog) Hashtbl.t Predicates *)
   e : (int, (int * float)) Hashtbl.t;
   l : (int, int) Hashtbl.t;  
@@ -26,10 +43,6 @@ type p_class =
   | P_class of sreact list 
   | P_rclass of sreact list
 
-type p_class_ide = 
-  | P_class_ide of string list  (** Priority class *)
-  | P_rclass_ide of string list (** Reducable priority class *)
-
 (* raised when a state was already discovered *)
 exception OLD of int
 
@@ -45,37 +58,17 @@ let init_ctmc n =
     l = Hashtbl.create n;
   }
 
-let string_of_sreact r =
-  Printf.sprintf "%s\n--%g-->\n%s" 
-    (to_string r.rdx) r.rate (to_string r.rct) 
-
-let is_valid_sreact r =
-  (inter_equal (inner r.rdx)  (inner r.rct)) 
-  && (inter_equal (outer r.rdx) (outer r.rct)) 
-  && (is_solid r.rdx) && (r.rate > 0.0)
-
 let is_inst r =
-  r.rate = infinity
+  (l r) = infinity
 
 let is_valid_p c =
   match c with
-  | P_class rr -> (List.for_all is_valid_sreact rr)
+  | P_class rr -> (List.for_all is_valid rr)
                   && (List.length rr > 0) 
                   && (not (List.exists is_inst rr))
-  | P_rclass rr -> (List.for_all is_valid_sreact rr)
+  | P_rclass rr -> (List.for_all is_valid rr)
                    && (List.length rr > 0) 
                    && (List.for_all is_inst rr)
-
-let is_valid_p_ide get_sreact c =
-  match c with
-  | P_class_ide rr -> let rr' = List.map get_sreact rr in
-    (List.for_all is_valid_sreact rr')
-    && (List.length rr' > 0) 
-    && (not (List.exists is_inst rr'))
-  | P_rclass_ide rr -> let rr' = List.map get_sreact rr in
-    (List.for_all is_valid_sreact rr')
-    && (List.length rr' > 0) 
-    && (List.for_all is_inst rr')
 
 let is_valid_p_l l = 
   List.exists (fun c ->
@@ -83,43 +76,12 @@ let is_valid_p_l l =
       | P_class _ -> true
       | P_rclass _ -> false) l
 
-let is_valid_p_ide_l l = 
-  List.exists (fun c ->
-      match c with
-      | P_class_ide _ -> true
-      | P_rclass_ide _ -> false) l
-
-let is_sreact_enabled b r = occurs b r.rdx
-
 let rec is_class_enabled b rs = 
     match rs with
     | [] -> false
     | r :: rs ->
-      if occurs b r.rdx then true
+      if Big.occurs b (lhs r) then true
       else is_class_enabled b rs
-
-let aux_apply (i_n, i_e, f_e) b r0 r1 =
-  let (c, d, id) = decomp b r0 i_n i_e f_e in
-  comp c (comp (tens r1 id) d)
-
-let step s srules =
-  let filter_iso l =
-    ((List.fold_left (fun acc (s, rho) ->
-         let (iso, non_iso) = 
-           List.partition (fun (a, _) -> Big.equal a s) acc in
-         match iso with
-         | [] -> (s, rho) :: acc
-         | [(a, lambda)] -> (a, lambda +. rho) :: non_iso
-         | _ -> assert false
-       ) [] l), 
-     (List.length l)) in
-  filter_iso (List.fold_left (fun acc r ->
-      let occs = occurrences s r.rdx in 
-      (List.map (fun o ->
-           let s' = aux_apply o s r.rdx r.rct in
-           (s', r.rate)
-         ) occs) @ acc
-    ) [] srules) 
 
 (* rule selection: second step of SSA 
    raise DEAD *)
@@ -142,28 +104,6 @@ let select_sreact (s : Big.bg) srules m =
       end else aux ss acc'
     | [] -> raise (DEAD m)
   in (aux ss_sorted 0.0, m + m')
-
-(* Reduce a reducible (instantaneous) class to the fixed point. Return the input
-   state if no rewriting is performed. *)    
-let fix s srules =
-  let rec _step s srules =
-    match srules with
-    | [] -> raise NO_MATCH
-    | r :: rs -> (
-        try
-          (* just an occurrence in order to minimise the number of match
-             instances *)
-          (*printf "s = %s\nrdx = %s\n" (to_string s) (to_string r.rdx);*)
-          aux_apply (occurrence s r.rdx) s r.rdx r.rct
-        with
-        | NO_MATCH -> _step s rs
-      ) in
-  let rec _fix s srules i =
-    try
-      _fix (_step s srules) srules (i + 1)
-    with
-    | NO_MATCH -> (s, i) in
-  _fix s srules 0
 
 let is_new b v =
   let k = Big.key b in
@@ -195,21 +135,6 @@ let rec rewrite (s : Big.bg) classes (m : int) =
           rewrite s' cs (m + i)
         end
     end 
-
-let rec rewrite_ide get_sreact s classes m =
-  match classes with
-  | [] -> (s, m)
-  | c :: cs -> (
-      match c with
-      | P_class_ide rr  ->
-        (* if there are matches then exit, skip otherwise *)
-        if is_class_enabled s (List.map get_sreact rr) then  (s, m)
-        else rewrite_ide get_sreact s cs m
-      | P_rclass_ide rr -> (
-          let (s', i) = fix s (List.map get_sreact rr) in
-          rewrite_ide get_sreact s' cs (m + i)
-        )
-    )
 
 (* Partition a list of bigraphs into new and old states *)
 let _partition_aux ctmc i iter_f =
@@ -243,28 +168,6 @@ let rec _scan curr m ctmc i iter_f pl pl_const =
         )
       | P_rclass _ -> (* skip *)
         _scan curr m ctmc i iter_f cs pl_const
-    )
-
-let rec _scan_ide get_sreact curr m ctmc i iter_f pl pl_const =
-  match pl with
-  | [] -> (([], [], i), m)
-  | c :: cs -> (
-      match c with
-      | P_class_ide rr -> (
-          let (ss, l) = step curr (List.map get_sreact rr) in
-          if l = 0 then
-            _scan_ide get_sreact curr m ctmc i iter_f cs pl_const 
-          else (
-            (* apply rewriting - instantaneous *)
-            let (ss', l') = 
-              List.fold_left (fun (ss,  l) (s, rho) ->
-                                  let (s', l') = rewrite_ide get_sreact s pl_const l in
-                                  ((s', rho) :: ss, l')) ([], l) ss in
-                       (_partition_aux ctmc i iter_f ss', m + l')
-          )
-        )
-      | P_rclass_ide _ -> (* skip *)
-        _scan_ide get_sreact curr m ctmc i iter_f cs pl_const 
     )
 
 let rec _bfs ctmc q i m (scan_f, p_classes, t0, limit, iter_f) =
@@ -326,14 +229,8 @@ let bfs s0 srules limit ctmc_size iter_f =
   iter_f 0 s0';
   _bfs ctmc q 0 m consts    
 
-let bfs_ide s0 p_classes get_sreact limit ctmc_size iter_f =
-  let (ctmc, s0', q, m, consts) =
-    _init_bfs s0 (rewrite_ide get_sreact) (_scan_ide get_sreact)
-      p_classes limit ctmc_size iter_f in
-  iter_f 0 s0';
-   _bfs ctmc q 0 m consts 
-
 let _init_sim s0 rewrite _scan srules t_max ctmc_size iter_f =
+  Random.self_init ();
   let consts = 
     (_scan, srules, Unix.gettimeofday (), t_max, iter_f) in
   (* apply rewriting to s0 *)
@@ -361,26 +258,6 @@ let rec _scan_sim (s : Big.bg) (m : int) iter_f pl pl_const =
         end
       | P_rclass _ -> (* skip *)
         _scan_sim s m iter_f cs pl_const
-    end
-
-let rec _scan_sim_ide get_sreact (s : Big.bg) (m : int) iter_f pl pl_const = 
-  match pl with
-  | [] -> raise (DEAD m)
-  | c :: cs ->
-    begin
-      match c with
-      | P_class_ide rr ->
-        begin
-          try
-            let ((s', tau), m) = select_sreact s (List.map get_sreact rr) m in
-            let (s'', m') = rewrite_ide get_sreact  s' pl_const m in
-            ((s'', tau), m')
-          with
-          | DEAD m -> (* skip *)
-            _scan_sim_ide get_sreact s m iter_f cs pl_const
-        end
-      | P_rclass_ide _ -> (* skip *)
-        _scan_sim_ide get_sreact s m iter_f cs pl_const
     end
 
 let rec _sim ctmc s t i m (scan_f, srules, t0, t_max, iter_f) =
@@ -416,30 +293,6 @@ let sim s0 srules t_max ctmc_size iter_f =
     _init_sim s0 rewrite _scan_sim srules t_max ctmc_size iter_f in
   iter_f 0 s0';
   _sim ctmc s0' 0.0 0 m consts    
-
-let sim_ide s0 p_classes get_sreact t_max ctmc_size iter_f =
-  let (ctmc, s0', m, consts) =
-    _init_sim s0 
-      (rewrite_ide get_sreact) (_scan_sim_ide get_sreact)
-      p_classes t_max ctmc_size iter_f in
-  iter_f 0 s0';
-  _sim ctmc s0' 0.0 0 m consts    
-
-let string_of_stats s = 
-  (sprintf
-     "\n\
-      ===============================[ SBRS Statistics ]==============================\n\
-      |  Execution time (s)   : %-8.3g                                             |\n\
-      |  States               : %-8d                                             |\n\
-      |  Reactions            : %-8d                                             |\n\
-      |  Occurrences          : %-8d                                             |\n"
-     s.t s.s s.r s.o) ^
-  (if s.sim <> infinity then 
-     sprintf 
-       "|  Simulation time      : %-8.3g                                             |\n" 
-       s.sim
-   else "") ^
-  (sprintf "================================================================================\n")
 
 let to_dot ctmc =
   let rank = "{ rank=source; 0 };\n" in
