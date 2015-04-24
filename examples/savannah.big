@@ -46,7 +46,7 @@ react timeout2 =
         Liongroup{a,l} | Liongroup{a',l} | Impalaheld{b,l} | id(1))
      )
   ->
-  Child{a} || Child{a'} || Locale{m}.(Lion{a} | Lion{a} | Impala{b} | id(1));
+  Child{a} || Child{a'} || Locale{m}.(Lion{a} | Lion{a'} | Impala{b} | id(1));
   
 react join2 =
   /l (Child{a} ||  (Lion{a} | Liongroup{a',l} | Liongroup{a'',l} | Impalaheld{b,l}))
