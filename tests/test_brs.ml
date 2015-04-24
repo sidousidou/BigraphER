@@ -51,12 +51,13 @@ let g =
       comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one ]
   
 let reacts =
-  [ Brs.P_class [ { Brs.rdx = r; rct = r_p; }; { Brs.rdx = g; rct = r; } ] ]
+  [ Brs.P_class [ { Brs.rdx = r; rct = r_p; eta = None };
+		  { Brs.rdx = g; rct = r; eta = None } ] ]
   
 let sreacts =
   [ Sbrs.P_class
-      [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; };
-        { Sbrs.rdx = g; rct = r; rate = 4.0; } ] ]
+      [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; eta = None };
+        { Sbrs.rdx = g; rct = r; rate = 4.0; eta = None } ] ]
 
 let () =
   Random.self_init ();
