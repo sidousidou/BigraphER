@@ -59,14 +59,14 @@ module Make(R : R) = struct
       and rhs = R.rhs r in
       (Big.inter_equal (Big.outer lhs) (Big.outer rhs))
       && (lhs.Big.p.Place.n > 0)
-      && (Big.is_solid rhs) 
+      && (Big.is_solid lhs)
       && (match R.map r with
-	  | None -> Big.inter_equal (Big.inner lhs) (Big.inner rhs)
-	  | Some eta ->
-	     (let s_lhs = lhs.Big.p.Place.s
-	      and s_rhs = rhs.Big.p.Place.s in
-	      (Fun.is_total s_rhs eta)
-	      && (Fun.check_codom 0 (s_lhs - 1) eta)))
+      	  | None -> Big.inter_equal (Big.inner lhs) (Big.inner rhs)
+      	  | Some eta ->
+      	     (let s_lhs = lhs.Big.p.Place.s
+      	      and s_rhs = rhs.Big.p.Place.s in
+      	      (Fun.is_total s_rhs eta)
+      	      && (Fun.check_codom 0 (s_lhs - 1) eta)))
       && (R.val_chk r) 
 
     let is_enabled b r =

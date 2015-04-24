@@ -382,7 +382,8 @@ let () =
       fprintf err_formatter "@]@?";
       exit 1)
   | e -> 
-     (fprintf fmt "@]@?";
-      fprintf err_formatter "@[%s@,%s@]@," (Printexc.to_string e) (Printexc.get_backtrace ());
+     (fprintf fmt "@]@.";
+      fprintf err_formatter "@[%s: %s@,%s@]"
+	      Utils.err (Printexc.to_string e) (Printexc.get_backtrace ());
       fprintf err_formatter "@]@?";
       exit 1)
