@@ -60,7 +60,6 @@ let sreacts =
         { Sbrs.rdx = g; rct = r; rate = 4.0; eta = None } ] ]
 
 let () =
-  Random.self_init ();
   let iter_f _ _ = ()
   and states_reference = 30
   and reacts_reference = 29
