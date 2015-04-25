@@ -17,8 +17,13 @@ let colorise (c: text_style) s =
     | `white     -> "37" in
   "\027[" ^ code ^ "m" ^ s ^ "\027[m"
 
-let warn = colorise `yellow "Warning"
-let err = colorise `red "Error"
+let warn =
+  colorise `yellow "Warning"
+  |> colorise `bold
+	
+let err =
+  colorise `red "Error"
+  |> colorise `bold
 	     
 let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
 let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
