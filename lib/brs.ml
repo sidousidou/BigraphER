@@ -276,10 +276,15 @@ let to_dot ts =
   Printf.sprintf "digraph ts {\nstylesheet = \"style_brs.css\"\n%s%s\n%s}" rank states edges
 
 let to_prism ts =
-  let dims = 
-    Printf.sprintf "%d %d\n" (Hashtbl.length ts.v) (Hashtbl.length ts.e) in
-  Hashtbl.fold (fun v u buff -> 
-    Printf.sprintf "%s%d %d\n" buff v u) ts.e dims
+  let dims =
+    (Hashtbl.length ts.v, Hashtbl.length ts.e)
+  and edges =
+    Hashtbl.fold (fun v u acc ->
+		  (v, u) :: acc) ts.e [] in
+  dims :: (List.fast_sort Base.ints_compare edges)
+  |> List.map (fun (v, u) ->
+	       (string_of_int v) ^ " " ^ (string_of_int u))
+  |> String.concat "\n"
   
 let iter_states f ts =
   Hashtbl.iter (fun _ (i, b) -> f i b) ts.v
