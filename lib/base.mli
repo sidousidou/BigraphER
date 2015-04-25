@@ -176,4 +176,7 @@ end
     @raise Assert_failure  when argument is [None]. *)  
 val safe : 'a option -> 'a
 
+(** Compare pairs of integers. *)			  
+val ints_compare : int * int -> int * int -> int
+			  
 (**/**)
