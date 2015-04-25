@@ -208,12 +208,22 @@ let export_ctmc_dot fmt ctmc =
   match Cmd.(defaults.out_dot) with
   | None -> ()
   | Some file ->
-     (print_msg fmt `yellow ("Exporting CTMC to " ^ file ^ " ...");
+     (print_msg fmt `yellow ("Exporting CTMC to " ^ file ^ " in svg format ...");
       Export.write_ctmc ctmc (Filename.basename file) (Filename.dirname file)
       |> print_fun fmt `white Cmd.(defaults.verbose) file;
       if Cmd.(defaults.out_states) then 
         export_ctmc_states fmt ctmc (Filename.dirname file))
 
+let export_ctmc_raw fmt ctmc =
+  match Cmd.(defaults.out_dot) with
+  | None -> ()
+  | Some file ->
+     (print_msg fmt `yellow ("Exporting CTMC to " ^ file ^ " in dot format ...");
+      Export.write_ctmc_raw ctmc (Filename.basename file) (Filename.dirname file)
+      |> print_fun fmt `white Cmd.(defaults.verbose) file;
+      if Cmd.(defaults.out_states) then ()
+        (* export_ctmc_states fmt ctmc (Filename.dirname file) *))
+       
 let export_ts_states fmt ts path =
   print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
   Brs.iter_states (fun i s ->
@@ -226,17 +236,28 @@ let export_ts_dot fmt ts =
   match Cmd.(defaults.out_dot) with
   | None -> ()
   | Some file ->
-     (print_msg fmt `yellow ("Exporting transition system to " ^ file ^ " ...");
+     (print_msg fmt `yellow ("Exporting transition system to " ^ file ^ " in svg format ...");
       Export.write_ts ts (Filename.basename file) (Filename.dirname file)
       |> print_fun fmt `white Cmd.(defaults.verbose) file;
       if Cmd.(defaults.out_states) then 
         export_ts_states fmt ts (Filename.dirname file))
+
+let export_ts_raw fmt ts =
+  match Cmd.(defaults.out_raw) with
+  | None -> ()
+  | Some file ->
+     (print_msg fmt `yellow ("Exporting transition system to " ^ file ^ " in dot format ...");
+      Export.write_ts_raw ts (Filename.basename file) (Filename.dirname file)
+      |> print_fun fmt `white Cmd.(defaults.verbose) file;
+      if Cmd.(defaults.out_states) then ()
+        (* export_ts_states_raw fmt ts (Filename.dirname file) *))
 
 let after_brs_aux fmt stats ts =
   print_stats_brs fmt stats;
   fprintf fmt "@]@?";
   fprintf fmt "@[<v>";
   export_ts_dot fmt ts;
+  export_ts_raw fmt ts;
   export_ts_prism fmt ts;
   export_csl fmt ts.Brs.l;
   fprintf fmt "@]@?";
@@ -259,6 +280,7 @@ let after_sbrs_aux fmt stats ctmc =
   fprintf fmt "@]@?";
   fprintf fmt "@[<v>";
   export_ctmc_dot fmt ctmc;
+  export_ctmc_raw fmt ctmc;
   export_ctmc_prism fmt ctmc;
   export_csl fmt ctmc.Sbrs.l;
   fprintf fmt "@]@?";
