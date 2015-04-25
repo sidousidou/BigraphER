@@ -151,7 +151,10 @@ let print_stats_sbrs fmt stats =
   
 let print_loop i _ = 
   if Cmd.(defaults.debug) then () 
-  else (let m = Cmd.(defaults.s_max) / 1000 in
+  else (let m =
+	  if Cmd.(defaults.s_max) >= 1000 then
+	    Cmd.(defaults.s_max) / 1000
+	  else 1 in
 	match (i + 1) mod (max_width * m) with
 	| 0 -> (Pervasives.print_char '.';
 				 Pervasives.print_newline ();
@@ -382,8 +385,7 @@ let () =
       fprintf err_formatter "@]@?";
       exit 1)
   | e -> 
-     (fprintf fmt "@]@.";
-      fprintf err_formatter "@[%s: %s@,%s@]"
-	      Utils.err (Printexc.to_string e) (Printexc.get_backtrace ());
+     (fprintf fmt "@]@?";
+      fprintf err_formatter "@[%s@,%s@]@," (Printexc.to_string e) (Printexc.get_backtrace ());
       fprintf err_formatter "@]@?";
       exit 1)
