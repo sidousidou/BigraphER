@@ -21,6 +21,19 @@ include RrType.Make(
 	      let merge_occ b _ = b
 	    end)
 
+type ts = {
+    v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
+    e : (int, int) Hashtbl.t;
+    l : (int, int) Hashtbl.t;
+  }
+
+type stats = {
+    t : float;  (** Execution time *)
+    s : int;    (** Number of states *)
+    r : int;    (** Number of reaction *)
+    o : int;    (** Number of occurrences *)
+  }
+
 (* include TsType.Make(struct *)
 (* 			type t = *)
 (* 			  { v : (bg_key, (int * bg)) Hashtbl.t; *)
@@ -35,20 +48,7 @@ include RrType.Make(
 			
 (* 		      end)		     *)
 
-type ts = {
-    v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-    (* p : (int, Bilog) Hashtbl.t Predicates *)
-    e : (int, int) Hashtbl.t;
-    l : (int, int) Hashtbl.t;
-  }
-
-type stats = {
-    t : float;  (** Execution time *)
-    s : int;    (** Number of states *)
-    r : int;    (** Number of reaction *)
-    o : int;    (** Number of occurrences *)
-  }
-	    
+	       
 type p_class = 
 | P_class of react list 
 | P_rclass of react list
