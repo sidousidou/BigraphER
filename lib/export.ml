@@ -71,6 +71,15 @@ let write_ts ts n path =
 let write_ctmc ctmc n path =
   catch_unix_errors _write_svg (Sbrs.to_dot ctmc) n path
 
+let write_big_raw b n path =
+  catch_unix_errors _write_string (get_dot b n) n path
+
+let write_ts_raw ts n path =
+  catch_unix_errors _write_string (Brs.to_dot ts) n path
+
+let write_ctmc_raw ctmc n path =
+  catch_unix_errors _write_string (Sbrs.to_dot ctmc) n path
+		    
 let write_ts_prism ts n path =
   _write_string (Brs.to_prism ts) n path
 

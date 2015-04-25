@@ -19,12 +19,21 @@ val report_error : error -> string
     [name] in directory [path] and returns the number of bytes written. *)
 val write_big : Big.bg -> string -> string -> int
 
+(** Same as {!Export.write_big} but the output is saved in dot format. *)
+val write_big_raw : Big.bg -> string -> string -> int
+
 (** Same as {!Export.write_big} but for transition systems. *)
 val write_ts : Brs.ts -> string -> string -> int
 
+(** Same as {!Export.write_big_raw} but for transition systems. *)
+val write_ts_raw : Brs.ts -> string -> string -> int
+					       
 (** Same as {!Export.write_big} but for Continuous Time Markov Chains. *)
 val write_ctmc : Sbrs.ctmc -> string -> string -> int
 
+(** Same as {!Export.write_big_raw} but for Continuous Time Markov Chains. *)
+val write_ctmc_raw : Sbrs.ctmc -> string -> string -> int
+						    
 (** Export a transition system to a text file in PRISM format. *)
 val write_ts_prism : Brs.ts -> string -> string -> int
 
