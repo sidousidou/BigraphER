@@ -92,5 +92,5 @@ true: annot, bin_annot
 # OASIS_STOP
 
 true: warn_A, principal, strict_sequence, safe_string, use_menhir
-<bin/*.ml{,i,y}>: explain
+<bin/*.ml{,i,y}>: explain, warn(-4-32-37)
 #true: debug, profile
