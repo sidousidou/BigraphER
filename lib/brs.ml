@@ -25,10 +25,6 @@ type p_class =
 | P_class of react list 
 | P_rclass of react list
 
-type p_class_ide = 
-| P_class_ide of string list  (* Standard priority class *)
-| P_rclass_ide of string list (* Reducible priority class *)
-
 (* raised when a state was already discovered *)
 exception OLD of int
 
@@ -60,25 +56,13 @@ let is_valid_p c =
     | P_class rs | P_rclass rs -> 
       List.for_all (fun r -> is_valid_react r) rs
       && (List.length rs > 0)
-  
-let is_valid_p_ide get_react c =
-  match c with
-    | P_class_ide rs | P_rclass_ide rs ->
-      List.for_all (fun r -> is_valid_react (get_react r)) rs
-      && (List.length rs > 0)
-	
+  	
 (* validity of each class is not checked *)
 let is_valid_p_l l = 
   List.exists (fun c ->
     match c with
       | P_class _ -> true
       | P_rclass _ -> false) l
-
-let is_valid_p_ide_l l = 
-  List.exists (fun c ->
-    match c with
-      | P_class_ide _ -> true
-      | P_rclass_ide _ -> false) l
 
 let is_react_enabled b r = occurs b r.rdx
 
@@ -187,23 +171,6 @@ let rec rewrite s classes m =
 	    end
       end
  
-let rec rewrite_ide get_react s classes m =
-  match classes with
-    | [] -> (s, m)
-    | c :: cs ->
-      begin
-	match c with
-	  | P_class_ide rr  ->
-	    (* if there are matches then exit, skip otherwise *)
-	    if is_class_enabled s (List.map get_react rr) then (s, m)
-	    else rewrite_ide get_react s cs m
-	  | P_rclass_ide rr ->
-	    begin
-	      let (s', i) = fix s (List.map get_react rr) in
-	      rewrite_ide get_react s' cs (m + i)
-	    end
-      end
-
 (* Partition a list of bigraphs into new and old states *)
 let _partition_aux ts i f_iter =
   List.fold_left (fun (new_acc, old_acc, i) b ->
@@ -238,30 +205,6 @@ let rec _scan step_f curr m ts i iter_f (pl : p_class list) pl_const =
 	end
       | P_rclass _ -> (* skip *)
 	_scan step_f curr m ts i iter_f cs pl_const
-    end 
-
-(* Iterate over priority classes *)
-let rec _scan_ide get_react step_f curr m ts i iter_f pl pl_const =
-  match pl with
-    | [] -> (([], [], i), m)
-  | c :: cs ->
-    begin
-      match c with
-      | P_class_ide rr ->
-	begin
-	  let (ss, l) = step_f curr (List.map get_react rr) in
-	  if l = 0 then 
-	    _scan_ide get_react step_f curr m ts i iter_f cs pl_const 
-	  else 
-	    (* apply rewriting *)
-	    let (ss', l') = 
-	      List.fold_left (fun (ss,  l) s -> 
-		let (s', l') = rewrite_ide get_react s pl_const l in
-		(s' :: ss, l')) ([], l) ss in
-	    (_partition_aux ts i iter_f ss', m + l')
-	end
-      | P_rclass_ide _ -> (* skip *)
-	_scan_ide get_react step_f curr m ts i iter_f cs pl_const
     end 
 
 (* queue contains already a state *) 
@@ -319,14 +262,6 @@ let bfs s0 rules limit ts_size iter_f =
   iter_f 0 s0';
   _bfs ts q 0 m consts    
 
-let bfs_ide s0 p_classes get_react limit ts_size iter_f =
-  let (ts, s0', q, m, consts) =
-    _init_bfs 
-      s0 (rewrite_ide get_react) (_scan_ide get_react) 
-      step p_classes limit ts_size iter_f in
-  iter_f 0 s0';
-  _bfs ts q 0 m consts 
-
 let _sim_step x y =
   try
     let (s, l) = random_step x y in
@@ -340,25 +275,6 @@ let sim s0 rules limit ts_size iter_f =
       s0 rewrite _scan _sim_step rules limit ts_size iter_f in
   iter_f 0 s0';
   _bfs ts q 0 m consts 
-
-let sim_ide s0 p_classes get_react limit ts_size iter_f =
-  let (ts, s0', q, m, consts) =
-    _init_bfs s0 
-      (rewrite_ide get_react) (_scan_ide get_react) _sim_step
-      p_classes limit ts_size iter_f in
-  iter_f 0 s0';
-  _bfs ts q 0 m consts 
-
-let string_of_stats s = 
-  sprintf
-    "\n\
-     ===============================[ BRS Statistics ]===============================\n\
-     |  Execution time (s)   : %-8.3g                                             |\n\
-     |  States               : %-8d                                             |\n\
-     |  Reactions            : %-8d                                             |\n\
-     |  Occurrences          : %-8d                                             |\n\
-     ================================================================================\n"
-    s.t s.s s.r s.o
 
 let to_dot ts =
   let rank = "{ rank=source; 0 };\n" in
@@ -381,10 +297,15 @@ let to_dot ts =
   sprintf "digraph ts {\nstylesheet = \"style_brs.css\"\n%s%s\n%s}" rank states edges
 
 let to_prism ts =
-  let dims = 
-    sprintf "%d %d\n" (Hashtbl.length ts.v) (Hashtbl.length ts.e) in
-  Hashtbl.fold (fun v u buff -> 
-    sprintf "%s%d %d\n" buff v u) ts.e dims
+  let dims =
+    (Hashtbl.length ts.v, Hashtbl.length ts.e)
+  and edges =
+    Hashtbl.fold (fun v u acc ->
+		  (v, u) :: acc) ts.e [] in
+  dims :: (List.fast_sort Base.ints_compare edges)
+  |> List.map (fun (v, u) ->
+	       (string_of_int v) ^ " " ^ (string_of_int u))
+  |> String.concat "\n"
   
 let iter_states f ts =
   Hashtbl.iter (fun _ (i, b) -> f i b) ts.v
