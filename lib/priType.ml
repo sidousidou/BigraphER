@@ -1,7 +1,10 @@
 module type P = sig
-   
-    val f_val : 'a list -> bool
-    val f_r_val : 'a list -> bool
+
+    type t
+	   
+    val f_val : t -> bool
+
+    val f_r_val : t -> bool
 	   
   end
 
@@ -21,8 +24,8 @@ module type T = sig
 				  
   end
 		  
-module Make (R : RrType.T) (P : P) = struct
-    
+module Make (R : RrType.T) (P : P with  type t = R.t list) = struct
+
     type p_class =
       | P_class of R.t list 
       | P_rclass of R.t list

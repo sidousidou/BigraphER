@@ -26,19 +26,19 @@ type stats = {
 
 (** The type of priority classes: lists of stochastic reaction rules. *)
 type p_class = 
-| P_class of sreact list  (** Priority class *)
-| P_rclass of sreact list (** Reducable priority class *)
+  | P_class of sreact list  (** Priority class *)
+  | P_rclass of sreact list (** Reducable priority class *)
 
 (** Raised when the size of the transition system reaches the limit. *)
 exception LIMIT of ctmc * stats
 
 (** String representation of a reaction. *)
-val to_string : sreact -> string
+val to_string_react : sreact -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal, if the redex is solid and if the rate is greater than zero.
     Return [false] otherwise. *)
-val is_valid : sreact -> bool
+val is_valid_react : sreact -> bool
 
 (** Return [true] if a reaction rule is instantaneous, [false] otherwise. *)
 val is_inst : sreact -> bool
@@ -53,12 +53,12 @@ val is_valid_priority : p_class -> bool
     priority class, [false] otherwise. *)
 val is_valid_priority_list : p_class list -> bool
 
-(** Return [true] if a reaction can be applied on a bigraph. *)
-val is_enabled : Big.bg -> sreact -> bool
+(* (\** Return [true] if a reaction can be applied on a bigraph. *\) *)
+(* val is_enabled : Big.bg -> sreact -> bool *)
 
-(** Return [true] if there is a reaction rule within the input priority class
-    that can be applied. *)
-val is_class_enabled : Big.bg -> sreact list -> bool
+(* (\** Return [true] if there is a reaction rule within the input priority class *)
+(*     that can be applied. *\) *)
+(* val is_class_enabled : Big.bg -> sreact list -> bool *)
 
 (** Compute all the possible evolutions in one step. Total number of occurrences
     is also returned. *)
@@ -66,7 +66,7 @@ val step : Big.bg -> sreact list -> (Big.bg * float) list * int
 
 (** Select step of Gillespie's SSA. Total number of occurrence is also returned. 
     @raise Big.NO_MATCH when no reaction can be computed.*)
-val select_sreact : Big.bg -> sreact list -> int -> (Big.bg * float) * int 
+val random_step : Big.bg -> sreact list -> int -> (Big.bg * float) * int 
 
 (** Reduce a reducible class to the fixed point. Return the input state if no
     rewriting is performed. The fixed point and the number of rewriting steps
@@ -76,7 +76,7 @@ val fix : Big.bg -> sreact list -> Big.bg * int
 (** Scan priority classes and reduce a state. Stop when no more rules can be
     applied or when a non reducing priority class is enabled. The output integer
     is the number of rewriting steps performed in the loop. *)
-val rewrite : Big.bg -> p_class list -> int -> Big.bg * int
+val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
 
 (** [bfs s p l n f] computes the transition system of the SBRS specified by
     initial state [s] and priority classes [p]. [l] is the maximum number of
@@ -93,13 +93,18 @@ val bfs : Big.bg -> p_class list -> int -> int ->
 val sim : Big.bg -> p_class list -> float -> int -> 
   (int -> Big.bg -> unit) -> ctmc * stats 
 
-(** Textual representation of a ctmc. The format is compatible with PRISM input 
-    format. *)
+(** Compute the string representation in PRISM [tra] format of a Continuous Time
+    Markov Chain. *)
 val to_prism : ctmc -> string
 
-(** Compute the string representation in [dot] format of a transition system. *)
+(** Compute the string representation in [dot] format of a Continuous Time
+    Markov Chain. *)
 val to_dot : ctmc -> string
 
+(** Compute the string representation in PRISM [lab] format of the labelling
+    function of a Continuous Time Markov Chain. *)		       
+val to_lab : ctmc -> string
+		       
 val iter_states : (int -> Big.bg -> unit) -> ctmc -> unit
 
 (**/**)

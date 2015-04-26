@@ -78,13 +78,17 @@ val bfs : Big.bg -> p_class list -> int -> int ->
 val sim : Big.bg -> p_class list -> int -> int ->
   (int -> Big.bg -> unit) -> ts * stats
 
-(** Textual representation of a transition system. The format is compatible
-    with PRISM input format. *)
+(** Compute the string representation in PRISM [tra] format of a transition
+    system. *)
 val to_prism : ts -> string
 
 (** Compute the string representation in [dot] format of a transition system. *)
 val to_dot : ts -> string
-
+		     
+(** Compute the string representation in PRISM [lab] format of the labelling
+    function of a transition system. *)
+val to_lab : ts -> string
+		     
 val iter_states : (int -> Big.bg -> unit) -> ts -> unit
 
 (**/**)

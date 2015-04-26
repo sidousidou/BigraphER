@@ -5,8 +5,8 @@ type react =
   }
     
 module R =
-  RrType.Make(
-      struct
+  RrType.Make
+    (struct
 	type t = react	
 	type label = Epsilon               (* Empty label       *)  
 	type occ = Big.bg
@@ -30,7 +30,8 @@ let fix = R.fix
 
 let step = R.step
 	     	     
-include PriType.Make (R) (struct    
+include PriType.Make (R) (struct
+			     type t = R.t list
 			     let f_val _ = true
 			     let f_r_val _ = true
 			   end)
@@ -249,6 +250,21 @@ let to_prism ts =
   |> List.map (fun (v, u) ->
 	       (string_of_int v) ^ " " ^ (string_of_int u))
   |> String.concat "\n"
-  
+
+let to_lab ts =
+  let inv =
+    Hashtbl.create (Hashtbl.length ts.l) in
+  Hashtbl.fold (fun s p acc -> 
+		Hashtbl.add inv p s;
+		p :: acc)
+	       ts.l []
+  |>  List.map (fun p ->
+		Hashtbl.find_all inv p
+		|> List.map (fun s -> "x = " ^ (string_of_int s)) 
+		|> String.concat " | " 
+		|> fun s ->
+		   "label \"p_" ^ (string_of_int p) ^ "\" = " ^ s ^ ";")
+  |> String.concat "\n"
+		   
 let iter_states f ts =
   Hashtbl.iter (fun _ (i, b) -> f i b) ts.v

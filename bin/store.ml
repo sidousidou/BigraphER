@@ -49,7 +49,7 @@ let string_of_store_val = function
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
   | React r -> Brs.to_string_react r
   | React_fun _ -> "<fun react>"
-  | Sreact r -> Sbrs.to_string r
+  | Sreact r -> Sbrs.to_string_react r
   | Sreact_fun _ -> "<fun sreact>"
   | Int_param p ->
      "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
@@ -643,7 +643,7 @@ let eval_sreact lhs rhs eta rate scope env env_t p =
 	    Sbrs.eta = eta;
 	  } in
   (* Get more informative messages from Sbrs *)
-  if Sbrs.is_valid r then (r, env_t') 
+  if Sbrs.is_valid_react r then (r, env_t') 
   else raise (ERROR (Reaction "Invalid stochastic reaction", p))
 
 (* Compute all the combinations of input values *)	  
