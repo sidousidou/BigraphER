@@ -4,22 +4,42 @@ type react =
     eta : int Fun.t option         (* Instantiation map *)
   }
     
-include RrType.Make(
-	    struct
-	      type t = react	
-	      type label = Epsilon               (* Empty label       *)  
-	      type occ = Big.bg
+module R =
+  RrType.Make(
+      struct
+	type t = react	
+	type label = Epsilon               (* Empty label       *)  
+	type occ = Big.bg
+		     
+	let lhs r = r.rdx
+	let rhs r = r.rct
+	let l _ = Epsilon
+	let map r = r.eta
+	let string_of_label _ = ""
+ 	let val_chk _ = true
+	let to_occ b _ = b
+	let big_of_occ b = b
+	let merge_occ b _ = b
+      end)
 
-	      let lhs r = r.rdx
-	      let rhs r = r.rct
-	      let l _ = Epsilon
-	      let map r = r.eta
-	      let string_of_label _ = ""
- 	      let val_chk _ = true
-	      let to_occ b _ = b
-	      let big_of_occ b = b
-	      let merge_occ b _ = b
-	    end)
+let to_string_react = R.to_string
+			
+let is_valid_react = R.is_valid
+			  
+let fix = R.fix
+
+let step = R.step
+	     	     
+include PriType.Make (R) (struct    
+			     let f_val _ = true
+			     let f_r_val _ = true
+			   end)
+	       
+let is_valid_priority = is_valid
+			  
+let is_valid_priority_list = is_valid_list
+
+let rewrite = rewrite			       
 
 type ts = {
     v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
@@ -33,32 +53,20 @@ type stats = {
     r : int;    (** Number of reaction *)
     o : int;    (** Number of occurrences *)
   }
-
+	       
 (* include TsType.Make(struct *)
-(* 			type t = *)
-(* 			  { v : (bg_key, (int * bg)) Hashtbl.t; *)
-(* 			    (\* p : (int, Bilog) Hashtbl.t Predicates *\) *)
-(* 			    e : (int, int) Hashtbl.t; *)
-(* 			    l : (int, int) Hashtbl.t; } *)
-(* 			type stats = *)
-(* 			  { t : float;   (\* Execution time *\) *)
-(* 			    s : int;     (\* Number of states *\) *)
-(* 			    r : int;     (\* Number of reaction *\) *)
-(* 			    o : int; }   (\* Number of occurrences *\) *)
-			
-(* 		      end)		     *)
+(* 			type t = ts *)
+(* 			type stats = stats *)
+(* 		      end) *)
 
 	       
-type p_class = 
-| P_class of react list 
-| P_rclass of react list
 
 (* raised when a state was already discovered *)
 exception OLD of int
 
 (* raised when the size of the ts reaches the limit *)
 exception LIMIT of ts * stats
-
+	     
 (* remove element with index i *)
 let rec aux i i' acc = function
   | [] -> (None, acc)
@@ -78,40 +86,40 @@ let random_step b rules =
 	match r with
 	| None -> assert false
 	| Some r ->
-	   (match Big.occurrence b (lhs r) t with
+	   (match Big.occurrence b (R.lhs r) t with
 	    | Some o ->
-	       Some (Big.rewrite o b (lhs r) (rhs r) (map r))
+	       Some (Big.rewrite o b (R.lhs r) (R.rhs r) (R.map r))
 	    | None -> _random_step b rs')) in
   _random_step b rules
-			  
+			       
 let init_ts n = 
   { v = Hashtbl.create n;
     e = Hashtbl.create n;
     l = Hashtbl.create n;
   }
 
-(* Requirements for validity :
-   - at least a standard class
-   - every reaction has to be valid: solid and matching interfaces
- *)
-let is_valid_p c =
-  match c with
-    | P_class rs | P_rclass rs -> 
-      List.for_all is_valid rs
-      && (List.length rs > 0)
+(* (\* Requirements for validity : *)
+(*    - at least a standard class *)
+(*    - every reaction has to be valid: solid and matching interfaces *)
+(*  *\) *)
+(* let is_valid_p c = *)
+(*   match c with *)
+(*     | P_class rs | P_rclass rs ->  *)
+(*       List.for_all is_valid rs *)
+(*       && (List.length rs > 0) *)
   	
-(* validity of each class is not checked *)
-let is_valid_p_l l = 
-  List.exists (fun c ->
-    match c with
-      | P_class _ -> true
-      | P_rclass _ -> false) l
+(* (\* validity of each class is not checked *\) *)
+(* let is_valid_p_l l =  *)
+(*   List.exists (fun c -> *)
+(*     match c with *)
+(*       | P_class _ -> true *)
+(*       | P_rclass _ -> false) l *)
 
-let rec is_class_enabled b = function 
-  | [] -> false
-  | r :: rs ->
-     if Big.occurs b (lhs r) then true
-     else is_class_enabled b rs
+(* let rec is_class_enabled b = function  *)
+(*   | [] -> false *)
+(*   | r :: rs -> *)
+(*      if Big.occurs b (lhs r) then true *)
+(*      else is_class_enabled b rs *)
   
 
 let is_new b v =
@@ -134,22 +142,22 @@ let is_new b v =
 (* Scan the piority classes and reduce a state. Stop when no more
    rules can be applied or when a non reducing piority class is
    enabled. *)
-let rec rewrite s classes m =
-  match classes with
-    | [] -> (s, m)
-    | c :: cs ->
-      begin
-	match c with
-	  | P_class rr  ->
-	    (* if there are matches then exit, skip otherwise *)
-	    if is_class_enabled s rr then (s, m)
-	    else rewrite s cs m
-	  | P_rclass rr ->
-	    begin
-	      let (s', i) = fix s rr in
-	      rewrite s' cs (m + i)
-	    end
-      end
+(* let rec rewrite s classes m = *)
+(*   match classes with *)
+(*     | [] -> (s, m) *)
+(*     | c :: cs -> *)
+(*       begin *)
+(* 	match c with *)
+(* 	  | P_class rr  -> *)
+(* 	    (\* if there are matches then exit, skip otherwise *\) *)
+(* 	    if is_class_enabled s rr then (s, m) *)
+(* 	    else rewrite s cs m *)
+(* 	  | P_rclass rr -> *)
+(* 	    begin *)
+(* 	      let (s', i) = fix s rr in *)
+(* 	      rewrite s' cs (m + i) *)
+(* 	    end *)
+(*       end *)
  
 (* Partition a list of bigraphs into new and old states *)
 let _partition_aux ts i f_iter =
@@ -164,7 +172,7 @@ let _partition_aux ts i f_iter =
   ) ([], [], i)
     
 (* Iterate over priority classes *)
-let rec _scan step_f curr m ts i iter_f (pl : p_class list) pl_const =
+let rec _scan step_f curr m ts i iter_f pl pl_const =
   match pl with
   | [] -> (([], [], i), m)
   | c :: cs ->
@@ -178,7 +186,7 @@ let rec _scan step_f curr m ts i iter_f (pl : p_class list) pl_const =
 	    (* apply rewriting *)
 	    let (ss', l') = 
 	      List.fold_left (fun (ss,  l) s -> 
-		  let (s', l') = rewrite s pl_const l in
+		  let (s', l') = rewrite s l pl_const in
 		  (s' :: ss, l')
                 ) ([], l) ss in
 	    (_partition_aux ts i iter_f ss', m + l')
@@ -229,7 +237,7 @@ let _init_bfs s0 rewrite _scan step rules limit ts_size iter_f =
     (_scan, step, rules, Unix.gettimeofday (), limit, ts_size, iter_f)
   and q = Queue.create () in
   (* apply rewriting to s0 *)
-  let (s0', m) = rewrite s0 rules 0
+  let (s0', m) = rewrite s0 0 rules
   and ts = init_ts ts_size in
   Queue.push (0, s0') q;
   (* add initial state *)

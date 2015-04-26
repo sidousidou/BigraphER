@@ -47,7 +47,7 @@ let string_of_store_val = function
   | Big_fun _ -> "<fun big>" 
   | A_ctrl c | Ctrl c -> Base.Ctrl.to_string c
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
-  | React r -> Brs.to_string r
+  | React r -> Brs.to_string_react r
   | React_fun _ -> "<fun react>"
   | Sreact r -> Sbrs.to_string r
   | Sreact_fun _ -> "<fun sreact>"
@@ -627,7 +627,7 @@ let eval_react lhs rhs eta scope env env_t p =
 	    Brs.eta = eta;
 	  } in
   (* Get more informative messages from Brs *)
-  if Brs.is_valid r then (r, env_t') 
+  if Brs.is_valid_react r then (r, env_t') 
   else raise (ERROR (Reaction "Invalid reaction", p))
 
 let eval_sreact lhs rhs eta rate scope env env_t p =

@@ -23,34 +23,34 @@ type stats = {
 }
 
 (** The type of priority classes: lists of reaction rules. *)
-type p_class = 
-| P_class of react list  (** Priority class *)
-| P_rclass of react list (** Reducible priority class *)
-
+type p_class =
+  | P_class of react list  (** Priority class *)
+  | P_rclass of react list (** Reducible priority class *)
+		      
 (** Raised when the size of the transition system reaches the limit. *)
 exception LIMIT of ts * stats
 
 (** String representation of a reaction. *)
-val to_string : react -> string
+val to_string_react : react -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal and if the redex is solid. [false] otherwise. *)
-val is_valid : react -> bool
+val is_valid_react : react -> bool
 
 (** Return [true] if all the reaction rules in the priority class are valid,
     [false] otherwise. *)
-val is_valid_p : p_class -> bool
+val is_valid_priority : p_class -> bool
 
 (** Return [true] if a list of priority classes contains at least a non reducing
     priority class, [false] otherwise. *)
-val is_valid_p_l : p_class list -> bool
+val is_valid_priority_list : p_class list -> bool
 
-(** Return [true] if a reaction can be applied on a bigraph. *)
-val is_enabled : Big.bg -> react -> bool
+(* (\** Return [true] if a reaction can be applied on a bigraph. *\) *)
+(* val is_enabled : Big.bg -> react -> bool *)
 
-(** Return [true] if there is a reaction rule within the input priority class
-    that can be applied. *)
-val is_class_enabled : Big.bg -> react list -> bool
+(* (\** Return [true] if there is a reaction rule within the input priority class *)
+(*     that can be applied. *\) *)
+(* val is_class_enabled : Big.bg -> react list -> bool *)
 
 (** Compute all the possible evolutions in one step. Total number of occurrences
     also returned. *)
@@ -68,7 +68,7 @@ val fix : Big.bg -> react list -> Big.bg * int
 (** Scan priority classes and reduce a state. Stop when no more rules can be
     applied or when a non reducing priority class is enabled. The output integer
     is the number of rewriting steps performed in the loop. *)
-val rewrite : Big.bg -> p_class list -> int -> Big.bg * int
+val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
 
 (** [bfs s p l n f] computes the transition system of the BRS specified by
     initial state [s] and priority classes [p]. [l] is the maximum number of
