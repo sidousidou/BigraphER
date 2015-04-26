@@ -61,13 +61,13 @@ type stats = {
 
 	       
 
-(* raised when a state was already discovered *)
+(* Raised when a state was already discovered *)
 exception OLD of int
 
-(* raised when the size of the ts reaches the limit *)
+(* Raised when the size of the ts reaches the limit *)
 exception LIMIT of ts * stats
 	     
-(* remove element with index i *)
+(* Remove element with index i *)
 let rec aux i i' acc = function
   | [] -> (None, acc)
   | x :: l -> if i = i' then (Some x, l @ acc)
@@ -98,30 +98,6 @@ let init_ts n =
     l = Hashtbl.create n;
   }
 
-(* (\* Requirements for validity : *)
-(*    - at least a standard class *)
-(*    - every reaction has to be valid: solid and matching interfaces *)
-(*  *\) *)
-(* let is_valid_p c = *)
-(*   match c with *)
-(*     | P_class rs | P_rclass rs ->  *)
-(*       List.for_all is_valid rs *)
-(*       && (List.length rs > 0) *)
-  	
-(* (\* validity of each class is not checked *\) *)
-(* let is_valid_p_l l =  *)
-(*   List.exists (fun c -> *)
-(*     match c with *)
-(*       | P_class _ -> true *)
-(*       | P_rclass _ -> false) l *)
-
-(* let rec is_class_enabled b = function  *)
-(*   | [] -> false *)
-(*   | r :: rs -> *)
-(*      if Big.occurs b (lhs r) then true *)
-(*      else is_class_enabled b rs *)
-  
-
 let is_new b v =
   let k = Big.key b in
   let k_buket = 
@@ -138,26 +114,6 @@ let is_new b v =
     raise (OLD old)
   with
   | Not_found -> true
-
-(* Scan the piority classes and reduce a state. Stop when no more
-   rules can be applied or when a non reducing piority class is
-   enabled. *)
-(* let rec rewrite s classes m = *)
-(*   match classes with *)
-(*     | [] -> (s, m) *)
-(*     | c :: cs -> *)
-(*       begin *)
-(* 	match c with *)
-(* 	  | P_class rr  -> *)
-(* 	    (\* if there are matches then exit, skip otherwise *\) *)
-(* 	    if is_class_enabled s rr then (s, m) *)
-(* 	    else rewrite s cs m *)
-(* 	  | P_rclass rr -> *)
-(* 	    begin *)
-(* 	      let (s', i) = fix s rr in *)
-(* 	      rewrite s' cs (m + i) *)
-(* 	    end *)
-(*       end *)
  
 (* Partition a list of bigraphs into new and old states *)
 let _partition_aux ts i f_iter =

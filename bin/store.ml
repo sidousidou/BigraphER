@@ -103,6 +103,8 @@ type error =
   | Unbound_variable of Id.t
   | Div_by_zero
   | Comp of Big.inter * Big.inter
+  | Invalid_class
+  | Invalid_priorities
   | Tens of Link.Face.t * Link.Face.t        (* (in , out) *)
   | Share
   | Unknown_big of int
@@ -133,6 +135,8 @@ let report_error_aux fmt = function
   | Unknown_big v ->
      fprintf fmt "Expression %d is not a valid bigraph" v
   | Reaction msg -> fprintf fmt "%s" msg
+  | Invalid_class -> fprintf fmt "Invalid epression for a priority class"
+  | Invalid_priorities -> fprintf fmt "Invalid expression for a priority structure"
 
 let report_error fmt err =
   fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
@@ -765,20 +769,30 @@ let eval_pr env env_t pr =
   let aux' (acc, env_t) id =
     let (rs, env_t') = aux env_t id in
     (acc @ rs, env_t') in 
-  match pr with
-  | Pr (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-		   (Brs.P_class rs, env_t') 
-  | Pr_red (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-		       (Brs.P_rclass rs, env_t')
+  let (pr_class, p) =
+    match pr with
+    | Pr (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Brs.P_class rs, env_t'), p) 
+    | Pr_red (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Brs.P_rclass rs, env_t'), p) in
+  if Brs.is_valid_priority (fst pr_class) then pr_class
+  else raise (ERROR (Invalid_class, p))
 
-let eval_p_list eval_f env env_t l =
+let eval_p_list eval_f chk_f env env_t l p =
   List.fold_left (fun (acc, env_t) pr ->
 		  let (pr_class, env_t') = eval_f env env_t pr in
 		  (pr_class :: acc, env_t'))
 		 ([], env_t) l
   |> (fun (l, e) -> (List.rev l, e))
+  |> (fun x -> if chk_f x then x
+	       else raise (ERROR (Invalid_priorities, p)))
 		 
-let eval_prs = eval_p_list eval_pr
+let eval_prs =
+  eval_p_list eval_pr (fun x -> Brs.is_valid_priority_list (fst x))
 			   
 let eval_spr env env_t pr =
   let aux env_t = function
@@ -786,16 +800,22 @@ let eval_spr env env_t pr =
     | Srul_id_fun (id, args, p) -> eval_sreact_fun_app id args env env_t p in
   let aux' (acc, env_t) id =
     let (rs, env_t') = aux env_t id in
-    (acc @ rs, env_t') in 
-  match pr with
-  | Spr (ids, _) -> let (rs, env_t') =
-		      List.fold_left aux' ([], env_t) ids in
-		    (Sbrs.P_class rs, env_t')
-  | Spr_red (ids, _) -> let (rs, env_t') =
-			  List.fold_left aux' ([], env_t) ids in
-			(Sbrs.P_rclass rs, env_t')
-
-let eval_sprs = eval_p_list eval_spr
+    (acc @ rs, env_t') in
+  let (pr_class, p) =
+    match pr with
+    | Spr (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Sbrs.P_class rs, env_t'), p)
+    | Spr_red (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Sbrs.P_rclass rs, env_t'), p) in
+  if Sbrs.is_valid_priority (fst pr_class) then pr_class
+  else raise (ERROR (Invalid_class, p))
+			  
+let eval_sprs =
+  eval_p_list eval_spr (fun x -> Sbrs.is_valid_priority_list (fst x))
 			    
 let eval_init exp env env_t =
   match exp with
@@ -941,10 +961,14 @@ let eval_model fmt m env =
   store_params fmt (params_of_ts m.model_rs) env;
   let (b, env_t') = eval_init (init_of_ts m.model_rs) env env_t in
   match m.model_rs with
-  | Dbrs rbs -> let (p, env_t'') = eval_prs env env_t' rbs.dbrs_pri in
-		(b, P p, env_t'')
-  | Dsbrs sbrs -> let (p, env_t'') = eval_sprs env env_t' sbrs.dsbrs_pri in
-		  (b, S p, env_t'')  
+  | Dbrs rbs ->
+     let (p, env_t'') =
+       eval_prs env env_t' rbs.dbrs_pri rbs.dbrs_loc in
+     (b, P p, env_t'')
+  | Dsbrs sbrs ->
+     let (p, env_t'') =
+       eval_sprs env env_t' sbrs.dsbrs_pri  sbrs.dsbrs_loc in
+     (b, S p, env_t'')  
 
 (******** EXPORT STORE *********)
 		    

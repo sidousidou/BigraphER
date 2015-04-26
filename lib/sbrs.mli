@@ -47,11 +47,11 @@ val is_inst : sreact -> bool
     valid, all the reaction rules in a reducible classes are
     instantaneous and no instantaneous raction rules are present in
     a non reducible class. Return [false] otherwise. *)
-val is_valid_p : p_class -> bool
+val is_valid_priority : p_class -> bool
 
 (** Return [true] if a list of priority classes contains at least a non reducing
     priority class, [false] otherwise. *)
-val is_valid_p_l : p_class list -> bool
+val is_valid_priority_list : p_class list -> bool
 
 (** Return [true] if a reaction can be applied on a bigraph. *)
 val is_enabled : Big.bg -> sreact -> bool

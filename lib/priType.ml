@@ -10,10 +10,6 @@ module type T = sig
     type p_class
 
     type r	   
-
-    (* val make_class : r list -> p_class *)
-				 
-    (* val make_red_class : r list -> p_class *)
       
     val is_valid : p_class -> bool
 
@@ -30,10 +26,6 @@ module Make (R : RrType.T) (P : P) = struct
     type p_class =
       | P_class of R.t list 
       | P_rclass of R.t list
-
-    (* let make_class rr = P_class rr *)
-
-    (* let make_red_class rr = P_rclass rr *)
 			
     let is_valid = function
       | P_class []

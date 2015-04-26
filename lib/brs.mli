@@ -45,13 +45,6 @@ val is_valid_priority : p_class -> bool
     priority class, [false] otherwise. *)
 val is_valid_priority_list : p_class list -> bool
 
-(* (\** Return [true] if a reaction can be applied on a bigraph. *\) *)
-(* val is_enabled : Big.bg -> react -> bool *)
-
-(* (\** Return [true] if there is a reaction rule within the input priority class *)
-(*     that can be applied. *\) *)
-(* val is_class_enabled : Big.bg -> react list -> bool *)
-
 (** Compute all the possible evolutions in one step. Total number of occurrences
     also returned. *)
 val step : Big.bg -> react list -> Big.bg list * int

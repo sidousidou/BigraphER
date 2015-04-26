@@ -61,7 +61,7 @@ let init_ctmc n =
 let is_inst r =
   (l r) = infinity
 
-let is_valid_p c =
+let is_valid_priority c =
   match c with
   | P_class rr -> (List.for_all is_valid rr)
                   && (List.length rr > 0) 
@@ -70,7 +70,7 @@ let is_valid_p c =
                    && (List.length rr > 0) 
                    && (List.for_all is_inst rr)
 
-let is_valid_p_l l = 
+let is_valid_priority_list l = 
   List.exists (fun c ->
       match c with
       | P_class _ -> true
