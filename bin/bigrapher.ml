@@ -157,9 +157,11 @@ let print_loop i _ =
 	  else 1 in
 	match (i + 1) mod (max_width * m) with
 	| 0 -> (Pervasives.print_char '.';
-				 Pervasives.print_newline ();
-				 Pervasives.print_char ' ';
-				 Pervasives.flush stdout)
+		Pervasives.print_string "  ";
+		Pervasives.print_int (i + 1);
+		Pervasives.print_newline ();
+		Pervasives.print_char ' ';
+		Pervasives.flush stdout)
 	| i when i mod m = 0 -> (Pervasives.print_char '.';
 				 Pervasives.flush stdout)
 	| _ -> ())
