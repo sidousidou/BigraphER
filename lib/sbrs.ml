@@ -6,21 +6,21 @@ type sreact =
   }
        
 module R =
-  RrType.Make(struct
-		 type t = sreact
-		 type label = float 
-		 type occ = Big.bg * float
-				       
-		 let lhs r = r.rdx
-		 let rhs r = r.rct
-		 let l r = r.rate
-		 let map r = r.eta
-		 let string_of_label l = string_of_float l
- 		 let val_chk r = r.rate > 0.0
-		 let to_occ b r = (b, r.rate)
-		 let big_of_occ (b, _) = b
-		 let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
-	       end)
+  RrType.Make (struct
+		  type t = sreact
+		  type label = float 
+		  type occ = Big.bg * float
+					
+		  let lhs r = r.rdx
+		  let rhs r = r.rct
+		  let l r = r.rate
+		  let map r = r.eta
+		  let string_of_label l = string_of_float l
+ 		  let val_chk r = r.rate > 0.0
+		  let to_occ b r = (b, r.rate)
+		  let big_of_occ (b, _) = b
+		  let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
+		end)
 
 let to_string_react = R.to_string
 			

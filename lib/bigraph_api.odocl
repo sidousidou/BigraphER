@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 340b6b4faacaea13a66decfd0f438f2a)
+# DO NOT EDIT (digest: 5cba33179ea890f1864e5a54c7cc002a)
 Base
 Link
 Place
@@ -8,6 +8,7 @@ Brs
 Sbrs
 RrType
 PriType
+TsType
 Export
 Iso
 IntSet

@@ -39,6 +39,7 @@ Library bigraph
                    Sbrs,
                    RrType,
                    PriType,
+                   TsType,
                    Export,
                    Iso,
                    IntSet,

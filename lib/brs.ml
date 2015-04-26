@@ -5,22 +5,21 @@ type react =
   }
     
 module R =
-  RrType.Make
-    (struct
-	type t = react	
-	type label = Epsilon               (* Empty label       *)  
-	type occ = Big.bg
-		     
-	let lhs r = r.rdx
-	let rhs r = r.rct
-	let l _ = Epsilon
-	let map r = r.eta
-	let string_of_label _ = ""
- 	let val_chk _ = true
-	let to_occ b _ = b
-	let big_of_occ b = b
-	let merge_occ b _ = b
-      end)
+  RrType.Make (struct
+		  type t = react	
+		  type label = Epsilon       (* Empty label       *)  
+		  type occ = Big.bg
+			       
+		  let lhs r = r.rdx
+		  let rhs r = r.rct
+		  let l _ = Epsilon
+		  let map r = r.eta
+		  let string_of_label _ = ""
+ 		  let val_chk _ = true
+		  let to_occ b _ = b
+		  let big_of_occ b = b
+		  let merge_occ b _ = b
+		end)
 
 let to_string_react = R.to_string
 			

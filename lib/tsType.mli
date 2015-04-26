@@ -1,41 +1,41 @@
-module type T = sig
-
-    type label
-
-    type t = {
-	s : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-	e : (int, (int * label)) Hashtbl.t;
-	l : (int, int) Hashtbl.t;
-      }
-
-    type stats = {
-	mutable t : float;    (** Execution time *)
-	mutable s : int;      (** Number of states *)
-	mutable r : int;      (** Number of reactions *)
-	mutable o : int;      (** Number of occurrences *)
-      }
-
-    val empty : int -> t
-    val init_stats : unit -> stats
-
-    (* Return None if it is new, Some(i) where i is the old state *)			       
-    val is_new : Big.bg -> t -> int option
-
-    (* With side-effects on stats *)
-    val add_s : Big.bg -> int -> stats -> t -> unit
-    val add_e : int -> int -> label -> stats -> t -> unit
-    val add_l : int -> int -> t -> unit
-    val fold_s : (Big.bg -> int -> 'a -> 'a) -> 'a -> t -> 'a
-    val fold_e : (int -> int -> label -> 'a -> 'a) -> 'a -> t -> 'a
-    val fold_l : (int -> int -> 'a -> 'a) -> 'a -> t -> 'a
-    val iter_s : (int -> Big.bg -> unit) -> t -> unit
-
-    (** Textual representation of a transition system. The format is compatible
-      with PRISM input format. *)
-    val to_prism : t -> string
-
-    (** Compute the string representation in [dot] format of a transition
-      system. *)
-    val to_dot : t -> string
-
+module type G =
+  sig
+    type t
+    type edge_type
+    type f
+    type stats
+    type limit
+    type p_class
+    val init : int -> t
+    val states : t -> (Big.bg_key, int * Big.bg) Hashtbl.t
+    val label : t -> (int, int) Hashtbl.t
+    val edges : t -> (int, edge_type) Hashtbl.t
+    val dest : edge_type -> int
+    val arrow : edge_type -> f
+    val string_of_arrow : edge_type -> string
   end
+module type T =
+  sig
+    type t
+    type stats
+    type limit
+    type p_class
+    exception LIMIT of t * stats
+    val bfs :
+      Big.bg -> p_class list -> int -> (int -> Big.bg -> unit) -> t * stats
+    val sim :
+      Big.bg -> p_class list -> limit -> (int -> Big.bg -> unit) -> t * stats
+    val to_prism : t -> string
+    val to_lab : t -> string
+    val to_dot : t -> string
+    val iter_states : (int -> Big.bg -> unit) -> t -> unit
+  end
+module Make :
+  functor (G : G) ->
+    sig
+      type t = G.t
+      val to_prism : G.t -> string
+      val to_dot : G.t -> string
+      val to_lab : G.t -> string
+      val iter_states : (int -> Big.bg -> unit) -> G.t -> unit
+    end

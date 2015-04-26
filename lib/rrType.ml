@@ -28,7 +28,7 @@ module type T = sig
     val step : Big.bg -> t list -> occ list * int
   end
 		  
-module Make(R : R) = struct
+module Make (R : R) = struct
     
     type t = R.t
 	       
