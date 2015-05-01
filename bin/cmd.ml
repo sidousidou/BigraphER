@@ -2,6 +2,45 @@ open Format
 open Utils
 open Version
 
+type big_file = string
+
+type bilog_file = string option		  
+
+type path = string
+	      
+type file = string
+	      	    
+type stand_alone_opt =
+  | Version
+  | Help_top_level
+  | Config
+		    
+type format_op =
+  | Svg
+  | Dot
+		            
+type opt =
+  | Verb
+  | Quiet
+  | Help
+  | Debug
+  | Const of Ast.const list 
+  | Decs of path
+  | Labels of file
+  | Prism of file
+  | Graph of file
+  | States
+  | Ext of format_op list
+  | Max of int
+  | Time of float
+  | Steps of int
+    
+type t =
+  | Check of opt list * big_file * bilog_file
+  | Full of opt list * big_file * bilog_file
+  | Sim of opt list * big_file * bilog_file
+  | StandAloneOpt of stand_alone_opt
+       
 type arg = 
   [ `debug
   | `verbose 
@@ -203,19 +242,19 @@ let help fmt () =
   fprintf fmt "@[<v>%a@,@[<v 2>OPTIONS:@,%a@]@]@." usage_str () options_str ();
   exit 0
 
-let parse_consts consts opt =
-  try
-    let lexbuf = Lexing.from_string consts in
-    lexbuf.Lexing.lex_curr_p <-
-      { Lexing.pos_fname = opt;
-	Lexing.pos_lnum = 1;
-	Lexing.pos_bol = 0;
-	Lexing.pos_cnum = 0;
-      };
-    Parser.const_list Lexer.token lexbuf          
-  with
-  | Parser.Error
-  | Lexer.ERROR _ -> raise (ERROR (Not_valid_const consts))
+(* let parse_consts consts opt = *)
+(*   try *)
+(*     let lexbuf = Lexing.from_string consts in *)
+(*     lexbuf.Lexing.lex_curr_p <- *)
+(*       { Lexing.pos_fname = opt; *)
+(* 	Lexing.pos_lnum = 1; *)
+(* 	Lexing.pos_bol = 0; *)
+(* 	Lexing.pos_cnum = 0; *)
+(*       }; *)
+(*     Parser.const_list Lexer.token lexbuf           *)
+(*   with *)
+(*   | Parser.Error *)
+(*   | Lexer.ERROR _ -> raise (ERROR (Not_valid_const consts)) *)
   
 let parse_int args i =
   try
@@ -293,7 +332,7 @@ let parse_options fmt args =
 	  (parse_file fmt `out_csl args (i + 1);
 	   _parse args (i + 2))
        | `consts ->
-	  (defaults.consts <- parse_consts args.(i + 1) args.(i);
+	  ((* defaults.consts <- parse_consts args.(i + 1) args.(i); *)
 	   _parse args (i + 2))
        | `out_dot -> parse_file fmt `out_dot args (i + 1); _parse args (i + 2)
        | `out_raw -> parse_file fmt `out_raw args (i + 1); _parse args (i + 2)

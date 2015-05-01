@@ -2,9 +2,12 @@
 
 open Loc 
 open Ast
+open Cmd
        
 %}
 
+(* BIG *)
+   
 %token            EOF
 
 %token <string>   CIDE
@@ -52,10 +55,38 @@ open Ast
 %left  PLUS MINUS
 %left  PROD SLASH
 %right CARET
- 
-%start model const_list
+
+(* CMD *)
+
+%token <string> BIG_FILE
+%token <string> BILOG_FILE
+%token <string> PATH
+
+%token   F_SVG
+%token   F_DOT
+%token   C_CHECK
+%token   C_FULL
+%token   C_SIM
+%token   O_CONF
+%token   O_VERS
+%token   O_HELP
+%token   O_VERB
+%token   O_QUIET
+%token   O_CONST
+%token   O_DEBUG
+%token   O_DECS
+%token   O_FORMAT
+%token   O_TS
+%token   O_STATES
+%token   O_LABELS
+%token   O_PRISM 
+%token   O_MAX
+%token   O_TIME
+%token   O_STEPS
+   
+%start model cmd
 %type <Ast.model> model
-%type <Ast.consts> const_list
+%type <Cmd.t> cmd 
 (* %type <Ast.predicates> pred_list *)
 
 %%
@@ -302,10 +333,6 @@ closure_list:
 closure:
   | SLASH IDE                               { { cl_name = $2; 
 						cl_loc = loc $startpos $endpos; } };
-
-const_list
-  : const EOF                               { [ $1 ]    }
-  | const COMMA const_list                  {  $1 :: $3 }
 		
 const:
   | IDE EQUAL CINT                          { Cint { dint_id = $1;
@@ -313,7 +340,60 @@ const:
 						     dint_loc = loc $startpos $endpos; } }
   | IDE EQUAL CFLOAT                        { Cfloat { dfloat_id = $1;
 						       dfloat_exp = Float_val ($3, loc $startpos $endpos);
-						       dfloat_loc = loc $startpos $endpos; } };				 
+						       dfloat_loc = loc $startpos $endpos; } };
+
+(* COMMAND LINE *)
+
+cmd:
+  | sub_cmd EOF                             { $1 }
+  | stand_alone_opt EOF                     { StandAloneOpt $1 };
+
+stand_alone_opt:
+  | O_CONF                                  { Config }
+  | O_VERS                                  { Version }
+  | O_HELP                                  { Help_top_level };
+
+common_opt:
+  | O_VERB { Verb }
+  | O_QUIET { Quiet }
+  | O_DEBUG { Debug }
+  | O_CONST l=separated_nonempty_list(COMMA, const) { Const l };
+
+ext:
+  | F_SVG { Svg }
+  | F_DOT { Dot };
+
+export_opt:
+  | O_DECS PATH { Decs $2 }
+  | O_TS PATH { Graph $2 }
+  | O_LABELS PATH { Labels $2 }
+  | O_STATES { States }
+  | O_PRISM PATH {Prism $2}
+  | O_FORMAT l=separated_nonempty_list(COMMA, ext) { Ext l };
+
+opt_chk:
+  | common_opt { $1 }
+  | O_DECS PATH { Decs $2 }
+  | O_FORMAT l=separated_nonempty_list(COMMA, ext) { Ext l };
+  
+opt_full:
+  | common_opt { $1 }
+  | export_opt { $1 }
+  | O_MAX CINT { Max $2 };
+
+opt_sim:
+  | common_opt { $1 }
+  | export_opt { $1 }
+  | O_TIME CFLOAT { Time $2 }
+  | O_STEPS CINT { Steps $2 };
+
+sub_cmd:
+  | C_CHECK l=list(opt_chk) BIG_FILE option(BILOG_FILE)
+    { Check (l, $3, $4) }
+  | C_FULL l=list(opt_full) BIG_FILE option(BILOG_FILE)
+    { Full (l, $3, $4) }
+  | C_SIM l=list(opt_sim) BIG_FILE option(BILOG_FILE)
+    { Sim (l, $3, $4) };
 
 %%
 
