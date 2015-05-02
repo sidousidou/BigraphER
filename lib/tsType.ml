@@ -103,18 +103,27 @@ module MakeE (G : G) = struct
 			  
   end
   		  
-module MakeTS (RT : RrType.R)
-	      (PT : PriType.P with type t = RT.t list)
+module MakeTS (R : RrType.T)
+	      (P : sig
+		  type p_class =
+		    | P_class of R.t list
+		    | P_rclass of R.t list
+		  val is_valid : p_class -> bool
+		  val is_valid_list : p_class list -> bool
+		  val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
+		  val scan : Big.bg * int -> matches:int ->
+			     part_f:(R.occ list ->
+				     ((int * R.occ) list * R.edge list * int)) ->
+			     const_pri:p_class list -> p_class list ->
+			     ((int * R.occ) list * R.edge list * int) * int
+		end)
 	      (S : S)
-	      (G : G with type edge_type = RT.edge) = struct
-
-    module R = RrType.Make (RT)
-			   
-    include PriType.Make (R) (PT)
+	      (G : G with type edge_type = R.edge) = struct
 
     type t = G.t
     type stats = S.t
-	       
+    type p_class = P.p_class
+		   
     exception MAX of t * stats
 	       
     let is_new b v =
@@ -132,32 +141,14 @@ module MakeTS (RT : RrType.R)
     (* Partition a list of bigraphs into new and old states *)
     let partition g i f_iter =
       List.fold_left (fun (new_acc, old_acc, i) o ->
-		      let b = RT.big_of_occ o in
+		      let b = R.big_of_occ o in
     		      match is_new b (G.states g) with
 		      | None ->
 			 (let i' = i + 1 in
     			  f_iter i' b;
     			  ((i', o) :: new_acc, old_acc, i'))
-    		      | Some x -> (new_acc, (RT.edge_of_occ o x) :: old_acc, i))
+    		      | Some x -> (new_acc, (R.edge_of_occ o x) :: old_acc, i))
     		     ([], [], i)
-
-    (* Iterate over priority classes *)
-    let rec scan curr m g i iter_f ~const_priorities = function
-      | [] -> (([], [], i), m)
-      | (P_class rr) :: cs ->
-         (let (ss, l) = R.step curr rr in
-          if l = 0 then scan curr m g i iter_f ~const_priorities cs 
-          else 
-	    (* apply rewriting - instantaneous *)
-	    let (ss', l') = 
-	      List.fold_left (fun (ss,  l) o -> 
-			      let (s', l') =
-				rewrite (RT.big_of_occ o) l const_priorities in
-			      ((RT.update_occ o s') :: ss, l'))
-			     ([], l) ss in
-	    (partition g i iter_f ss', m + l'))
-      | P_rclass _ :: cs -> (* skip *)
-         scan curr m g i iter_f ~const_priorities cs
 
     let rec _bfs g q i m stats priorities max iter_f =
       if not (Queue.is_empty q) then
@@ -170,21 +161,23 @@ module MakeTS (RT : RrType.R)
 	else 
 	    (let (v, curr) = Queue.pop q in
 	    let ((new_s, old_s, i'), m') = 
-              scan curr m g i iter_f ~const_priorities:priorities priorities in
+              P.scan (curr, i) ~matches:m
+		   ~part_f:(partition g i iter_f)
+		   ~const_pri:priorities priorities in
 	    (* Add new states to v *)
 	    List.iter (fun (i, o) ->
-		       let b = RT.big_of_occ o in 
+		       let b = R.big_of_occ o in 
 		       Hashtbl.add (G.states g) (Big.key b) (i, b))
 		      new_s;
 	    (* Add new states to q *)
 	    List.iter (fun (i, o) ->
-		       Queue.push (i, RT.big_of_occ o) q)
+		       Queue.push (i, R.big_of_occ o) q)
 		      new_s;
 	    (* Add labels for new states *)
 	    (* TO DO *)
 	    (* Add edges from v to new states *)
 	    List.iter (fun (u, o) -> 
-		       Hashtbl.add (G.edges g) v (RT.edge_of_occ o u))
+		       Hashtbl.add (G.edges g) v (R.edge_of_occ o u))
 		      new_s;
 	    (* Add edges from v to old states *)
 	    List.iter (fun e ->
@@ -202,7 +195,7 @@ module MakeTS (RT : RrType.R)
     let bfs ~s0 ~priorities ~max ~iter_f =
       let q = Queue.create () in
       (* apply rewriting to s0 *)
-      let (s0', m) = rewrite s0 0 priorities
+      let (s0', m) = P.rewrite s0 0 priorities
       and g = G.init max
       and stats = S.init ~t0:(Unix.gettimeofday ()) in
       Queue.push (0, s0') q;
@@ -214,3 +207,20 @@ module MakeTS (RT : RrType.R)
     include MakeE (G)
 	   
   end
+
+module MakeTrace (R : RrType.T)
+		 (P : sig
+		     type p_class =
+		       | P_class of R.t list
+		       | P_rclass of R.t list
+		     val is_valid : p_class -> bool
+		     val is_valid_list : p_class list -> bool
+		     val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
+		   end)
+		 (S : S)
+		 (G : G with type edge_type = R.edge) = struct
+    
+    include MakeE (G)
+	   
+  end
+							  

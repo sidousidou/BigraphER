@@ -57,63 +57,70 @@ type ts_stats = {
     trans : int;    (** Number of reaction *)
     occs : int;    (** Number of occurrences *)
   }
-	       
-(** Raised when the size of the transition system reaches the limit. *)
-exception MAX of ts_g * ts_stats
-		       
-(** [bfs s0 priorities max f] computes the transition system of the BRS
-    specified by initial state [s] and priority classes [p]. [l] is the maximum
-    number of states of the transition system. [n] is the initialisation size
-    for the edges and [f] is a function that is applied at every loop. Priority
-    classes are assumed to be sorted by priority, i.e. the first element in the
-    list is the class with the highest priority.  @raise Brs.LIMIT when the
-    maximum number of states is reached.*)
-val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
-	  iter_f:(int -> Big.bg -> unit) -> ts_g * ts_stats
 
-(** Compute the string representation in PRISM [tra] format of a transition
-    system. *)
-val to_prism : ts_g -> string
+module TransitionSystem : sig		  
+    
+    (** Raised when the size of the transition system reaches the limit. *)
+    exception MAX of ts_g * ts_stats
+			      
+    (** [bfs s0 priorities max f] computes the transition system of the BRS
+        specified by initial state [s] and priority classes [p]. [l] is the
+        maximum number of states of the transition system. [n] is the
+        initialisation size for the edges and [f] is a function that is applied
+        at every loop. Priority classes are assumed to be sorted by priority,
+        i.e. the first element in the list is the class with the highest
+        priority.  
 
-(** Compute the string representation in [dot] format of a transition system. *)
-val to_dot : ts_g -> string
+        @raise Brs.LIMIT when the maximum number of states is reached. *)
+    val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
+	      iter_f:(int -> Big.bg -> unit) -> ts_g * ts_stats
 
-(** Compute the string representation in PRISM [lab] format of the labelling
-    function of a transition system. *)
-val to_lab : ts_g -> string
-		    
-val iter_states : f:(int -> Big.bg -> unit) -> ts_g -> unit
+    (** Compute the string representation in PRISM [tra] format of a transition
+        system. *)
+    val to_prism : ts_g -> string
 
-val write_prism : ts_g -> name:string -> path:string -> int
+    (** Compute the string representation in [dot] format of a transition
+        system. *)
+    val to_dot : ts_g -> name:string -> string
 
-val write_lab : ts_g -> name:string -> path:string -> int
+    (** Compute the string representation in PRISM [lab] format of the labelling
+        function of a transition system. *)
+    val to_lab : ts_g -> string
+			   
+    val iter_states : f:(int -> Big.bg -> unit) -> ts_g -> unit
 
-val write_dot : ts_g -> name:string -> path:string -> int							       
+    val write_prism : ts_g -> name:string -> path:string -> int
+
+    val write_lab : ts_g -> name:string -> path:string -> int
+
+    val write_dot : ts_g -> name:string -> path:string -> int
+  end
+			    
 (** {6 Simulation traces} *)
 							  
-(** The type of simulation trace. *)
-type trace = {
-    v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
-    e : (int, int) Hashtbl.t;                   (** Transition relation *)
-    l : (int, int) Hashtbl.t;                   (** Labelling function *) 
-  }
+(* (\** The type of simulation trace. *\) *)
+(* type trace = { *)
+(*     v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (\** States *\) *)
+(*     e : (int, int) Hashtbl.t;                   (\** Transition relation *\) *)
+(*     l : (int, int) Hashtbl.t;                   (\** Labelling function *\)  *)
+(*   } *)
 
-type sim_stats = {
-    time : float;  (** Execution time *)
-    states : int;    (** Number of states *)
-    trans : int;    (** Number of reaction *)
-    occs : int;    (** Number of occurrences *)
-  }
+(* type sim_stats = { *)
+(*     time : float;  (\** Execution time *\) *)
+(*     states : int;    (\** Number of states *\) *)
+(*     trans : int;    (\** Number of reaction *\) *)
+(*     occs : int;    (\** Number of occurrences *\) *)
+(*   } *)
 
-exception SIM_LIMIT of trace * sim_stats
+(* exception SIM_LIMIT of trace * sim_stats *)
 							
-(** Compute a random reaction.
-    @raise NODE_FREE when [p] has an empty node set. *)
-val random_step : Big.bg -> react list -> Big.bg option
+(* (\** Compute a random reaction. *)
+(*     @raise NODE_FREE when [p] has an empty node set. *\) *)
+(* val random_step : Big.bg -> react list -> Big.bg option *)
 
-(** Similar to {!Brs.bfs} but only one simulation path is computed. In this
-    case, parameter [l] indicates the maximum number of simulation steps. *)
-val sim : s0:Big.bg -> priorities:p_class list -> max_steps:int ->
-	  iter_f:(int -> Big.bg -> unit) -> trace * sim_stats
+(* (\** Similar to {!Brs.bfs} but only one simulation path is computed. In this *)
+(*     case, parameter [l] indicates the maximum number of simulation steps. *\) *)
+(* val sim : s0:Big.bg -> priorities:p_class list -> max_steps:int -> *)
+(* 	  iter_f:(int -> Big.bg -> unit) -> trace * sim_stats *)
 						     
 (**/**)

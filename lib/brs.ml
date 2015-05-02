@@ -1,3 +1,4 @@
+(* Reaction rules *)
 type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
@@ -23,11 +24,43 @@ module RT = struct
     let edge_of_occ _ i = i 		 
   end
 
+module R = RrType.Make (RT)
+		       
+include R
+	  
+(* Override some functions *)	       
+let to_string_react = R.to_string
+			
+let is_valid_react = R.is_valid
+			  
+let fix = R.fix
+
+let step = R.step
+
+(* Priorities *)	     
 module PT = struct
     type t = RT.t list
     let f_val _ = true
     let f_r_val _ = true
   end
+
+module P = PriType.Make (R) (PT)
+
+include P			
+			
+(* Override some functions *)     
+let is_valid_priority = is_valid
+			  
+let is_valid_priority_list = is_valid_list
+
+let rewrite = rewrite
+
+(* Transition system *)    
+type ts_g =
+  { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
+    e : (int, int) Hashtbl.t;
+    l : (int, int) Hashtbl.t;
+  }
 
 type ts_stats =
   { time : float; 
@@ -35,16 +68,10 @@ type ts_stats =
     trans : int;  
     occs : int;
   }
-
-type ts_g =
-  { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-    e : (int, int) Hashtbl.t;
-    l : (int, int) Hashtbl.t;
-  }
-    
-(* Transition system *)    
-include TsType.MakeTS (RT) (PT)
-		      (struct
+		  
+module TransitionSystem =
+  TsType.MakeTS (R) (P)
+		(struct
 			  type t = ts_stats
 			  let init ~t0 =
 			    { time = t0; 
@@ -73,50 +100,67 @@ include TsType.MakeTS (RT) (PT)
 			  let dest u = u
 			  let string_of_arrow _ = ""
 			end)
-
-(* Override some functions *)
-		      
-let to_string_react = R.to_string
-			
-let is_valid_react = R.is_valid
-			  
-let fix = R.fix
-
-let step = R.step
-	     	    			
-let is_valid_priority = is_valid
-			  
-let is_valid_priority_list = is_valid_list
-
-let rewrite = rewrite
 		      
 (* Simulation trace *)
-	      
-(* Remove element with index i *)
-let rec aux i i' acc = function
-  | [] -> (None, acc)
-  | x :: l -> if i = i' then (Some x, l @ acc)
-	      else aux i (i' + 1) (x :: acc) l
-			  
-(* - Select a reaction rule randomly
-   - Try to rewrite
-   - Done on success, repeat with the remainig reaction rules otherwise *)			  
-let random_step b rules =
-  let t = Sparse.trans b.Big.p.Place.nn in
-  let rec _random_step b = function
-    | [] -> None
-    | rs ->
-       (let (r, rs') =
-	  aux (Random.int (List.length rs)) 0 [] rs in
-	match r with
-	| None -> assert false
-	| Some r ->
-	   (match Big.occurrence b (R.lhs r) t with
-	    | Some o ->
-	       Some (Big.rewrite o b (R.lhs r) (R.rhs r) (R.map r))
-	    | None -> _random_step b rs')) in
-  _random_step b rules
-			       
+(* module Trace = *)
+(*   TsType.MakeTrace (R) (P) *)
+(* 		   (struct *)
+(* 		       type t = ts_stats *)
+(* 		       let init ~t0 = *)
+(* 			 { time = t0;  *)
+(* 			   states = 0;   *)
+(* 			   trans = 0;   *)
+(* 			   occs = 0; *)
+(* 			 } *)
+(* 		       let update ~time ~states ~reacts ~occs ~old_stats = *)
+(* 			 { time = old_stats.time -. time;  *)
+(* 			   states = old_stats.states + states;   *)
+(* 			   trans = old_stats.trans + reacts;   *)
+(* 			   occs = old_stats.occs + occs; *)
+(* 			 }	     *)
+(* 		     end) *)
+(* 		      (struct *)
+(* 			  type t = ts_g *)
+(* 			  type edge_type = RT.edge *)
+					     
+(* 			  let init n = *)
+(* 			    { v = Hashtbl.create n; *)
+(* 			      e = Hashtbl.create n; *)
+(* 			      l = Hashtbl.create n; }		       *)
+(* 			  let states g = g.v *)
+(* 			  let label g = g.l *)
+(* 			  let edges g = g.e *)
+(* 			  let dest u = u *)
+(* 			  let string_of_arrow _ = "" *)
+(* 			end) *)
+(*   (struct	       *)
+
+(*     (\* Remove element with index i *\) *)
+(*     let rec aux i i' acc = function *)
+(*       | [] -> (None, acc) *)
+(*       | x :: l -> if i = i' then (Some x, l @ acc) *)
+(* 		  else aux i (i' + 1) (x :: acc) l *)
+			   
+(*     (\* - Select a reaction rule randomly *)
+(*        - Try to rewrite *)
+(*        - Done on success, repeat with the remainig reaction rules otherwise *\)			   *)
+(*     let random_step b rules = *)
+(*       let t = Sparse.trans b.Big.p.Place.nn in *)
+(*       let rec _random_step b = function *)
+(* 	| [] -> None *)
+(* 	| rs -> *)
+(* 	   (let (r, rs') = *)
+(* 	      aux (Random.int (List.length rs)) 0 [] rs in *)
+(* 	    match r with *)
+(* 	    | None -> assert false *)
+(* 	    | Some r -> *)
+(* 	       (match Big.occurrence b (R.lhs r) t with *)
+(* 		| Some o -> *)
+(* 		   Some (Big.rewrite o b (R.lhs r) (R.rhs r) (R.map r)) *)
+(* 		| None -> _random_step b rs')) in *)
+(*       _random_step b rules *)
+(*   end) *)
+		 
 (* let init_ts n =  *)
 (*   { v = Hashtbl.create n; *)
 (*     e = Hashtbl.create n; *)
