@@ -23,7 +23,86 @@ module type S = sig
     val update : time:float -> states:int -> reacts:int -> occs:int ->
 		 old_stats:t -> t		  
   end
-		  
+
+(* Export functions *)
+module MakeE (G : G) = struct
+    
+    let to_prism g =
+      let (s, e) =
+	(Hashtbl.length (G.states g), Hashtbl.length (G.edges g))
+      and edges =
+	Hashtbl.fold (fun v u acc ->
+		      (v, u) :: acc) (G.edges g) [] in
+      List.fast_sort (fun (v, u) (v', u') ->
+		      Base.ints_compare (v, G.dest u) (v', G.dest u'))
+		     edges
+      |> List.map (fun (v, u) ->
+		   (string_of_int v)
+		   ^ " "
+		   ^ (string_of_int (G.dest u))
+		   ^ (match G.string_of_arrow u with
+		      | "" -> ""
+		      | s -> " " ^ s))
+      |> List.append [(string_of_int s) ^ " " ^ (string_of_int e)]
+      |> String.concat "\n"
+
+    let to_dot g ~name =
+      let rank = "{ rank=source; 0 };\n" in
+      let states =
+	Hashtbl.fold (fun _ (i, _) buff -> 
+		      if i = 0 then Printf.sprintf 
+				      "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
+				       fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
+				       style=\"bold\" ];\n" 
+				      buff i i i i
+		      else Printf.sprintf 
+			     "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
+			      fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
+			     buff i i i i)
+		     (G.states g) ""
+      and edges =
+	Hashtbl.fold (fun v u buff -> 
+		      Printf.sprintf "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
+				      arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+				     buff v (G.dest u) (G.string_of_arrow u))
+		     (G.edges g) "" in
+      Printf.sprintf "digraph %s {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
+		     name rank states edges
+
+		     
+    let to_lab g =
+      let inv =
+	Hashtbl.create (Hashtbl.length (G.label g)) in
+      Hashtbl.fold (fun s p acc -> 
+		    Hashtbl.add inv p s;
+		    p :: acc)
+		   (G.label g) []
+      |>  List.map (fun p ->
+		    Hashtbl.find_all inv p
+		    |> List.map (fun s -> "x = " ^ (string_of_int s)) 
+		    |> String.concat " | " 
+		    |> fun s ->
+		       "label \"p_" ^ (string_of_int p) ^ "\" = " ^ s ^ ";")
+      |> String.concat "\n"
+
+		       
+    let iter_states ~f g =
+      Hashtbl.iter (fun _ (i, b) -> f i b) (G.states g)
+		   
+    let write_svg g ~name ~path =
+      Export.write_svg (to_dot g ~name) ~name ~path
+		       
+    let write_prism g ~name ~path =
+      Export.write_string (to_prism g) ~name ~path
+			  
+    let write_lab g ~name ~path =
+      Export.write_string (to_lab g) ~name ~path
+			  
+    let write_dot g ~name ~path =
+      Export.write_string (to_dot g ~name) ~name ~path
+			  
+  end
+  		  
 module MakeTS (RT : RrType.R)
 	      (PT : PriType.P with type t = RT.t list)
 	      (S : S)
@@ -132,77 +211,6 @@ module MakeTS (RT : RrType.R)
       iter_f 0 s0';
       _bfs g q 0 m stats priorities max iter_f
 
-    let to_prism g =
-      let (s, e) =
-	(Hashtbl.length (G.states g), Hashtbl.length (G.edges g))
-      and edges =
-	Hashtbl.fold (fun v u acc ->
-		      (v, u) :: acc) (G.edges g) [] in
-      List.fast_sort (fun (v, u) (v', u') ->
-			       Base.ints_compare (v, G.dest u) (v', G.dest u'))
-			      edges
-      |> List.map (fun (v, u) ->
-		   (string_of_int v)
-		   ^ " "
-		   ^ (string_of_int (G.dest u))
-		   ^ (match G.string_of_arrow u with
-		      | "" -> ""
-		      | s -> " " ^ s))
-      |> List.append [(string_of_int s) ^ " " ^ (string_of_int e)]
-      |> String.concat "\n"
-
-    let to_dot g =
-      let rank = "{ rank=source; 0 };\n" in
-      let states =
-	Hashtbl.fold (fun _ (i, _) buff -> 
-		      if i = 0 then Printf.sprintf 
-				      "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
-				       fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
-				       style=\"bold\" ];\n" 
-				      buff i i i i
-		      else Printf.sprintf 
-			     "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
-			      fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
-			     buff i i i i)
-		     (G.states g) ""
-      and edges =
-	Hashtbl.fold (fun v u buff -> 
-		      Printf.sprintf "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
-				      arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-				     buff v (G.dest u) (G.string_of_arrow u))
-		     (G.edges g) "" in
-      Printf.sprintf "digraph ctmc {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}" rank states edges
-
-	       
-    let to_lab g =
-      let inv =
-	Hashtbl.create (Hashtbl.length (G.label g)) in
-      Hashtbl.fold (fun s p acc -> 
-		    Hashtbl.add inv p s;
-		    p :: acc)
-		   (G.label g) []
-      |>  List.map (fun p ->
-		    Hashtbl.find_all inv p
-		    |> List.map (fun s -> "x = " ^ (string_of_int s)) 
-		    |> String.concat " | " 
-		    |> fun s ->
-		       "label \"p_" ^ (string_of_int p) ^ "\" = " ^ s ^ ";")
-      |> String.concat "\n"
-
-	       
-    let iter_states ~f g =
-      Hashtbl.iter (fun _ (i, b) -> f i b) (G.states g)
-		   
-    let write_svg g ~name ~path =
-      Export.write_svg (to_dot g) ~name ~path
-		
-    let write_prism g ~name ~path =
-      Export.write_string (to_prism g) ~name ~path
-							   
-    let write_lab g ~name ~path =
-      Export.write_string (to_lab g) ~name ~path
-							 
-    let write_dot g ~name ~path =
-      Export.write_string (to_dot g) ~name ~path
-			 
+    include MakeE (G)
+	   
   end

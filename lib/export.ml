@@ -63,36 +63,4 @@ let write_string s ~name ~path =
     String.length s
   with
   | Sys_error s -> raise (ERROR (Sys s))
-  
-(* let write_big b n path = *)
-(*   catch_unix_errors _write_svg (get_dot b n) n path *)
-
-(* let write_ts ts n path = *)
-(*   catch_unix_errors _write_svg (Brs.to_dot ts) n path *)
-
-(* let write_ctmc ctmc n path = *)
-(*   catch_unix_errors _write_svg (Sbrs.to_dot ctmc) n path *)
-
-(* let write_ts_prism ts n path = *)
-(*   _write_string (Brs.to_prism ts) n path *)
-
-(* let write_ctmc_prism ctmc n path = *)
-(*   _write_string (Sbrs.to_prism ctmc) n path *)
-
-(* let string_of_l l = *)
-(*   let inv = Hashtbl.create (Hashtbl.length l) in *)
-(*   Hashtbl.fold (fun s p acc ->  *)
-(* 		Hashtbl.add inv p s; *)
-(* 		p :: acc) *)
-(* 	       l [] *)
-(*   |>  List.map (fun p -> *)
-(* 		Hashtbl.find_all inv p *)
-(* 		|> List.map (fun s -> "x = " ^ (string_of_int s))  *)
-(* 		|> String.concat " | "  *)
-(* 		|> fun s -> *)
-(* 		   "label \"p_" ^ (string_of_int p) ^ "\" = " ^ s ^ ";") *)
-(*   |> String.concat "\n" *)
-
-(* let write_csl l n path = *)
-(*   _write_string (string_of_l l) n path *)
-
+			 

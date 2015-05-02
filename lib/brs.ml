@@ -74,7 +74,7 @@ include TsType.MakeTS (RT) (PT)
 			  let string_of_arrow _ = ""
 			end)
 
-(* Override soome names *)
+(* Override some functions *)
 		      
 let to_string_react = R.to_string
 			
