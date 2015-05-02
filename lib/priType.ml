@@ -8,21 +8,19 @@ module type P = sig
 	   
   end
 
-module type T = sig
+(* module type T = sig *)
 
-    type p_class
-
-    type r	   
+(*     type p_class = *)
+(*       | P_class of RrType.T.t list  *)
+(*       | P_rclass of RrType.T.t list *)
       
-    val is_valid : p_class -> bool
+(*     val is_valid : p_class -> bool *)
 
-    val is_valis_list : p_class list -> bool
+(*     val is_valid_list : p_class list -> bool *)
 
-    val is_enabled : p_class -> bool					  
-
-    val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
+(*     val rewrite : Big.bg -> int -> p_class list -> Big.bg * int *)
 				  
-  end
+(*   end *)
 		  
 module Make (R : RrType.T) (P : P with  type t = R.t list) = struct
 

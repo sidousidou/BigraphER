@@ -58,9 +58,9 @@ val to_string: bg -> string
 (** Parse a bigraph. *)
 val parse : string list -> bg
  
-(** [get_dot b i] returns a string expressing bigraph [b] named [i] in 
+(** [to_dot b i] returns a string expressing bigraph [b] named [i] in 
     dot format. *)
-val get_dot : bg -> string -> string
+val to_dot : bg -> string -> string
 
 (** [inner b] returns the inner face of bigraph [b].*)
 val inner : bg -> inter
@@ -76,6 +76,12 @@ val apply_exn : int Iso.t -> bg -> bg
     The link graph is the idendity over face [f].*)
 val placing : int list list -> int -> Link.Face.t -> bg
 
+(** Exception *)						       
+val write_dot : bg -> name:string -> path:string -> int
+
+(** Exception *)						      
+val write_svg : bg -> name:string -> path:string -> int
+						       
 (** {6 Elementary bigraphs graphs} *)
 
 (** [id i] returns an identity over interface [i].*)

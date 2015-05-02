@@ -228,7 +228,7 @@ let apply_exn i b =
       l = Link.apply_exn i b.l;
     }
 
-let get_dot b ide =
+let to_dot b ide =
   let build_rank i flag =
     let ord = ord_of_inter i
     and f = face_of_inter i in 
@@ -875,3 +875,9 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   match eta with
   | Some eta' -> comp c (comp (tens r1 id) (instantiate eta' d))
   | None -> comp c (comp (tens r1 id) d)
+
+let write_svg b ~name ~path =
+  Export.write_svg (to_dot b name) ~name ~path
+
+let write_dot b ~name ~path =
+  Export.write_string (to_dot b name) ~name ~path		 

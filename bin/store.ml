@@ -979,9 +979,9 @@ let export decs (env : store) (env_t : store_t) path
   let write_pair id lhs rhs =
     let (lhs_n, rhs_n) =
       (id ^ "_lhs" ^ svg, id ^ "_rhs" ^ svg) in
-    Export.write_big lhs lhs_n path
+    Big.write_svg lhs ~name:lhs_n ~path
     |> print_fun (concat lhs_n);
-    Export.write_big rhs rhs_n path
+    Big.write_svg rhs ~name:rhs_n ~path
     |> print_fun (concat rhs_n) in
   let dummy_args (args_t : num_type list) =
     resolve_types env_t args_t
@@ -997,13 +997,13 @@ let export decs (env : store) (env_t : store_t) path
 	     | Dint _
 	     | Dfloat _ -> ()
 	     | Dbig (Big_exp (id, _, p)) ->
-		(Export.write_big (get_big id p env) (id ^ svg) path
+		(Big.write_svg (get_big id p env) ~name:(id ^ svg) ~path
 		 |> print_fun (concat (id ^ svg)))
 	     | Dbig (Big_fun_exp (id, _, _, p)) ->
 		(let args = aux id in
 		 let b = fst (eval_big (Big_var_fun (id, args, p))
 				       ScopeMap.empty env env_t) in
-		 Export.write_big b (id ^ svg) path
+		 Big.write_svg b ~name:(id ^ svg) ~path
 		|> print_fun (concat (id ^ svg)))
 	     | Dreact (React_exp (id, _, _, _, p)) ->
 		(let r = get_react id p env in

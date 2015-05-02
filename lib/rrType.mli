@@ -10,6 +10,9 @@ module type R =
 	   
     (** The type of an occurrence. *)
     type occ
+
+    (** The type of an edge destination. *)	   
+    type edge
 	   
     (** Return the left-hand side of a rewrite rule. *)
     val lhs : t -> Big.bg
@@ -38,7 +41,12 @@ module type R =
 			      
     (** Merge two occurrences. *)			 
     val merge_occ : occ -> occ -> occ
-			 
+
+    (** [update_occ o b] returns a copy of [o] with [b] as bigraph. *)				    
+    val update_occ : occ -> Big.bg -> occ
+
+    (** Replace the bigraph in an occurrence with an integer. *)					
+    val edge_of_occ : occ -> int -> edge
   end
 
 (** Common interface of concrete rewrite rules. *)		  
@@ -88,21 +96,8 @@ module type T =
     
 (** Module for the concrete implementation of basic operations on rewrite
     rules. *)
-module Make :
-functor (R : R) ->
-sig
-  type t = R.t
-  type label = R.label
-  type occ = R.occ
-  val lhs : t -> Big.bg
-  val rhs : t -> Big.bg
-  val l : t -> label
-  val map : t -> int Fun.t option
-  val to_string : t -> string
-  val is_valid : t -> bool
-  val is_enabled : Big.bg -> t -> bool
-  val fix : Big.bg -> t list -> Big.bg * int
-  val step : Big.bg -> t list -> occ list * int
-end
-
-(* module Make (R : R) : T with type t = R.t and type label = R.label and type occ = R.occ *)
+module Make (R : R) : T with type t = R.t
+			 and type label = R.label
+			 and type occ = R.occ
+					  
+(**/**)

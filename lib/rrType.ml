@@ -2,6 +2,7 @@ module type R = sig
     type t
     type label
     type occ
+    type edge
     val lhs : t -> Big.bg
     val rhs : t -> Big.bg
     val l : t -> label
@@ -11,6 +12,9 @@ module type R = sig
     val to_occ : Big.bg -> t -> occ
     val big_of_occ : occ -> Big.bg
     val merge_occ : occ -> occ -> occ
+    val update_occ : occ -> Big.bg -> occ
+    (* Replace the bigraph in an occurrence with an index *)
+    val edge_of_occ : occ -> int -> edge 
   end
 
 module type T = sig

@@ -109,19 +109,19 @@ let print_max fmt =
 		   
 let print_stats_brs fmt stats =
   [{ descr = ("Build time:", `green);
-     value = `f Brs.(stats.t);
+     value = `f Brs.(stats.time);
      pp_val = print_float;
      display =  not Cmd.(defaults.debug); };
    { descr = ("States:", `green);
-     value = `i Brs.(stats.s);
+     value = `i Brs.(stats.states);
      pp_val = print_int;
      display = true; };
    { descr = ("Transitions:", `green);
-     value = `i Brs.(stats.r);
+     value = `i Brs.(stats.trans);
      pp_val = print_int;
      display = true; };
    { descr = ("Occurrences:", `green);
-     value = `i Brs.(stats.o);
+     value = `i Brs.(stats.occs);
      pp_val = print_int;
      display = true; }]
   |> print_table fmt
@@ -171,12 +171,12 @@ let print_fun fmt verb fname i =
     print_msg fmt ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'") 
   else ()
 		      
-let export_csl fmt label =
+let export_csl fmt g =
   match Cmd.(defaults.out_csl) with
   | None -> ()
   | Some file ->
      (print_msg fmt ("Exporting properties to " ^ file ^ " ...");
-      Export.write_csl label (Filename.basename file) (Filename.dirname file)
+      write_lab g ~name:(Filename.basename file) ~path:(Filename.dirname file)
      |> print_fun fmt Cmd.(defaults.verbose) file)
 
 let export_ctmc_prism fmt ctmc =

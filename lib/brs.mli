@@ -8,27 +8,10 @@ type react =
     eta : int Fun.t option         (* Instantiation map *)
   }
        
-(** The type of transition systems. *)
-type ts = {
-  v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
-  e : (int, int) Hashtbl.t;                   (** Transition relation *)
-  l : (int, int) Hashtbl.t;                   (** Labelling function *) 
-}
-
-type stats = {
-  t : float;  (** Execution time *)
-  s : int;    (** Number of states *)
-  r : int;    (** Number of reaction *)
-  o : int;    (** Number of occurrences *)
-}
-
-(** The type of priority classes: lists of reaction rules. *)
+(** The type of priority classes as lists of reaction rules. *)
 type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list (** Reducible priority class *)
-		      
-(** Raised when the size of the transition system reaches the limit. *)
-exception LIMIT of ts * stats
 
 (** String representation of a reaction. *)
 val to_string_react : react -> string
@@ -49,10 +32,6 @@ val is_valid_priority_list : p_class list -> bool
     also returned. *)
 val step : Big.bg -> react list -> Big.bg list * int
 
-(** Compute a random reaction.
-    @raise NODE_FREE when [p] has an empty node set. *)
-val random_step : Big.bg -> react list -> Big.bg option
-
 (** Reduce a reducible class to the fixed point. Return the input state if no
     rewriting is performed. The fixed point and the number of rewriting steps
     performed are returned otherwise. *)   
@@ -63,32 +42,64 @@ val fix : Big.bg -> react list -> Big.bg * int
     is the number of rewriting steps performed in the loop. *)
 val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
 
-(** [bfs s p l n f] computes the transition system of the BRS specified by
-    initial state [s] and priority classes [p]. [l] is the maximum number of
-    states of the transition system. [n] is the initialisation size for the
-    edges and [f] is a function that is applied at every loop. Priority classes 
-    are assumed to be sorted by priority, i.e. the first element in the list is
-    the class with the highest priority.
-    @raise Brs.LIMIT when the maximum number of states is reached.*)
-val bfs : Big.bg -> p_class list -> int -> int ->
-  (int -> Big.bg -> unit) -> ts * stats
+(** {6 Transition systems} *)
+							  
+(** The type of transition systems. *)
+type ts_g = {
+    v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
+    e : (int, int) Hashtbl.t;                   (** Transition relation *)
+    l : (int, int) Hashtbl.t;                   (** Labelling function *) 
+  }
 
-(** Similar to {!Brs.bfs} but only one simulation path is computed. In this
-    case, parameter [l] indicates the maximum number of simulation steps. *)
-val sim : Big.bg -> p_class list -> int -> int ->
-  (int -> Big.bg -> unit) -> ts * stats
+type ts_stats = {
+    time : float;  (** Execution time *)
+    states : int;    (** Number of states *)
+    trans : int;    (** Number of reaction *)
+    occs : int;    (** Number of occurrences *)
+  }
+	       
+(** Raised when the size of the transition system reaches the limit. *)
+exception MAX of ts_g * ts_stats
+		       
+(** [bfs s0 priorities max f] computes the transition system of the BRS
+    specified by initial state [s] and priority classes [p]. [l] is the maximum
+    number of states of the transition system. [n] is the initialisation size
+    for the edges and [f] is a function that is applied at every loop. Priority
+    classes are assumed to be sorted by priority, i.e. the first element in the
+    list is the class with the highest priority.  @raise Brs.LIMIT when the
+    maximum number of states is reached.*)
+val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
+	  iter_f:(int -> Big.bg -> unit) -> ts_g * ts_stats
 
 (** Compute the string representation in PRISM [tra] format of a transition
     system. *)
-val to_prism : ts -> string
+val to_prism : ts_g -> string
 
 (** Compute the string representation in [dot] format of a transition system. *)
-val to_dot : ts -> string
-		     
+val to_dot : ts_g -> string
+		    
 (** Compute the string representation in PRISM [lab] format of the labelling
     function of a transition system. *)
-val to_lab : ts -> string
-		     
-val iter_states : (int -> Big.bg -> unit) -> ts -> unit
+val to_lab : ts_g -> string
+		    
+val iter_states : f:(int -> Big.bg -> unit) -> ts_g -> unit
 
+val write_prism : ts_g -> name:string -> path:string -> int
+
+val write_lab : ts_g -> name:string -> path:string -> int
+
+val write_dot : ts_g -> name:string -> path:string -> int							       
+
+
+
+
+(** Compute a random reaction.
+    @raise NODE_FREE when [p] has an empty node set. *)
+val random_step : Big.bg -> react list -> Big.bg option
+
+(* (\** Similar to {!Brs.bfs} but only one simulation path is computed. In this *)
+(*     case, parameter [l] indicates the maximum number of simulation steps. *\) *)
+(* val sim : Big.bg -> p_class list -> int -> int -> *)
+(*   (int -> Big.bg -> unit) -> ts * stats *)
+						     
 (**/**)
