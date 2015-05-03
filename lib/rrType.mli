@@ -16,6 +16,7 @@ module type R =
     val merge_occ : occ -> occ -> occ
     val update_occ : occ -> Big.bg -> occ
     val edge_of_occ : occ -> int -> edge
+    val random_step : Big.bg -> t list -> occ option * int
   end
 
 module type T =
@@ -105,6 +106,8 @@ sig
       returned. *)
   val step : Big.bg -> t list -> occ list * int
 
+  val random_step : Big.bg -> t list -> occ option * int
+					      
 end
 
 

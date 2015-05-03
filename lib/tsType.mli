@@ -12,10 +12,12 @@ module type G =
 
 module type L = sig
     type t
+    type occ
     val init : t
-    val increment : t -> t -> t
+    val increment : t -> occ -> t
+    (* is_greater a b = a > b *)
     val is_greater : t -> t -> bool
-  end
+end
 
 type stats =  { time : float; 
 		states : int;  
@@ -30,8 +32,8 @@ module MakeTS (R : RrType.T)
 		    | P_rclass of R.t list
 		  val is_valid : p_class -> bool
 		  val is_valid_list : p_class list -> bool
-		  val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
-		  val scan : Big.bg * int -> matches:int ->
+		  val rewrite : Big.bg -> p_class list -> Big.bg * int
+		  val scan : Big.bg * int ->
 			     part_f:(R.occ list ->
 				     ((int * R.occ) list * R.edge list * int)) ->
 			     const_pri:p_class list -> p_class list ->
@@ -77,8 +79,8 @@ module MakeTrace (R : RrType.T)
 		       | P_rclass of R.t list
 		     val is_valid : p_class -> bool
 		     val is_valid_list : p_class list -> bool
-		     val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
-		     val scan : Big.bg * int -> matches:int ->
+		     val rewrite : Big.bg -> p_class list -> Big.bg * int
+		     val scan : Big.bg * int ->
 				part_f:(R.occ list ->
 					((int * R.occ) list * R.edge list * int)) ->
 				const_pri:p_class list -> p_class list ->
@@ -122,4 +124,3 @@ module MakeTrace (R : RrType.T)
 							   
   end
 
-(**/**)  

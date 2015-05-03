@@ -35,6 +35,8 @@ val is_valid_priority_list : p_class list -> bool
     also returned. *)
 val step : Big.bg -> react list -> Big.bg list * int
 
+val random_step : Big.bg -> react list -> Big.bg option * int
+						   
 (** Reduce a reducible class to the fixed point. Return the input state if no
     rewriting is performed. The fixed point and the number of rewriting steps
     performed are returned otherwise. *)   
@@ -43,17 +45,17 @@ val fix : Big.bg -> react list -> Big.bg * int
 (** Scan priority classes and reduce a state. Stop when no more rules can be
     applied or when a non reducing priority class is enabled. The output integer
     is the number of rewriting steps performed in the loop. *)
-val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
+val rewrite : Big.bg -> p_class list -> Big.bg * int
 
-(** {6 Transition systems} *)
-							  
 (** The type of transition systems. *)
 type ts_g = {
     v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
     e : (int, int) Hashtbl.t;                   (** Transition relation *)
     l : (int, int) Hashtbl.t;                   (** Labelling function *) 
   }
-
+						   
+(** {6 Transition systems} *)
+							  
 module TransitionSystem : sig		  
     
     (** Raised when the size of the transition system reaches the limit. *)
@@ -93,23 +95,36 @@ module TransitionSystem : sig
   end
 			    
 (** {6 Simulation traces} *)
-							  
-(* (\** The type of simulation trace. *\) *)
-(* type trace = { *)
-(*     v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (\** States *\) *)
-(*     e : (int, int) Hashtbl.t;                   (\** Transition relation *\) *)
-(*     l : (int, int) Hashtbl.t;                   (\** Labelling function *\)  *)
-(*   } *)
 
-(* exception SIM_LIMIT of trace * stats *)
-							
-(* (\** Compute a random reaction. *)
-(*     @raise NODE_FREE when [p] has an empty node set. *\) *)
-(* val random_step : Big.bg -> react list -> Big.bg option *)
+module Trace : sig		  
+	       
+    type limit = int
+		   
+    exception LIMIT of ts_g * stats
 
-(* (\** Similar to {!Brs.bfs} but only one simulation path is computed. In this *)
-(*     case, parameter [l] indicates the maximum number of simulation steps. *\) *)
-(* val sim : s0:Big.bg -> priorities:p_class list -> max_steps:int -> *)
-(* 	  iter_f:(int -> Big.bg -> unit) -> trace * stats *)
+    exception DEADLOCK of ts_g * stats * limit
+
+    val sim :
+      s0:Big.bg ->
+      priorities:p_class list -> init_size:int ->
+      stop:limit -> iter_f:(int -> Big.bg -> unit) -> ts_g * stats
+
+    val to_prism : ts_g -> string
+			  
+    val to_dot : ts_g -> name:string -> string
+
+    val to_lab : ts_g -> string
+			
+    val iter_states : f:(int -> Big.bg -> unit) -> ts_g -> unit
+
+    val write_svg : ts_g -> name:string -> path:string -> int
+							 
+    val write_prism : ts_g -> name:string -> path:string -> int
+							   
+    val write_lab : ts_g -> name:string -> path:string -> int
+
+    val write_dot : ts_g -> name:string -> path:string -> int
+
+  end							  
 						     
 (**/**)

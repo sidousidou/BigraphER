@@ -184,8 +184,7 @@ module MakeTS (R : RrType.T)
 	    List.iter (fun (i, o) ->
 		       Queue.push (i, R.big_of_occ o) q)
 		      new_s;
-	    (* Add labels for new states *)
-	    (* TO DO *)
+	    (* TO DO: add labels for new states *)
 	    (* Add edges from v to new states *)
 	    List.iter (fun (u, o) -> 
 		       Hashtbl.add (G.edges g) v (R.edge_of_occ o u))
@@ -260,6 +259,7 @@ module MakeTrace (R : RrType.T)
 	| (Some o, m') ->	
 	   (let s' = R.big_of_occ o in
 	    Hashtbl.add (G.states trace) (Big.key s') (i + 1, s');
+	    (* TO DO: add labels for new states *)
 	    Hashtbl.add (G.edges trace) i (R.edge_of_occ o (i + 1));
 	    _sim trace s' (i + 1) (L.increment t_sim o) m' t0 priorities t_max iter_f) 
 				    				    
@@ -276,4 +276,3 @@ module MakeTrace (R : RrType.T)
     include MakeE (G)
 	   
   end
-							  

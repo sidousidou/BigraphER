@@ -15,7 +15,9 @@ module type R =
     val merge_occ : occ -> occ -> occ
     val update_occ : occ -> Big.bg -> occ
     (* Replace the bigraph in an occurrence with an index *)
-    val edge_of_occ : occ -> int -> edge 
+    val edge_of_occ : occ -> int -> edge
+    (* Type specific for now *)			      
+    val random_step : Big.bg -> t list -> occ option * int
   end
 
 module type T =
@@ -39,6 +41,7 @@ module type T =
     val is_enabled : Big.bg -> t -> bool
     val fix : Big.bg -> t list -> Big.bg * int
     val step : Big.bg -> t list -> occ list * int
+    val random_step : Big.bg -> t list -> occ option * int
   end
 		  
 module Make (R : R) = struct
@@ -116,5 +119,5 @@ module Make (R : R) = struct
 	@ acc in
       List.fold_left aux2 [] rules
       |> filter_iso
-				
+		   
   end
