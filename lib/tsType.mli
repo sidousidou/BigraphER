@@ -90,7 +90,7 @@ module MakeTrace (R : RrType.T)
 				    const_pri:p_class list -> p_class list ->
 				    R.occ option * int
 		   end)
-		 (L : L)
+		 (L : L with type occ = R.occ)
 		 (G : G with type edge_type = R.edge) : sig
 
     type t = G.t

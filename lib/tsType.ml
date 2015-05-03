@@ -220,8 +220,8 @@ module MakeTrace (R : RrType.T)
 		       | P_rclass of R.t list
 		     val is_valid : p_class -> bool
 		     val is_valid_list : p_class list -> bool
-		     val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
-		     val scan : Big.bg * int -> matches:int ->
+		     val rewrite : Big.bg -> p_class list -> Big.bg * int
+		     val scan : Big.bg * int ->
 				part_f:(R.occ list ->
 					((int * R.occ) list * R.edge list * int)) ->
 				const_pri:p_class list -> p_class list ->
@@ -266,7 +266,7 @@ module MakeTrace (R : RrType.T)
     let sim ~s0 ~priorities ~init_size ~stop ~iter_f =
       Random.self_init ();
       (* Apply rewriting to s0 *)
-      let (s0', m) = P.rewrite s0 0 priorities
+      let (s0', m) = P.rewrite s0 priorities
       and trace = G.init init_size in
       (* Add initial state *)
       Hashtbl.add (G.states trace) (Big.key s0') (0, s0');

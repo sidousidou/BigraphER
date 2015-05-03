@@ -76,14 +76,14 @@ let rewrite = rewrite
 
 type stats = TsType.stats
 
-type ts_g =
+type g =
   { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-    e : (int, int) Hashtbl.t;
+    e : (int, edge) Hashtbl.t;
     l : (int, int) Hashtbl.t;
   }
 		  
 module G = struct
-    type t = ts_g
+    type t = g
     type edge_type = RT.edge	       
     let init n =
       { v = Hashtbl.create n;
@@ -96,13 +96,11 @@ module G = struct
     let string_of_arrow _ = ""
   end
 	       
-(* Transition system *)    
 module TransitionSystem = TsType.MakeTS (R) (P) (G)
 		      
-(* Simulation trace *)
 module L = struct
     type t = int
-    type occ = Big.bg
+    type occ = R.occ
     let init = 0
     let increment t _ = t + 1
     let is_greater = ( > )
