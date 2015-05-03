@@ -31,32 +31,50 @@ module Make (R :RrType.T)
     let is_reducible = function
       | P_class _ -> false
       | P_rclass _ -> true
-		  
-    let rec rewrite b m = function
-      | [] -> (b, m)
-      | (P_class rr) :: classes ->
-	 (if is_enabled b rr then (b, m)
-          else rewrite b m classes)
-      | (P_rclass rr) :: classes ->
-	 (let (b', i) = R.fix b rr in
-          rewrite b' (m + i) classes)
+
+    let rewrite b =
+      let rec _rewrite b m = function 
+	| [] -> (b, m)
+	| (P_class rr) :: classes ->
+	   (if is_enabled b rr then (b, m)
+            else _rewrite b m classes)
+	| (P_rclass rr) :: classes ->
+	   (let (b', i) = R.fix b rr in
+            _rewrite b' (m + i) classes) in
+      _rewrite b 0
 
     (* Iterate over priority classes *)
-    let rec scan (b, i) ~matches ~part_f ~const_pri = function
-      | [] -> (([], [], i), matches)
-      | (P_class rr) :: cs ->
-         (let (ss, l) = R.step b rr in
-          if l = 0 then scan (b, i) ~matches ~part_f ~const_pri cs 
-          else 
-	    (* apply rewriting - instantaneous *)
-	    let (ss', l') = 
-	      List.fold_left (fun (ss,  l) o -> 
-			      let (s', l') =
-				rewrite (R.big_of_occ o) l const_pri in
-			      ((R.update_occ o s') :: ss, l'))
-			     ([], l) ss in
-	    ((part_f ss' : (int * R.occ) list * R.edge list * int), matches + l'))
-      | P_rclass _ :: cs -> (* skip *)
-         scan (b, i) ~matches ~part_f ~const_pri cs
+    let scan (b, i) ~part_f ~const_pri =
+      let rec _scan (b, i) ~matches ~part_f ~const_pri = function
+	| [] -> (([], [], i), matches)
+	| (P_class rr) :: cs ->
+           (let (ss, l) = R.step b rr in
+            if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs 
+            else 
+	      (* Apply rewriting - instantaneous *)
+	      let (ss', l') = 
+		List.fold_left (fun (ss,  l) o -> 
+				let (s', l') =
+				  rewrite (R.big_of_occ o) const_pri in
+				((R.update_occ o s') :: ss, l + l'))
+			       ([], l) ss in
+	      ((part_f ss' : (int * R.occ) list * R.edge list * int), matches + l'))
+	| (P_rclass _) :: cs -> (* Skip *)
+           _scan (b, i) ~matches ~part_f ~const_pri cs in
+      _scan (b, i) ~matches:0 ~part_f ~const_pri
+
+    let scan_sim b ~iter_f ~const_pri =
+      let rec _scan_sim b m ~iter_f ~const_pri = function
+	| [] -> (None, m)
+	| (P_class rr) :: cs ->
+    	   (match R.random_step b rr with
+    	    | (None, m') -> (* Skip *)
+    	       _scan_sim b (m + m') ~iter_f ~const_pri cs
+    	    | (Some o, m') ->
+    	       (let (b', m'') = rewrite (R.big_of_occ o) const_pri in
+    		(Some (R.update_occ o b'), m + m' + m'')))
+	| (P_rclass _) :: cs -> (* Skip *)
+    	   _scan_sim b m ~iter_f ~const_pri cs in
+      _scan_sim b 0 ~iter_f ~const_pri
 
   end

@@ -12,17 +12,17 @@ module type G =
 
 module type L = sig
     type t
+    val init : t
+    val increment : t -> t -> t
     val is_greater : t -> t -> bool
   end
 
-module type S =
-  sig
-    type t
-    val init : t0:float -> t
-    val update : time:float -> states:int -> reacts:int -> occs:int ->
-		 old_stats:t -> t
-  end
-    
+type stats =  { time : float; 
+		states : int;  
+		trans : int;  
+		occs : int;
+	      }
+		  
 module MakeTS (R : RrType.T)
 	      (P : sig
 		  type p_class =
@@ -36,81 +36,90 @@ module MakeTS (R : RrType.T)
 				     ((int * R.occ) list * R.edge list * int)) ->
 			     const_pri:p_class list -> p_class list ->
 			     ((int * R.occ) list * R.edge list * int) * int
+		  val scan_sim : Big.bg ->
+				 iter_f:(int -> Big.bg -> unit) ->
+				 const_pri:p_class list -> p_class list ->
+				 R.occ option * int
 		end)
-	      (S : S)
-	      (G : G with type edge_type = R.edge) :
-sig
-  
-  type t = G.t
+	      (G : G with type edge_type = R.edge) : sig
+    
+    type t = G.t
 
-  type stats = S.t
+    exception MAX of t * stats
 
-  exception MAX of t * stats
+    val bfs :
+      s0:Big.bg ->
+      priorities:P.p_class list ->
+      max:int -> iter_f:(int -> Big.bg -> unit) -> t * stats
 
-  val bfs :
-    s0:Big.bg ->
-    priorities:P.p_class list ->
-    max:int -> iter_f:(int -> Big.bg -> unit) -> t * S.t
+    val to_prism : t -> string
 
-  val to_prism : G.t -> string
+    val to_dot : t -> name: string -> string
 
-  val to_dot : G.t -> name: string -> string
+    val to_lab : t -> string
 
-  val to_lab : G.t -> string
+    val iter_states : f:(int -> Big.bg -> unit) -> t -> unit
 
-  val iter_states : f:(int -> Big.bg -> unit) -> G.t -> unit
+    val write_svg : t -> name:string -> path:string -> int
 
-  val write_svg : G.t -> name:string -> path:string -> int
+    val write_prism : t -> name:string -> path:string -> int
 
-  val write_prism : G.t -> name:string -> path:string -> int
+    val write_lab : t -> name:string -> path:string -> int
 
-  val write_lab : G.t -> name:string -> path:string -> int
+    val write_dot : t -> name:string -> path:string -> int
 
-  val write_dot : G.t -> name:string -> path:string -> int
+  end
 
-end
+module MakeTrace (R : RrType.T)
+		 (P : sig
+		     type p_class =
+		       | P_class of R.t list
+		       | P_rclass of R.t list
+		     val is_valid : p_class -> bool
+		     val is_valid_list : p_class list -> bool
+		     val rewrite : Big.bg -> int -> p_class list -> Big.bg * int
+		     val scan : Big.bg * int -> matches:int ->
+				part_f:(R.occ list ->
+					((int * R.occ) list * R.edge list * int)) ->
+				const_pri:p_class list -> p_class list ->
+				((int * R.occ) list * R.edge list * int) * int
+		     val scan_sim : Big.bg ->
+				    iter_f:(int -> Big.bg -> unit) ->
+				    const_pri:p_class list -> p_class list ->
+				    R.occ option * int
+		   end)
+		 (L : L)
+		 (G : G with type edge_type = R.edge) : sig
 
-(* module MakeTrace (R : RrType.T) *)
-(* 		 (P : sig *)
-(* 		     type p_class = *)
-(* 		       | P_class of R.t list *)
-(* 		       | P_rclass of R.t list *)
-(* 		     val is_valid : p_class -> bool *)
-(* 		     val is_valid_list : p_class list -> bool *)
-(* 		     val rewrite : Big.bg -> int -> p_class list -> Big.bg * int *)
-(* 		   end) *)
-(* 		 (S : S) *)
-(* 		 (G : G with type edge_type = R.edge) : *)
-(* sig *)
+    type t = G.t
+	       
+    type limit = L.t
+		   
+    exception LIMIT of t * stats
 
-(*   type t = G.t *)
-	     
-(*   type stats = S.t *)
+    exception DEADLOCK of t * stats * limit
 
-(*   exception MAX of t * stats *)
+    val sim :
+      s0:Big.bg ->
+      priorities:P.p_class list -> init_size:int ->
+      stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * stats
 
-(*   val sim : *)
-(*     s0:Big.bg -> *)
-(*     priorities:P.p_class list -> *)
-(*     max:int -> iter_f:(int -> Big.bg -> unit) -> t * S.t *)
-						       
-  
-(*   val to_prism : G.t -> string *)
+    val to_prism : t -> string
+			    
+    val to_dot : t -> name:string -> string
+
+    val to_lab : t -> string
 			  
-(*   val to_dot : G.t -> string *)
+    val iter_states : f:(int -> Big.bg -> unit) -> t -> unit
 
-(*   val to_lab : G.t -> string *)
-			
-(*   val iter_states : f:(int -> Big.bg -> unit) -> G.t -> unit *)
-
-(*   val write_svg : G.t -> name:string -> path:string -> int *)
-							 
-(*   val write_prism : G.t -> name:string -> path:string -> int *)
+    val write_svg : t -> name:string -> path:string -> int
 							   
-(*   val write_lab : G.t -> name:string -> path:string -> int *)
+    val write_prism : t -> name:string -> path:string -> int
+							     
+    val write_lab : t -> name:string -> path:string -> int
 
-(*   val write_dot : G.t -> name:string -> path:string -> int *)
- 
-(* end *)
+    val write_dot : t -> name:string -> path:string -> int
+							   
+  end
 
-  
+(**/**)  

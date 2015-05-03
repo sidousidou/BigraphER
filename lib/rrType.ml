@@ -74,7 +74,7 @@ module Make (R : R) = struct
       Big.occurs b (lhs r)
 
     (* Reduce a reducible class to the fixed point. Return the input state if no
-     rewriting is performed. *)
+       rewriting is performed. *)
     let fix b rules =
       let t_trans = Sparse.trans b.Big.p.Place.nn in
       let rec _step s = function

@@ -55,37 +55,17 @@ let is_valid_priority_list = is_valid_list
 
 let rewrite = rewrite
 
+type stats = TsType.stats
+		
 (* Transition system *)    
 type ts_g =
   { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
     e : (int, int) Hashtbl.t;
     l : (int, int) Hashtbl.t;
   }
-
-type ts_stats =
-  { time : float; 
-    states : int;  
-    trans : int;  
-    occs : int;
-  }
 		  
 module TransitionSystem =
   TsType.MakeTS (R) (P)
-		(struct
-			  type t = ts_stats
-			  let init ~t0 =
-			    { time = t0; 
-			      states = 0;  
-			      trans = 0;  
-			      occs = 0;
-			    }
-			  let update ~time ~states ~reacts ~occs ~old_stats =
-			    { time = old_stats.time -. time; 
-			      states = old_stats.states + states;  
-			      trans = old_stats.trans + reacts;  
-			      occs = old_stats.occs + occs;
-			    }	    
-			end)
 		      (struct
 			  type t = ts_g
 			  type edge_type = RT.edge
@@ -104,21 +84,6 @@ module TransitionSystem =
 (* Simulation trace *)
 (* module Trace = *)
 (*   TsType.MakeTrace (R) (P) *)
-(* 		   (struct *)
-(* 		       type t = ts_stats *)
-(* 		       let init ~t0 = *)
-(* 			 { time = t0;  *)
-(* 			   states = 0;   *)
-(* 			   trans = 0;   *)
-(* 			   occs = 0; *)
-(* 			 } *)
-(* 		       let update ~time ~states ~reacts ~occs ~old_stats = *)
-(* 			 { time = old_stats.time -. time;  *)
-(* 			   states = old_stats.states + states;   *)
-(* 			   trans = old_stats.trans + reacts;   *)
-(* 			   occs = old_stats.occs + occs; *)
-(* 			 }	     *)
-(* 		     end) *)
 (* 		      (struct *)
 (* 			  type t = ts_g *)
 (* 			  type edge_type = RT.edge *)

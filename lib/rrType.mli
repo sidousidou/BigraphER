@@ -39,6 +39,7 @@ module type T =
     val is_enabled : Big.bg -> t -> bool
     val fix : Big.bg -> t list -> Big.bg * int
     val step : Big.bg -> t list -> occ list * int
+    val random_step : Big.bg -> t list -> occ option * int
   end
     
 (** Module for the concrete implementation of basic operations on rewrite

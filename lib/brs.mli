@@ -13,6 +13,9 @@ type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list (** Reducible priority class *)
 
+(** Execution statistics. *)		      
+type stats = TsType.stats
+		      
 (** String representation of a reaction. *)
 val to_string_react : react -> string
 
@@ -51,17 +54,10 @@ type ts_g = {
     l : (int, int) Hashtbl.t;                   (** Labelling function *) 
   }
 
-type ts_stats = {
-    time : float;  (** Execution time *)
-    states : int;    (** Number of states *)
-    trans : int;    (** Number of reaction *)
-    occs : int;    (** Number of occurrences *)
-  }
-
 module TransitionSystem : sig		  
     
     (** Raised when the size of the transition system reaches the limit. *)
-    exception MAX of ts_g * ts_stats
+    exception MAX of ts_g * stats
 			      
     (** [bfs s0 priorities max f] computes the transition system of the BRS
         specified by initial state [s] and priority classes [p]. [l] is the
@@ -73,7 +69,7 @@ module TransitionSystem : sig
 
         @raise Brs.LIMIT when the maximum number of states is reached. *)
     val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
-	      iter_f:(int -> Big.bg -> unit) -> ts_g * ts_stats
+	      iter_f:(int -> Big.bg -> unit) -> ts_g * stats
 
     (** Compute the string representation in PRISM [tra] format of a transition
         system. *)
@@ -105,14 +101,7 @@ module TransitionSystem : sig
 (*     l : (int, int) Hashtbl.t;                   (\** Labelling function *\)  *)
 (*   } *)
 
-(* type sim_stats = { *)
-(*     time : float;  (\** Execution time *\) *)
-(*     states : int;    (\** Number of states *\) *)
-(*     trans : int;    (\** Number of reaction *\) *)
-(*     occs : int;    (\** Number of occurrences *\) *)
-(*   } *)
-
-(* exception SIM_LIMIT of trace * sim_stats *)
+(* exception SIM_LIMIT of trace * stats *)
 							
 (* (\** Compute a random reaction. *)
 (*     @raise NODE_FREE when [p] has an empty node set. *\) *)
@@ -121,6 +110,6 @@ module TransitionSystem : sig
 (* (\** Similar to {!Brs.bfs} but only one simulation path is computed. In this *)
 (*     case, parameter [l] indicates the maximum number of simulation steps. *\) *)
 (* val sim : s0:Big.bg -> priorities:p_class list -> max_steps:int -> *)
-(* 	  iter_f:(int -> Big.bg -> unit) -> trace * sim_stats *)
+(* 	  iter_f:(int -> Big.bg -> unit) -> trace * stats *)
 						     
 (**/**)
