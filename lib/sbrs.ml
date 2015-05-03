@@ -22,26 +22,27 @@ module RT = struct
     let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
     let update_occ (b, rho) b' = (b', rho)
     let edge_of_occ (b, rho) i = (i, rho)
-    let random_step b rules = (None, 0)
-    (* let random_step (s : Big.bg) srules m = *)
-    (*   (\* sort transitions by rate *\) *)
-    (*   let (ss, m') = step s srules in *)
-    (*   let ss_sorted = List.fast_sort (fun a b -> *)
-    (* 				      Pervasives.compare ((snd a) : float) ((snd b) : float)) ss in *)
-    (*   (\* compute exit rate *\) *)
-    (*   let a0 = *)
-    (* 	List.fold_left (fun acc (_, rho) -> acc +. rho) 0.0 ss in *)
-    (*   let r = (Random.float 1.0) *. a0 in *)
-    (*   let rec aux (l : (Big.bg * float) list) (acc : float) = *)
-    (* 	match l with *)
-    (* 	| (s, rho) :: ss -> *)
-    (* 	   let acc' = acc +. rho in  *)
-    (* 	   if acc' > r then begin *)
-    (*            let tau = (1. /. a0) *. (log (1. /. (Random.float 1.0))) in *)
-    (*            (s, tau)  *)
-    (* 	     end else aux ss acc' *)
-    (* 	| [] -> raise (DEAD m) *)
-    (*   in (aux ss_sorted 0.0, m + m') *)
+    let random_step step_f b rules =
+      (* Sort transitions by rate *)
+      let (ss, m) = step_f b rules in
+      let ss_sorted =
+	List.fast_sort (fun a b ->
+    			compare (snd a) (snd b))
+		       ss in
+      (* Compute exit rate *)
+      let a0 =
+    	List.fold_left (fun acc (_, rho) -> acc +. rho) 0.0 ss in
+      let r = (Random.float 1.0) *. a0 in
+      let rec aux acc = function
+    	| (s, rho) :: ss ->
+    	   let acc' = acc +. rho in
+    	   if acc' > r then
+             (let tau =
+		(1. /. a0) *. (log (1. /. (Random.float 1.0))) in
+              (Some (s, tau), m))
+	   else aux acc' ss
+    	| [] -> (None, m) in
+      aux 0.0 ss_sorted
   end
 
 module R = RrType.Make (RT)
@@ -56,7 +57,7 @@ let fix = R.fix
 	    
 let step = R.step
 
-let random_step = R.random_step	     
+let random_step = R.random_step     
 
 let is_inst r = R.l r = infinity
 	     

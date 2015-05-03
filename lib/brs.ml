@@ -22,7 +22,7 @@ module RT = struct
     let merge_occ b _ = b
     let update_occ _ b = b
     let edge_of_occ _ i = i
-    let random_step b rules =
+    let random_step _ b rules =
       (* Remove element with index i *)
       let rec aux i i' acc = function
 	| [] -> assert false
