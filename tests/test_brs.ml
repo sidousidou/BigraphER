@@ -103,7 +103,8 @@ let () =
 	  print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
 	  failures [("States", states_reference, stats.Brs.states);
 		    ("Reactions", reacts_reference, stats.Brs.trans);
-		    ("Occurrences", 31, stats.Brs.occs)])     
+		    (* ("Occurrences", 31, stats.Brs.occs) *) (* RANDOM *)
+		   ])     
        end;
        begin
 	 let stats = 
