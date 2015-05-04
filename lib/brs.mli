@@ -73,7 +73,7 @@ module TransitionSystem : sig
         i.e. the first element in the list is the class with the highest
         priority.  
 
-        @raise Brs.LIMIT when the maximum number of states is reached. *)
+        @raise Brs.MAX when the maximum number of states is reached. *)
     val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
 	      iter_f:(int -> Big.bg -> unit) -> graph * stats
 

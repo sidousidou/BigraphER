@@ -353,16 +353,28 @@ let () =
     (* in *)
     (* 	  after_sbrs fmt stats ctmc) *)
     with
+    | Sbrs.Ctmc.MAX (ctmc, stats)
     | Sbrs.Trace.LIMIT (ctmc, stats) ->
        (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
 	fprintf fmt "@[<v>";
 	print_msg fmt "Maximum number of states reached.";
-       (* after_sbrs_aux fmt stats ctmc *)) 
+       (* after_sbrs_aux fmt stats ctmc *))
+    | Sbrs.Trace.DEADLOCK (ctmc, stats, t) ->
+       (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
+	fprintf fmt "@[<v>";
+	print_msg fmt ("Deadlock state reached at time " ^ (string_of_float t) ^ ".");
+       (* after_sbrs_aux fmt stats ctmc *))
+    | Brs.TransitionSystem.MAX (ts, stats)
     | Brs.Trace.LIMIT (ts, stats) ->
        (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
 	fprintf fmt "@[<v>";
 	print_msg fmt "Maximum number of states reached.";
-	(* after_brs_aux fmt stats ts *))
+       (* after_brs_aux fmt stats ts *))
+    | Brs.Trace.DEADLOCK (ts, stats, t) ->
+       (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
+	fprintf fmt "@[<v>";
+	print_msg fmt ("Deadlock state reached at step " ^ (string_of_int t) ^ ".");
+       (* after_brs_aux fmt stats ts *))
     | Export.ERROR e ->
        (fprintf fmt "@]@?";
 	Export.report_error e
