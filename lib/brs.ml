@@ -42,20 +42,7 @@ module RT = struct
   end
 
 module R = RrType.Make (RT)
-		       
-include R
-	  
-(* Override some functions *)	       
-let to_string_react = R.to_string
-			
-let is_valid_react = R.is_valid
-			  
-let fix = R.fix
-
-let step = R.step
-
-let random_step = R.random_step
-	     
+		       	     
 (* Priorities *)	     
 module PT = struct
     type t = RT.t list
@@ -63,19 +50,8 @@ module PT = struct
     let f_r_val _ = true
   end
 
-module P = PriType.Make (R) (PT)
-
-include P			
-			
-(* Override some functions *)     
-let is_valid_priority = is_valid
-			  
-let is_valid_priority_list = is_valid_list
-
-let rewrite = rewrite
-
 type graph = { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-	       e : (int, edge) Hashtbl.t;
+	       e : (int, R.edge) Hashtbl.t;
 	       l : (int, int) Hashtbl.t;
 	     }
 
@@ -87,7 +63,7 @@ type stats =  { time : float;
      
 module G = struct
     type t = graph
-    type edge_type = RT.edge	       
+    type edge_type = R.edge	       
     let init n =
       { v = Hashtbl.create n;
 	e = Hashtbl.create n;
@@ -108,9 +84,7 @@ module S = struct
 	trans = Hashtbl.length g.e;
 	occs = m; }
 end	       
-	     
-module TransitionSystem = TsType.MakeTS (R) (P) (G) (S)
-					
+
 module L = struct
     type t = int
     type occ = R.occ
@@ -118,5 +92,5 @@ module L = struct
     let increment t _ = t + 1
     let is_greater = ( > )
   end
-					
-module Trace = TsType.MakeTrace (R) (P) (L) (G) (S)
+	     
+include TsType.Make (R)	(PriType.Make (R) (PT)) (L) (G) (S)

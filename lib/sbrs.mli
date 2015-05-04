@@ -67,77 +67,56 @@ val fix : Big.bg -> sreact list -> Big.bg * int
     is the number of rewriting steps performed in the loop. *)
 val rewrite : Big.bg -> p_class list -> Big.bg * int
 
-(** {6 Exhaustive exploration of the state space} *)
+(** {6 Continuous Time Markov Chains} *)
 
-module Ctmc : sig
+(** Raised when the size of the transition system reaches the limit. *)
+exception MAX of graph * stats
 
-    (** Raised when the size of the transition system reaches the limit. *)
-    exception MAX of graph * stats
+(** [bfs s p l n f] computes the transition system of the SBRS specified by
+    initial state [s] and priority classes [p]. [l] is the maximum number of
+    states of the transition system. [n] is the initialisation size for the
+    edges and [f] is function to be applied whenever a new state is discovered.
+    Priority classes are assumed to be sorted by priority, i.e. the first
+    element in the list is the class with the highest priority.
 
-    (** [bfs s p l n f] computes the transition system of the SBRS specified by
-        initial state [s] and priority classes [p]. [l] is the maximum number of
-        states of the transition system. [n] is the initialisation size for the
-        edges and [f] is function to be applied whenever a new state is
-        discovered.  Priority classes are assumed to be sorted by priority,
-        i.e. the first element in the list is the class with the highest
-        priority.  
+    @raise Sbrs.MAX when the maximum number of states is reached.*)
+val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
+	  iter_f:(int -> Big.bg -> unit) -> graph * stats
 
-        @raise Sbrs.LIMIT when the maximum number of states is reached.*)
-    val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
-	      iter_f:(int -> Big.bg -> unit) -> graph * stats
+(** {6 Stochastic simulation traces} *)
 
-    (** Compute the string representation in PRISM [tra] format of a transition
-        system. *)
-    val to_prism : graph -> string
-
-    (** Compute the string representation in [dot] format of a transition
-        system. *)
-    val to_dot : graph -> name:string -> string
-
-    (** Compute the string representation in PRISM [lab] format of the labelling
-        function of a transition system. *)
-    val to_lab : graph -> string
-			   
-    val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
-
-    val write_prism : graph -> name:string -> path:string -> int
-
-    val write_lab : graph -> name:string -> path:string -> int
-
-    val write_dot : graph -> name:string -> path:string -> int
-  end
-
-(** {6 Simulation traces} *)
-
-module Trace : sig		  
+type limit = float
 	       
-    type limit = float
-		   
-    exception LIMIT of graph * stats
+exception LIMIT of graph * stats
 
-    exception DEADLOCK of graph * stats * limit
+exception DEADLOCK of graph * stats * limit
 
-    val sim :
-      s0:Big.bg ->
-      priorities:p_class list -> init_size:int ->
-      stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+val sim :
+  s0:Big.bg ->
+  priorities:p_class list -> init_size:int ->
+  stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * stats
 
-    val to_prism : graph -> string
-			  
-    val to_dot : graph -> name:string -> string
+(** {6 Export functions} *)
 
-    val to_lab : graph -> string
+(** Compute the string representation in PRISM [tra] format of a transition
+    system. *)
+val to_prism : graph -> string
+
+(** Compute the string representation in [dot] format of a transition system. *)
+val to_dot : graph -> name:string -> string
+
+(** Compute the string representation in PRISM [lab] format of the labelling
+    function of a transition system. *)
+val to_lab : graph -> string
 			
-    val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
+val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
-    val write_svg : graph -> name:string -> path:string -> int
-							 
-    val write_prism : graph -> name:string -> path:string -> int
-							   
-    val write_lab : graph -> name:string -> path:string -> int
+val write_dot : graph -> name:string -> path:string -> int
 
-    val write_dot : graph -> name:string -> path:string -> int
+val write_lab : graph -> name:string -> path:string -> int
 
-  end							  
+val write_svg : graph -> name:string -> path:string -> int
+
+val write_prism : graph -> name:string -> path:string -> int
 
 (**/**)

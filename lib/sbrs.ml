@@ -20,8 +20,8 @@ module RT = struct
     let to_occ b r = (b, r.rate)
     let big_of_occ (b, _) = b
     let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
-    let update_occ (b, rho) b' = (b', rho)
-    let edge_of_occ (b, rho) i = (i, rho)
+    let update_occ (_, rho) b' = (b', rho)
+    let edge_of_occ (_, rho) i = (i, rho)
     let random_step step_f b rules =
       (* Sort transitions by rate *)
       let (ss, m) = step_f b rules in
@@ -46,19 +46,7 @@ module RT = struct
   end
 
 module R = RrType.Make (RT)
-
-include R
 		       
-let to_string_react = R.to_string
-			
-let is_valid_react = R.is_valid
-		       
-let fix = R.fix
-	    
-let step = R.step
-
-let random_step = R.random_step     
-
 let is_inst r = R.l r = infinity
 	     
 module PT = struct
@@ -67,19 +55,9 @@ module PT = struct
     let f_r_val = List.for_all is_inst				   
   end
 
-module P = PriType.Make (R) (PT) 
-	      
-include P
-	  
-let is_valid_priority = is_valid
-			  
-let is_valid_priority_list = is_valid_list
-
-let rewrite = rewrite			       
-
 type graph = { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
 	       (* p : (int, Bilog) Hashtbl.t Predicates *)
-	       e : (int, edge) Hashtbl.t;
+	       e : (int, R.edge) Hashtbl.t;
 	       l : (int, int) Hashtbl.t;  
 	     }
 
@@ -113,8 +91,6 @@ module S = struct
 	occs = m; }
 end	       
 	     
-module Ctmc = TsType.MakeTS (R) (P) (G) (S)
-
 module L = struct
     type t = float
     type occ = R.occ
@@ -123,4 +99,4 @@ module L = struct
     let is_greater = ( > )
   end
 					
-module Trace = TsType.MakeTrace (R) (P) (L) (G) (S)
+include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (S)

@@ -103,7 +103,7 @@ module MakeE (G : G) = struct
 			  
   end
 
-module MakeTS (R : RrType.T)
+module Make (R : RrType.T)
 	      (P : sig
 		  type p_class =
 		    | P_class of R.t list
@@ -121,15 +121,37 @@ module MakeTS (R : RrType.T)
 				 const_pri:p_class list -> p_class list ->
 				 R.occ option * int
 		end)
+	      (L : L with type occ = R.occ)
 	      (G : G with type edge_type = R.edge)
 	      (S : S with type g = G.t) = struct
 
     type t = G.t
    		    
-    type p_class = P.p_class
-		   
+    include P
+
+    type limit = L.t
+
     exception MAX of t * S.t
-	       
+			   
+    exception LIMIT of t * S.t
+
+    exception DEADLOCK of t * S.t * limit
+
+    (* Override some functions *)	       
+    let to_string_react = R.to_string
+			    
+    let is_valid_react = R.is_valid
+			   
+    let fix = R.fix
+		
+    let step = R.step
+		 
+    let random_step = R.random_step
+		    
+    let is_valid_priority = is_valid
+			  
+    let is_valid_priority_list = is_valid_list
+				      
     let is_new b v =
       let k_buket =
 	Hashtbl.find_all v (Big.key b) in
@@ -197,41 +219,7 @@ module MakeTS (R : RrType.T)
       Hashtbl.add (G.states g) (Big.key s0') (0, s0');
       iter_f 0 s0';
       _bfs g q 0 m (Unix.gettimeofday ()) priorities max iter_f
-
-    include MakeE (G)
-	   
-  end
-
-module MakeTrace (R : RrType.T)
-		 (P : sig
-		     type p_class =
-		       | P_class of R.t list
-		       | P_rclass of R.t list
-		     val is_valid : p_class -> bool
-		     val is_valid_list : p_class list -> bool
-		     val rewrite : Big.bg -> p_class list -> Big.bg * int
-		     val scan : Big.bg * int ->
-				part_f:(R.occ list ->
-					((int * R.occ) list * R.edge list * int)) ->
-				const_pri:p_class list -> p_class list ->
-				((int * R.occ) list * R.edge list * int) * int
-		     val scan_sim : Big.bg ->
-				    iter_f:(int -> Big.bg -> unit) ->
-				    const_pri:p_class list -> p_class list ->
-				    R.occ option * int
-		   end)
-		 (L : L with type occ = R.occ)
-		 (G : G with type edge_type = R.edge)
-		 (S : S with type g = G.t) = struct
-
-    type t = G.t
-	       
-    type limit = L.t
-		   
-    exception LIMIT of t * S.t
-
-    exception DEADLOCK of t * S.t * limit
-					
+	   					
     let rec _sim trace s i t_sim m t0 priorities t_max iter_f =
       if L.is_greater t_sim t_max then
 	raise (LIMIT (trace, S.make t0 trace m))

@@ -76,12 +76,12 @@ let () =
     [  begin
 	let stats =
 	  try
-	    snd (Brs.TransitionSystem.bfs ~s0:s
-					  ~priorities:reacts
-					  ~max:1000
-					  ~iter_f)
+	    snd (Brs.bfs ~s0:s
+			 ~priorities:reacts
+			 ~max:1000
+			 ~iter_f)
 	  with
-	  | Brs.TransitionSystem.MAX (_, stats) -> stats in
+	  | Brs.MAX (_, stats) -> stats in
 	("brs",
 	 __MODULE__,
 	 print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
@@ -90,14 +90,14 @@ let () =
        begin
 	 let stats = 
 	   try
-	     snd (Brs.Trace.sim ~s0:s
-				~priorities:reacts
-				~stop:1000
-				~init_size:50
-				~iter_f)
+	     snd (Brs.sim ~s0:s
+			  ~priorities:reacts
+			  ~stop:1000
+			  ~init_size:50
+			  ~iter_f)
 	   with
-	   | Brs.Trace.LIMIT (_, stats)
-	   | Brs.Trace.DEADLOCK (_, stats, _) -> stats in
+	   | Brs.LIMIT (_, stats)
+	   | Brs.DEADLOCK (_, stats, _) -> stats in
 	 ("sim_brs",
 	  __MODULE__,
 	  print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
@@ -106,12 +106,12 @@ let () =
        begin
 	 let stats = 
 	   try
-	     snd (Sbrs.Ctmc.bfs ~s0:s
+	     snd (Sbrs.bfs ~s0:s
 				~priorities:sreacts
 				~max:1000
 				~iter_f)
 	   with
-	   | Sbrs.Ctmc.MAX (_, stats) -> stats in
+	   | Sbrs.MAX (_, stats) -> stats in
 	 ("sbrs",
 	  __MODULE__,
 	  print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
@@ -120,14 +120,14 @@ let () =
        begin
 	 let stats = 
 	   try
-	     snd (Sbrs.Trace.sim ~s0:s
+	     snd (Sbrs.sim ~s0:s
 				 ~priorities:sreacts
 				 ~stop:5000.0
 				 ~init_size:50
 				 ~iter_f)
 	   with
-	   | Sbrs.Trace.LIMIT (_, stats)
-	   | Sbrs.Trace.DEADLOCK (_, stats, _) -> stats in 
+	   | Sbrs.LIMIT (_, stats)
+	   | Sbrs.DEADLOCK (_, stats, _) -> stats in 
 	 ("sim_sbrs",
 	  __MODULE__,
 	  print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,

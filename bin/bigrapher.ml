@@ -107,40 +107,21 @@ let print_max fmt =
   if Cmd.(defaults.debug) then () 
   else Pervasives.print_string "\n["
 		   
-let print_stats_brs fmt stats =
+let print_stats fmt t s r o =
   [{ descr = ("Build time:", `green);
-     value = `f Brs.(stats.time);
+     value = `f t;
      pp_val = print_float;
      display =  not Cmd.(defaults.debug); };
    { descr = ("States:", `green);
-     value = `i Brs.(stats.states);
+     value = `i s;
      pp_val = print_int;
      display = true; };
    { descr = ("Transitions:", `green);
-     value = `i Brs.(stats.trans);
+     value = `i r;
      pp_val = print_int;
      display = true; };
    { descr = ("Occurrences:", `green);
-     value = `i Brs.(stats.occs);
-     pp_val = print_int;
-     display = true; }]
-  |> print_table fmt
-
-let print_stats_sbrs fmt stats =
-  [{ descr = ("Build time:", `green);
-     value = `f Sbrs.(stats.time);
-     pp_val = print_float;
-     display =  not Cmd.(defaults.debug); };
-   { descr = ("States:", `green);
-     value = `i Sbrs.(stats.states);
-     pp_val = print_int;
-     display = true; };
-   { descr = ("Transitions:", `green);
-     value = `i Sbrs.(stats.trans);
-     pp_val = print_int;
-     display = true; };
-   { descr = ("Occurrences:", `green);
-     value = `i Sbrs.(stats.occs);
+     value = `i o;
      pp_val = print_int;
      display = true; }]
   |> print_table fmt
@@ -161,107 +142,119 @@ let print_loop i _ =
 	| _ -> ())
 
 (******** EXPORT FUNCTIONS *********)
-
+	 
 let print_fun fmt verb fname i =
   if verb then
     print_msg fmt ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'")
   else ()
-		      
-(* let export_csl fmt g = *)
-(*   match Cmd.(defaults.out_csl) with *)
-(*   | None -> () *)
-(*   | Some file -> *)
-(*      (print_msg fmt ("Exporting properties to " ^ file ^ " ..."); *)
-(*       write_lab g ~name:(Filename.basename file) ~path:(Filename.dirname file) *)
-(*      |> print_fun fmt Cmd.(defaults.verbose) file) *)
 
-(* let export_ctmc_prism fmt ctmc = *)
-(*   match Cmd.(defaults.out_prism) with *)
-(*   | None -> () *)
-(*   | Some file -> *)
-(*      (print_msg fmt ("Exporting CTMC in PRISM format to " ^ file ^ " ..."); *)
-(*       Export.write_ctmc_prism ctmc (Filename.basename file) (Filename.dirname file) *)
-(*      |> print_fun fmt Cmd.(defaults.verbose) file) *)
+let export_prism fmt msg f =
+  match Cmd.(defaults.out_prism) with
+  | None -> ()
+  | Some file ->
+     (print_msg fmt (msg ^ file ^ " ...");
+      f	~name:(Filename.basename file)
+	~path:(Filename.dirname file)
+      |> print_fun fmt Cmd.(defaults.verbose) file)
+	 
+let export_ctmc_prism fmt ctmc =
+  export_prism fmt
+	       "Exporting CTMC in PRISM format to "
+	       (Sbrs.write_prism ctmc)
 
-(* let export_ts_prism fmt ts = *)
-(*   match Cmd.(defaults.out_prism) with *)
-(*   | None -> () *)
-(*   | Some file -> *)
-(*      (print_msg fmt ("Exporting transition system in PRISM format to " *)
-(* 		     ^ file ^ " ..."); *)
-(*       Export.write_ts_prism ts (Filename.basename file) (Filename.dirname file) *)
-(*      |> print_fun fmt Cmd.(defaults.verbose) file) *)
+let export_ts_prism fmt ts =
+  export_prism fmt
+	       "Exporting transition system in PRISM format to "
+	       (Brs.write_prism ts)
 
-(* let export_ctmc_states fmt ctmc path = *)
-(*   print_msg fmt ("Exporting states to " ^ path ^ " ..."); *)
-(*   Sbrs.iter_states (fun i s -> *)
-(* 		    let fname = (string_of_int i) ^ ".svg" in *)
-(* 		    Export.write_big s fname path *)
-(* 		    |> print_fun fmt Cmd.(defaults.verbose) (Filename.concat path fname)) *)
-(* 		   ctmc *)
+let export_csl fmt f =
+  match Cmd.(defaults.out_csl) with
+  | None -> ()
+  | Some file ->
+     (print_msg fmt ("Exporting properties to " ^ file ^ " ...");
+      f ~name:(Filename.basename file) ~path:(Filename.dirname file)
+      |> print_fun fmt Cmd.(defaults.verbose) file)
 
-(* let export_ctmc_dot fmt ctmc = *)
-(*   match Cmd.(defaults.out_dot) with *)
-(*   | None -> () *)
-(*   | Some file -> *)
-(*      (print_msg fmt ("Exporting CTMC to " ^ file ^ " ..."); *)
-(*       Export.write_ctmc ctmc (Filename.basename file) (Filename.dirname file) *)
-(*       |> print_fun fmt Cmd.(defaults.verbose) file; *)
-(*       if Cmd.(defaults.out_states) then  *)
-(*         export_ctmc_states fmt ctmc (Filename.dirname file)) *)
+let export_ctmc_csl fmt ctmc =
+  export_csl fmt (Sbrs.write_lab ctmc)
+	     
+let export_ts_csl fmt ts =
+  export_csl fmt (Brs.write_lab ts)
 
-(* let export_ts_states fmt ts path = *)
-(*   print_msg fmt ("Exporting states to " ^ path ^ " ..."); *)
-(*   Brs.iter_states (fun i s -> *)
-(* 		   let fname = (string_of_int i) ^ ".svg" in *)
-(* 		   Export.write_big s fname path *)
-(* 		   |> print_fun fmt Cmd.(defaults.verbose) (Filename.concat path fname)) *)
-(* 		  ts *)
+let export_states fmt f path =
+  print_msg fmt ("Exporting states to " ^ path ^ " ...");
+  f ~f:(fun i s ->
+	let fname = (string_of_int i) ^ ".svg" in
+	Big.write_svg s ~name:fname ~path
+	|> print_fun fmt
+		     Cmd.(defaults.verbose)
+		     (Filename.concat path fname))
+	     
+let export_ctmc_states ctmc fmt path =
+  export_states fmt Sbrs.iter_states path ctmc
 
-(* let export_ts_dot fmt ts = *)
-(*   match Cmd.(defaults.out_dot) with *)
-(*   | None -> () *)
-(*   | Some file -> *)
-(*      (print_msg fmt ("Exporting transition system to " ^ file ^ " ..."); *)
-(*       Export.write_ts ts (Filename.basename file) (Filename.dirname file) *)
-(*       |> print_fun fmt Cmd.(defaults.verbose) file; *)
-(*       if Cmd.(defaults.out_states) then  *)
-(*         export_ts_states fmt ts (Filename.dirname file)) *)
-
-(* let after_brs_aux fmt stats ts = *)
-(*   print_stats_brs fmt stats;  *)
-(*   export_ts_dot fmt ts; *)
-(*   export_ts_prism fmt ts; *)
-(*   export_csl fmt ts.Brs.l; *)
-(*   fprintf fmt "@]@?"; *)
-(*   fprintf err_formatter "@]@?"; *)
-(*   exit 0 *)
-
-(* let close_progress_bar () = *)
-(*   Pervasives.print_char ']'; *)
-(*   Pervasives.print_newline (); *)
-(*   Pervasives.print_newline () *)
-  
-(* let after_brs fmt stats ts = *)
-(*   if Cmd.(defaults.debug) then () *)
-(*   else close_progress_bar (); *)
-(*   fprintf fmt "@[<v>"; *)
-(*   after_brs_aux fmt stats ts *)
-
-(* let after_sbrs_aux fmt stats ctmc = *)
-(*   print_stats_sbrs fmt stats;  *)
-(*   export_ctmc_dot fmt ctmc; *)
-(*   export_ctmc_prism fmt ctmc; *)
-(*   export_csl fmt ctmc.Sbrs.l; *)
-(*   fprintf fmt "@]@?"; *)
-(*   fprintf err_formatter "@]@?"; *)
-(*   exit 0 *)
+let export_ts_states ts fmt path =
+  export_states fmt Brs.iter_states path ts
 		
-(* let after_sbrs fmt stats ctmc = *)
-(*   if Cmd.(defaults.debug) then () *)
-(*   else close_progress_bar (); *)
-(*   fprintf fmt "@[<v>"; *)
-(*   after_sbrs_aux fmt stats ctmc *)
+let export_ts fmt msg f f_iter =
+  match Cmd.(defaults.out_dot) with
+  | None -> ()
+  | Some file ->
+     (print_msg fmt (msg ^ file ^ " ...");
+      f	~name:(Filename.basename file)
+	~path:(Filename.dirname file)
+      |> print_fun fmt Cmd.(defaults.verbose) file;
+      if Cmd.(defaults.out_states) then
+        f_iter fmt (Filename.dirname file))
+       
+let close_progress_bar () =
+  Pervasives.print_char ']';
+  Pervasives.print_newline ();
+  Pervasives.print_newline ()
+			   
+let after_brs_aux fmt stats ts =
+  print_stats fmt
+	      stats.Brs.time
+	      stats.Brs.states
+	      stats.Brs.trans
+	      stats.Brs.occs;
+  export_ts fmt
+	    "Exporting transition system to "
+	    (Brs.write_svg ts)
+	    (export_ts_states ts);
+  export_ts_prism fmt ts;
+  export_ts_csl fmt ts;
+  fprintf fmt "@]@?";
+  fprintf err_formatter "@]@?";
+  exit 0
+
+let after_brs fmt (ts,stats) =
+  if Cmd.(defaults.debug) then ()
+  else close_progress_bar ();
+  fprintf fmt "@[<v>";
+  after_brs_aux fmt stats ts
+
+let after_sbrs_aux fmt stats ctmc =
+  print_stats fmt
+	      stats.Sbrs.time
+	      stats.Sbrs.states
+	      stats.Sbrs.trans
+	      stats.Sbrs.occs;
+  export_ts fmt
+	    "Exporting CTMC to "
+	    (Sbrs.write_svg ctmc)
+	    (export_ctmc_states ctmc);
+  export_ctmc_prism fmt ctmc;
+  export_ctmc_csl fmt ctmc;
+  fprintf fmt "@]@?";
+  fprintf err_formatter "@]@?";
+  exit 0
+
+let after_sbrs fmt (ctmc, stats) =
+  if Cmd.(defaults.debug) then ()
+  else close_progress_bar ();
+  fprintf fmt "@[<v>";
+  after_sbrs_aux fmt stats ctmc
 		 
 (******** BIGRAPHER *********)
        
@@ -292,7 +285,6 @@ let () =
       close_in file; 
       let env = Store.init_env fmt Cmd.(defaults.consts) in
       let (s0, prs, env_t) = Store.eval_model fmt m env in
-      let n = Store.bindings env in
       let stoch =
 	match prs with
 	| Store.P _ -> false
@@ -308,73 +300,72 @@ let () =
       match prs with
       | Store.P priorities ->
 	 (******** BRS *********)
-	 (*(let (ts, stats) =*)
-            if Cmd.(defaults.sim) then
-	      (print_msg fmt "Starting simulation ...";
-	       print_max fmt;
-	       ignore(Brs.Trace.sim ~s0
-			     ~priorities
-			     ~init_size:Cmd.(defaults.s_max)
-			     ~stop:n (* limit *)
-			     ~iter_f))
-	    else
-	      (print_msg fmt "Computing transition system ...";
-	       print_max fmt;
-	       ignore(Brs.TransitionSystem.bfs ~s0
-					~priorities
-					~max:n (* max #states *)
-					~iter_f))
-	  (* in after_brs fmt stats ts )*)
+	 (if Cmd.(defaults.sim) then
+	    (print_msg fmt "Starting simulation ...";
+	     print_max fmt;
+	     Brs.sim ~s0
+		     ~priorities
+		     ~init_size:Cmd.(defaults.s_max)
+		     ~stop:Cmd.(defaults.s_max)
+		     ~iter_f
+	     |> after_brs fmt)
+	  else
+	    (print_msg fmt "Computing transition system ...";
+	     print_max fmt;
+	     Brs.bfs ~s0
+		     ~priorities
+		     ~max:Cmd.(defaults.s_max)
+		     ~iter_f
+	     |> after_brs fmt))
       | Store.S priorities ->
 	 (******** SBRS *********)
-	 (*(let (ctmc, stats) =*) 
-            if Cmd.(defaults.sim) then
-	      (print_msg fmt "Starting stochastic simulation ...";
-	       [{ descr = ("Max sim time:", `cyan);
-		  value = `f Cmd.(defaults.t_max);
-		  pp_val = print_float;
-		  display = true; }]
-	       |> print_table fmt;
-	       print_flush ();
-	       if Cmd.(defaults.debug) then ()
-	       else Pervasives.print_string "\n[";
-	       ignore(Sbrs.Trace.sim ~s0
-			      ~priorities
-			      ~init_size:n
-			      ~stop:Cmd.(defaults.t_max)
-			      ~iter_f))
-            else
-	      (print_msg fmt "Computing CTMC ...";
-	       print_max fmt;
-	       ignore(Sbrs.Ctmc.bfs ~s0
-			     ~priorities
-			     ~max:Cmd.(defaults.s_max)
-			     ~iter_f))
-    (* in *)
-    (* 	  after_sbrs fmt stats ctmc) *)
+	 (if Cmd.(defaults.sim) then
+	    (print_msg fmt "Starting stochastic simulation ...";
+	     [{ descr = ("Max sim time:", `cyan);
+		value = `f Cmd.(defaults.t_max);
+		pp_val = print_float;
+		display = true; }]
+	     |> print_table fmt;
+	     print_flush ();
+	     if Cmd.(defaults.debug) then ()
+	     else Pervasives.print_string "\n[";
+	     Sbrs.sim ~s0
+			    ~priorities
+			    ~init_size:Cmd.(defaults.s_max)
+			    ~stop:Cmd.(defaults.t_max)
+			    ~iter_f
+	     |> after_sbrs fmt)
+          else
+	    (print_msg fmt "Computing CTMC ...";
+	     print_max fmt;
+	     Sbrs.bfs ~s0
+			   ~priorities
+			   ~max:Cmd.(defaults.s_max)
+			   ~iter_f
+	     |>  after_sbrs fmt))
     with
-    | Sbrs.Ctmc.MAX (ctmc, stats)
-    | Sbrs.Trace.LIMIT (ctmc, stats) ->
-       (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
+    | Sbrs.MAX (ctmc, stats)
+    | Sbrs.LIMIT (ctmc, stats) ->
+       (if Cmd.(defaults.debug) then () else close_progress_bar ();
 	fprintf fmt "@[<v>";
 	print_msg fmt "Maximum number of states reached.";
-       (* after_sbrs_aux fmt stats ctmc *))
-    | Sbrs.Trace.DEADLOCK (ctmc, stats, t) ->
-       (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
+	after_sbrs_aux fmt stats ctmc)
+    | Sbrs.DEADLOCK (ctmc, stats, t) ->
+       (if Cmd.(defaults.debug) then () else close_progress_bar ();
 	fprintf fmt "@[<v>";
 	print_msg fmt ("Deadlock state reached at time " ^ (string_of_float t) ^ ".");
-       (* after_sbrs_aux fmt stats ctmc *))
-    | Brs.TransitionSystem.MAX (ts, stats)
-    | Brs.Trace.LIMIT (ts, stats) ->
-       (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
+	after_sbrs_aux fmt stats ctmc)
+    | Brs.MAX (ts, stats)
+    | Brs.LIMIT (ts, stats) ->
+       (if Cmd.(defaults.debug) then () else close_progress_bar ();
 	fprintf fmt "@[<v>";
 	print_msg fmt "Maximum number of states reached.";
-       (* after_brs_aux fmt stats ts *))
-    | Brs.Trace.DEADLOCK (ts, stats, t) ->
-       (if Cmd.(defaults.debug) then () else (* close_progress_bar *) ();
+	after_brs_aux fmt stats ts)
+    | Brs.DEADLOCK (ts, stats, t) ->
+       (if Cmd.(defaults.debug) then () else close_progress_bar ();
 	fprintf fmt "@[<v>";
 	print_msg fmt ("Deadlock state reached at step " ^ (string_of_int t) ^ ".");
-       (* after_brs_aux fmt stats ts *))
+	after_brs_aux fmt stats ts)
     | Export.ERROR e ->
        (fprintf fmt "@]@?";
 	Export.report_error e
