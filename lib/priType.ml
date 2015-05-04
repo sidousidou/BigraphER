@@ -52,7 +52,8 @@ module Make (R :RrType.T)
             if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs 
             else 
 	      (* Apply rewriting - instantaneous *)
-	      let (ss', l') = 
+	      let (ss', l') =
+		(* Parmap.parfold *)
 		List.fold_left (fun (ss,  l) o -> 
 				let (s', l') =
 				  rewrite (R.big_of_occ o) const_pri in

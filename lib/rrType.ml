@@ -113,7 +113,8 @@ module Make (R : R) = struct
 	  | Some iso_o -> (merge_occ o iso_o) :: non_iso in
 	(List.fold_left aux1 [] l, List.length l) in
       let aux2 acc r =
-	(Big.occurrences b (lhs r) 
+	(Big.occurrences b (lhs r)
+	 (* Parmap.parmap *)			 
 	 |> List.map (fun o ->
 		      to_occ
 			(Big.rewrite o b (lhs r) (rhs r) (map r)) r))

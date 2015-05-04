@@ -15,7 +15,7 @@ type row =
        
 let print_msg fmt msg =
   if not Cmd.(defaults.debug) then
-    fprintf fmt "@[%s@]@," (Utils.colorise `yellow msg)
+    fprintf fmt "@?@[%s@]@." (Utils.colorise `yellow msg)
   else ()
 	 
 let print_descr fmt (d, c) =
@@ -54,7 +54,7 @@ let print_table fmt (rows : row list) =
        fprintf fmt "%a" r.pp_val r.value; 
        List.iter (pp_row fmt) rows;
        pp_close_tbox fmt ();
-       print_cut ())
+       Format.print_newline ())
   | _ -> assert false
 		   
 let print_header fmt () =
@@ -83,7 +83,7 @@ let print_header fmt () =
      pp_val = print_string;
      display = true; }]
   |> print_table fmt)
-  else fprintf fmt "@[<v>"
+  else ()
 	    
 let print_stats_store fmt env stoch =
   let ty = if stoch then "Stochastic BRS" else "BRS" in
@@ -103,7 +103,6 @@ let print_max fmt =
      pp_val = print_int;
      display = true; }]
   |> print_table fmt;
-  print_flush ();
   if Cmd.(defaults.debug) then () 
   else Pervasives.print_string "\n["
 		   
@@ -147,15 +146,22 @@ let print_fun fmt verb fname i =
   if verb then
     print_msg fmt ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'")
   else ()
-
+	 
 let export_prism fmt msg f =
   match Cmd.(defaults.out_prism) with
   | None -> ()
   | Some file ->
      (print_msg fmt (msg ^ file ^ " ...");
-      f	~name:(Filename.basename file)
-	~path:(Filename.dirname file)
-      |> print_fun fmt Cmd.(defaults.verbose) file)
+      try
+	f ~name:(Filename.basename file)
+	  ~path:(Filename.dirname file)
+	|> print_fun fmt Cmd.(defaults.verbose) file
+      with
+      | Export.ERROR e ->
+	 (pp_print_flush fmt ();
+	  fprintf err_formatter "@[<v>";
+	  Export.report_error e
+	  |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
 	 
 let export_ctmc_prism fmt ctmc =
   export_prism fmt
@@ -172,8 +178,15 @@ let export_csl fmt f =
   | None -> ()
   | Some file ->
      (print_msg fmt ("Exporting properties to " ^ file ^ " ...");
-      f ~name:(Filename.basename file) ~path:(Filename.dirname file)
-      |> print_fun fmt Cmd.(defaults.verbose) file)
+      try
+	f ~name:(Filename.basename file) ~path:(Filename.dirname file)
+	|> print_fun fmt Cmd.(defaults.verbose) file
+      with
+      | Export.ERROR e ->
+	 (pp_print_flush fmt ();
+	  fprintf err_formatter "@[<v>";
+	  Export.report_error e
+	  |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
 
 let export_ctmc_csl fmt ctmc =
   export_csl fmt (Sbrs.write_lab ctmc)
@@ -183,12 +196,19 @@ let export_ts_csl fmt ts =
 
 let export_states fmt f path =
   print_msg fmt ("Exporting states to " ^ path ^ " ...");
-  f ~f:(fun i s ->
-	let fname = (string_of_int i) ^ ".svg" in
-	Big.write_svg s ~name:fname ~path
-	|> print_fun fmt
-		     Cmd.(defaults.verbose)
-		     (Filename.concat path fname))
+    f ~f:(fun i s ->
+	  let fname = (string_of_int i) ^ ".svg" in
+	  try
+	    Big.write_svg s ~name:fname ~path
+	    |> print_fun fmt
+			 Cmd.(defaults.verbose)
+			 (Filename.concat path fname)
+	  with
+	  | Export.ERROR e ->
+	     (pp_print_flush fmt ();
+	      fprintf err_formatter "@[<v>";
+	      Export.report_error e
+	      |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
 	     
 let export_ctmc_states ctmc fmt path =
   export_states fmt Sbrs.iter_states path ctmc
@@ -201,9 +221,16 @@ let export_ts fmt msg f f_iter =
   | None -> ()
   | Some file ->
      (print_msg fmt (msg ^ file ^ " ...");
-      f	~name:(Filename.basename file)
-	~path:(Filename.dirname file)
-      |> print_fun fmt Cmd.(defaults.verbose) file;
+      (try
+	  f ~name:(Filename.basename file)
+	    ~path:(Filename.dirname file)
+	  |> print_fun fmt Cmd.(defaults.verbose) file
+	with
+	| Export.ERROR e ->
+	   (pp_print_flush fmt ();
+	    fprintf err_formatter "@[<v>";
+	    Export.report_error e
+	    |> fprintf err_formatter "@[%s: %s@]@." Utils.err));
       if Cmd.(defaults.out_states) then
         f_iter fmt (Filename.dirname file))
        
@@ -224,14 +251,12 @@ let after_brs_aux fmt stats ts =
 	    (export_ts_states ts);
   export_ts_prism fmt ts;
   export_ts_csl fmt ts;
-  fprintf fmt "@]@?";
-  fprintf err_formatter "@]@?";
+  pp_print_flush err_formatter ();
   exit 0
 
 let after_brs fmt (ts,stats) =
   if Cmd.(defaults.debug) then ()
   else close_progress_bar ();
-  fprintf fmt "@[<v>";
   after_brs_aux fmt stats ts
 
 let after_sbrs_aux fmt stats ctmc =
@@ -246,14 +271,12 @@ let after_sbrs_aux fmt stats ctmc =
 	    (export_ctmc_states ctmc);
   export_ctmc_prism fmt ctmc;
   export_ctmc_csl fmt ctmc;
-  fprintf fmt "@]@?";
-  fprintf err_formatter "@]@?";
+  pp_print_flush err_formatter ();
   exit 0
 
 let after_sbrs fmt (ctmc, stats) =
   if Cmd.(defaults.debug) then ()
   else close_progress_bar ();
-  fprintf fmt "@[<v>";
   after_sbrs_aux fmt stats ctmc
 		 
 (******** BIGRAPHER *********)
@@ -269,9 +292,8 @@ let open_lex path =
   (lexbuf, file)          
        
 let () =
-  Printexc.record_backtrace true;
+  Printexc.record_backtrace true; (* Disable for releases *)
   let fmt = std_formatter in (* TEMPORARY *)
-  fprintf err_formatter "@[<v>";
   try
     let iter_f = print_loop in
     Cmd.parse Sys.argv;
@@ -326,7 +348,6 @@ let () =
 		pp_val = print_float;
 		display = true; }]
 	     |> print_table fmt;
-	     print_flush ();
 	     if Cmd.(defaults.debug) then ()
 	     else Pervasives.print_string "\n[";
 	     Sbrs.sim ~s0
@@ -347,59 +368,51 @@ let () =
     | Sbrs.MAX (ctmc, stats)
     | Sbrs.LIMIT (ctmc, stats) ->
        (if Cmd.(defaults.debug) then () else close_progress_bar ();
-	fprintf fmt "@[<v>";
 	print_msg fmt "Maximum number of states reached.";
 	after_sbrs_aux fmt stats ctmc)
     | Sbrs.DEADLOCK (ctmc, stats, t) ->
        (if Cmd.(defaults.debug) then () else close_progress_bar ();
-	fprintf fmt "@[<v>";
 	print_msg fmt ("Deadlock state reached at time " ^ (string_of_float t) ^ ".");
 	after_sbrs_aux fmt stats ctmc)
     | Brs.MAX (ts, stats)
     | Brs.LIMIT (ts, stats) ->
        (if Cmd.(defaults.debug) then () else close_progress_bar ();
-	fprintf fmt "@[<v>";
 	print_msg fmt "Maximum number of states reached.";
 	after_brs_aux fmt stats ts)
     | Brs.DEADLOCK (ts, stats, t) ->
        (if Cmd.(defaults.debug) then () else close_progress_bar ();
-	fprintf fmt "@[<v>";
 	print_msg fmt ("Deadlock state reached at step " ^ (string_of_int t) ^ ".");
 	after_brs_aux fmt stats ts)
-    | Export.ERROR e ->
-       (fprintf fmt "@]@?";
-	Export.report_error e
-	|> fprintf err_formatter "@[%s: %s@]@," Utils.err;
-	fprintf err_formatter "@]@?";
-	exit 1)
     | Store.ERROR (e, p) ->
-       (fprintf fmt "@]@?";
+       (pp_print_flush fmt ();
+	fprintf err_formatter "@[<v>";
 	Loc.print_loc err_formatter p;
 	Store.report_error err_formatter e;
-	fprintf err_formatter "@]@?";
+	pp_print_flush err_formatter ();
 	exit 1)
     | Parser.Error ->
-       (fprintf fmt "@]@?";
-	Loc.print_loc err_formatter Loc.{lstart = Lexing.(lexbuf.lex_start_p);
-					 lend = Lexing.(lexbuf.lex_curr_p)};
-	fprintf err_formatter "@[%s: Syntax error near token `%s'@]@,"
+       (pp_print_flush fmt ();
+	fprintf err_formatter "@[<v>";
+	Loc.print_loc err_formatter
+		      Loc.{lstart = Lexing.(lexbuf.lex_start_p);
+			   lend = Lexing.(lexbuf.lex_curr_p)};
+	fprintf err_formatter "@[%s: Syntax error near token `%s'@]@."
 		Utils.err (Lexing.lexeme lexbuf);
-	fprintf err_formatter "@]@?";
 	exit 1)
   with
   | Lexer.ERROR (e, p) ->
-     (fprintf fmt "@]@?";
+     (pp_print_flush fmt ();
+      fprintf err_formatter "@[<v>";
       Loc.print_loc err_formatter p;
       Lexer.report_error err_formatter e;
-      fprintf err_formatter "@]@?";
+      pp_print_flush err_formatter ();
       exit 1)
   | Sys_error s ->
-     (fprintf fmt "@]@?";
-      fprintf err_formatter "@[%s: %s@]@," Utils.err s;
-      fprintf err_formatter "@]@?";
+     (pp_print_flush fmt ();
+      fprintf err_formatter "@[%s: %s@]@." Utils.err s;
       exit 1)
   | e -> 
-     (fprintf fmt "@]@?";
-      fprintf err_formatter "@[%s@,%s@]@," (Printexc.to_string e) (Printexc.get_backtrace ());
-      fprintf err_formatter "@]@?";
+     (pp_print_flush fmt ();
+      fprintf err_formatter "@[%s@,%s@]@."
+	      (Printexc.to_string e) (Printexc.get_backtrace ());
       exit 1)
