@@ -75,35 +75,49 @@ let () =
   let testcases =
     [  begin
 	let (_, stats) = 
-	  Brs.bfs s reacts 1000 50 iter_f in
+	  Brs.TransitionSystem.bfs ~s0:s
+				   ~priorities:reacts
+				   ~max:1000
+				   ~iter_f in
 	("brs",
 	 __MODULE__,
-	 print_res stats.Brs.s stats.Brs.r stats.Brs.o,
-	 failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
+	 print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
+	 failures (ass_list stats.Brs.states stats.Brs.trans stats.Brs.occs))
       end;
        begin
 	 let (_, stats) = 
-	   Brs.sim s reacts 1000 50 iter_f in
+	   Brs.Trace.sim ~s0:s
+			 ~priorities:reacts
+			 ~stop:1000
+			 ~init_size:50
+			 ~iter_f in
 	 ("sim_brs",
 	  __MODULE__,
-	  print_res stats.Brs.s stats.Brs.r stats.Brs.o,
-	  failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
+	  print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
+	  failures (ass_list stats.Brs.states stats.Brs.trans stats.Brs.occs))
        end;
        begin
 	 let (_, stats) = 
-	   Sbrs.bfs s sreacts 1000 50 iter_f in
+	   Sbrs.Ctmc.bfs ~s0:s
+			 ~priorities:sreacts
+			 ~max:1000
+			 ~iter_f in
 	 ("sbrs",
 	  __MODULE__,
-	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
-	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
+	  print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
+	  failures (ass_list stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs))
        end;
        begin
 	 let (_, stats) = 
-	   Sbrs.sim s sreacts 5000.0 50 iter_f in 
+	   Sbrs.Trace.sim ~s0:s
+			  ~priorities:sreacts
+			  ~stop:5000.0
+			  ~init_size:50
+			  ~iter_f in 
 	 ("sim_sbrs",
 	  __MODULE__,
-	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
-	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
+	  print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
+	  failures (ass_list stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs))
        end; ] in
   write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2)
 
