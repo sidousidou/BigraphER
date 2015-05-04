@@ -101,7 +101,9 @@ let () =
 	 ("sim_brs",
 	  __MODULE__,
 	  print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
-	  failures (ass_list stats.Brs.states stats.Brs.trans stats.Brs.occs))
+	  failures [("States", states_reference, stats.Brs.states);
+		    ("Reactions", reacts_reference, stats.Brs.trans);
+		    ("Occurrences", 31, stats.Brs.occs)])     
        end;
        begin
 	 let stats = 
