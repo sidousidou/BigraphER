@@ -224,8 +224,10 @@ module Make (R : RrType.T)
       if L.is_greater t_sim t_max then
 	raise (LIMIT (trace, S.make t0 trace m))
       else
-	match P.scan_sim s ~iter_f
-			 ~const_pri:priorities priorities with
+	match P.scan_sim s
+			 ~iter_f
+			 ~const_pri:priorities
+			 priorities with
 	| (None, m') ->
 	   raise (DEADLOCK (trace, S.make t0 trace (m + m'), t_sim))
 	| (Some o, m') ->	
@@ -233,7 +235,7 @@ module Make (R : RrType.T)
 	    Hashtbl.add (G.states trace) (Big.key s') (i + 1, s');
 	    (* TO DO: add labels for new states *)
 	    Hashtbl.add (G.edges trace) i (R.edge_of_occ o (i + 1));
-	    _sim trace s' (i + 1) (L.increment t_sim o) m' t0 priorities t_max iter_f) 
+	    _sim trace s' (i + 1) (L.increment t_sim o) (m + m') t0 priorities t_max iter_f) 
 				    				    
     let sim ~s0 ~priorities ~init_size ~stop ~iter_f =
       Random.self_init ();
