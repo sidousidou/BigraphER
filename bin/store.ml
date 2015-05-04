@@ -47,9 +47,9 @@ let string_of_store_val = function
   | Big_fun _ -> "<fun big>" 
   | A_ctrl c | Ctrl c -> Base.Ctrl.to_string c
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
-  | React r -> Brs.string_of_react r
+  | React r -> Brs.to_string_react r
   | React_fun _ -> "<fun react>"
-  | Sreact r -> Sbrs.string_of_sreact r
+  | Sreact r -> Sbrs.to_string_react r
   | Sreact_fun _ -> "<fun sreact>"
   | Int_param p ->
      "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
@@ -103,6 +103,8 @@ type error =
   | Unbound_variable of Id.t
   | Div_by_zero
   | Comp of Big.inter * Big.inter
+  | Invalid_class
+  | Invalid_priorities
   | Tens of Link.Face.t * Link.Face.t        (* (in , out) *)
   | Share
   | Unknown_big of int
@@ -133,6 +135,8 @@ let report_error_aux fmt = function
   | Unknown_big v ->
      fprintf fmt "Expression %d is not a valid bigraph" v
   | Reaction msg -> fprintf fmt "%s" msg
+  | Invalid_class -> fprintf fmt "Invalid epression for a priority class"
+  | Invalid_priorities -> fprintf fmt "Invalid expression for a priority structure"
 
 let report_error fmt err =
   fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
@@ -624,7 +628,7 @@ let eval_react lhs rhs eta scope env env_t p =
     eval_react_aux lhs rhs scope env env_t in
   let r = { Brs.rdx = lhs_v;
 	    Brs.rct = rhs_v;
-	    (* Brs.eta = eval_eta eta; *)
+	    Brs.eta = eta;
 	  } in
   (* Get more informative messages from Brs *)
   if Brs.is_valid_react r then (r, env_t') 
@@ -636,9 +640,10 @@ let eval_sreact lhs rhs eta rate scope env env_t p =
   let r = { Sbrs.rdx = lhs_v;
 	    Sbrs.rct = rhs_v;
 	    Sbrs.rate = eval_float rate scope env;
+	    Sbrs.eta = eta;
 	  } in
   (* Get more informative messages from Sbrs *)
-  if Sbrs.is_valid_sreact r then (r, env_t') 
+  if Sbrs.is_valid_react r then (r, env_t') 
   else raise (ERROR (Reaction "Invalid stochastic reaction", p))
 
 (* Compute all the combinations of input values *)	  
@@ -764,20 +769,30 @@ let eval_pr env env_t pr =
   let aux' (acc, env_t) id =
     let (rs, env_t') = aux env_t id in
     (acc @ rs, env_t') in 
-  match pr with
-  | Pr (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-		   (Brs.P_class rs, env_t') 
-  | Pr_red (ids, _) -> let (rs, env_t') = List.fold_left aux' ([], env_t) ids in
-		       (Brs.P_rclass rs, env_t')
+  let (pr_class, p) =
+    match pr with
+    | Pr (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Brs.P_class rs, env_t'), p) 
+    | Pr_red (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Brs.P_rclass rs, env_t'), p) in
+  if Brs.is_valid_priority (fst pr_class) then pr_class
+  else raise (ERROR (Invalid_class, p))
 
-let eval_p_list eval_f env env_t l =
+let eval_p_list eval_f chk_f env env_t l p =
   List.fold_left (fun (acc, env_t) pr ->
 		  let (pr_class, env_t') = eval_f env env_t pr in
 		  (pr_class :: acc, env_t'))
 		 ([], env_t) l
   |> (fun (l, e) -> (List.rev l, e))
+  |> (fun x -> if chk_f x then x
+	       else raise (ERROR (Invalid_priorities, p)))
 		 
-let eval_prs = eval_p_list eval_pr
+let eval_prs =
+  eval_p_list eval_pr (fun x -> Brs.is_valid_priority_list (fst x))
 			   
 let eval_spr env env_t pr =
   let aux env_t = function
@@ -785,16 +800,22 @@ let eval_spr env env_t pr =
     | Srul_id_fun (id, args, p) -> eval_sreact_fun_app id args env env_t p in
   let aux' (acc, env_t) id =
     let (rs, env_t') = aux env_t id in
-    (acc @ rs, env_t') in 
-  match pr with
-  | Spr (ids, _) -> let (rs, env_t') =
-		      List.fold_left aux' ([], env_t) ids in
-		    (Sbrs.P_class rs, env_t')
-  | Spr_red (ids, _) -> let (rs, env_t') =
-			  List.fold_left aux' ([], env_t) ids in
-			(Sbrs.P_rclass rs, env_t')
-
-let eval_sprs = eval_p_list eval_spr
+    (acc @ rs, env_t') in
+  let (pr_class, p) =
+    match pr with
+    | Spr (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Sbrs.P_class rs, env_t'), p)
+    | Spr_red (ids, p) ->
+       let (rs, env_t') =
+	 List.fold_left aux' ([], env_t) ids in
+       ((Sbrs.P_rclass rs, env_t'), p) in
+  if Sbrs.is_valid_priority (fst pr_class) then pr_class
+  else raise (ERROR (Invalid_class, p))
+			  
+let eval_sprs =
+  eval_p_list eval_spr (fun x -> Sbrs.is_valid_priority_list (fst x))
 			    
 let eval_init exp env env_t =
   match exp with
@@ -847,13 +868,13 @@ let store_decs fmt decs env env_t =
        upd id (Big_fun (exp, forms)) p
     | Dreact (React_exp (id, lhs, rhs, eta, p)) ->
        (let (r_v, env_t') =
-	  eval_react lhs rhs eta ScopeMap.empty env env_t p in
+	  eval_react lhs rhs (eval_eta eta) ScopeMap.empty env env_t p in
 	update fmt id (React r_v) p env env_t')
     | Dreact (React_fun_exp (id, forms, lhs, rhs, eta, p)) ->
        upd id (React_fun (lhs, rhs, eval_eta eta, forms)) p
     | Dsreact (Sreact_exp (id, lhs, rhs, eta, rate, p)) ->
        (let (r_v, env_t') =
-	  eval_sreact lhs rhs eta rate ScopeMap.empty env env_t p in
+	  eval_sreact lhs rhs (eval_eta eta) rate ScopeMap.empty env env_t p in
 	update fmt id (Sreact r_v) p env env_t')
     | Dsreact (Sreact_fun_exp (id, forms, lhs, rhs, eta, rate, p)) ->
        upd id (Sreact_fun (lhs, rhs, eval_eta eta, rate, forms)) p in
@@ -940,10 +961,14 @@ let eval_model fmt m env =
   store_params fmt (params_of_ts m.model_rs) env;
   let (b, env_t') = eval_init (init_of_ts m.model_rs) env env_t in
   match m.model_rs with
-  | Dbrs rbs -> let (p, env_t'') = eval_prs env env_t' rbs.dbrs_pri in
-		(b, P p, env_t'')
-  | Dsbrs sbrs -> let (p, env_t'') = eval_sprs env env_t' sbrs.dsbrs_pri in
-		  (b, S p, env_t'')  
+  | Dbrs rbs ->
+     let (p, env_t'') =
+       eval_prs env env_t' rbs.dbrs_pri rbs.dbrs_loc in
+     (b, P p, env_t'')
+  | Dsbrs sbrs ->
+     let (p, env_t'') =
+       eval_sprs env env_t' sbrs.dsbrs_pri  sbrs.dsbrs_loc in
+     (b, S p, env_t'')  
 
 (******** EXPORT STORE *********)
 		    
@@ -954,9 +979,9 @@ let export decs (env : store) (env_t : store_t) path
   let write_pair id lhs rhs =
     let (lhs_n, rhs_n) =
       (id ^ "_lhs" ^ svg, id ^ "_rhs" ^ svg) in
-    Export.write_big lhs lhs_n path
+    Big.write_svg lhs ~name:lhs_n ~path
     |> print_fun (concat lhs_n);
-    Export.write_big rhs rhs_n path
+    Big.write_svg rhs ~name:rhs_n ~path
     |> print_fun (concat rhs_n) in
   let dummy_args (args_t : num_type list) =
     resolve_types env_t args_t
@@ -972,13 +997,13 @@ let export decs (env : store) (env_t : store_t) path
 	     | Dint _
 	     | Dfloat _ -> ()
 	     | Dbig (Big_exp (id, _, p)) ->
-		(Export.write_big (get_big id p env) (id ^ svg) path
+		(Big.write_svg (get_big id p env) ~name:(id ^ svg) ~path
 		 |> print_fun (concat (id ^ svg)))
 	     | Dbig (Big_fun_exp (id, _, _, p)) ->
 		(let args = aux id in
 		 let b = fst (eval_big (Big_var_fun (id, args, p))
 				       ScopeMap.empty env env_t) in
-		 Export.write_big b (id ^ svg) path
+		 Big.write_svg b ~name:(id ^ svg) ~path
 		|> print_fun (concat (id ^ svg)))
 	     | Dreact (React_exp (id, _, _, _, p)) ->
 		(let r = get_react id p env in

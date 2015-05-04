@@ -8,10 +8,14 @@ include Map.Make (struct
 		   end)
 
 let dom f =
-  fst (List.split (bindings f))
+  fold (fun i _ acc ->
+	IntSet.add i acc)
+       f IntSet.empty
 
 let codom f = 
-  snd (List.split (bindings f))
+  fold (fun _ j acc ->
+	IntSet.add j acc)
+       f IntSet.empty
 
 let inverse f =
   fold (fun i j rel ->
@@ -49,7 +53,7 @@ let apply f i =
   try Some (apply_exn f i) with
   | Not_found -> None
 
-(* check if there is a binding for each 0 ... (n - 1) *)
+(* Check if there is a binding for each 0 ... (n - 1) *)
 let is_total n f =
   let rec aux i f =
     if i < 0 then true
@@ -57,3 +61,7 @@ let is_total n f =
 	 | Some _ -> aux (i - 1) f
 	 | None -> false in
   aux (n - 1) f
+
+let check_codom min max f =
+  let c = codom f in
+  (IntSet.min_elt c >= min) && (IntSet.max_elt c <= max)

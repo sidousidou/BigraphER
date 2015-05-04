@@ -20,10 +20,10 @@ val cardinal : int t -> int
 (** {6 Additional functions} *)
 
 (** Return the domain of a function. *)
-val dom : int t -> int list
+val dom : int t -> IntSet.t
 
 (** Return the codomain of a function. *)
-val codom : int t -> int list
+val codom : int t -> IntSet.t
 
 (** Return the inverse of a function. Note that the inverse of a function is, in
     the general case, a binary relation. *)
@@ -38,7 +38,7 @@ val of_list : (int * int) list -> int t
 
 (** [parse l] returns a function in which the numbers from [0] to [n - 1] (with
     [n] the length of [l]) are mapped to the elements of [l], in the given
-    order. Example: [0;0;3;1;2] -> [(0,0);(1,0);(2,3);(3,1);(4,2)]. *)
+    order. Example: [parse [0;0;3;1;2] = [(0,0);(1,0);(2,3);(3,1);(4,2)]]. *)
 val parse : int list -> int t
 
 (** Return the string representation of a function. Example: ["\{(1, 2), (2, 3),
@@ -66,4 +66,8 @@ val transform_exn : int t -> int Iso.t -> int Iso.t -> int t
 (** Return [true] if a function is total, [false] otherwise. *)
 val is_total : int -> int t -> bool
 
+(** [check_codom min max f] returns [true] if the codomain of [f] is in the
+    range [[min, max]]. *)
+val check_codom : int -> int -> int t -> bool
+				 
 (**/**)

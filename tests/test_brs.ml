@@ -51,15 +51,15 @@ let g =
       comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one ]
   
 let reacts =
-  [ Brs.P_class [ { Brs.rdx = r; rct = r_p; }; { Brs.rdx = g; rct = r; } ] ]
+  [ Brs.P_class [ { Brs.rdx = r; rct = r_p; eta = None };
+		  { Brs.rdx = g; rct = r; eta = None } ] ]
   
 let sreacts =
   [ Sbrs.P_class
-      [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; };
-        { Sbrs.rdx = g; rct = r; rate = 4.0; } ] ]
+      [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; eta = None };
+        { Sbrs.rdx = g; rct = r; rate = 4.0; eta = None } ] ]
 
 let () =
-  Random.self_init ();
   let iter_f _ _ = ()
   and states_reference = 30
   and reacts_reference = 29
@@ -74,36 +74,67 @@ let () =
 			("Occurrences", occurs_reference, o)] in
   let testcases =
     [  begin
-	let (_, stats) = 
-	  Brs.bfs s reacts 1000 50 iter_f in
+	let stats =
+	  try
+	    snd (Brs.bfs ~s0:s
+			 ~priorities:reacts
+			 ~max:1000
+			 ~iter_f)
+	  with
+	  | Brs.MAX (_, stats) -> stats in
 	("brs",
 	 __MODULE__,
-	 print_res stats.Brs.s stats.Brs.r stats.Brs.o,
-	 failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
+	 print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
+	 failures (ass_list stats.Brs.states stats.Brs.trans stats.Brs.occs))
       end;
        begin
-	 let (_, stats) = 
-	   Brs.sim s reacts 1000 50 iter_f in
+	 let stats = 
+	   try
+	     snd (Brs.sim ~s0:s
+			  ~priorities:reacts
+			  ~stop:1000
+			  ~init_size:50
+			  ~iter_f)
+	   with
+	   | Brs.LIMIT (_, stats)
+	   | Brs.DEADLOCK (_, stats, _) -> stats in
 	 ("sim_brs",
 	  __MODULE__,
-	  print_res stats.Brs.s stats.Brs.r stats.Brs.o,
-	  failures (ass_list stats.Brs.s stats.Brs.r stats.Brs.o))
+	  print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
+	  failures [("States", states_reference, stats.Brs.states);
+		    ("Reactions", reacts_reference, stats.Brs.trans);
+		    (* ("Occurrences", 31, stats.Brs.occs) *) (* RANDOM *)
+		   ])     
        end;
        begin
-	 let (_, stats) = 
-	   Sbrs.bfs s sreacts 1000 50 iter_f in
+	 let stats = 
+	   try
+	     snd (Sbrs.bfs ~s0:s
+				~priorities:sreacts
+				~max:1000
+				~iter_f)
+	   with
+	   | Sbrs.MAX (_, stats) -> stats in
 	 ("sbrs",
 	  __MODULE__,
-	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
-	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
+	  print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
+	  failures (ass_list stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs))
        end;
        begin
-	 let (_, stats) = 
-	   Sbrs.sim s sreacts 5000.0 50 iter_f in 
+	 let stats = 
+	   try
+	     snd (Sbrs.sim ~s0:s
+				 ~priorities:sreacts
+				 ~stop:5000.0
+				 ~init_size:50
+				 ~iter_f)
+	   with
+	   | Sbrs.LIMIT (_, stats)
+	   | Sbrs.DEADLOCK (_, stats, _) -> stats in 
 	 ("sim_sbrs",
 	  __MODULE__,
-	  print_res stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o,
-	  failures (ass_list stats.Sbrs.s stats.Sbrs.r stats.Sbrs.o))
+	  print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
+	  failures (ass_list stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs))
        end; ] in
   write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2)
 

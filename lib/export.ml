@@ -1,5 +1,3 @@
-open Big
-
 type error =
   | Dot_not_found
   | Dot_stopped of int
@@ -51,55 +49,17 @@ let catch_unix_errors f arg name path =
   try f arg name path with
   | Unix.Unix_error (e,fname,args) ->
      raise (ERROR (Internal_error (e, fname, args)))
-       
-let _write_string s name path =
+
+let write_svg s ~name ~path =
+  catch_unix_errors _write_svg s name path
+	   
+let write_string s ~name ~path =
   try
-    let f_name = Filename.concat path name in
-    let out_ch = open_out f_name in
+    let out_ch =
+      Filename.concat path name
+      |> open_out in
     output_string out_ch s;
     close_out out_ch;
     String.length s
   with
   | Sys_error s -> raise (ERROR (Sys s))
-  
-let write_big b n path =
-  catch_unix_errors _write_svg (get_dot b n) n path
-
-let write_ts ts n path =
-  catch_unix_errors _write_svg (Brs.to_dot ts) n path
-
-let write_ctmc ctmc n path =
-  catch_unix_errors _write_svg (Sbrs.to_dot ctmc) n path
-
-let write_big_raw b n path =
-  catch_unix_errors _write_string (get_dot b n) n path
-
-let write_ts_raw ts n path =
-  catch_unix_errors _write_string (Brs.to_dot ts) n path
-
-let write_ctmc_raw ctmc n path =
-  catch_unix_errors _write_string (Sbrs.to_dot ctmc) n path
-		    
-let write_ts_prism ts n path =
-  _write_string (Brs.to_prism ts) n path
-
-let write_ctmc_prism ctmc n path =
-  _write_string (Sbrs.to_prism ctmc) n path
-
-let string_of_l l =
-  let inv = Hashtbl.create (Hashtbl.length l) in
-  Hashtbl.fold (fun s p acc -> 
-		Hashtbl.add inv p s;
-		p :: acc)
-	       l []
-  |>  List.map (fun p ->
-		Hashtbl.find_all inv p
-		|> List.map (fun s -> "x = " ^ (string_of_int s)) 
-		|> String.concat " | " 
-		|> fun s ->
-		   "label \"p_" ^ (string_of_int p) ^ "\" = " ^ s ^ ";")
-  |> String.concat "\n"
-
-let write_csl l n path =
-  _write_string (string_of_l l) n path
-

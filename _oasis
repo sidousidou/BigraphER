@@ -30,20 +30,22 @@ Library bigraph
   Path:            lib
   FindlibName:	   bigraph
 #  Pack:            true
-  Modules:
-                   Base,
+  Modules:         Base,
                    Link,
                    Place,
                    Big,
                    Brs,
-                   Sbrs,
-                   Export,
+                   Sbrs
+  InternalModules: Sparse,
+                   Cnf,
                    Iso,
                    IntSet,
                    Rel,
                    Fun,
-                   Sparse,
-                   Cnf
+                   RrType,
+                   PriType,
+                   TsType,
+                   Export
   BuildDepends:    unix, minisat, bigarray, str
   CCOpt+:	   -O3
   NativeOpt+:	   -noassert

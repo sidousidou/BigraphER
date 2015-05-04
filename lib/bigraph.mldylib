@@ -1,16 +1,19 @@
 # OASIS_START
-# DO NOT EDIT (digest: 2e6dd8719e158e693919ecaa52eb82b9)
+# DO NOT EDIT (digest: 6c0e1e59c178a7a61b9a1d8ab62c106b)
 Base
 Link
 Place
 Big
 Brs
 Sbrs
-Export
+Sparse
+Cnf
 Iso
 IntSet
 Rel
 Fun
-Sparse
-Cnf
+RrType
+PriType
+TsType
+Export
 # OASIS_STOP
