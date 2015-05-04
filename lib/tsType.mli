@@ -1,5 +1,4 @@
-module type G =
-  sig
+module type G = sig
     type t
     type edge_type
     val init : int -> t
@@ -19,11 +18,11 @@ module type L = sig
     val is_greater : t -> t -> bool
 end
 
-type stats =  { time : float; 
-		states : int;  
-		trans : int;  
-		occs : int;
-	      }
+module type S = sig
+    type t
+    type g
+    val make : float -> g -> int -> t
+  end
 		  
 module MakeTS (R : RrType.T)
 	      (P : sig
@@ -43,16 +42,17 @@ module MakeTS (R : RrType.T)
 				 const_pri:p_class list -> p_class list ->
 				 R.occ option * int
 		end)
-	      (G : G with type edge_type = R.edge) : sig
+	      (G : G with type edge_type = R.edge)
+	      (S : S with type g = G.t): sig
     
     type t = G.t
 
-    exception MAX of t * stats
+    exception MAX of t * S.t
 
     val bfs :
       s0:Big.bg ->
       priorities:P.p_class list ->
-      max:int -> iter_f:(int -> Big.bg -> unit) -> t * stats
+      max:int -> iter_f:(int -> Big.bg -> unit) -> t * S.t
 
     val to_prism : t -> string
 
@@ -91,20 +91,21 @@ module MakeTrace (R : RrType.T)
 				    R.occ option * int
 		   end)
 		 (L : L with type occ = R.occ)
-		 (G : G with type edge_type = R.edge) : sig
+		 (G : G with type edge_type = R.edge)
+		 (S : S with type g = G.t): sig
 
     type t = G.t
 	       
     type limit = L.t
 		   
-    exception LIMIT of t * stats
+    exception LIMIT of t * S.t
 
-    exception DEADLOCK of t * stats * limit
+    exception DEADLOCK of t * S.t * limit
 
     val sim :
       s0:Big.bg ->
       priorities:P.p_class list -> init_size:int ->
-      stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * stats
+      stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * S.t
 
     val to_prism : t -> string
 			    

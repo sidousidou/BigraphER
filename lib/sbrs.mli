@@ -15,10 +15,14 @@ type p_class =
   | P_rclass of sreact list (** Reducable priority class *)
 
 (** Execution statistics. *)		      
-type stats = TsType.stats
+type stats =  { time : float; 
+		states : int;  
+		trans : int;  
+		occs : int;
+	      }
 		       
 (** The type of Continuous Time Markov Chains. *)
-type g = {
+type graph = {
   v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
   e : (int, (int * float)) Hashtbl.t; (** Transition relation *)
   l : (int, int) Hashtbl.t; (** Labelling function *) 
@@ -68,7 +72,7 @@ val rewrite : Big.bg -> p_class list -> Big.bg * int
 module Ctmc : sig
 
     (** Raised when the size of the transition system reaches the limit. *)
-    exception MAX of g * stats
+    exception MAX of graph * stats
 
     (** [bfs s p l n f] computes the transition system of the SBRS specified by
         initial state [s] and priority classes [p]. [l] is the maximum number of
@@ -80,27 +84,27 @@ module Ctmc : sig
 
         @raise Sbrs.LIMIT when the maximum number of states is reached.*)
     val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
-	      iter_f:(int -> Big.bg -> unit) -> g * stats
+	      iter_f:(int -> Big.bg -> unit) -> graph * stats
 
     (** Compute the string representation in PRISM [tra] format of a transition
         system. *)
-    val to_prism : g -> string
+    val to_prism : graph -> string
 
     (** Compute the string representation in [dot] format of a transition
         system. *)
-    val to_dot : g -> name:string -> string
+    val to_dot : graph -> name:string -> string
 
     (** Compute the string representation in PRISM [lab] format of the labelling
         function of a transition system. *)
-    val to_lab : g -> string
+    val to_lab : graph -> string
 			   
-    val iter_states : f:(int -> Big.bg -> unit) -> g -> unit
+    val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
-    val write_prism : g -> name:string -> path:string -> int
+    val write_prism : graph -> name:string -> path:string -> int
 
-    val write_lab : g -> name:string -> path:string -> int
+    val write_lab : graph -> name:string -> path:string -> int
 
-    val write_dot : g -> name:string -> path:string -> int
+    val write_dot : graph -> name:string -> path:string -> int
   end
 
 (** {6 Simulation traces} *)
@@ -109,30 +113,30 @@ module Trace : sig
 	       
     type limit = float
 		   
-    exception LIMIT of g * stats
+    exception LIMIT of graph * stats
 
-    exception DEADLOCK of g * stats * limit
+    exception DEADLOCK of graph * stats * limit
 
     val sim :
       s0:Big.bg ->
       priorities:p_class list -> init_size:int ->
-      stop:limit -> iter_f:(int -> Big.bg -> unit) -> g * stats
+      stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * stats
 
-    val to_prism : g -> string
+    val to_prism : graph -> string
 			  
-    val to_dot : g -> name:string -> string
+    val to_dot : graph -> name:string -> string
 
-    val to_lab : g -> string
+    val to_lab : graph -> string
 			
-    val iter_states : f:(int -> Big.bg -> unit) -> g -> unit
+    val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
-    val write_svg : g -> name:string -> path:string -> int
+    val write_svg : graph -> name:string -> path:string -> int
 							 
-    val write_prism : g -> name:string -> path:string -> int
+    val write_prism : graph -> name:string -> path:string -> int
 							   
-    val write_lab : g -> name:string -> path:string -> int
+    val write_lab : graph -> name:string -> path:string -> int
 
-    val write_dot : g -> name:string -> path:string -> int
+    val write_dot : graph -> name:string -> path:string -> int
 
   end							  
 

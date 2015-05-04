@@ -77,17 +77,20 @@ let is_valid_priority_list = is_valid_list
 
 let rewrite = rewrite			       
 
-type stats = TsType.stats
-		
-type g = {
-  v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-  (* p : (int, Bilog) Hashtbl.t Predicates *)
-  e : (int, edge) Hashtbl.t;
-  l : (int, int) Hashtbl.t;  
-}
+type graph = { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
+	       (* p : (int, Bilog) Hashtbl.t Predicates *)
+	       e : (int, edge) Hashtbl.t;
+	       l : (int, int) Hashtbl.t;  
+	     }
+
+type stats =  { time : float; 
+		states : int;  
+		trans : int;  
+		occs : int;
+	      }
 
 module G = struct
-    type t = g
+    type t = graph
     type edge_type = RT.edge	       
     let init n =
       { v = Hashtbl.create n;
@@ -100,7 +103,17 @@ module G = struct
     let string_of_arrow u = string_of_float (snd u)
   end
 
-module Ctmc = TsType.MakeTS (R) (P) (G)
+module S = struct
+    type t = stats
+    type g = graph
+    let make t0 g m =
+      { time = t0 -. (Unix.gettimeofday ());
+	states = Hashtbl.length g.v; 
+	trans = Hashtbl.length g.e;
+	occs = m; }
+end	       
+	     
+module Ctmc = TsType.MakeTS (R) (P) (G) (S)
 
 module L = struct
     type t = float
@@ -110,4 +123,4 @@ module L = struct
     let is_greater = ( > )
   end
 					
-module Trace = TsType.MakeTrace (R) (P) (L) (G)
+module Trace = TsType.MakeTrace (R) (P) (L) (G) (S)

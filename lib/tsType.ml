@@ -19,6 +19,13 @@ module type L = sig
     val is_greater : t -> t -> bool
 end
 
+(* Execution statistics *)
+module type S = sig
+    type t
+    type g
+    val make : float -> g -> int -> t
+  end
+		  
 (* Export functions *)
 module MakeE (G : G) = struct
     
@@ -96,19 +103,6 @@ module MakeE (G : G) = struct
 			  
   end
 
-type stats =  { time : float; 
-		states : int;  
-		trans : int;  
-		occs : int;
-	      }
-
-let make_stats t0 s t m =
-  { time = t0 -. (Unix.gettimeofday ());
-    states = s;
-    trans = t;
-    occs = m;
-  }
-
 module MakeTS (R : RrType.T)
 	      (P : sig
 		  type p_class =
@@ -127,13 +121,14 @@ module MakeTS (R : RrType.T)
 				 const_pri:p_class list -> p_class list ->
 				 R.occ option * int
 		end)
-	      (G : G with type edge_type = R.edge) = struct
+	      (G : G with type edge_type = R.edge)
+	      (S : S with type g = G.t) = struct
 
     type t = G.t
    		    
     type p_class = P.p_class
 		   
-    exception MAX of t * stats
+    exception MAX of t * S.t
 	       
     let is_new b v =
       let k_buket =
@@ -158,17 +153,11 @@ module MakeTS (R : RrType.T)
     			  ((i', o) :: new_acc, old_acc, i'))
     		      | Some x -> (new_acc, (R.edge_of_occ o x) :: old_acc, i))
     		     ([], [], i)
-
-    let _make_stats t0 g m =
-      make_stats t0
-		 (Hashtbl.length (G.states g))
-		 (Hashtbl.length (G.edges g))
-		 m
 			  
     let rec _bfs g q i m t0 priorities max iter_f =
       if not (Queue.is_empty q) then
 	if i > max then
-	  raise (MAX (g, _make_stats t0 g m))
+	  raise (MAX (g, S.make t0 g m))
 	else 
 	    (let (v, curr) = Queue.pop q in
 	    let ((new_s, old_s, i'), m') = 
@@ -196,7 +185,7 @@ module MakeTS (R : RrType.T)
 	    (* recursive call *)
 	    _bfs g q i' (m + m') t0 priorities max iter_f) 
       else
-	(g, _make_stats t0 g m)
+	(g, S.make t0 g m)
 
     let bfs ~s0 ~priorities ~max ~iter_f =
       let q = Queue.create () in
@@ -232,30 +221,25 @@ module MakeTrace (R : RrType.T)
 				    R.occ option * int
 		   end)
 		 (L : L with type occ = R.occ)
-		 (G : G with type edge_type = R.edge) = struct
+		 (G : G with type edge_type = R.edge)
+		 (S : S with type g = G.t) = struct
 
     type t = G.t
 	       
     type limit = L.t
 		   
-    exception LIMIT of t * stats
+    exception LIMIT of t * S.t
 
-    exception DEADLOCK of t * stats * limit
-
-    let _make_stats t0 g m =
-      make_stats t0
-		 (Hashtbl.length (G.states g))
-		 (Hashtbl.length (G.edges g))
-		 m
+    exception DEADLOCK of t * S.t * limit
 					
     let rec _sim trace s i t_sim m t0 priorities t_max iter_f =
       if L.is_greater t_sim t_max then
-	raise (LIMIT (trace, _make_stats t0 trace m))
+	raise (LIMIT (trace, S.make t0 trace m))
       else
 	match P.scan_sim s ~iter_f
 			 ~const_pri:priorities priorities with
 	| (None, m') ->
-	   raise (DEADLOCK (trace, _make_stats t0 trace (m + m'), t_sim))
+	   raise (DEADLOCK (trace, S.make t0 trace (m + m'), t_sim))
 	| (Some o, m') ->	
 	   (let s' = R.big_of_occ o in
 	    Hashtbl.add (G.states trace) (Big.key s') (i + 1, s');
