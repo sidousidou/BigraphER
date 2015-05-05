@@ -260,3 +260,9 @@ let rules_of_ts = function
 let params_of_ts = function
   | Dbrs ts -> ts.dbrs_params
   | Dsbrs ts -> ts.dsbrs_params
+
+let string_of_consts l =
+  List.map (function
+	     | Cint x ->
+	     | Cfloat x -> ) l
+  |> String.concat ","

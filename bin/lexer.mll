@@ -28,7 +28,11 @@ let float_literal =
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let comment = '#' [^'\r' '\n']* (newline | eof)  
- 
+
+let path = [^'\r' '\n']+			    
+let big = path ".big"
+let bilog = path ".bilog"
+
 (* RULES *)
 
 rule token =  parse 
@@ -80,15 +84,62 @@ rule token =  parse
   | "*"                     { PROD }
   | "/"                     { SLASH }
   | "^"                     { CARET }
-  (* | "true"                  { TRUE } *)
-  (* | "false"                 { FALSE } *)
-  (* | "not"                   { NOT } *)
-  (* | "sort"                  { SORT } *)
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }
   | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
+and cmd =  parse
+  | blank+                  { token lexbuf }
+  | newline                 { Lexing.new_line lexbuf; token lexbuf }
+  | int_literal             { let s = Lexing.lexeme lexbuf in
+			      try CINT (int_literal s) with
+			      | Failure _ -> 
+				 raise (ERROR (Int_overflow s, Loc.curr lexbuf)) }
+  | float_literal           { try CFLOAT (float_of_string (Lexing.lexeme lexbuf)) with
+			      | Failure _ -> assert false }
+  | "="                     { EQUAL }  
+  | ","                     { COMMA }
+  | "svg"                   { F_SVG }
+  | "dot"                   { F_DOT }
+  (* COMMANDS *)			    
+  | "check"                 { C_CHECK }
+  | "full"                  { C_FULL }
+  | "sim"                   { C_SIM }
+  (* STAND-ALONE OPTIONS *)			    
+  | ("--config" | "-c")     { O_CONF }
+  | ("--version" | "-V")    { O_VERS }
+  | ("--help" | "-h")       { O_HELP }
+  (* COMMON OPTIONS *)			    
+  | ("--verbose" | "-v")    { O_VERB }
+  | ("--quiet" | "-q")      { O_QUIET }     
+  | ("--const" | "-c")      { O_CONST } 
+  | "--debug"               { O_DEBUG }
+  (* COMMAND OPTIONS *)
+  | ("--export-decs"
+    | "-d")                 { O_DECS }
+  | ("--format" | "-f")     { O_FORMAT }
+  | ("--export-transition-system"
+    | "-t")                 { O_TS }
+  | ("--export-states"
+    | "-s")                 { O_STATES }
+  | ("--export-labels"
+    | "-l")                 { O_LABELS }
+  | ("--export-prism"
+    | "-p")                 { O_PRISM } 
+  | ("--max-states"
+    | "-M")                 { O_MAX }			    
+  | ("--simulation-time"
+    | "-T")                 { O_TIME }
+  | ("--simulation-steps"
+    | "-S")                 { O_STEPS } 	 
+  | identifier              { IDE (Lexing.lexeme lexbuf) }
+  | big                     { BIG_FILE (Lexing.lexeme lexbuf) }
+  | bilog                   { BILOG_FILE (Lexing.lexeme lexbuf) }
+  | path                    { PATH (Lexing.lexeme lexbuf) }
+  | eof                     { EOF }
+  | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
+			    
 {
 
 open Format
