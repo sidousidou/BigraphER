@@ -346,7 +346,8 @@ const:
 
 cmd:
   | sub_cmd EOF                             { $1 }
-  | stand_alone_opt EOF                     { StandAloneOpt $1 };
+  | stand_alone_opt EOF                     { StandAloneOpt $1 }
+  | error	    			    { raise (ERROR (Parse)) };
 
 stand_alone_opt:
   | O_CONF                                  { Config }
@@ -367,7 +368,7 @@ export_opt:
   | O_DECS PATH { Decs $2 }
   | O_TS PATH { Graph $2 }
   | O_LABELS PATH { Labels $2 }
-  | O_STATES { States }
+  | O_STATES option(PATH) { States $2 }
   | O_PRISM PATH {Prism $2}
   | O_FORMAT l=separated_nonempty_list(COMMA, ext) { Ext l };
 
