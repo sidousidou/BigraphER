@@ -297,7 +297,9 @@ let parse_cmd fmt argv =
     Array.to_list argv
     |> List.tl
     |> String.concat " " 
-    |> Lexing.from_string  in
+    |> Lexing.from_string in
+  (* Check environment variables *)
+  Cmd.eval_env ();
   try
     match Parser.cmd Lexer.token lexbuf with
     | Cmd.StandAloneOpt Cmd.Config ->
@@ -307,13 +309,13 @@ let parse_cmd fmt argv =
     | Cmd.StandAloneOpt Cmd.Version ->
        Cmd.eval_version std_formatter ()
     | Cmd.Check (options, model, pred) ->
-       (Cmd.eval_cmd options model pred;
+       (Cmd.eval_chk fmt options model pred;
 	`check) 
     | Cmd.Full (options, model, pred) ->
-       (Cmd.eval_cmd options model pred;
+       (Cmd.eval_full fmt options model pred;
 	`full) 
     | Cmd.Sim (options, model, pred) ->
-       (Cmd.eval_cmd options model pred;
+       (Cmd.eval_sim fmt options model pred;
 	`sim) 
   with
   | Cmd.ERROR e ->
@@ -323,6 +325,7 @@ let parse_cmd fmt argv =
   | Parser.Error ->
      (pp_print_flush fmt ();
       Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
+      Cmd.usage err_formatter ();
       exit 1)
   | Lexer.ERROR (e, p) ->
      (pp_print_flush fmt ();
