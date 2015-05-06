@@ -223,7 +223,13 @@ let usage_str fmt () =
 	                               [-c|--config]@,\
 	                               [COMMAND] <ARGS> @]@]"
 
-let print_table fmt rows f_l f_r =
+let print_table fmt rows ?(offset = 0) f_l f_r =
+  (* Find longest row *)
+  let l_max =
+    List.fold_left (fun max r ->
+		    let l = String.length (f_l r) in
+		    if l > max then l else max)
+		   0 rows in
   let pp_row fmt row =
     pp_print_tab fmt ();
     pp_print_string fmt (f_l row);
@@ -235,7 +241,7 @@ let print_table fmt rows f_l f_r =
       pp_set_tab fmt ();
       let l = f_l first in
       fprintf fmt "@[<h>%s" l;
-      print_break (15 - (String.length l)) 0;
+      print_break (l_max - offset) 0;
       fprintf fmt "@]";
       pp_set_tab fmt ();
       fprintf fmt "%a" f_r first;
@@ -301,59 +307,63 @@ let string_of_format f =
   |> String.concat ","
 
 let string_of_file = function
-  | None -> ""
+  | None -> "-"
   | Some f -> f
-		   
+		
 let eval_config fmt () =
   let config_str fmt () =
-    print_table fmt
-		[("consts",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (Ast.string_of_consts defaults.consts));
-		 ("debug",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%b.@]" defaults.debug);
-		 ("export_decs",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_decs));
-		 ("export_graph",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_graph));
-		 ("export_lab",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_lab)); 
-		 ("export_prism",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_lab));
-		 ("export_states",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_states));
-		  ("export_states_flag",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%b.@]" defaults.export_states_flag);
-		 ("help",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%b.@]" defaults.help);
-		 ("max_states",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%d.@]" defaults.max_states);
-		 ("out_format",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%s.@]" (string_of_format defaults.out_format));
-		 ("quiet",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%b.@]" defaults.quiet);
-		 ("steps",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%d.@]" defaults.steps);
-		 ("time",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%g.@]" defaults.time);
-		 ("verb",
-		  fun fmt () ->
-		  fprintf fmt "@[<hov>%b.@]" defaults.verb)]
+    let conf =
+      List.map (fun (a, b) -> (colorise `blue  a, b))
+	       [("consts",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (match Ast.string_of_consts defaults.consts with
+					    | "" -> "-"
+					    | s -> s));
+		("debug",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%b@]" defaults.debug);
+		("export_decs",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_decs));
+		("export_graph",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_graph));
+		("export_lab",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab)); 
+		("export_prism",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab));
+		("export_states",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_states));
+		("export_states_flag",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%b@]" defaults.export_states_flag);
+		("help",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%b@]" defaults.help);
+		("max_states",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%d@]" defaults.max_states);
+		("out_format",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format));
+		("quiet",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%b@]" defaults.quiet);
+		("steps",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%d@]" defaults.steps);
+		("time",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%g@]" defaults.time);
+		("verb",
+		 fun fmt () ->
+		 fprintf fmt "@[<hov>%b@]" defaults.verb)] in
+    print_table fmt conf ~offset:10
 		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
-  fprintf fmt "@[<v>%a@]@." config_str ();
+  fprintf fmt "@[<v>CONFIGURATION:@,%a@]@." config_str ();
   exit 0
 	    
 let dot = dot_installed ()
