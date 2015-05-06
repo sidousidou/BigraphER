@@ -29,7 +29,7 @@ let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let comment = '#' [^'\r' '\n']* (newline | eof)  
 
-let path = [^'\r' '\n']+			    
+let path = [^'\r' '\n' ' ']+			    
 let big = path ".big"
 let bilog = path ".bilog"
 
@@ -90,37 +90,36 @@ rule token =  parse
   | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
 and cmd =  parse
-  | blank+                  { token lexbuf }
-  | newline                 { Lexing.new_line lexbuf; token lexbuf }
-  | int_literal             { let s = Lexing.lexeme lexbuf in
+  | blank+                  { cmd lexbuf }
+  | int_literal             { print_endline "int"; let s = Lexing.lexeme lexbuf in
 			      try CINT (int_literal s) with
 			      | Failure _ -> 
 				 raise (ERROR (Int_overflow s, Loc.curr lexbuf)) }
-  | float_literal           { try CFLOAT (float_of_string (Lexing.lexeme lexbuf)) with
+  | float_literal           { print_endline "float"; try CFLOAT (float_of_string (Lexing.lexeme lexbuf)) with
 			      | Failure _ -> assert false }
-  | "="                     { EQUAL }  
-  | ","                     { COMMA }
-  | "svg"                   { F_SVG }
-  | "dot"                   { F_DOT }
+  | "="                     { print_endline "equal"; EQUAL }  
+  | ","                     { print_endline "comma"; COMMA }
+  | "svg"                   { print_endline "svg"; F_SVG }
+  | "dot"                   { print_endline "dot"; F_DOT }
   (* COMMANDS *)			    
-  | "check"                 { C_CHECK }
-  | "full"                  { C_FULL }
-  | "sim"                   { C_SIM }
+  | "validate"              { print_endline "validate"; C_CHECK }
+  | "full"                  { print_endline "full"; C_FULL }
+  | "sim"                   { print_endline "sim"; C_SIM }
   (* STAND-ALONE OPTIONS *)			    
-  | ("--config" | "-c")     { O_CONF }
-  | ("--version" | "-V")    { O_VERS }
-  | ("--help" | "-h")       { O_HELP }
+  | ("--config" | "-c")     { print_endline "config"; O_CONF }
+  | ("--version" | "-V")    { print_endline "version"; O_VERS }
+  | ("--help" | "-h")       { print_endline "help"; O_HELP }
   (* COMMON OPTIONS *)			    
-  | ("--verbose" | "-v")    { O_VERB }
-  | ("--quiet" | "-q")      { O_QUIET }     
-  | ("--const" | "-c")      { O_CONST } 
+  | ("--verbose" | "-v")    { print_endline "verb"; O_VERB }
+  | ("--quiet" | "-q")      { print_endline "quiet"; O_QUIET }     
+  | ("--const" | "-c")      { print_endline "const"; O_CONST } 
   | "--debug"               { O_DEBUG }
   (* COMMAND OPTIONS *)
   | ("--export-decs"
-    | "-d")                 { O_DECS }
-  | ("--format" | "-f")     { O_FORMAT }
+    | "-d")                 { print_endline "decs"; O_DECS }
+  | ("--format" | "-f")     { print_endline "format"; O_FORMAT }
   | ("--export-transition-system"
-    | "-t")                 { O_TS }
+    | "-t")                 { print_endline "ts"; O_TS }
   | ("--export-states"
     | "-s")                 { O_STATES }
   | ("--export-labels"
@@ -130,15 +129,15 @@ and cmd =  parse
   | ("--max-states"
     | "-M")                 { O_MAX }			    
   | ("--simulation-time"
-    | "-T")                 { O_TIME }
+    | "-T")                 { print_endline "time"; O_TIME }
   | ("--simulation-steps"
     | "-S")                 { O_STEPS } 	 
-  | identifier              { IDE (Lexing.lexeme lexbuf) }
-  | big                     { BIG_FILE (Lexing.lexeme lexbuf) }
-  | bilog                   { BILOG_FILE (Lexing.lexeme lexbuf) }
-  | path                    { PATH (Lexing.lexeme lexbuf) }
-  | eof                     { EOF }
-  | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
+  | identifier              { print_endline "ide"; IDE (Lexing.lexeme lexbuf) }
+  | big                     { print_endline "big"; BIG_FILE (Lexing.lexeme lexbuf) }
+  | bilog                   { print_endline "bilog"; BILOG_FILE (Lexing.lexeme lexbuf) }
+  | path                    { print_endline "path"; PATH (Lexing.lexeme lexbuf) }
+  | eof                     { print_endline "EOF"; EOF }
+  | _ as c                  { raise (print_endline "Lexing error"; ERROR (Unknown_char c, Loc.curr lexbuf)) }
 			    
 {
 

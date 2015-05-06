@@ -293,45 +293,32 @@ let open_lex path =
   (lexbuf, file)
     		     		   		 
 let parse_cmd fmt argv =
-  let lexbuf =
-    Array.to_list argv
-    |> List.tl
-    |> String.concat " " 
-    |> Lexing.from_string in
+  let lexbuf = Array.to_list argv
+	       |> List.tl
+	       |> String.concat " " 
+	       |> Lexing.from_string in
   (* Check environment variables *)
   Cmd.eval_env ();
   try
-    match Parser.cmd Lexer.cmd lexbuf with
-    | Cmd.StandAloneOpt Cmd.Config ->
-       Cmd.eval_config std_formatter ()
-    | Cmd.StandAloneOpt Cmd.Help_top_level ->
-       Cmd.eval_help_top std_formatter ()
-    | Cmd.StandAloneOpt Cmd.Version ->
-       Cmd.eval_version std_formatter ()
-    | Cmd.Check (options, model, pred) ->
-       (Cmd.eval_chk fmt options model pred;
-	`check) 
-    | Cmd.Full (options, model, pred) ->
-       (Cmd.eval_full fmt options model pred;
-	`full) 
-    | Cmd.Sim (options, model, pred) ->
-       (Cmd.eval_sim fmt options model pred;
-	`sim) 
+    Parser.cmd Lexer.cmd lexbuf
   with
   | Cmd.ERROR e ->
      (pp_print_flush fmt ();
-      Cmd.report_error err_formatter e;
+      fprintf err_formatter "@?@[%a%a"
+      Cmd.report_error e
+      Cmd.eval_help_top ();
       exit 1)
   | Parser.Error ->
      (pp_print_flush fmt ();
-      Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
-      Cmd.usage err_formatter ();
+      fprintf err_formatter "@?@[%a%a"
+      Cmd.report_error (Cmd.Parse (Lexing.lexeme lexbuf))
+      Cmd.eval_help_top ();
       exit 1)
   | Lexer.ERROR (e, p) ->
      (pp_print_flush fmt ();
-      fprintf err_formatter "@[<v>";
-      Lexer.report_error err_formatter e;
-      Cmd.usage err_formatter ();
+      fprintf err_formatter "@?@[%a%a"
+      Lexer.report_error e
+      Cmd.eval_help_top ();
       exit 1)
        
 let () =

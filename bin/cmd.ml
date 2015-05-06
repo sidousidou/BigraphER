@@ -10,13 +10,13 @@ exception ERROR of error
 
 let report_error_aux fmt = function
   | Malformed_env s ->
-     fprintf fmt "`%s'@ is@ not@ a valid@ format" s
+     fprintf fmt "@[`%s'@ is@ not@ a valid@ format@]" s
   | Malformed_states ->
-     fprintf fmt "Specify a@ path@ or for option `-s|--export-states'@ \
-		  or@ use it@ in conjunction@ with option@ \
-		  `-t|--export-transition-system'"			
+     fprintf fmt "@[Specify a path or for option `-s|--export-states'@ \
+		  or use it in conjunction with option \
+		  `-t|--export-transition-system'@]"			
   | Parse s ->
-     fprintf fmt "Syntax error near token `%s'" s 
+     fprintf fmt "@[Invalid argument `%s'@]" s 
 		     
 type big_file = string
 
@@ -81,7 +81,7 @@ type t =
   | StandAloneOpt of stand_alone_opt
 
 type cmd_t =
-  [ `check | `full | `sim ]
+  [ `check | `full | `sim | `opt ]
 		       
 let string_of_t = function
   | Check (_, _, _) -> "validate"
@@ -218,8 +218,9 @@ let msg_cmd fmt = function
   | StandAloneOpt x -> msg_so_opt fmt x
 
 let usage_str fmt () =  
-  fprintf fmt "@[USAGE: @[<v>bigrapher <OPTION>@,\
-	                     bigrapher <COMMAND> <ARGS> @]@]@,"
+  fprintf fmt "@[<v 2>USAGE:@,\
+	       bigrapher <OPTION>@,\
+	       bigrapher <COMMAND> <ARGS>@]@,"
 
 let print_table fmt rows ?(offset = 0) f_l f_r =
   (* Find longest row *)
@@ -262,17 +263,18 @@ let eval_help_top fmt () =
 		~offset:6
 		string_of_stand_alone_opt
 		msg_so_opt in
-  fprintf fmt "@[<v>%a@,@[<v 2>COMMANDS:@,%a@]@,\
-	       @,@[<v 2>OPTIONS:@,%a@]@,\
-	       @,See `bigrapher <COMMAND> -h' for more information on a specific subcommand.@]@."
-	  usage_str () commands () opts ();
-  exit 0
+  fprintf fmt "@[<v>%a@,\
+	       @[<v 2>COMMANDS:@,%a@]@,@,\
+	       @[<v 2>OPTIONS:@,%a@]@,@,\
+	       See `bigrapher <COMMAND> -h' for more information on a specific subcommand.@]@."
+	  usage_str () commands () opts ()
 
 let help_fun fmt l cmd =
   let options fmt () =
     print_table fmt l (string_of_opt ", ") msg_opt in
-  fprintf fmt "@[<v>USAGE: bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@,\
-	       @[<v 2>OPTIONS:@,%a@]@]" cmd options ();
+  fprintf fmt "@[<v 2>USAGE:@,\
+	       bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@,@,\
+	       @[<v 2>OPTIONS:@,%a@]@]@." cmd options ();
   exit 0
 
 let opt_chk = [ Const []; Debug; Decs ""; Ext []; Help; Quiet; Verb ]
@@ -360,7 +362,7 @@ let eval_config fmt () =
 	fprintf fmt "@[<hov>%b@]" defaults.verb)] in
     print_table fmt conf
 		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
-  fprintf fmt "@[<v>CONFIGURATION:@,%a@]@." config_str ();
+  fprintf fmt "@[<v 2>CONFIGURATION:@,%a@]@." config_str ();
   exit 0
 	    
 let dot = dot_installed ()
@@ -465,3 +467,8 @@ let eval_sim fmt options model pred =
 		  usage_sub fmt "sim"));
   defaults.model <- model;
   defaults.pred <- pred
+
+(* postprocess settings:
+   - path for export states 
+   - dot options *)
+		     

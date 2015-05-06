@@ -86,7 +86,7 @@ open Cmd
    
 %start model cmd
 %type <Ast.model> model
-%type <Cmd.t> cmd 
+%type <Cmd.cmd_t> cmd 
 (* %type <Ast.predicates> pred_list *)
 
 %%
@@ -346,55 +346,93 @@ const:
 
 cmd:
   | sub_cmd EOF                             { $1 }
-  | stand_alone_opt EOF                     { StandAloneOpt $1 }
+  | stand_alone_opt EOF                     { $1; `opt }
 
 stand_alone_opt:
-  | O_CONF                                  { Config }
-  | O_VERS                                  { Version }
-  | O_HELP                                  { Help_top_level };
+  | O_CONF
+      { eval_config Format.err_formatter () }
+  | O_VERS
+      { eval_version Format.err_formatter () }
+  | O_HELP
+      { eval_help_top Format.err_formatter () };
 
 common_opt:
-  | O_VERB { Verb }
-  | O_QUIET { Quiet }
-  | O_DEBUG { Debug }
-  | O_HELP { Help }
-  | O_CONST l=separated_nonempty_list(COMMA, const) { Const l };
+  | O_VERB
+      { defaults.verb <- true }
+  | O_QUIET
+      { defaults.quiet <- true }
+  | O_DEBUG
+      { defaults.debug <- true }
+  | O_CONST l=separated_nonempty_list(COMMA, const)
+      { defaults.consts <- l };
 
 ext:
   | F_SVG { Svg }
   | F_DOT { Dot };
 
 export_opt:
-  | O_DECS PATH { Decs $2 }
-  | O_TS PATH { Graph $2 }
-  | O_LABELS PATH { Labels $2 }
-  | O_STATES option(PATH) { States $2 }
-  | O_PRISM PATH {Prism $2}
-  | O_FORMAT l=separated_nonempty_list(COMMA, ext) { Ext l };
+  | O_DECS PATH
+      { defaults.export_decs <- Some $2 }
+  | O_TS PATH
+      { defaults.export_graph <- Some $2 }
+  | O_LABELS PATH
+      { defaults.export_lab <- Some $2 }
+  | O_STATES option(PATH)
+      { defaults.export_states_flag <- true;
+	defaults.export_states <- $2 }
+  | O_PRISM PATH
+      { defaults.export_prism <- Some $2 }
+  | O_FORMAT l=separated_nonempty_list(COMMA, ext)
+      { defaults.out_format <- l };
 
 opt_chk:
-  | common_opt { $1 }
-  | O_DECS PATH { Decs $2 }
-  | O_FORMAT l=separated_nonempty_list(COMMA, ext) { Ext l };
+  | common_opt
+      { $1 }
+  | O_DECS PATH
+      { defaults.export_decs <- Some $2 }
+  | O_FORMAT l=separated_nonempty_list(COMMA, ext)
+      { defaults.out_format <- l };
   
 opt_full:
-  | common_opt { $1 }
-  | export_opt { $1 }
-  | O_MAX CINT { Max $2 };
+  | common_opt
+      { $1 }
+  | export_opt
+      { $1 }
+  | O_MAX CINT
+      { defaults.max_states <- $2 };
 
 opt_sim:
-  | common_opt { $1 }
-  | export_opt { $1 }
-  | O_TIME CFLOAT { Time $2 }
-  | O_STEPS CINT { Steps $2 };
+  | common_opt
+      { $1 }
+  | export_opt
+      { $1 }
+  | O_TIME CFLOAT
+      { defaults.time <- $2 }
+  | O_STEPS CINT
+      { defaults.steps <- $2 };
 
 sub_cmd:
-  | C_CHECK l=list(opt_chk) BIG_FILE option(BILOG_FILE)
-    { Check (l, $3, $4) }
-  | C_FULL l=list(opt_full) BIG_FILE option(BILOG_FILE)
-    { Full (l, $3, $4) }
-  | C_SIM l=list(opt_sim) BIG_FILE option(BILOG_FILE)
-    { Sim (l, $3, $4) };
+  | C_CHECK O_HELP
+      { eval_help_check Format.std_formatter () }
+  | C_FULL O_HELP
+      { eval_help_full Format.std_formatter () }
+  | C_SIM O_HELP
+      { eval_help_sim Format.std_formatter () }
+  | C_CHECK list(opt_chk) BIG_FILE option(BILOG_FILE)
+      { List.iter (fun x-> x) $2;
+	defaults.model <- $3;
+	defaults.pred <- $4;
+        `check }
+  | C_FULL list(opt_full) BIG_FILE option(BILOG_FILE)
+      { List.iter (fun x-> x) $2;
+	defaults.model <- $3;
+	defaults.pred <- $4;
+        `full }
+  | C_SIM list(opt_sim) BIG_FILE option(BILOG_FILE)
+      { List.iter (fun x-> x) $2;
+	defaults.model <- $3;
+	defaults.pred <- $4;
+        `sim };
 
 %%
 
