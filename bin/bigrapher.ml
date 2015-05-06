@@ -99,7 +99,7 @@ let print_stats_store fmt env stoch =
 
 let print_max fmt =
   [{ descr = ("Max # states:", `cyan);
-     value = `i Cmd.(defaults.s_max);
+     value = `i Cmd.(defaults.max_states);
      pp_val = print_int;
      display = true; }]
   |> print_table fmt;
@@ -128,8 +128,8 @@ let print_stats fmt t s r o =
 let print_loop i _ = 
   if Cmd.(defaults.debug) then () 
   else (let m =
-	  if Cmd.(defaults.s_max) >= 1000 then
-	    Cmd.(defaults.s_max) / 1000
+	  if Cmd.(defaults.max_states) >= 1000 then
+	    Cmd.(defaults.max_states) / 1000
 	  else 1 in
 	match (i + 1) mod (max_width * m) with
 	| 0 -> (Pervasives.print_char '.';
@@ -150,14 +150,14 @@ let print_fun fmt c verb fname i =
   else ()
 	 
 let export_prism fmt msg f =
-  match Cmd.(defaults.out_prism) with
+  match Cmd.(defaults.export_prism) with
   | None -> ()
   | Some file ->
      (print_msg fmt `yellow (msg ^ file ^ " ...");
       try
 	f ~name:(Filename.basename file)
 	  ~path:(Filename.dirname file)
-	|> print_fun fmt `white Cmd.(defaults.verbose) file
+	|> print_fun fmt `white Cmd.(defaults.verb) file
       with
       | Export.ERROR e ->
 	 (pp_print_flush fmt ();
@@ -176,13 +176,13 @@ let export_ts_prism fmt ts =
 	       (Brs.write_prism ts)
 
 let export_csl fmt f =
-  match Cmd.(defaults.out_csl) with
+  match Cmd.(defaults.export_lab) with
   | None -> ()
   | Some file ->
      (print_msg fmt `yellow ("Exporting properties to " ^ file ^ " ...");
       try
 	f ~name:(Filename.basename file) ~path:(Filename.dirname file)
-	|> print_fun fmt `white Cmd.(defaults.verbose) file
+	|> print_fun fmt `white Cmd.(defaults.verb) file
       with
       | Export.ERROR e ->
 	 (pp_print_flush fmt ();
@@ -204,7 +204,7 @@ let export_states fmt f path =
 	    Big.write_svg s ~name:fname ~path
 	    |> print_fun fmt
 			 `white
-			 Cmd.(defaults.verbose)
+			 Cmd.(defaults.verb)
 			 (Filename.concat path fname)
 	  with
 	  | Export.ERROR e ->
@@ -220,22 +220,20 @@ let export_ts_states ts fmt path =
   export_states fmt Brs.iter_states path ts
 		
 let export_ts fmt msg f f_iter =
-  match Cmd.(defaults.out_dot) with
+  match Cmd.(defaults.export_graph) with
   | None -> ()
   | Some file ->
      (print_msg fmt `yellow (msg ^ file ^ " ...");
       (try
 	  f ~name:(Filename.basename file)
 	    ~path:(Filename.dirname file)
-	  |> print_fun fmt `white Cmd.(defaults.verbose) file
+	  |> print_fun fmt `white Cmd.(defaults.verb) file
 	with
 	| Export.ERROR e ->
 	   (pp_print_flush fmt ();
 	    fprintf err_formatter "@[<v>";
 	    Export.report_error e
-	    |> fprintf err_formatter "@[%s: %s@]@." Utils.err));
-      if Cmd.(defaults.out_states) then
-        f_iter fmt (Filename.dirname file))
+	    |> fprintf err_formatter "@[%s: %s@]@." Utils.err)))
        
 let close_progress_bar () =
   Pervasives.print_char ']';
@@ -292,19 +290,58 @@ let open_lex path =
       Lexing.pos_lnum = 1;
       Lexing.pos_bol = 0;
       Lexing.pos_cnum = 0; };
-  (lexbuf, file)          
+  (lexbuf, file)
+    		     		   		 
+let parse_cmd fmt argv =
+  let lexbuf =
+    Array.to_list argv
+    |> List.tl
+    |> String.concat " " 
+    |> Lexing.from_string  in
+  try
+    match Parser.cmd Lexer.token lexbuf with
+    | Cmd.StandAloneOpt Cmd.Config ->
+       Cmd.eval_config std_formatter ()
+    | Cmd.StandAloneOpt Cmd.Help_top_level ->
+       Cmd.eval_help_top std_formatter ()
+    | Cmd.StandAloneOpt Cmd.Version ->
+       Cmd.eval_version std_formatter ()
+    | Cmd.Check (options, model, pred) ->
+       (Cmd.eval_cmd options model pred;
+	`check) 
+    | Cmd.Full (options, model, pred) ->
+       (Cmd.eval_cmd options model pred;
+	`full) 
+    | Cmd.Sim (options, model, pred) ->
+       (Cmd.eval_cmd options model pred;
+	`sim) 
+  with
+  | Cmd.ERROR e ->
+     (pp_print_flush fmt ();
+      Cmd.report_error err_formatter e;
+      exit 1)
+  | Parser.Error ->
+     (pp_print_flush fmt ();
+      Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
+      exit 1)
+  | Lexer.ERROR (e, p) ->
+     (pp_print_flush fmt ();
+      fprintf err_formatter "@[<v>";
+      Lexer.report_error err_formatter e;
+      Cmd.usage err_formatter ();
+      exit 1)
        
 let () =
   Printexc.record_backtrace true; (* Disable for releases *)
   let fmt = std_formatter in (* TEMPORARY *)
   try
     let iter_f = print_loop in
-    Cmd.parse Sys.argv;
+    let exec_type = parse_cmd fmt Sys.argv in
     print_header fmt ();
     print_msg fmt `yellow ("Parsing model file "
-		   ^ (Cmd.(to_string defaults.model))
+		   ^ Cmd.(defaults.model)
 		   ^ " ..."); 
-    let (lexbuf, file) = open_lex Cmd.(to_string defaults.model) in
+    let (lexbuf, file) = open_lex Cmd.(defaults.model) in
     try
       let m = Parser.model Lexer.token lexbuf in 
       close_in file; 
@@ -314,59 +351,63 @@ let () =
 	match prs with
 	| Store.P _ -> false
 	| Store.S _ -> true in
-      (match Cmd.(defaults.out_store) with
+      (match Cmd.(defaults.export_decs) with
        | None -> ()
        | Some path ->
 	  (print_msg fmt `yellow ("Exporting declarations to "
 			  ^ path ^ " ...");
 	   Store.export m.model_decs env env_t path
-			(print_fun fmt `white Cmd.(defaults.verbose))));
+			(print_fun fmt `white Cmd.(defaults.verb))));
       print_stats_store fmt env stoch;
       match prs with
       | Store.P priorities ->
 	 (******** BRS *********)
-	 (if Cmd.(defaults.sim) then
-	    (print_msg fmt `yellow "Starting simulation ...";
-	     print_max fmt;
-	     Brs.sim ~s0
-		     ~priorities
-		     ~init_size:Cmd.(defaults.s_max)
-		     ~stop:Cmd.(defaults.s_max)
-		     ~iter_f
-	     |> after_brs fmt)
-	  else
-	    (print_msg fmt `yellow "Computing transition system ...";
-	     print_max fmt;
-	     Brs.bfs ~s0
-		     ~priorities
-		     ~max:Cmd.(defaults.s_max)
-		     ~iter_f
-	     |> after_brs fmt))
+	 (match exec_type with
+	  | `sim ->
+	     (print_msg fmt `yellow "Starting simulation ...";
+	      print_max fmt;
+	      Brs.sim ~s0
+		      ~priorities
+		      ~init_size:Cmd.(defaults.max_states)
+		      ~stop:Cmd.(defaults.steps)
+		      ~iter_f
+	      |> after_brs fmt)
+	  | `full ->
+	     (print_msg fmt `yellow "Computing transition system ...";
+	      print_max fmt;
+	      Brs.bfs ~s0
+		      ~priorities
+		      ~max:Cmd.(defaults.max_states)
+		      ~iter_f
+	      |> after_brs fmt)
+	  | `check -> failwith "TO DO")
       | Store.S priorities ->
 	 (******** SBRS *********)
-	 (if Cmd.(defaults.sim) then
-	    (print_msg fmt `yellow "Starting stochastic simulation ...";
-	     [{ descr = ("Max sim time:", `cyan);
-		value = `f Cmd.(defaults.t_max);
-		pp_val = print_float;
-		display = true; }]
-	     |> print_table fmt;
-	     if Cmd.(defaults.debug) then ()
-	     else Pervasives.print_string "\n[";
-	     Sbrs.sim ~s0
-			    ~priorities
-			    ~init_size:Cmd.(defaults.s_max)
-			    ~stop:Cmd.(defaults.t_max)
-			    ~iter_f
-	     |> after_sbrs fmt)
-          else
-	    (print_msg fmt `yellow "Computing CTMC ...";
-	     print_max fmt;
-	     Sbrs.bfs ~s0
-			   ~priorities
-			   ~max:Cmd.(defaults.s_max)
-			   ~iter_f
-	     |>  after_sbrs fmt))
+	 (match exec_type with
+	  | `sim ->
+	     (print_msg fmt `yellow "Starting stochastic simulation ...";
+	      [{ descr = ("Max sim time:", `cyan);
+		 value = `f Cmd.(defaults.time);
+		 pp_val = print_float;
+		 display = true; }]
+	      |> print_table fmt;
+	      if Cmd.(defaults.debug) then ()
+	      else Pervasives.print_string "\n[";
+	      Sbrs.sim ~s0
+		       ~priorities
+		       ~init_size:Cmd.(defaults.max_states)
+		       ~stop:Cmd.(defaults.time)
+		       ~iter_f
+	      |> after_sbrs fmt)
+          | `full ->
+	     (print_msg fmt `yellow "Computing CTMC ...";
+	      print_max fmt;
+	      Sbrs.bfs ~s0
+		       ~priorities
+		       ~max:Cmd.(defaults.max_states)
+		       ~iter_f
+	      |>  after_sbrs fmt)
+	  | `check -> failwith "TO DO")
     with
     | Sbrs.MAX (ctmc, stats)
     | Sbrs.LIMIT (ctmc, stats) ->

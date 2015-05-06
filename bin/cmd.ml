@@ -1,17 +1,17 @@
 open Format
 open Utils
-open Version
 
 type error =
   | Malformed_env of string
-  | Parse
+  | Parse of string
 	       
 exception ERROR of error
 
-let report_error_aux tok = function
+let report_error_aux = function
   | Malformed_env s ->
      "String `" ^ s ^ "' is not a valid format"
-  | Parse -> "" 
+  | Parse s ->
+     "Syntax error near token `"^ s ^"'" 
 		     
 type big_file = string
 
@@ -25,7 +25,12 @@ type stand_alone_opt =
   | Config
   | Help_top_level
   | Version
-		    
+
+let string_of_stand_alone_opt = function
+  | Config -> "--config, -c"
+  | Help_top_level -> "--help, -h"
+  | Version -> "--version, -V"
+      
 type format_op =
   | Dot
   | Svg
@@ -45,13 +50,38 @@ type opt =
   | Steps of int
   | Time of float
   | Verb
-    
+
+let string_of_opt = function
+  | Const _ -> "--const, -c"
+  | Debug -> ""
+  | Decs _ -> "--export-decs, -d"
+  | Ext _ -> "--format, -f"
+  | Graph _ -> "--export-transition-system, -t"
+  | Help -> "--help, -h"
+  | Labels _ -> "--export-labels, -l"
+  | Max _ -> "--max-states, -M"
+  | Prism _ -> "--export-prism, -p"
+  | Quiet -> "--quiet, -q"
+  | States _ -> "--export-states, -s"
+  | Steps _ -> "--simulation-steps, -S"
+  | Time _ -> "--simulation-time, -T"
+  | Verb -> "--verbose, -v"
+      
 type t =
   | Check of opt list * big_file * bilog_file
   | Full of opt list * big_file * bilog_file
   | Sim of opt list * big_file * bilog_file
   | StandAloneOpt of stand_alone_opt
-	       
+
+type cmd_t =
+  [ `check | `full | `sim ]
+		       
+let string_of_t = function
+  | Check (_, _, _) -> "check"
+  | Full (_, _, _) -> "full"
+  | Sim (_, _, _) -> "sim"
+  | StandAloneOpt x -> string_of_stand_alone_opt x
+  
 type settings = {
     mutable consts : Ast.const list;
     mutable debug : bool;
@@ -59,10 +89,13 @@ type settings = {
     mutable export_graph : file option;
     mutable export_lab : file option;
     mutable export_prism : file option;
-    mutable export_states : bool;
+    mutable export_states : path option;
+    mutable export_states_flag : bool;
     mutable help : bool;
     mutable max_states : int;
-    mutable out_format : format_op list option;
+    mutable model : string;
+    mutable out_format : format_op list;
+    mutable pred : string option;
     mutable quiet : bool;
     mutable steps : int;
     mutable time : float;
@@ -76,16 +109,19 @@ let defaults = {
     export_graph = None;
     export_lab = None;
     export_prism = None;
-    export_states = false;
+    export_states = None;
+    export_states_flag = false;
     help = false;
     max_states = 1000;
-    out_format = Some [Svg];
+    model = "";
+    out_format = [Svg];
+    pred = None;
     quiet = false;
     steps = 1000;
     time  = 1000.0;
     verb = false;
   }
-
+		 
 (* Update defaults with environment variables *)    		 
 let eval_env () =
   let parse_format s =
@@ -104,9 +140,7 @@ let eval_env () =
     | Not_found -> ());
   (try
       defaults.out_format <-
-	(match parse_format (Sys.getenv "BIGFORMAT") with
-	 | [] -> None
-	 | l -> Some l);
+	parse_format (Sys.getenv "BIGFORMAT")
     with
     | Not_found -> ())
 
@@ -116,7 +150,7 @@ let eval =
 	      | Const l -> defaults.consts <- l		
 	      | Debug -> defaults.debug <- true
 	      | Decs p -> defaults.export_decs <- Some p
-	      | Ext l -> defaults.out_format <- Some l
+	      | Ext l -> defaults.out_format <- l
 	      | Graph f -> defaults.export_graph <- Some f
 	      | Help -> defaults.help <- true
 	      | Labels f -> defaults.export_lab <- Some f
@@ -139,13 +173,13 @@ let msg_opt fmt = function
   | Debug ->   fprintf fmt "" (* Undocumented *)
   | Decs _ -> fprintf fmt "@[<hov>Export each declaration@ in@ the@ model@ to@ a file@ in@ \
 		        	  %s.@ Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
-		      (colorise `underline "PATH")
+		      (colorise `underline "DIR")
   | Ext _ ->  fprintf fmt "@[<hov>Specify a comma-separated list@ of@ output@ formats@ for@ options@ \
 			          %s,@ %s@ and@ %s.@ This@ is@ equivalent@ to@ setting@ \
 		                  %s@ to@ a@ non-empty@ value.@]"
-		      (colorise `bold "\'--export-transition-system\' | \'-t\'")
-		      (colorise `bold "\'--export-states\' | \'-s\'")
-		      (colorise `bold "\'--export-decs\' | \'-d\'")
+		      (colorise `bold "\'--export-transition-system | -t\'")
+		      (colorise `bold "\'--export-states | -s\'")
+		      (colorise `bold "\'--export-decs | -d\'")
 		      (colorise `bold "BIGFORMAT")
   | Graph _ -> fprintf fmt "@[<hov>Export the transition@ system@ to@ %s.@]"
 		       (colorise `underline "FILENAME")
@@ -159,198 +193,171 @@ let msg_opt fmt = function
 			         %s@ to a@ non-empty@ value.@]" (colorise `bold "$BIGQUIET")
   | States _ -> fprintf fmt "@[<hov>Export each state@ to@ a file@ in %s.@ \
 			            State@ indices@ are@ used@ as@ file names.@]"
-			(colorise `underline "PATH")
+			(colorise `underline "DIR")
   | Steps _ -> fprintf fmt "@[<hov>Set the maximum number of simulation steps.@ This@ option@ is@ \
                                   valid@ only@ for@ deterministic@ models.@]"
-  | Time _ -> fprintf fmt "@[<hov>Set the maximum simulation time.@ This@ option@ is@ valid@ \ 
-			          only@ for@ stochstic@ models.@]"
+  | Time _ -> fprintf fmt "@[<hov>Set the maximum simulation time.@ This@ option@ is@ valid@ \
+			   only@ for@ stochstic@ models.@]"
   | Verb -> fprintf fmt "@[<hov>Be more verbose.@ This is@ equivalent to@ setting@ \
 			        %s@ to a@ non-empty@ value.@]" (colorise `bold "$BIGVERBOSE")
 
-let msg_opt fmt = function
+let msg_cmd fmt = function
   | Check (_, _, _) -> fprintf fmt "@[<hov>Parse a model and check its validity.@]"
   | Full (_, _, _) -> fprintf fmt "@[<hov>Compute the transition system of a model.@]"
   | Sim (_, _, _) -> fprintf fmt "@[<hov>Simulate a model.@]"
   | StandAloneOpt x -> msg_so_opt fmt x
 
-
-
-(*Top level screen
-usage
-options
-*)
-
-
-(* subcommand check *)
-
-(* subcommand full*)
-
-(* subcommand sim *)
-				  
-				  
-let options_str fmt () =
-  let l =
-    [ `consts; `out_raw; `out_states; `out_dot; `help; `out_store; `out_csl; `s_max; 
-      `out_prism; `sim; `verbose; `version ]
-  and flag_str a = String.concat ", " (flags a) in	    
-  let pp_row fmt = function
-    | `consts as a-> (* First row *)
-       (pp_set_tab fmt ();
-	fprintf fmt "@<28>%s" ((flag_str a) ^ " <x=val,...>");
-	pp_set_tab fmt ();
-	(* I don't understand why I need these spaces for a correct alignment *)
-	fprintf fmt "    %a" msg a)
-    | `debug -> fprintf fmt ""
-    | `version as a ->
-       (pp_print_tab fmt ();
-	fprintf fmt "%s" (flag_str a);
-	pp_print_tab fmt ();
-	fprintf fmt "%a" msg a) 
-    | `sim as a ->
-       (pp_print_tab fmt ();
-	fprintf fmt "%s <float>" (flag_str a);
-	pp_print_tab fmt ();
-	fprintf fmt "%a"  msg a) 
-    | `s_max as a ->
-       (pp_print_tab fmt ();
-	fprintf fmt "%s [int]" (flag_str a);
-	pp_print_tab fmt ();
-	fprintf fmt "%a" msg a)
-    | `out_csl
-    | `out_dot
-    | `out_raw
-    | `out_prism as a ->
-       (pp_print_tab fmt ();
-	fprintf fmt "%s [file]" (flag_str a);
-	pp_print_tab fmt ();
-	fprintf fmt "%a"  msg a)
-    | `out_store as a ->
-       (pp_print_tab fmt ();
-	fprintf fmt "%s [dir]" (flag_str a);
-	pp_print_tab fmt ();
-	fprintf fmt "%a" msg a)
-    | `help
-    | `verbose
-    | `out_states as a->
-       (pp_print_tab fmt ();
-	fprintf fmt "%s" (flag_str a);
-	pp_print_tab fmt ();
-	fprintf fmt "%a" msg a) in
-  pp_open_tbox fmt ();
-  List.iter (pp_row fmt) l;
-  pp_close_tbox fmt ()
-
-
-let config_str fmt () =
-  let print_row l r () =
-    pp_print_tab fmt ();
-    pp_print_string fmt l;
-    pp_print_tab fmt ();
-    pp_print_string fmt r in
-  pp_open_tbox fmt ();
-  pp_set_tab fmt ();
-  pp_print_string fmt "consts";
-  pp_set_tab fmt ();
-  pp_print_string fmt (string_of_consts (defaults.consts));
-
-
-
-
-     debug = false;
-    export_decs = None;
-    export_graph = None;
-    export_lab = None;
-    export_prism = None;
-    export_states = false;
-    help = false;
-    max_states = 1000;
-    out_format = Some [Svg];
-    quiet = false;
-    steps = 1000;
-    time  = 1000.0;
-    verb = false;  
-
-    
-
-  
-  pp_close_tbox fmt ()
-		
 let usage_str fmt () =  
-  fprintf fmt "@[USAGE: bigrapher @[<v>[--version]@,\
-	       [--help|-h]@,<model.big> [predicates.bilog] [options]@]@]"
+  fprintf fmt "@[USAGE: bigrapher @[<v>[-V | --version]@,\
+	                               [-h | --help]@,\
+	                               [-c | --config]@,\
+	                               [COMMAND] <ARGS> @]@]"
 
-let help fmt () =
-  fprintf fmt "@[<v>%a@,@[<v 2>OPTIONS:@,%a@]@]@." usage_str () options_str ();
+let print_table fmt rows f_l f_r =
+  let pp_row fmt row =
+    pp_print_tab fmt ();
+    pp_print_string fmt (f_l row);
+    pp_print_tab fmt ();
+    fprintf fmt "%a" f_r row in
+  match rows with
+  | first :: rows ->
+     (pp_open_tbox fmt ();
+      pp_set_tab fmt ();
+      let l = f_l first in
+      fprintf fmt "@[<h>%s" l;
+      print_break (15 - (String.length l)) 0;
+      fprintf fmt "@]";
+      pp_set_tab fmt ();
+      fprintf fmt "%a" f_r first;
+      List.iter (pp_row fmt) rows;
+      pp_close_tbox fmt ())
+  | _ -> assert false (* Assumed always non-empty *)
+    
+let eval_help_top fmt () =
+  let commands fmt () =
+    print_table fmt [ Check ([], "", None);
+		      Full ([], "", None);
+		      Sim ([], "", None) ]
+		string_of_t
+		msg_cmd
+  and opts fmt () =
+    print_table fmt [ Config;
+		      Help_top_level;
+		      Version ]
+		string_of_stand_alone_opt
+		msg_so_opt in
+  fprintf fmt "@[<v>%a@,@[<v 2>COMMANDS:@,%a@]@'\
+	       @[<v 2>OPTIONS:@,%a@]@'\
+	       See \'bigrapher <COMMAND> -h\' or@ \
+	       \'bigrapher <COMMAND> --help\'@ for@ more@ \
+	       information@ on@ a@ specific@ subcommand.@]@."
+	  usage_str () commands () opts ();
   exit 0
 
-let config fmt () =
+let help_fun fmt l cmd =
+  let options fmt () =
+    print_table fmt l string_of_opt msg_opt in
+  fprintf fmt "@[<v>USAGE: bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@,\
+	       @[<v 2>OPTIONS:@,%a@]@]" cmd options ();
+  exit 0
+
+let opt_chk = [ Const []; Debug; Decs ""; Ext []; Help; Quiet; Verb ]
+       
+let eval_help_check fmt () =
+  help_fun fmt opt_chk "check"
+
+let opt_full = [ Const []; Debug; Decs ""; Ext []; Graph ""; Help;
+		 Labels ""; Max 0; Prism ""; Quiet; States None;
+		 Verb ]
+	   
+let eval_help_full fmt () =
+  help_fun fmt opt_full "full"
+
+let opt_sim  = [ Const []; Debug; Decs ""; Ext []; Graph ""; Help;
+		 Labels ""; Prism ""; Quiet; States None;
+		 Steps 0; Time 0.0; Verb ]
+		 
+let eval_help_sim fmt () =
+  help_fun fmt opt_sim "sim"
+
+let eval_version fmt () =
+  fprintf fmt "@[%s@]@." Version.version;
+  exit 0
+
+let string_of_format f =
+  List.map (function
+	     | Svg -> "svg"
+	     | Dot -> "dot") f
+  |> String.concat ","
+
+let string_of_file = function
+  | None -> ""
+  | Some f -> f
+		   
+let eval_config fmt () =
+  let config_str fmt () =
+    print_table fmt
+		[("consts",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (Ast.string_of_consts defaults.consts));
+		 ("debug",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%b.@]" defaults.debug);
+		 ("export_decs",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_decs));
+		 ("export_graph",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_graph));
+		 ("export_lab",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_lab)); 
+		 ("export_prism",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_lab));
+		 ("export_states",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (string_of_file defaults.export_states));
+		  ("export_states_flag",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%b.@]" defaults.export_states_flag);
+		 ("help",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%b.@]" defaults.help);
+		 ("max_states",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%d.@]" defaults.max_states);
+		 ("out_format",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%s.@]" (string_of_format defaults.out_format));
+		 ("quiet",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%b.@]" defaults.quiet);
+		 ("steps",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%d.@]" defaults.steps);
+		 ("time",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%g.@]" defaults.time);
+		 ("verb",
+		  fun fmt () ->
+		  fprintf fmt "@[<hov>%b.@]" defaults.verb)]
+		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
   fprintf fmt "@[<v>%a@]@." config_str ();
   exit 0
-       
-let eval_stand_alone fmt = function
-  | Config -> config std_formatter ()
-  | Help_top_level -> help std_formatter ()
-  | Version -> fprintf std_formatter "@[%s@]@." version; exit 0
-
-
-
 	    
 let dot = dot_installed ()
 
-		
-
-	       
 let report_warning_dot fmt a =
   fprintf fmt "@[%s: @[`dot' is not installed on this system.@ Ignoring option `%s'@]@]@."
 	  warn a
-
 	  
 let usage fmt () =
   fprintf fmt "@[<v>%a@,@[Try `bigrapher --help' for more information.@]@]" usage_str ()
 
 let report_error fmt e =
   fprintf fmt "@[<v>%s: %s@,%a@]@." err (report_error_aux e) usage ()
-
-
-
-
-		 	  
-let flags = function
-  | `debug ->      ["--debug"]
-  | `verbose ->    ["-v"; "--verbose"]
-  | `sim ->        ["-s"; "--simulation"]
-  | `s_max ->      ["-m"; "--max-states"]
-  | `version ->    ["-V"; "--version"]
-  | `consts ->     ["-c"; "--consts"]
-  | `out_csl ->    ["-l"; "--export-labels"]
-  | `out_raw ->    ["-d"; "--export-dot"]
-  | `out_dot ->    ["-g"; "--export-svg"]    (* g for svG         *)
-  | `out_states -> ["-f"; "--export-states"] (* f stands for Full *)
-  | `out_prism ->  ["-p"; "--export-prism"]
-  | `out_store ->  ["-i"; "--export-store"]  (* i stands for Info *)
-  | `help ->       ["-h"; "--help"] 
-
-		     		   		     
-let is_option s =
-  (String.length s >= 1) && (s.[0] = '-') 
-
-let parse_option s =
-  if is_option s then 
-    match s with
-    | "--debug" ->                `debug
-    | "-v" | "--verbose" ->       `verbose
-    | "-s" | "--simulation" ->    `sim
-    | "-m" | "--max-states" ->    `s_max
-    | "-V" | "--version" ->       `version
-    | "-c" | "--consts" ->        `consts
-    | "-l" | "--export-labels" -> `out_csl 
-    | "-d" | "--export-dot" ->    `out_raw
-    | "-g" | "--export-svg" ->    `out_dot
-    | "-f" | "--export-states" -> `out_states
-    | "-p" | "--export-prism" ->  `out_prism
-    | "-i" | "--export-store" ->  `out_store
-    | "-h" | "--help" ->          `help
-    | _ ->                         raise (ERROR (Unknown_option s))
-  else raise (ERROR (Not_option s))
-
+	  
+let eval_cmd options model pred =
+  ()
 	  

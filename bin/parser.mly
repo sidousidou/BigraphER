@@ -347,7 +347,6 @@ const:
 cmd:
   | sub_cmd EOF                             { $1 }
   | stand_alone_opt EOF                     { StandAloneOpt $1 }
-  | error	    			    { raise (ERROR (Parse)) };
 
 stand_alone_opt:
   | O_CONF                                  { Config }
@@ -358,6 +357,7 @@ common_opt:
   | O_VERB { Verb }
   | O_QUIET { Quiet }
   | O_DEBUG { Debug }
+  | O_HELP { Help }
   | O_CONST l=separated_nonempty_list(COMMA, const) { Const l };
 
 ext:

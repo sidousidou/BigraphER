@@ -263,6 +263,6 @@ let params_of_ts = function
 
 let string_of_consts l =
   List.map (function
-	     | Cint x ->
-	     | Cfloat x -> ) l
+	     | Cint x ->  x.dint_id ^ "=<exp>" (*x.dint_exp*)
+	     | Cfloat x -> x.dfloat_id ^ "=<exp>" (*x.dfloat_exp)*)) l
   |> String.concat ","
