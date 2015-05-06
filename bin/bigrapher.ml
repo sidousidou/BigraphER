@@ -301,7 +301,7 @@ let parse_cmd fmt argv =
   (* Check environment variables *)
   Cmd.eval_env ();
   try
-    match Parser.cmd Lexer.token lexbuf with
+    match Parser.cmd Lexer.cmd lexbuf with
     | Cmd.StandAloneOpt Cmd.Config ->
        Cmd.eval_config std_formatter ()
     | Cmd.StandAloneOpt Cmd.Help_top_level ->
