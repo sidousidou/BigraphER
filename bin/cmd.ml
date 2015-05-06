@@ -84,7 +84,7 @@ type cmd_t =
   [ `check | `full | `sim ]
 		       
 let string_of_t = function
-  | Check (_, _, _) -> "check"
+  | Check (_, _, _) -> "validate"
   | Full (_, _, _) -> "full"
   | Sim (_, _, _) -> "sim"
   | StandAloneOpt x -> string_of_stand_alone_opt x
@@ -218,10 +218,8 @@ let msg_cmd fmt = function
   | StandAloneOpt x -> msg_so_opt fmt x
 
 let usage_str fmt () =  
-  fprintf fmt "@[USAGE: bigrapher @[<v>[-V|--version]@,\
-	                               [-h|--help]@,\
-	                               [-c|--config]@,\
-	                               [COMMAND] <ARGS> @]@]"
+  fprintf fmt "@[USAGE: @[<v>bigrapher <OPTION>@,\
+	                     bigrapher <COMMAND> <ARGS> @]@]@,"
 
 let print_table fmt rows ?(offset = 0) f_l f_r =
   (* Find longest row *)
@@ -254,19 +252,19 @@ let eval_help_top fmt () =
     print_table fmt [ Check ([], "", None);
 		      Full ([], "", None);
 		      Sim ([], "", None) ]
+		~offset:(-3)
 		string_of_t
 		msg_cmd
   and opts fmt () =
     print_table fmt [ Config;
 		      Help_top_level;
 		      Version ]
+		~offset:6
 		string_of_stand_alone_opt
 		msg_so_opt in
-  fprintf fmt "@[<v>%a@,@[<v 2>COMMANDS:@,%a@]@'\
-	       @[<v 2>OPTIONS:@,%a@]@'\
-	       See `bigrapher <COMMAND> -h' or@ \
-	       `bigrapher <COMMAND> --help'@ for@ more@ \
-	       information@ on@ a@ specific@ subcommand.@]@."
+  fprintf fmt "@[<v>%a@,@[<v 2>COMMANDS:@,%a@]@,\
+	       @,@[<v 2>OPTIONS:@,%a@]@,\
+	       @,See `bigrapher <COMMAND> -h' for more information on a specific subcommand.@]@."
 	  usage_str () commands () opts ();
   exit 0
 
@@ -280,7 +278,7 @@ let help_fun fmt l cmd =
 let opt_chk = [ Const []; Debug; Decs ""; Ext []; Help; Quiet; Verb ]
        
 let eval_help_check fmt () =
-  help_fun fmt opt_chk "check"
+  help_fun fmt opt_chk "validate"
 
 let opt_full = [ Const []; Debug; Decs ""; Ext []; Graph ""; Help;
 		 Labels ""; Max 0; Prism ""; Quiet; States None;
@@ -313,55 +311,54 @@ let string_of_file = function
 let eval_config fmt () =
   let config_str fmt () =
     let conf =
-      List.map (fun (a, b) -> (colorise `blue  a, b))
-	       [("consts",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (match Ast.string_of_consts defaults.consts with
-					    | "" -> "-"
-					    | s -> s));
-		("debug",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%b@]" defaults.debug);
-		("export_decs",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_decs));
-		("export_graph",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_graph));
-		("export_lab",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab)); 
-		("export_prism",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab));
-		("export_states",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_states));
-		("export_states_flag",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%b@]" defaults.export_states_flag);
-		("help",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%b@]" defaults.help);
-		("max_states",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%d@]" defaults.max_states);
-		("out_format",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format));
-		("quiet",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%b@]" defaults.quiet);
-		("steps",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%d@]" defaults.steps);
-		("time",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%g@]" defaults.time);
-		("verb",
-		 fun fmt () ->
-		 fprintf fmt "@[<hov>%b@]" defaults.verb)] in
-    print_table fmt conf ~offset:10
+      [("consts",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (match Ast.string_of_consts defaults.consts with
+				   | "" -> "-"
+				   | s -> s));
+       ("debug",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%b@]" defaults.debug);
+       ("export_decs",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_decs));
+       ("export_graph",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_graph));
+       ("export_lab",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab)); 
+       ("export_prism",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab));
+       ("export_states",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_states));
+       ("export_states_flag",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%b@]" defaults.export_states_flag);
+       ("help",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%b@]" defaults.help);
+       ("max_states",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%d@]" defaults.max_states);
+       ("out_format",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format));
+       ("quiet",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%b@]" defaults.quiet);
+       ("steps",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%d@]" defaults.steps);
+       ("time",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%g@]" defaults.time);
+       ("verb",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%b@]" defaults.verb)] in
+    print_table fmt conf
 		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
   fprintf fmt "@[<v>CONFIGURATION:@,%a@]@." config_str ();
   exit 0
@@ -396,7 +393,7 @@ let eval_chk fmt options model pred =
 	      | Verb -> defaults.verb <-true
 	      | o ->
 		 (report_warning fmt "" (string_of_opt "|" o);
-		  usage_sub fmt "check"))
+		  usage_sub fmt "validate"))
 	    options;
   defaults.model <- model;
   defaults.pred <- pred
