@@ -11,7 +11,7 @@ let parse path =
   let file = open_in path in
   read_lines [] file 
 
-let bin = "./bigrapher.native"
+let bin = "./bigrapher.native full"
 let flag = "--debug"
 let path = "./tests/files"	     
 let ext = ".reference"
