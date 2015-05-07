@@ -192,24 +192,6 @@ let eval_env () =
     with
     | Not_found -> ())
 
-(* Update defaults with command line options *)    
-(* let eval = *)
-(*   List.iter (function *)
-(* 	      | Const l -> defaults.consts <- l		 *)
-(* 	      | Debug -> defaults.debug <- true *)
-(* 	      | Decs p -> defaults.export_decs <- Some p *)
-(* 	      | Ext l -> defaults.out_format <- l *)
-(* 	      | Graph f -> defaults.export_graph <- Some f *)
-(* 	      | Help -> defaults.help <- true *)
-(* 	      | Labels f -> defaults.export_lab <- Some f *)
-(* 	      | Max x -> defaults.max_states <- x *)
-(* 	      | Prism f -> defaults.export_prism <- Some f *)
-(* 	      | Quiet -> defaults.quiet <- true *)
-(* 	      | States p -> defaults.export_states <- p *)
-(* 	      | Steps x -> defaults.steps <- x *)
-(* 	      | Time t -> defaults.time <- t *)
-(* 	      | Verb -> defaults.verb <- true) *)
-
 (* Stand alone options *)
 let msg_so_opt fmt = function
   | Config -> fprintf fmt "@[<hov>Print a summary of your configuration.@]"
@@ -217,18 +199,20 @@ let msg_so_opt fmt = function
   | Version -> fprintf fmt "@[<hov>Show version information.@]"
 
 let msg_opt fmt = function
-  | Const _ -> fprintf fmt "@[<hov>Specify a comma-separated list of variable assignments.@]"
-  | Debug ->   fprintf fmt "" (* Undocumented *)
-  | Decs _ -> fprintf fmt "@[<hov>Export each declaration@ in@ the@ model@ to@ a file@ in@ \
-		        	  %s.@ Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
+  | Const _ -> fprintf fmt "@[<hov>Specify a comma-separated list of@ variable@ assignments.@,\
+			    Example: `x=4,t=.56'.@]"
+  | Debug -> assert false (* Undocumented *)
+  | Decs _ -> fprintf fmt "@[<hov>Export each declaration@ in@ the@ model@ \
+			   (bigraphs@ and@ reaction@ rules)@ to@ a distinct file@ in@ \
+		           %s.@ Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
 		      (colorise `underline "DIR")
   | Ext _ ->  fprintf fmt "@[<hov>Specify a comma-separated list@ of@ output@ formats@ for@ options@ \
-			          `%s',@ `%s'@ and@ `%s'.@ This@ is@ equivalent@ to@ setting@ \
-		                  %s@ to@ a@ non-empty@ value.@]"
-		      (colorise `bold (string_of_opt "|" (Decs "")))
-		      (colorise `bold (string_of_opt "|" (Graph "")))
-		      (colorise `bold (string_of_opt "|" (States None)))
-		      (colorise `bold "BIGFORMAT")
+			          `%s',@ `%s'@ and@ `%s'.@ Supported@ formats@ are@ `svg'@ and@ `dot'.@ \
+			   This@ is@ equivalent@ to@ setting@ $BIGFORMAT@ to@ %s.@]"
+		      (string_of_opt "|" (Decs ""))
+		      (string_of_opt "|" (Graph ""))
+		      (string_of_opt "|" (States None))
+		      (colorise `underline "FORMAT")
   | Graph _ -> fprintf fmt "@[<hov>Export the transition system to %s.@]"
 		       (colorise `underline "FILE")
   | Help -> fprintf fmt "@[<hov>Show this help.@]"
@@ -238,20 +222,19 @@ let msg_opt fmt = function
   | Prism _ -> fprintf fmt "@[<hov>Export the transition system in@ PRISM@ tra@ format@ \
 			           to@ %s.@]" (colorise `underline "FILE")
   | Quiet -> fprintf fmt "@[<hov>Disable progress indicator.@ This is@ equivalent to@ setting@ \
-			         %s@ to a@ non-empty@ value.@]" (colorise `bold "$BIGQUIET")
+			         $BIGQUIET@ to a@ non-empty@ value.@]"
   | States _ -> fprintf fmt "@[<hov>Export each state@ to@ a file@ in %s.@ \
-			            State@ indices@ are@ used@ as@ file names.@ \
-			            When %s@ is@ omitted,@ it@ is@ inferred@ from option `%s'.]"
+			            State@ indices@ are@ used@ as@ file@ names.@ \
+			            When %s@ is@ omitted,@ it@ is@ inferred@ from@ option `%s'.@]"
 			(colorise `underline "DIR")
 			(colorise `underline "DIR")
-			(colorise `bold (string_of_opt "|" (Graph "")))
+			(string_of_opt "|" (Graph ""))
   | Steps _ -> fprintf fmt "@[<hov>Set the maximum number of simulation steps.@ This option@ is@ \
                                   valid@ only@ for@ deterministic models.@]"
   | Time _ -> fprintf fmt "@[<hov>Set the maximum simulation time.@ This option@ is@ valid@ \
-			   only@ for@ stochstic@ models.@]"
+			   only@ for@ stochastic@ models.@]"
   | Verb -> fprintf fmt "@[<hov>Be more verbose.@ This is@ equivalent to@ setting@ \
-			 %s@ to a@ non-empty@ value.@]"
-		    (colorise `bold "$BIGVERBOSE")
+			 $BIGVERBOSE@ to@ a@ non-empty@ value.@]"
 
 let msg_cmd fmt = function
   | Check (_, _, _) -> fprintf fmt "@[<hov>Parse a model and check its validity.@]"
@@ -313,29 +296,35 @@ let eval_help_top fmt () =
 	  
 let help_fun fmt l cmd =
   let print_man fmt l =
-    List.iter (fun row ->
-	       fprintf fmt "@[<v 2>%s@, %a@]@,"
+    let n = (List.length l) - 1 in
+    List.iteri (fun i row ->
+	       fprintf fmt "@[<v 2>@[%s@]@,@[%a@]@]"
 		       (string_of_opt ", " ~man:true row)
-		       msg_opt row)
-	      l in  
-  fprintf fmt "@[<v>@[<v 2>USAGE:@,\
-	       bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@]@,@,\
-	       @[<v 2>OPTIONS:@,%a@]@]" cmd print_man l;
+		       msg_opt row;
+	       if (i < n) then
+		 pp_print_cut fmt ()
+	       else ())
+	       l in  
+   fprintf fmt "@[<v 2>USAGE:@,\
+		bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@]@.@."
+	   cmd;
+   fprintf fmt "@[<v 2>OPTIONS:@,%a@]@."
+	   print_man l;
   exit 0
 
-let opt_chk = [ Const []; Debug; Decs ""; Ext []; Help; Quiet; Verb ]
+let opt_chk = [ Const []; Decs ""; Ext []; Help; Quiet; Verb ]
        
 let eval_help_check fmt () =
   help_fun fmt opt_chk "validate"
 
-let opt_full = [ Const []; Debug; Decs ""; Ext []; Graph ""; Help;
+let opt_full = [ Const []; Decs ""; Ext []; Graph ""; Help;
 		 Labels ""; Max 0; Prism ""; Quiet; States None;
 		 Verb ]
 	   
 let eval_help_full fmt () =
   help_fun fmt opt_full "full"
 
-let opt_sim  = [ Const []; Debug; Decs ""; Ext []; Graph ""; Help;
+let opt_sim  = [ Const []; Decs ""; Ext []; Graph ""; Help;
 		 Labels ""; Prism ""; Quiet; States None;
 		 Steps 0; Time 0.0; Verb ]
 		 
@@ -427,91 +416,6 @@ let usage_sub fmt cmd =
 let report_error fmt e =
   fprintf fmt "@[<v>%s: %a@]@." err report_error_aux e
 	  
-(* let eval_chk fmt options model pred = *)
-(*   (\* Update defaults *\) *)
-(*   List.iter (function *)
-(* 	      | Const l -> defaults.consts <- l *)
-(* 	      | Debug -> defaults.debug <- true *)
-(* 	      | Decs f -> defaults.export_decs <- Some f *)
-(* 	      | Ext l -> defaults.out_format <- l  *)
-(* 	      | Help -> eval_help_check fmt () *)
-(* 	      | Quiet -> defaults.quiet <- true *)
-(* 	      | Verb -> defaults.verb <-true *)
-(* 	      | o -> *)
-(* 		 (report_warning fmt "" (string_of_opt "|" o); *)
-(* 		  usage_sub fmt "validate")) *)
-(* 	    options; *)
-(*   defaults.model <- model; *)
-(*   defaults.pred <- pred *)
-
-(* let front_graph l = *)
-(*   let (a, b) = List.partition (function *)
-(* 				| Graph _ -> true *)
-(* 				|_ -> false) *)
-(* 			      l in *)
-(*   a @ b *)
-		     
-(* let eval_full fmt options model pred = *)
-(*   front_graph options *)
-(*   |> List.iter (function *)
-(* 	      | Const l -> defaults.consts <- l *)
-(* 	      | Debug -> defaults.debug <- true *)
-(* 	      | Decs f -> defaults.export_decs <- Some f *)
-(* 	      | Ext l -> defaults.out_format <- l  *)
-(* 	      | Graph f -> defaults.export_graph <- Some f *)
-(* 	      | Help -> eval_help_full fmt () *)
-(* 	      | Labels f -> defaults.export_lab <- Some f *)
-(* 	      | Max n -> defaults.max_states <- n *)
-(* 	      | Prism f -> defaults.export_prism <- Some f *)
-(* 	      | Quiet -> defaults.quiet <- true *)
-(* 	      | States None -> *)
-(* 		 (defaults.export_states_flag <- true; *)
-(* 		  match defaults.export_graph with *)
-(* 		  | None -> (report_error fmt (Malformed_states); *)
-(* 			     usage_sub fmt "full"; *)
-(* 			     exit 1) *)
-(* 		  | f -> defaults.export_states <- f) *)
-(* 	      | States f -> *)
-(* 		 (defaults.export_states_flag <- true; *)
-(* 		  defaults.export_states <- f) *)
-(* 	      | Verb -> defaults.verb <- true *)
-(* 	      | o -> *)
-(* 		 (report_warning fmt "" (string_of_opt "|" o); *)
-(* 		  usage_sub fmt "full")); *)
-(*   defaults.model <- model; *)
-(*   defaults.pred <- pred *)
-
-(* let eval_sim fmt options model pred = *)
-(*   front_graph options *)
-(*   |> List.iter (function *)
-(* 	      | Const l -> defaults.consts <- l *)
-(* 	      | Debug -> defaults.debug <- true *)
-(* 	      | Decs f -> defaults.export_decs <- Some f *)
-(* 	      | Ext l -> defaults.out_format <- l  *)
-(* 	      | Graph f -> defaults.export_graph <- Some f *)
-(* 	      | Help -> eval_help_full fmt () *)
-(* 	      | Labels f -> defaults.export_lab <- Some f *)
-(* 	      | Prism f -> defaults.export_prism <- Some f *)
-(* 	      | Quiet -> defaults.quiet <- true *)
-(* 	      | States None -> *)
-(* 		 (defaults.export_states_flag <- true; *)
-(* 		  match defaults.export_graph with *)
-(* 		  | None -> (report_error fmt (Malformed_states); *)
-(* 			     usage_sub fmt "sim"; *)
-(* 			    exit 1) *)
-(* 		  | f -> defaults.export_states <- f) *)
-(* 	      | States f -> *)
-(* 		 (defaults.export_states_flag <- true; *)
-(* 		  defaults.export_states <- f) *)
-(* 	      | Verb -> defaults.verb <- true					    *)
-(* 	      | Steps s -> defaults.max_states <- s *)
-(* 	      | Time t -> defaults.time <- t *)
-(* 	      | o -> *)
-(* 		 (report_warning fmt "" (string_of_opt "|" o); *)
-(* 		  usage_sub fmt "sim")); *)
-(*   defaults.model <- model; *)
-(*   defaults.pred <- pred *)
-
 (* postprocess settings:
    - path for export states 
    - dot options
