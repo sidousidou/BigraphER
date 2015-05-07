@@ -119,7 +119,7 @@ and cmd =  parse
   | ("--export-decs"
     | "-d")                 { O_DECS }
   | ("--format" | "-f")     { O_FORMAT }
-  | ("--export-transition-system"
+  | ("--export-ts"
     | "-t")                 { O_TS }
   | ("--export-states"
     | "-s")                 { O_STATES }
