@@ -107,13 +107,13 @@ and cmd =  parse
   | "full"                  { C_FULL }
   | "sim"                   { C_SIM }
   (* STAND-ALONE OPTIONS *)			    
-  | ("--config" | "-c")     { O_CONF }
+  | ("--config" | "-C")     { O_CONF }
   | ("--version" | "-V")    { O_VERS }
   | ("--help" | "-h")       { O_HELP }
   (* COMMON OPTIONS *)			    
   | ("--verbose" | "-v")    { O_VERB }
   | ("--quiet" | "-q")      { O_QUIET }     
-  | ("--const" | "-c")      { O_CONST } 
+  | ("--const" | "-c")      { O_CONST } (* try to use a recursive lexer here only for assignments *) 
   | "--debug"               { O_DEBUG }
   (* COMMAND OPTIONS *)
   | ("--export-decs"

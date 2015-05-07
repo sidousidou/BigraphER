@@ -350,7 +350,8 @@ let () =
       match prs with
       | Store.P priorities ->
 	 (******** BRS *********)
-	 (match exec_type with
+	 (Cmd.check_brs_opt ();
+	  match exec_type with
 	  | `sim ->
 	     (print_msg fmt `yellow "Starting simulation ...";
 	      print_max fmt;
@@ -371,7 +372,8 @@ let () =
 	  | `check -> failwith "TO DO")
       | Store.S priorities ->
 	 (******** SBRS *********)
-	 (match exec_type with
+	 (Cmd.check_sbrs_opt ();
+	  match exec_type with
 	  | `sim ->
 	     (print_msg fmt `yellow "Starting stochastic simulation ...";
 	      [{ descr = ("Max sim time:", `cyan);

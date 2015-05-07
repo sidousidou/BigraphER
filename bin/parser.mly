@@ -354,7 +354,7 @@ const:
         dint_exp = Int_val ($3, loc $startpos $endpos);
 	dint_loc = loc $startpos $endpos; } }
 | IDE EQUAL CFLOAT
-      { Cfloat { dfloat_id = $1;
+      { print_endline "here"; Cfloat { dfloat_id = $1;
         dfloat_exp = Float_val ($3, loc $startpos $endpos);
 	dfloat_loc = loc $startpos $endpos; } };
 
@@ -365,66 +365,70 @@ common_opt:
       { defaults.quiet <- true }
   | O_DEBUG
       { defaults.debug <- true }
-  | O_CONST l=separated_nonempty_list(COMMA, const)
-      { defaults.consts <- l };
+  | O_CONST separated_nonempty_list(COMMA, const)
+      { defaults.consts <- $2 };
 
 ext:
   | F_SVG { Svg }
   | F_DOT { Dot };
 
 export_opt:
-  | O_DECS PATH
-      {	check_dot_opt (fun x -> defaults.export_decs <- x)
-		      (Some $2)
-		      (Decs "") }
   | O_TS PATH
-      { check_dot_opt (fun x -> defaults.export_graph <- x)
-		      (Some $2)
-		      (Graph "") }
+    { check_dot_opt (fun x -> defaults.export_graph <- x)
+		    (Some $2)
+		    (Graph "") }
   | O_LABELS PATH
-      { check_dot_opt (fun x -> defaults.export_lab <- x)
-		      (Some $2)
-		      (Labels "") }
+    { check_dot_opt (fun x -> defaults.export_lab <- x)
+		    (Some $2)
+		    (Labels "") }
   | O_STATES option(PATH)
     { check_dot_opt (fun x ->
 		     defaults.export_states_flag <- true;
 		     defaults.export_states <- x)
-      $2
-	 (States None) }
+                    $2
+		       (States None) }
   | O_PRISM PATH
-      { check_dot_opt (fun x -> defaults.export_prism <- x)
-		      (Some $2)
-		      (Prism "") }
-  | O_FORMAT l=separated_nonempty_list(COMMA, ext)
-      { check_dot_opt (fun x -> defaults.out_format <- x)
-		      l
-		      (Ext []) };
+    { check_dot_opt (fun x -> defaults.export_prism <- x)
+		    (Some $2)
+		    (Prism "") }
+  | common_export_opt
+    { $1 };
+
+common_export_opt:   
+  | O_DECS PATH
+    { check_dot_opt (fun x -> defaults.export_decs <- x)
+		    (Some $2)
+		    (Decs "") }
+  | O_FORMAT separated_nonempty_list(COMMA, ext)
+    { check_dot_opt (fun x -> defaults.out_format <- x)
+		    $2
+		    (Ext []) };
 
 opt_chk:
   | common_opt
-      { $1 }
-  | O_DECS PATH
-      { defaults.export_decs <- Some $2 }
-  | O_FORMAT l=separated_nonempty_list(COMMA, ext)
-      { defaults.out_format <- l };
+    { $1 }
+  | common_export_opt
+    { $1 };
   
 opt_full:
   | common_opt
-      { $1 }
+    { $1 }
   | export_opt
-      { $1 }
+    { $1 }
   | O_MAX CINT
-      { defaults.max_states <- $2 };
+    { defaults.max_states <- $2 };
 
 opt_sim:
   | common_opt
-      { $1 }
+    { $1 }
   | export_opt
-      { $1 }
+    { $1 }
   | O_TIME CFLOAT
-      { defaults.time <- $2 }
+    { defaults.time <- $2;
+      defaults.time_flag <- true }
   | O_STEPS CINT
-      { defaults.steps <- $2 };
+    { defaults.steps <- $2;
+      defaults.steps_flag <- true };
 
 sub_cmd:
   | C_CHECK O_HELP

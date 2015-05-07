@@ -22,7 +22,7 @@ type stand_alone_opt =
   | Version
 
 let string_of_stand_alone_opt = function
-  | Config -> "-c, --config"
+  | Config -> "-C, --config"
   | Help_top_level -> "-h, --help"
   | Version -> "-V, --version"
       
@@ -147,7 +147,9 @@ type settings = {
     mutable pred : string option;
     mutable quiet : bool;
     mutable steps : int;
+    mutable steps_flag : bool;
     mutable time : float;
+    mutable time_flag : bool;
     mutable verb : bool;
   }
 
@@ -168,7 +170,9 @@ let defaults = {
     pred = None;
     quiet = false;
     steps = 1000;
+    steps_flag = false;
     time  = 1000.0;
+    time_flag = false;
     verb = false;
   }
 		 
@@ -395,10 +399,10 @@ let eval_config fmt () =
 		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
   fprintf fmt "@[<v 2>CONFIGURATION:@,%a@]@." config_str ()
 
-let dot_msg = "`dot' is not installed on this system."
+let dot_msg = "`dot' is not installed on this system. "
 			
 let report_warning fmt msg opt =
-  fprintf fmt "@[<v>%s: @[<v -16>%s@,Ignoring option `%s'@]@]@."
+  fprintf fmt "@[<v>%s: %sIgnoring option `%s'@]@."
 	  warn msg opt
 	  
 let usage fmt () =
@@ -428,8 +432,14 @@ let check_dot_opt f x opt =
 		   dot_msg
 		   (string_of_opt "|" opt)
 
+let check_brs_opt () =
+  if defaults.time_flag then
+    report_warning err_formatter
+		   ""
+		   (string_of_opt "|" (Time 0.0))
 
-					  
-(* postprocess settings:
-   - time or steps in brs or sbrs *)
-		     
+let check_sbrs_opt () =
+  if defaults.steps_flag then
+    report_warning err_formatter
+		   ""
+		   (string_of_opt "|" (Steps 0))
