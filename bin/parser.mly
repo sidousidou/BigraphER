@@ -334,27 +334,29 @@ closure:
   | SLASH IDE                               { { cl_name = $2; 
 						cl_loc = loc $startpos $endpos; } };
 		
-const:
-  | IDE EQUAL CINT                          { Cint { dint_id = $1;
-						     dint_exp = Int_val ($3, loc $startpos $endpos);
-						     dint_loc = loc $startpos $endpos; } }
-  | IDE EQUAL CFLOAT                        { Cfloat { dfloat_id = $1;
-						       dfloat_exp = Float_val ($3, loc $startpos $endpos);
-						       dfloat_loc = loc $startpos $endpos; } };
-
 (* COMMAND LINE *)
 
 cmd:
   | sub_cmd EOF                             { $1 }
-  | stand_alone_opt EOF                     { $1; `opt }
+  | stand_alone_opt EOF                     { $1; exit 0 }
 
 stand_alone_opt:
   | O_CONF
-      { eval_config Format.err_formatter () }
+      { eval_config Format.std_formatter () }
   | O_VERS
-      { eval_version Format.err_formatter () }
+      { eval_version Format.std_formatter () }
   | O_HELP
-      { eval_help_top Format.err_formatter () };
+      { eval_help_top Format.std_formatter () };
+
+const:
+| IDE EQUAL CINT
+      { Cint { dint_id = $1;
+        dint_exp = Int_val ($3, loc $startpos $endpos);
+	dint_loc = loc $startpos $endpos; } }
+| IDE EQUAL CFLOAT
+      { Cfloat { dfloat_id = $1;
+        dfloat_exp = Float_val ($3, loc $startpos $endpos);
+	dfloat_loc = loc $startpos $endpos; } };
 
 common_opt:
   | O_VERB

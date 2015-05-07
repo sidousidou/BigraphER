@@ -295,7 +295,7 @@ let open_lex path =
 let parse_cmd fmt argv =
   let lexbuf = Array.to_list argv
 	       |> List.tl
-	       |> String.concat " " 
+	       |> String.concat "\n" 
 	       |> Lexing.from_string in
   (* Check environment variables *)
   Cmd.eval_env ();

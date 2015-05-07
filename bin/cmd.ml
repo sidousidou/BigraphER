@@ -81,7 +81,7 @@ type t =
   | StandAloneOpt of stand_alone_opt
 
 type cmd_t =
-  [ `check | `full | `sim | `opt ]
+  [ `check | `full | `sim ]
 		       
 let string_of_t = function
   | Check (_, _, _) -> "validate"
@@ -272,8 +272,8 @@ let eval_help_top fmt () =
 let help_fun fmt l cmd =
   let options fmt () =
     print_table fmt l (string_of_opt ", ") msg_opt in
-  fprintf fmt "@[<v 2>USAGE:@,\
-	       bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@,@,\
+  fprintf fmt "@[<v>@[<v 2>USAGE:@,\
+	       bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@]@,@,\
 	       @[<v 2>OPTIONS:@,%a@]@]@." cmd options ();
   exit 0
 
@@ -297,8 +297,7 @@ let eval_help_sim fmt () =
   help_fun fmt opt_sim "sim"
 
 let eval_version fmt () =
-  fprintf fmt "@[%s@]@." Version.version;
-  exit 0
+  fprintf fmt "@[%s@]@." Version.version
 
 let string_of_format f =
   List.map (function
@@ -362,8 +361,7 @@ let eval_config fmt () =
 	fprintf fmt "@[<hov>%b@]" defaults.verb)] in
     print_table fmt conf
 		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
-  fprintf fmt "@[<v 2>CONFIGURATION:@,%a@]@." config_str ();
-  exit 0
+  fprintf fmt "@[<v 2>CONFIGURATION:@,%a@]@." config_str ()
 	    
 let dot = dot_installed ()
 
