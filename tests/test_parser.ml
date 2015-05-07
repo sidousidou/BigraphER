@@ -36,7 +36,7 @@ let () =
     parse Sys.argv.(1)
     |> List.map (fun f ->
 		 let name = Filename.chop_extension (Filename.basename f) in
-		 let chan_in = Unix.open_process_in (bin ^ " " ^ f ^ " " ^ flag) in
+		 let chan_in = Unix.open_process_in (bin ^ " " ^ flag ^ " " ^ f) in
 		 let std_out = read_lines [] chan_in in	      
 		 (name,
 		  __MODULE__,
