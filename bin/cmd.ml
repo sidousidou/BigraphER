@@ -108,8 +108,8 @@ let report_error_aux fmt = function
   | Malformed_env s ->
      fprintf fmt "@[`%s' is not a valid format@]" s
   | Malformed_states ->
-     fprintf fmt "@[Specify a path for option `%s'\
-		  or use it in@ conjunction with option `%s'@]"
+     fprintf fmt "@[<hov -16>Specify a path for@ option@ `%s'@ or@ \
+		  use@ it@ in@ conjunction@ with@ option@ `%s'@]"
 	     (string_of_opt "|" (States None))
 	     (string_of_opt "|" (Graph ""))
   | Parse s ->
@@ -133,6 +133,7 @@ let string_of_t = function
 type settings = {
     mutable consts : Ast.const list;
     mutable debug : bool;
+    mutable dot_installed : bool;
     mutable export_decs : path option;
     mutable export_graph : file option;
     mutable export_lab : file option;
@@ -153,6 +154,7 @@ type settings = {
 let defaults = {
     consts = [];
     debug = false;
+    dot_installed = dot_installed ();
     export_decs = None;
     export_graph = None;
     export_lab = None;
@@ -392,13 +394,11 @@ let eval_config fmt () =
     print_table fmt conf
 		(fun (x, _) -> x) (fun fmt (_, f) -> f fmt ()) in
   fprintf fmt "@[<v 2>CONFIGURATION:@,%a@]@." config_str ()
-	    
-let dot = dot_installed ()
 
 let dot_msg = "`dot' is not installed on this system."
 			
 let report_warning fmt msg opt =
-  fprintf fmt "@[<v>%s: %s@,Ignoring option `%s'@]@."
+  fprintf fmt "@[<v>%s: @[<v -16>%s@,Ignoring option `%s'@]@]@."
 	  warn msg opt
 	  
 let usage fmt () =
@@ -409,10 +409,27 @@ let usage_sub fmt cmd =
 	       Try `bigrapher %s --help' for more information.@]@." cmd cmd
 	  
 let report_error fmt e =
-  fprintf fmt "@[<v>%s: %a@]@." err report_error_aux e
-	  
+  fprintf fmt "@[%s: %a@]@." err report_error_aux e
+
+let check_states () =
+  if defaults.export_states_flag then
+    (match (defaults.export_states, defaults.export_graph) with
+     | (None, Some f) -> defaults.export_states <- Some (Filename.basename f)
+     | (None, None) -> raise (ERROR Malformed_states)
+     | (Some _, None )
+     | (Some _, Some _) -> ())
+  else ()
+
+let check_dot_opt f x opt =
+  if defaults.dot_installed then
+    f x
+  else
+    report_warning err_formatter
+		   dot_msg
+		   (string_of_opt "|" opt)
+
+
+					  
 (* postprocess settings:
-   - path for export states 
-   - dot options
    - time or steps in brs or sbrs *)
 		     

@@ -374,18 +374,31 @@ ext:
 
 export_opt:
   | O_DECS PATH
-      { defaults.export_decs <- Some $2 }
+      {	check_dot_opt (fun x -> defaults.export_decs <- x)
+		      (Some $2)
+		      (Decs "") }
   | O_TS PATH
-      { defaults.export_graph <- Some $2 }
+      { check_dot_opt (fun x -> defaults.export_graph <- x)
+		      (Some $2)
+		      (Graph "") }
   | O_LABELS PATH
-      { defaults.export_lab <- Some $2 }
+      { check_dot_opt (fun x -> defaults.export_lab <- x)
+		      (Some $2)
+		      (Labels "") }
   | O_STATES option(PATH)
-      { defaults.export_states_flag <- true;
-	defaults.export_states <- $2 }
+    { check_dot_opt (fun x ->
+		     defaults.export_states_flag <- true;
+		     defaults.export_states <- x)
+      $2
+	 (States None) }
   | O_PRISM PATH
-      { defaults.export_prism <- Some $2 }
+      { check_dot_opt (fun x -> defaults.export_prism <- x)
+		      (Some $2)
+		      (Prism "") }
   | O_FORMAT l=separated_nonempty_list(COMMA, ext)
-      { defaults.out_format <- l };
+      { check_dot_opt (fun x -> defaults.out_format <- x)
+		      l
+		      (Ext []) };
 
 opt_chk:
   | common_opt
@@ -422,16 +435,19 @@ sub_cmd:
       { eval_help_sim Format.std_formatter () }
   | C_CHECK list(opt_chk) BIG_FILE option(BILOG_FILE)
       { List.iter (fun x-> x) $2;
+	check_states ();      
 	defaults.model <- $3;
 	defaults.pred <- $4;
         `check }
   | C_FULL list(opt_full) BIG_FILE option(BILOG_FILE)
       { List.iter (fun x-> x) $2;
+	check_states ();      
 	defaults.model <- $3;
 	defaults.pred <- $4;
         `full }
   | C_SIM list(opt_sim) BIG_FILE option(BILOG_FILE)
       { List.iter (fun x-> x) $2;
+	check_states ();      
 	defaults.model <- $3;
 	defaults.pred <- $4;
         `sim };
