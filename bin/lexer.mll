@@ -146,9 +146,9 @@ open Format
 
 let report_error fmt = function
   | Unknown_char c ->
-     fprintf fmt "@[%s: Unknown character `%c'@]@," Utils.err c
+     fprintf fmt "@[%s: Unknown character `%c'@]" Utils.err c
   | Int_overflow s ->
-     fprintf fmt "@[%s: Integer out of bounds: %s is not in [%i, %i]@]@," 
+     fprintf fmt "@[%s: Integer out of bounds: %s is not in [%i, %i]@]" 
 	     Utils.err s min_int max_int
 
 }

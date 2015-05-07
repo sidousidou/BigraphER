@@ -21,8 +21,8 @@ let print_msg fmt c msg =
 let print_descr fmt (d, c) =
   fprintf fmt "%s" (Utils.colorise c d)
 
-let print_float fmt = function
-  | `f f  -> fprintf fmt "@[<h>%-3gs@]" f
+let print_float unit fmt = function
+  | `f f  -> fprintf fmt "@[<h>%-3g%s@]" f unit
   | `i _
   | `s _ -> assert false
 		   
@@ -109,7 +109,7 @@ let print_max fmt =
 let print_stats fmt t s r o =
   [{ descr = ("Build time:", `green);
      value = `f t;
-     pp_val = print_float;
+     pp_val = print_float "s";
      display =  not Cmd.(defaults.debug); };
    { descr = ("States:", `green);
      value = `i s;
@@ -304,21 +304,19 @@ let parse_cmd fmt argv =
   with
   | Cmd.ERROR e ->
      (pp_print_flush fmt ();
-      fprintf err_formatter "@?@[%a%a"
-      Cmd.report_error e
-      Cmd.eval_help_top ();
+      Cmd.report_error err_formatter e;
+      Cmd.eval_help_top err_formatter ();
       exit 1)
   | Parser.Error ->
      (pp_print_flush fmt ();
-      fprintf err_formatter "@?@[%a%a"
-      Cmd.report_error (Cmd.Parse (Lexing.lexeme lexbuf))
-      Cmd.eval_help_top ();
+      Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
+      Cmd.eval_help_top err_formatter ();
       exit 1)
-  | Lexer.ERROR (e, p) ->
+  | Lexer.ERROR (e, _) ->
      (pp_print_flush fmt ();
-      fprintf err_formatter "@?@[%a%a"
-      Lexer.report_error e
-      Cmd.eval_help_top ();
+      Lexer.report_error err_formatter e;
+      pp_print_newline err_formatter ();    
+      Cmd.eval_help_top err_formatter ();
       exit 1)
        
 let () =
@@ -378,7 +376,7 @@ let () =
 	     (print_msg fmt `yellow "Starting stochastic simulation ...";
 	      [{ descr = ("Max sim time:", `cyan);
 		 value = `f Cmd.(defaults.time);
-		 pp_val = print_float;
+ 		 pp_val = print_float "";
 		 display = true; }]
 	      |> print_table fmt;
 	      if Cmd.(defaults.debug) then ()

@@ -116,18 +116,18 @@ let report_error_aux fmt = function
      fprintf fmt "@[Invalid argument `%s'@]" s 
 		   
 type t =
-  | Check of opt list * big_file * bilog_file
-  | Full of opt list * big_file * bilog_file
-  | Sim of opt list * big_file * bilog_file
+  | Check
+  | Full
+  | Sim
   | StandAloneOpt of stand_alone_opt
 
 type cmd_t =
   [ `check | `full | `sim ]
 		       
 let string_of_t = function
-  | Check (_, _, _) -> "validate"
-  | Full (_, _, _) -> "full"
-  | Sim (_, _, _) -> "sim"
+  | Check -> "validate"
+  | Full -> "full"
+  | Sim -> "sim"
   | StandAloneOpt x -> string_of_stand_alone_opt x
   
 type settings = {
@@ -237,9 +237,9 @@ let msg_opt fmt = function
 			 $BIGVERBOSE@ to@ a@ non-empty@ value.@]"
 
 let msg_cmd fmt = function
-  | Check (_, _, _) -> fprintf fmt "@[<hov>Parse a model and check its validity.@]"
-  | Full (_, _, _) -> fprintf fmt "@[<hov>Compute the transition system of a model.@]"
-  | Sim (_, _, _) -> fprintf fmt "@[<hov>Simulate a model.@]"
+  | Check -> fprintf fmt "@[<hov>Parse a model and check its validity.@]"
+  | Full -> fprintf fmt "@[<hov>Compute the transition system of a model.@]"
+  | Sim -> fprintf fmt "@[<hov>Simulate a model.@]"
   | StandAloneOpt x -> msg_so_opt fmt x
 
 let usage_str fmt () =  
@@ -265,7 +265,7 @@ let print_table fmt rows ?(offset = 0) f_l f_r =
       pp_set_tab fmt ();
       let l = f_l first in
       fprintf fmt "@[<h>%s" l;
-      print_break (l_max - offset) 0;
+      pp_print_break fmt (l_max - offset) 0;
       fprintf fmt "@]";
       pp_set_tab fmt ();
       fprintf fmt "%a" f_r first;
@@ -275,9 +275,7 @@ let print_table fmt rows ?(offset = 0) f_l f_r =
     
 let eval_help_top fmt () =
   let commands fmt () =
-    print_table fmt [ Check ([], "", None);
-		      Full ([], "", None);
-		      Sim ([], "", None) ]
+    print_table fmt [ Check; Full; Sim ]
 		~offset:(-3)
 		string_of_t
 		msg_cmd
@@ -311,24 +309,21 @@ let help_fun fmt l cmd =
    fprintf fmt "@[<v 2>OPTIONS:@,%a@]@."
 	   print_man l;
   exit 0
-
-let opt_chk = [ Const []; Decs ""; Ext []; Help; Quiet; Verb ]
        
 let eval_help_check fmt () =
+  let opt_chk = [ Const []; Decs ""; Ext []; Help; Quiet; Verb ] in
   help_fun fmt opt_chk "validate"
-
-let opt_full = [ Const []; Decs ""; Ext []; Graph ""; Help;
-		 Labels ""; Max 0; Prism ""; Quiet; States None;
-		 Verb ]
 	   
 let eval_help_full fmt () =
+  let opt_full = [ Const []; Decs ""; Ext []; Graph ""; Help;
+		   Labels ""; Max 0; Prism ""; Quiet; States None;
+		   Verb ] in
   help_fun fmt opt_full "full"
-
-let opt_sim  = [ Const []; Decs ""; Ext []; Graph ""; Help;
-		 Labels ""; Prism ""; Quiet; States None;
-		 Steps 0; Time 0.0; Verb ]
 		 
 let eval_help_sim fmt () =
+  let opt_sim  = [ Const []; Decs ""; Ext []; Graph ""; Help;
+		   Labels ""; Prism ""; Quiet; States None;
+		   Steps 0; Time 0.0; Verb ] in
   help_fun fmt opt_sim "sim"
 
 let eval_version fmt () =
@@ -341,7 +336,7 @@ let string_of_format f =
   |> String.concat ","
 
 let string_of_file = function
-  | None -> "-"
+  | None -> "-" (* Not set *)
   | Some f -> f
 		
 let eval_config fmt () =

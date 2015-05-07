@@ -31,7 +31,7 @@ let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
              
 let format_time () =
   let tm = Unix.localtime (Unix.time ()) in
-  Printf.sprintf "%s %s %2d %02d:%02d:%02d %04d"
+  Printf.sprintf "%s %s %02d %02d:%02d:%02d %04d"
     days.(tm.Unix.tm_wday)
     months.(tm.Unix.tm_mon)
     tm.Unix.tm_mday
