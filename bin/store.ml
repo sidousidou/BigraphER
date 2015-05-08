@@ -973,15 +973,15 @@ let eval_model fmt m env =
 (******** EXPORT STORE *********)
 		    
 let export decs (env : store) (env_t : store_t) path
+	   formats fmt
 	   (print_fun : string -> int -> unit) = 
-  let svg = ".svg"
-  and concat = Filename.concat path in
-  let write_pair id lhs rhs =
+  let concat = Filename.concat path in
+  let write_pair id lhs rhs (f, ext) =
     let (lhs_n, rhs_n) =
-      (id ^ "_lhs" ^ svg, id ^ "_rhs" ^ svg) in
-    Big.write_svg lhs ~name:lhs_n ~path
+      (id ^ "_lhs" ^ ext, id ^ "_rhs" ^ ext) in
+    f lhs ~name:lhs_n ~path
     |> print_fun (concat lhs_n);
-    Big.write_svg rhs ~name:rhs_n ~path
+    f rhs ~name:rhs_n ~path
     |> print_fun (concat rhs_n) in
   let dummy_args (args_t : num_type list) =
     resolve_types env_t args_t
@@ -991,35 +991,43 @@ let export decs (env : store) (env_t : store_t) path
     dummy_args args_t in
   let aux' eval_f id args p =
     eval_f id args env env_t p |> fst |> List.hd in
-  List.iter (fun d ->
-	     match d with
-	     | Dctrl _
-	     | Dint _
-	     | Dfloat _ -> ()
-	     | Dbig (Big_exp (id, _, p)) ->
-		(Big.write_svg (get_big id p env) ~name:(id ^ svg) ~path
-		 |> print_fun (concat (id ^ svg)))
-	     | Dbig (Big_fun_exp (id, _, _, p)) ->
-		(let args = aux id in
-		 let b = fst (eval_big (Big_var_fun (id, args, p))
-				       ScopeMap.empty env env_t) in
-		 Big.write_svg b ~name:(id ^ svg) ~path
-		|> print_fun (concat (id ^ svg)))
-	     | Dreact (React_exp (id, _, _, _, p)) ->
-		(let r = get_react id p env in
-		 write_pair id r.Brs.rdx r.Brs.rct)
-	     | Dreact (React_fun_exp (id, _, _, _, _, p)) ->
-		(let args = aux id in
-		 let r = aux' eval_react_fun_app id args p in
-		 write_pair id r.Brs.rdx r.Brs.rct)
-	     | Dsreact (Sreact_exp (id, _, _, _, _, p)) ->
-		(let r = get_sreact id p env in
-		 write_pair id r.Sbrs.rdx r.Sbrs.rct)
-	     | Dsreact (Sreact_fun_exp (id, _, _, _, _, _, p)) ->
-		(let args = aux id in
-		 let r = aux' eval_sreact_fun_app id args p in
-		 write_pair id r.Sbrs.rdx r.Sbrs.rct)
-	    ) decs
+  let write f_write ext = function
+    | Dctrl _
+    | Dint _
+    | Dfloat _ -> ()
+    | Dbig (Big_exp (id, _, p)) ->
+       (f_write (get_big id p env) ~name:(id ^ ext) ~path
+	|> print_fun (concat (id ^ ext)))
+    | Dbig (Big_fun_exp (id, _, _, p)) ->
+       (let args = aux id in
+	let b = fst (eval_big (Big_var_fun (id, args, p))
+			      ScopeMap.empty env env_t) in
+	f_write b ~name:(id ^ ext) ~path
+	|> print_fun (concat (id ^ ext)))
+    | Dreact (React_exp (id, _, _, _, p)) ->
+       (let r = get_react id p env in
+	write_pair id r.Brs.rdx r.Brs.rct (f_write, ext))
+    | Dreact (React_fun_exp (id, _, _, _, _, p)) ->
+       (let args = aux id in
+	let r = aux' eval_react_fun_app id args p in
+	write_pair id r.Brs.rdx r.Brs.rct (f_write, ext))
+    | Dsreact (Sreact_exp (id, _, _, _, _, p)) ->
+       (let r = get_sreact id p env in
+	write_pair id r.Sbrs.rdx r.Sbrs.rct (f_write, ext))
+    | Dsreact (Sreact_fun_exp (id, _, _, _, _, _, p)) ->
+       (let args = aux id in
+	let r = aux' eval_sreact_fun_app id args p in
+	write_pair id r.Sbrs.rdx r.Sbrs.rct (f_write, ext)) in		     
+  List.iter (fun (f_write, ext) ->
+	     List.iter (fun d ->
+			try write f_write ext d with
+			| Export.ERROR e ->
+			   (pp_print_flush fmt ();
+			    fprintf err_formatter "@[<v>";
+			    Export.report_error e
+			    |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
+		       decs)
+	    formats
 	    
 (******** DEBUG *********)
 	    

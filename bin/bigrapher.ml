@@ -376,10 +376,17 @@ let () =
       (match Cmd.(defaults.export_decs) with
        | None -> ()
        | Some path ->
-	  (print_msg fmt `yellow ("Exporting declarations to "
+	  (let format_map = function
+	     | Cmd.Svg -> (Big.write_svg, ".svg")
+	     | Cmd.Dot -> (Big.write_dot, ".dot") in
+	   print_msg fmt `yellow ("Exporting declarations to "
 				  ^ path ^ " ...");
-	   (* HANDLE defaults.out_format *)
-	   Store.export m.model_decs env env_t path
+	   Store.export m.model_decs
+			env
+			env_t
+			path
+			(List.map format_map Cmd.(defaults.out_format))
+			fmt
 			(print_fun fmt `white Cmd.(defaults.verb))));
       match prs with
       | Store.P priorities ->
