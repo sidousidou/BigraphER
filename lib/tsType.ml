@@ -111,6 +111,7 @@ module Make (R : RrType.T)
 		  val is_valid : p_class -> bool
 		  val is_valid_list : p_class list -> bool
 		  val rewrite : Big.bg -> p_class list -> Big.bg * int
+		  val cardinal : p_class list -> int
 		  val scan : Big.bg * int ->
 			     part_f:(R.occ list ->
 				     ((int * R.occ) list * R.edge list * int)) ->

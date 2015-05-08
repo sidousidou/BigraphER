@@ -78,4 +78,12 @@ module Make (R :RrType.T)
     	   _scan_sim b m ~iter_f ~const_pri cs in
       _scan_sim b 0 ~iter_f ~const_pri
 
+    let cardinal l =
+      let to_reacts = function
+	| P_class rr
+	| P_rclass rr -> rr in
+      List.map to_reacts l
+      |> List.flatten
+      |> List.length
+      
   end

@@ -49,6 +49,9 @@ val is_valid_priority : p_class -> bool
     priority class, [false] otherwise. *)
 val is_valid_priority_list : p_class list -> bool
 
+(** Return the total number of reaction rules in a list of priority classes. *)
+val cardinal : p_class list -> int
+					       
 (** Compute all the possible evolutions in one step. Total number of occurrences
     is also returned. *)
 val step : Big.bg -> sreact list -> (Big.bg * float) list * int

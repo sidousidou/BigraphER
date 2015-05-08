@@ -31,6 +31,7 @@ module Make (R : RrType.T)
 		    | P_rclass of R.t list
 		  val is_valid : p_class -> bool
 		  val is_valid_list : p_class list -> bool
+		  val cardinal : p_class list -> int
 		  val rewrite : Big.bg -> p_class list -> Big.bg * int
 		  val scan : Big.bg * int ->
 			     part_f:(R.occ list ->
@@ -74,6 +75,8 @@ module Make (R : RrType.T)
 			  
     val is_valid_priority_list : p_class list -> bool
 
+    val cardinal : p_class list -> int
+						   
     val rewrite : Big.bg -> p_class list -> Big.bg * int
 				      
     val bfs :
