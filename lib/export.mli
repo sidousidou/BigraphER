@@ -6,6 +6,7 @@ type error =
   | Dot_not_found
   | Dot_stopped of int
   | Dot_killed of int
+  | Dot_internal_error of int		    
   | Internal_error of Unix.error * string * string
   | Sys of string
 

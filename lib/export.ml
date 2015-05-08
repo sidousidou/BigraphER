@@ -2,6 +2,7 @@ type error =
   | Dot_not_found
   | Dot_stopped of int
   | Dot_killed of int
+  | Dot_internal_error of int		    
   | Internal_error of Unix.error * string * string
   | Sys of string
        
@@ -11,6 +12,7 @@ let report_error = function
   | Dot_not_found -> "`dot' command not found"
   | Dot_stopped i -> "`dot' stopped by signal " ^ (string_of_int i)
   | Dot_killed i -> "`dot' killed by signal " ^ (string_of_int i)
+  | Dot_internal_error i -> "`dot' returned with code " ^ (string_of_int i)
   | Sys s -> s
   | Internal_error (e, fname, arg) ->
      (Unix.error_message e) ^ " at \""^ fname ^ "\" \"" ^ arg ^ "\""
@@ -43,7 +45,8 @@ let _write_svg s name path =
       | Unix.WSTOPPED i -> raise (ERROR (Dot_stopped i))
       | Unix.WSIGNALED i -> raise (ERROR (Dot_killed i))
       | Unix.WEXITED 0 -> b_w
-      | Unix.WEXITED _ -> raise (ERROR (Dot_not_found)))
+      | Unix.WEXITED 127 -> raise (ERROR (Dot_not_found))
+      | Unix.WEXITED i -> raise (ERROR (Dot_internal_error i)))
 
 let catch_unix_errors f arg name path =
   try f arg name path with
