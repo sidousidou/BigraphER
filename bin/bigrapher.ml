@@ -85,7 +85,7 @@ let print_header fmt () =
   |> print_table fmt)
   else ()
 	    
-let print_stats_store fmt env stoch =
+let print_stats_store fmt env n stoch =
   let ty = if stoch then "Stochastic BRS" else "BRS" in
   [{ descr = ("Type:", `cyan);
      value = `s ty;
@@ -93,6 +93,10 @@ let print_stats_store fmt env stoch =
      display = true; };
    { descr = ("Bindings:", `cyan);
      value = `i (Hashtbl.length env);
+     pp_val = print_int;
+     display = true; };
+   { descr = ("# of rules:", `cyan);
+     value = `i n;
      pp_val = print_int;
      display = true; }]
   |> print_table fmt
@@ -196,44 +200,63 @@ let export_ctmc_csl fmt ctmc =
 let export_ts_csl fmt ts =
   export_csl fmt (Brs.write_lab ts)
 
-let export_states fmt f path =
-  print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
-    f ~f:(fun i s ->
-	  let fname = (string_of_int i) ^ ".svg" in
-	  try
-	    Big.write_svg s ~name:fname ~path
-	    |> print_fun fmt
-			 `white
-			 Cmd.(defaults.verb)
-			 (Filename.concat path fname)
-	  with
-	  | Export.ERROR e ->
-	     (pp_print_flush fmt ();
-	      fprintf err_formatter "@[<v>";
-	      Export.report_error e
-	      |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
-	     
-let export_ctmc_states ctmc fmt path =
-  export_states fmt Sbrs.iter_states path ctmc
+let export_states fmt f g =
+  if Cmd.(defaults.export_states_flag) then
+    (match Cmd.(defaults.export_states) with
+     | None -> assert false
+     | Some path ->
+	(print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
+	 f ~f:(fun i s ->
+	       let aux i s f ext =
+		 let fname = (string_of_int i) ^ ext in
+		 try
+		   f s ~name:fname ~path
+		   |> print_fun fmt
+				`white
+				Cmd.(defaults.verb)
+				(Filename.concat path fname)
+		 with
+		 | Export.ERROR e ->
+		    (pp_print_flush fmt ();
+		     fprintf err_formatter "@[<v>";
+		     Export.report_error e
+		     |> fprintf err_formatter "@[%s: %s@]@." Utils.err) in
+	       List.iter (function 
+			   | Cmd.Svg -> aux i s Big.write_svg ".svg"
+			   | Cmd.Dot -> aux i s Big.write_dot ".dot")
+			 Cmd.(defaults.out_format))
+	   g))
+  else ()
+	 
+let export_ctmc_states fmt =
+  export_states fmt Sbrs.iter_states
 
-let export_ts_states ts fmt path =
-  export_states fmt Brs.iter_states path ts
+let export_ts_states fmt =
+  export_states fmt Brs.iter_states
 		
-let export_ts fmt msg f f_iter =
+let export_ts fmt msg formats =
   match Cmd.(defaults.export_graph) with
   | None -> ()
   | Some file ->
-     (print_msg fmt `yellow (msg ^ file ^ " ...");
-      (try
-	  f ~name:(Filename.basename file)
-	    ~path:(Filename.dirname file)
-	  |> print_fun fmt `white Cmd.(defaults.verb) file
-	with
-	| Export.ERROR e ->
-	   (pp_print_flush fmt ();
-	    fprintf err_formatter "@[<v>";
-	    Export.report_error e
-	    |> fprintf err_formatter "@[%s: %s@]@." Utils.err)))
+     (let name =
+	let n = Filename.basename file in
+	try Filename.chop_extension n with
+	| Invalid_argument _ -> n
+      and path = Filename.dirname file in
+      List.iter (fun (f, ext) ->
+		 try
+		   let file' =
+		     Filename.concat path (name ^ ext) in
+		   print_msg fmt `yellow (msg ^ file' ^ " ...");
+		   f ~name:(name ^ ext) ~path
+		   |> print_fun fmt `white Cmd.(defaults.verb) file
+		 with
+		 | Export.ERROR e ->
+		    (pp_print_flush fmt ();
+		     fprintf err_formatter "@[<v>";
+		     Export.report_error e
+		     |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
+		formats)
        
 let close_progress_bar () =
   Pervasives.print_char ']';
@@ -241,6 +264,9 @@ let close_progress_bar () =
   Pervasives.print_newline ()
 			   
 let after_brs_aux fmt stats ts =
+  let format_map = function
+    | Cmd.Svg -> (Brs.write_svg ts, ".svg")
+    | Cmd.Dot -> (Brs.write_dot ts, ".dot") in
   print_stats fmt
 	      stats.Brs.time
 	      stats.Brs.states
@@ -248,8 +274,8 @@ let after_brs_aux fmt stats ts =
 	      stats.Brs.occs;
   export_ts fmt
 	    "Exporting transition system to "
-	    (Brs.write_svg ts)
-	    (export_ts_states ts);
+	    (List.map format_map Cmd.(defaults.out_format));
+  export_ts_states fmt ts;
   export_ts_prism fmt ts;
   export_ts_csl fmt ts;
   pp_print_flush err_formatter ();
@@ -261,6 +287,9 @@ let after_brs fmt (ts,stats) =
   after_brs_aux fmt stats ts
 
 let after_sbrs_aux fmt stats ctmc =
+    let format_map = function
+    | Cmd.Svg -> (Sbrs.write_svg ctmc, ".svg")
+    | Cmd.Dot -> (Sbrs.write_dot ctmc, ".dot") in
   print_stats fmt
 	      stats.Sbrs.time
 	      stats.Sbrs.states
@@ -268,8 +297,8 @@ let after_sbrs_aux fmt stats ctmc =
 	      stats.Sbrs.occs;
   export_ts fmt
 	    "Exporting CTMC to "
-	    (Sbrs.write_svg ctmc)
-	    (export_ctmc_states ctmc);
+	    (List.map format_map Cmd.(defaults.out_format));
+  export_ctmc_states fmt ctmc;
   export_ctmc_prism fmt ctmc;
   export_ctmc_csl fmt ctmc;
   pp_print_flush err_formatter ();
@@ -318,7 +347,7 @@ let parse_cmd fmt argv =
       pp_print_newline err_formatter ();    
       Cmd.eval_help_top err_formatter ();
       exit 1)
-       
+
 let () =
   Printexc.record_backtrace true; (* Disable for releases *)
   let fmt = std_formatter in (* TEMPORARY *)
@@ -335,23 +364,27 @@ let () =
       close_in file; 
       let env = Store.init_env fmt Cmd.(defaults.consts) in
       let (s0, prs, env_t) = Store.eval_model fmt m env in
-      let stoch =
-	match prs with
-	| Store.P _ -> false
-	| Store.S _ -> true in
+      (* STATS *)
+      (match prs with
+       | Store.P priorities ->
+	  (Cmd.check_brs_opt ();
+	   print_stats_store fmt env (Brs.cardinal priorities) false;)
+       | Store.S priorities ->
+	  (Cmd.check_sbrs_opt ();
+	   print_stats_store fmt env (Sbrs.cardinal priorities) true;));
+      (* DECLARATIONS *)
       (match Cmd.(defaults.export_decs) with
        | None -> ()
        | Some path ->
 	  (print_msg fmt `yellow ("Exporting declarations to "
-			  ^ path ^ " ...");
+				  ^ path ^ " ...");
+	   (* HANDLE defaults.out_format *)
 	   Store.export m.model_decs env env_t path
 			(print_fun fmt `white Cmd.(defaults.verb))));
-      print_stats_store fmt env stoch;
       match prs with
       | Store.P priorities ->
 	 (******** BRS *********)
-	 (Cmd.check_brs_opt ();
-	  match exec_type with
+	 (match exec_type with
 	  | `sim ->
 	     (print_msg fmt `yellow "Starting simulation ...";
 	      print_max fmt;
@@ -372,8 +405,7 @@ let () =
 	  | `check -> failwith "TO DO")
       | Store.S priorities ->
 	 (******** SBRS *********)
-	 (Cmd.check_sbrs_opt ();
-	  match exec_type with
+	 (match exec_type with
 	  | `sim ->
 	     (print_msg fmt `yellow "Starting stochastic simulation ...";
 	      [{ descr = ("Max sim time:", `cyan);
