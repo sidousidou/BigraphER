@@ -68,7 +68,7 @@ module MakeE (G : G) = struct
 				      arrowhead=\"vee\", arrowsize=0.5 ];\n" 
 				     buff v (G.dest u) (G.string_of_arrow u))
 		     (G.edges g) "" in
-      Printf.sprintf "digraph %s {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
+      Printf.sprintf "digraph \"%s\" {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
 		     name rank states edges
 		     
     let to_lab g =

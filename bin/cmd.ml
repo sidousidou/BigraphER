@@ -418,7 +418,7 @@ let report_error fmt e =
 let check_states () =
   if defaults.export_states_flag then
     (match (defaults.export_states, defaults.export_graph) with
-     | (None, Some f) -> defaults.export_states <- Some (Filename.basename f)
+     | (None, Some f) -> defaults.export_states <- Some (Filename.dirname f)
      | (None, None) -> raise (ERROR Malformed_states)
      | (Some _, None )
      | (Some _, Some _) -> ())
