@@ -5,7 +5,8 @@ open Parser
 type error =
   | Unknown_char of char
   | Int_overflow of string
-  | Term
+  | Invalid_assign of string
+  | Invalid_format of string
 
 exception ERROR of error * Loc.t
 
@@ -140,16 +141,28 @@ and cmd =  parse
   | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
 and read_string_const buf = parse
-  | argv_sep   	            { Parser.consts read_consts (Lexing.from_string (Buffer.contents buf)) }  
+  | argv_sep
+    { let s = Buffer.contents buf in
+      try
+        Parser.consts read_consts (Lexing.from_string s)
+      with
+      | _ ->
+        raise (ERROR (Invalid_assign s, Loc.curr lexbuf)) }  
   | [^ '\n'] as c  	    { Buffer.add_char buf c; read_string_const buf lexbuf }
-  | eof                     { raise (ERROR (Term, Loc.curr lexbuf)) }
-  | _ as c 	     		    { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
+  | eof                     { raise (ERROR (Invalid_assign (Buffer.contents buf), Loc.curr lexbuf)) }
+  | _ as c 	            { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
 and read_string_format buf = parse
-  | argv_sep   	            { Parser.format read_format (Lexing.from_string (Buffer.contents buf)) }  
+  | argv_sep
+    { let s = Buffer.contents buf in
+      try
+        Parser.format read_format (Lexing.from_string s)
+      with
+      | _ ->
+        raise (ERROR (Invalid_format s, Loc.curr lexbuf)) }  
   | [^ '\n'] as c  	    { Buffer.add_char buf c; read_string_format buf lexbuf }
-  | eof                     { raise (ERROR (Term, Loc.curr lexbuf)) }
-  | _ as c 	     		    { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
+  | eof                     { raise (ERROR (Invalid_format (Buffer.contents buf), Loc.curr lexbuf)) }
+  | _ as c 	            { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }
 
 and read_consts = parse
   | int_literal             { read_int lexbuf }
@@ -177,7 +190,9 @@ let report_error fmt = function
   | Int_overflow s ->
      fprintf fmt "@[%s: Integer out of bounds: %s is not in [%i, %i]@]" 
 	     Utils.err s min_int max_int
-  | Term ->
-     fprintf fmt "@[%s: String is not terminated@]" Utils.err	     
+  | Invalid_assign s ->
+     fprintf fmt "@[%s: Invalid constant assignments `%s'@]" Utils.err s
+  | Invalid_format s ->
+     fprintf fmt "@[%s: Invalid format `%s'@]" Utils.err s
 
 }
