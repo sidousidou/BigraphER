@@ -61,6 +61,8 @@ open Cmd
 %token <string> BIG_FILE
 %token <string> BILOG_FILE
 %token <string> PATH
+%token <Ast.const list> O_CONST
+%token <Cmd.format_op list> O_FORMAT
 
 %token   F_SVG
 %token   F_DOT
@@ -72,10 +74,8 @@ open Cmd
 %token   O_HELP
 %token   O_VERB
 %token   O_QUIET
-%token   O_CONST
 %token   O_DEBUG
 %token   O_DECS
-%token   O_FORMAT
 %token   O_TS
 %token   O_STATES
 %token   O_LABELS
@@ -84,9 +84,11 @@ open Cmd
 %token   O_TIME
 %token   O_STEPS
    
-%start model cmd
+%start model cmd consts format
 %type <Ast.model> model
-%type <Cmd.cmd_t> cmd 
+%type <Cmd.cmd_t> cmd
+%type <Ast.const list> consts
+%type <Cmd.format_op list> format
 (* %type <Ast.predicates> pred_list *)
 
 %%
@@ -349,14 +351,18 @@ stand_alone_opt:
       { eval_help_top Format.std_formatter () };
 
 const:
-| IDE EQUAL CINT
-      { Cint { dint_id = $1;
-        dint_exp = Int_val ($3, loc $startpos $endpos);
-	dint_loc = loc $startpos $endpos; } }
-| IDE EQUAL CFLOAT
-      { print_endline "here"; Cfloat { dfloat_id = $1;
-        dfloat_exp = Float_val ($3, loc $startpos $endpos);
-	dfloat_loc = loc $startpos $endpos; } };
+  | IDE EQUAL CINT
+    { Cint { dint_id = $1;
+      dint_exp = Int_val ($3, loc $startpos $endpos);
+      dint_loc = loc $startpos $endpos; } }
+  | IDE EQUAL CFLOAT
+    { Cfloat { dfloat_id = $1;
+      dfloat_exp = Float_val ($3, loc $startpos $endpos);
+      dfloat_loc = loc $startpos $endpos; } };
+
+consts:
+  | l=separated_nonempty_list(COMMA, const) EOF
+    { l };
 
 common_opt:
   | O_VERB
@@ -365,8 +371,12 @@ common_opt:
       { defaults.quiet <- true }
   | O_DEBUG
       { defaults.debug <- true }
-  | O_CONST separated_nonempty_list(COMMA, const)
-      { defaults.consts <- $2 };
+  | O_CONST 
+      { defaults.consts <- $1 };
+
+format:
+  | l=separated_nonempty_list(COMMA, ext) EOF
+    { l };
 
 ext:
   | F_SVG { Svg }
@@ -399,9 +409,9 @@ common_export_opt:
     { check_dot_opt (fun x -> defaults.export_decs <- x)
 		    (Some $2)
 		    (Decs "") }
-  | O_FORMAT separated_nonempty_list(COMMA, ext)
+  | O_FORMAT
     { check_dot_opt (fun x -> defaults.out_format <- x)
-		    $2
+		    $1
 		    (Ext []) };
 
 opt_chk:
