@@ -15,7 +15,14 @@ OCamlVersion:	>= 4.02.0
 Plugins:     	META (0.4), DevFiles (0.4)
 Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
 BuildTools:	ocamlbuild, menhir
-FilesAB:       	bin/version.ml.ab, man/bigrapher.1.ab, opam/url.ab, opam/opam.ab, README.md.ab
+FilesAB:       	bin/version.ml.ab,
+                man/bigrapher.1.ab,
+                man/bigrapher-validate.1.ab,
+                man/bigrapher-full.1.ab,
+                man/bigrapher-sim.1.ab,
+                opam/url.ab,
+                opam/opam.ab,
+                README.md.ab
 AlphaFeatures:  ocamlbuild_more_args
 XOCamlbuildExtraArgs: -j 4
 

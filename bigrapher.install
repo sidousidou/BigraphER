@@ -5,6 +5,9 @@ bin: [
 
 man: [
   "man/bigrapher.1" {"man1/bigrapher.1"}
+  "man/bigrapher-validate.1" {"man1/bigrapher-validate.1"}
+  "man/bigrapher-full.1" {"man1/bigrapher-full.1"}
+  "man/bigrapher-sim.1" {"man1/bigrapher-sim.1"}
 ]
 
 share: [
