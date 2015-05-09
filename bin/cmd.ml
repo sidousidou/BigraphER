@@ -281,7 +281,7 @@ let print_table fmt rows ?(offset = 0) f_l f_r =
     
 let eval_help_top fmt () =
   let commands fmt () =
-    print_table fmt [ Check; Full; Sim ]
+    print_table fmt [ Full; Sim; Check ]
 		~offset:(-3)
 		string_of_t
 		msg_cmd
@@ -321,15 +321,15 @@ let eval_help_check fmt () =
   help_fun fmt opt_chk "validate"
 	   
 let eval_help_full fmt () =
-  let opt_full = [ Const []; Decs ""; Ext []; Graph ""; Help;
+  let opt_full = [ Const []; Decs ""; Ext []; Help;
 		   Labels ""; Max 0; Prism ""; Quiet; States None;
-		   Verb ] in
+		   Graph ""; Verb ] in
   help_fun fmt opt_full "full"
 		 
 let eval_help_sim fmt () =
-  let opt_sim  = [ Const []; Decs ""; Ext []; Graph ""; Help;
+  let opt_sim  = [ Const []; Decs ""; Ext []; Help;
 		   Labels ""; Prism ""; Quiet; States None;
-		   Steps 0; Time 0.0; Verb ] in
+		   Steps 0; Graph ""; Time 0.0; Verb ] in
   help_fun fmt opt_sim "sim"
 
 let eval_version fmt () =
