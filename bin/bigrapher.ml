@@ -48,13 +48,13 @@ let print_table fmt (rows : row list) =
        (* First row *)
        pp_set_tab fmt ();
        fprintf fmt "@[<h>%s" (Utils.colorise (snd r.descr) (fst r.descr));
-       print_break (15 - (String.length (fst r.descr))) 0;
+       pp_print_break fmt (15 - (String.length (fst r.descr))) 0;
        fprintf fmt "@]";
        pp_set_tab fmt ();
        fprintf fmt "%a" r.pp_val r.value; 
        List.iter (pp_row fmt) rows;
        pp_close_tbox fmt ();
-       Format.print_newline ())
+       Format.pp_print_newline fmt ())
   | _ -> assert false
 		   
 let print_header fmt () =
@@ -106,10 +106,8 @@ let print_max fmt =
      value = `i Cmd.(defaults.max_states);
      pp_val = print_int;
      display = true; }]
-  |> print_table fmt;
-  if Cmd.(defaults.debug) then () 
-  else Pervasives.print_string "\n["
-		   
+  |> print_table fmt
+		 		   
 let print_stats fmt t s r o =
   [{ descr = ("Build time:", `green);
      value = `f t;
@@ -128,9 +126,13 @@ let print_stats fmt t s r o =
      pp_val = print_int;
      display = true; }]
   |> print_table fmt
+
+let open_progress_bar () =
+  if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then () 
+  else Pervasives.print_string "\n["
 		 
 let print_loop i _ = 
-  if Cmd.(defaults.debug) then () 
+  if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then () 
   else (let m =
 	  if Cmd.(defaults.max_states) >= 1000 then
 	    Cmd.(defaults.max_states) / 1000
@@ -146,6 +148,10 @@ let print_loop i _ =
 				 Pervasives.flush stdout)
 	| _ -> ())
 
+let close_progress_bar () =
+  if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then ()
+  else Pervasives.print_string "]\n\n"
+	 
 (******** EXPORT FUNCTIONS *********)
 	 
 let print_fun fmt c verb fname i =
@@ -257,12 +263,7 @@ let export_ts fmt msg formats =
 		     Export.report_error e
 		     |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
 		formats)
-       
-let close_progress_bar () =
-  Pervasives.print_char ']';
-  Pervasives.print_newline ();
-  Pervasives.print_newline ()
-			   
+      			   
 let after_brs_aux fmt stats ts =
   let format_map = function
     | Cmd.Svg -> (Brs.write_svg ts, ".svg")
@@ -282,8 +283,7 @@ let after_brs_aux fmt stats ts =
   exit 0
 
 let after_brs fmt (ts,stats) =
-  if Cmd.(defaults.debug) then ()
-  else close_progress_bar ();
+  close_progress_bar ();
   after_brs_aux fmt stats ts
 
 let after_sbrs_aux fmt stats ctmc =
@@ -305,8 +305,7 @@ let after_sbrs_aux fmt stats ctmc =
   exit 0
 
 let after_sbrs fmt (ctmc, stats) =
-  if Cmd.(defaults.debug) then ()
-  else close_progress_bar ();
+  close_progress_bar ();
   after_sbrs_aux fmt stats ctmc
 		 
 (******** BIGRAPHER *********)
@@ -321,7 +320,7 @@ let open_lex path =
       Lexing.pos_cnum = 0; };
   (lexbuf, file)
     		     		   		 
-let parse_cmd fmt argv =
+let parse_cmd argv =
   let lexbuf = Array.to_list argv
 	       |> List.tl
 	       |> String.concat "\n" 
@@ -332,28 +331,32 @@ let parse_cmd fmt argv =
     Parser.cmd Lexer.cmd lexbuf
   with
   | Cmd.ERROR e ->
-     (pp_print_flush fmt ();
-      Cmd.report_error err_formatter e;
+     (Cmd.report_error err_formatter e;
       Cmd.eval_help_top err_formatter ();
       exit 1)
   | Parser.Error ->
-     (pp_print_flush fmt ();
-      Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
+     (Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
       Cmd.eval_help_top err_formatter ();
       exit 1)
   | Lexer.ERROR (e, _) ->
-     (pp_print_flush fmt ();
-      Lexer.report_error err_formatter e;
+     (Lexer.report_error err_formatter e;
       pp_print_newline err_formatter ();    
       Cmd.eval_help_top err_formatter ();
       exit 1)
 
-let () =
+let set_output_ch () =
+  if Cmd.(defaults.quiet) then
+    (Cmd.(defaults.verb <- false); (* Ignore verbose flag *)
+     str_formatter)
+  else
+      std_formatter
+       
+let _ =
   Printexc.record_backtrace true; (* Disable for releases *)
-  let fmt = std_formatter in (* TEMPORARY *)
   try
     let iter_f = print_loop in
-    let exec_type = parse_cmd fmt Sys.argv in
+    let exec_type = parse_cmd Sys.argv in
+    let fmt = set_output_ch () in
     print_header fmt ();
     print_msg fmt `yellow ("Parsing model file "
 		   ^ Cmd.(defaults.model)
@@ -395,6 +398,7 @@ let () =
 	  | `sim ->
 	     (print_msg fmt `yellow "Starting simulation ...";
 	      print_max fmt;
+	      open_progress_bar ();
 	      Brs.sim ~s0
 		      ~priorities
 		      ~init_size:Cmd.(defaults.max_states)
@@ -404,6 +408,7 @@ let () =
 	  | `full ->
 	     (print_msg fmt `yellow "Computing transition system ...";
 	      print_max fmt;
+	      open_progress_bar ();
 	      Brs.bfs ~s0
 		      ~priorities
 		      ~max:Cmd.(defaults.max_states)
@@ -420,8 +425,7 @@ let () =
  		 pp_val = print_float "";
 		 display = true; }]
 	      |> print_table fmt;
-	      if Cmd.(defaults.debug) then ()
-	      else Pervasives.print_string "\n[";
+	      open_progress_bar ();
 	      Sbrs.sim ~s0
 		       ~priorities
 		       ~init_size:Cmd.(defaults.max_states)
@@ -431,6 +435,7 @@ let () =
           | `full ->
 	     (print_msg fmt `yellow "Computing CTMC ...";
 	      print_max fmt;
+	      open_progress_bar ();
 	      Sbrs.bfs ~s0
 		       ~priorities
 		       ~max:Cmd.(defaults.max_states)
@@ -440,20 +445,20 @@ let () =
     with
     | Sbrs.MAX (ctmc, stats)
     | Sbrs.LIMIT (ctmc, stats) ->
-       (if Cmd.(defaults.debug) then () else close_progress_bar ();
+       (close_progress_bar ();
 	print_msg fmt `yellow "Maximum number of states reached.";
 	after_sbrs_aux fmt stats ctmc)
     | Sbrs.DEADLOCK (ctmc, stats, t) ->
-       (if Cmd.(defaults.debug) then () else close_progress_bar ();
+       (close_progress_bar ();
 	print_msg fmt `yellow ("Deadlock state reached at time " ^ (string_of_float t) ^ ".");
 	after_sbrs_aux fmt stats ctmc)
     | Brs.MAX (ts, stats)
     | Brs.LIMIT (ts, stats) ->
-       (if Cmd.(defaults.debug) then () else close_progress_bar ();
+       (close_progress_bar ();
 	print_msg fmt `yellow "Maximum number of states reached.";
 	after_brs_aux fmt stats ts)
     | Brs.DEADLOCK (ts, stats, t) ->
-       (if Cmd.(defaults.debug) then () else close_progress_bar ();
+       (close_progress_bar ();
 	print_msg fmt `yellow ("Deadlock state reached at step " ^ (string_of_int t) ^ ".");
 	after_brs_aux fmt stats ts)
     | Store.ERROR (e, p) ->
@@ -474,18 +479,15 @@ let () =
 	exit 1)
   with
   | Lexer.ERROR (e, p) ->
-     (pp_print_flush fmt ();
-      fprintf err_formatter "@[<v>";
+     (fprintf err_formatter "@[<v>";
       Loc.print_loc err_formatter p;
       Lexer.report_error err_formatter e;
       pp_print_flush err_formatter ();
       exit 1)
   | Sys_error s ->
-     (pp_print_flush fmt ();
-      fprintf err_formatter "@[%s: %s@]@." Utils.err s;
+     (fprintf err_formatter "@[%s: %s@]@." Utils.err s;
       exit 1)
   | e -> 
-     (pp_print_flush fmt ();
-      fprintf err_formatter "@[%s@,%s@]@."
+     (fprintf err_formatter "@[%s@,%s@]@."
 	      (Printexc.to_string e) (Printexc.get_backtrace ());
       exit 1)
