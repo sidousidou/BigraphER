@@ -52,21 +52,24 @@ module MakeE (G : G) = struct
       let rank = "{ rank=source; 0 };\n" in
       let states =
 	Hashtbl.fold (fun _ (i, _) buff -> 
-		      if i = 0 then Printf.sprintf 
-				      "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
-				       fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
-				       style=\"bold\" ];\n" 
-				      buff i i i i
-		      else Printf.sprintf 
-			     "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
-			      fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
-			     buff i i i i)
+		      if i = 0 then
+			Printf.sprintf 
+			  "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
+			   fontname=\"monospace\", fixedsize=true, width=.60, height=.30 \
+			   style=\"bold\" ];\n" 
+			  buff i i i i
+		      else
+			Printf.sprintf 
+			  "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
+			   fontname=\"monospace\", fixedsize=true, width=.60, height=.30 ];\n" 
+			  buff i i i i)
 		     (G.states g) ""
       and edges =
 	Hashtbl.fold (fun v u buff -> 
-		      Printf.sprintf "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
-				      arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-				     buff v (G.dest u) (G.string_of_arrow u))
+		      Printf.sprintf
+			"%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
+			 arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+			buff v (G.dest u) (G.string_of_arrow u))
 		     (G.edges g) "" in
       Printf.sprintf "digraph \"%s\" {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
 		     name rank states edges
