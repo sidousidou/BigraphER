@@ -967,7 +967,7 @@ let eval_model fmt m env =
      (b, P p, env_t'')
   | Dsbrs sbrs ->
      let (p, env_t'') =
-       eval_sprs env env_t' sbrs.dsbrs_pri  sbrs.dsbrs_loc in
+       eval_sprs env env_t' sbrs.dsbrs_pri sbrs.dsbrs_loc in
      (b, S p, env_t'')  
 
 (******** EXPORT STORE *********)

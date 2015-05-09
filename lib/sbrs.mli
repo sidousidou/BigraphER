@@ -30,7 +30,7 @@ type graph = {
   l : (int, int) Hashtbl.t;                   (** Labelling function *) 
 }
 
-(** String representation of a reaction. *)
+(** String representation of a stochastic reaction rule. *)
 val to_string_react : sreact -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
@@ -51,7 +51,8 @@ val is_valid_priority : p_class -> bool
     reducible priority class, [false] otherwise. *)
 val is_valid_priority_list : p_class list -> bool
 
-(** Return the total number of reaction rules in a list of priority classes. *)
+(** Return the total number of stochastic reaction rules in a list of priority
+    classes. *)
 val cardinal : p_class list -> int
 					       
 (** Compute the set of reachable states in one step. Note that isomorphic states
@@ -74,7 +75,8 @@ val rewrite : Big.bg -> p_class list -> Big.bg * int
 
 (** {6 Continuous Time Markov Chains} *)
 
-(** Raised when the size of the transition system reaches the limit. *)
+(** Raised when the size of the transition system reaches the maximum number of
+    states. *)
 exception MAX of graph * stats
 
 (** [bfs ~s0 ~priorities ~max ~iter_f] computes the transition system of the
@@ -103,8 +105,8 @@ exception LIMIT of graph * stats
     respectively. Function [iter_f] is applied to every new state discovered
     during the simulation.
  
-   @raise DEADLOCK when the simulation reaches a deadlock state.
-   @raise LIMIT when the simulation time exceeds the maximum simulation time. *)
+   @raise Sbrs.DEADLOCK when the simulation reaches a deadlock state.
+   @raise Sbrs.LIMIT when the simulation time exceeds the maximum simulation time. *)
 val sim :
   s0:Big.bg ->
   priorities:p_class list -> init_size:int ->
@@ -134,12 +136,12 @@ val write_dot : graph -> name:string -> path:string -> int
     labelling function of a transition system. *)
 val write_lab : graph -> name:string -> path:string -> int
 
-(** Export to file the string representation in [svg] format of a transition
-    system. *)							 
-val write_svg : graph -> name:string -> path:string -> int
-
 (** Export to file the string representation in PRISM [tra] format of a
     transition system. *)
 val write_prism : graph -> name:string -> path:string -> int
 
+(** Export to file the string representation in [svg] format of a transition
+    system. *)							 
+val write_svg : graph -> name:string -> path:string -> int
+							   
 (**/**)
