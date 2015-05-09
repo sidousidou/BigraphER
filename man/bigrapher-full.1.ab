@@ -26,7 +26,7 @@ Supported formats are
 and
 .IR dot .
 This is equivalent to setting
-.B $BIGFORMAT
+.B BIGFORMAT
 to
 .IR FORMAT .   
 .IP "-h, --help"
@@ -43,7 +43,7 @@ Export the transition system in PRISM tra format to
 .IR FILE .
 .IP "-q, --quiet"
 Disable all output. This is equivalent to setting
-.B $BIGQUIET
+.B BIGQUIET
 to a non-empty value.
 .IP "-s [DIR], --export-states [DIR]"
 Export each state to a file in
@@ -57,7 +57,7 @@ Export the transition system to
 .IR FILE .
 .IP "-v, --verbose"
 Be more verbose. This is equivalent to setting
-.B $BIGVERBOSE
+.B BIGVERBOSE
 to a non-empty value.
 
 .SH ENVIRONMENT

@@ -26,18 +26,18 @@ Supported formats are
 and
 .IR dot .
 This is equivalent to setting
-.B $BIGFORMAT
+.B BIGFORMAT
 to
 .IR FORMAT .
 .IP "-h, --help"
 Display the list of options.
 .IP "-q, --quiet"
 Disable all output. This is equivalent to setting
-.B $BIGQUIET
+.B BIGQUIET
 to a non-empty value.
 .IP "-v, --verbose"
 Be more verbose. This is equivalent to setting
-.B $BIGVERBOSE
+.B BIGVERBOSE
 to a non-empty value.
 
 .SH ENVIRONMENT
