@@ -39,18 +39,18 @@ Library bigraph
   FindlibName:	   bigraph
 #  Pack:            true
   Modules:         Base,
-                   Link,
-                   Place,
                    Big,
                    Brs,
-                   Sbrs
-  InternalModules: Sparse,
                    Cnf,
-                   Iso,
-                   IntSet,
-                   Rel,
                    Fun,
-                   RrType,
+                   IntSet,
+                   Iso,
+                   Link,
+                   Place,
+                   Rel,
+                   Sbrs,
+                   Sparse
+  InternalModules: RrType,
                    PriType,
                    TsType,
                    Export
