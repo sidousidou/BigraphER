@@ -18,8 +18,9 @@ exception COMP_ERROR of (int * int)
 
 (* String representation *)
 let to_string p =
-  let m = Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) in
-  sprintf "%d %d %d\n%s\n" p.r p.n p.s (Sparse.to_string m)
+  Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) 
+  |> Sparse.to_string
+  |> sprintf "%d %d %d\n%s\n" p.r p.n p.s 
 
 (* Parse a place graph from a list of strings *)
 let parse r n s lines =
@@ -33,26 +34,31 @@ let parse r n s lines =
   and nn = Sparse.make n n
   and ns = Sparse.make n s in
   ignore (List.fold_left (fun i line ->
-      if i < r then begin
-        (* roots - nodes *)
-        for j = 0 to n - 1 do
-	  if line.[j] = '1' then Sparse.add rn i j
-        done;
-        (* roots - sites *)
-        for j = n to n + s - 1 do
-	  if line.[j] = '1' then Sparse.add rs i (j - n)
-        done
-      end else begin
-        (* nodes - nodes *)
-        for j = 0 to n - 1 do
-	  if line.[j] = '1' then Sparse.add nn (i - r) j
-        done;
-        (* nodes - sites *)
-        for j = n to n + s - 1 do
-	  if line.[j] = '1' then Sparse.add ns (i -r) (j - n)
-        done
-      end;
-      i + 1) 0 lines);
+			  if i < r then begin
+			      (* roots - nodes *)
+			      for j = 0 to n - 1 do
+				if line.[j] = '1' then
+				  Sparse.add rn i j
+			      done;
+			      (* roots - sites *)
+			      for j = n to n + s - 1 do
+				if line.[j] = '1' then
+				  Sparse.add rs i (j - n)
+			      done
+			    end else begin
+			      (* nodes - nodes *)
+			      for j = 0 to n - 1 do
+				if line.[j] = '1' then
+				  Sparse.add nn (i - r) j
+			      done;
+			      (* nodes - sites *)
+			      for j = n to n + s - 1 do
+				if line.[j] = '1' then
+				  Sparse.add ns (i -r) (j - n)
+			      done
+			    end;
+			  i + 1)
+			 0 lines);
   { r = r;
     n = n;
     s = s;
@@ -118,8 +124,8 @@ let elementary_sym m n =
     s = m + n;
     rn = Sparse.make (m + n) 0;
     rs = Sparse.stack 
-        (Sparse.append (Sparse.make n m) (Sparse.diag n)) 
-        (Sparse.append (Sparse.diag m) (Sparse.make m n)); 
+           (Sparse.append (Sparse.make n m) (Sparse.diag n)) 
+           (Sparse.append (Sparse.diag m) (Sparse.make m n)); 
     nn = Sparse.make 0 0;
     ns = Sparse.make 0 (m + n);
   }
@@ -156,13 +162,12 @@ let equal_placing a b =
 let compare_placing a b =
   assert (a.n = 0);
   assert (b.n = 0);
-  let x = a.r - b.r in
-  match x with
-  | 0 -> (let x = a.s - b.s in
-	  match x with
-	  | 0 -> Sparse.compare a.rs b.rs
-	  | _ -> x)
-  | _ -> x
+  match a.r - b.r with
+  | 0 ->
+     (match a.s - b.s with
+      | 0 -> Sparse.compare a.rs b.rs
+      | x -> x)
+  | x -> x
 
 (* Tensor product: A x B (indices in the right hand-side are increased) *)
 let tens a b =
@@ -175,9 +180,10 @@ let tens a b =
     ns = Sparse.tens a.ns b.ns;
   }
 
-let tens_of_list l =
+let tens_of_list =
   List.fold_left (fun acc a ->
-      tens acc a) id0 l
+		  tens acc a)
+		 id0 
 
 (* Composition: G o F (indices in the right hand-side are increased) *)
 let comp g f =
@@ -188,16 +194,15 @@ let comp g f =
       rn = Sparse.append g.rn (Sparse.mul g.rs f.rn);
       rs = Sparse.mul g.rs f.rs;
       nn = Sparse.stack 
-	  (Sparse.append g.nn (Sparse.mul g.ns f.rn)) 
-	  (Sparse.append (Sparse.make f.n g.n) f.nn);
+	     (Sparse.append g.nn (Sparse.mul g.ns f.rn)) 
+	     (Sparse.append (Sparse.make f.n g.n) f.nn);
       ns = Sparse.stack (Sparse.mul g.ns f.rs) f.ns;
     }
   else raise (COMP_ERROR (g.s, f.r))
 
 (* Is p an identity? *)
-let is_id p =
-  match p with
-  | { r = x; n = 0; _ } -> p.rs = Sparse.diag x
+let is_id = function
+  | { r = x; n = 0; _ } as p -> p.rs = Sparse.diag x
   | _ -> false
 
 let is_plc p = 
@@ -468,60 +473,66 @@ let get_dot p =
   (* Root shapes *)
   let root_shapes =  
     IntSet.fold (fun i buff ->
-      sprintf "%sr%d [ label=\"%d\", style=\"dashed\", shape=box, width=.28,\
-                       height=.18, fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
-      (IntSet.of_int p.r) ""
+		 sprintf "%sr%d [ label=\"%d\", style=\"dashed\", shape=box, width=.28,\
+			  height=.18, fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
+		(IntSet.of_int p.r) ""
   (* Site shapes *)
   and site_shapes = 
     IntSet.fold (fun i buff ->
-      sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", shape=box,\
-                       fillcolor=\"gray\", width=.28, height=.18,\
-                       fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
-      (IntSet.of_int p.s) ""
+		 sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", shape=box,\
+			  fillcolor=\"gray\", width=.28, height=.18,\
+			  fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
+		(IntSet.of_int p.s) ""
   (* Ranks *)
   and ranks = 
     List.fold_left (fun buff ns ->
-      sprintf "%s{ rank=same; %s };\n" buff 
-	(String.concat "; " (IntSet.fold (fun i acc ->
-	  (sprintf "v%d" i) :: acc) ns []))) "" (Sparse.levels p.nn)
+		    sprintf "%s{ rank=same; %s };\n" buff 
+			    (IntSet.fold (fun i acc ->
+					  (sprintf "v%d" i) :: acc) ns []
+			     |> String.concat "; " ))
+		   "" (Sparse.levels p.nn)
   (* Adjacency matrix *) 
   and m_rn = 
     Sparse.fold (fun i j buff ->
-      sprintf "%sr%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-	buff i j) p.rn ""
+		 sprintf "%sr%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+			 buff i j)
+		p.rn ""
   and m_rs =
     Sparse.fold (fun i j buff ->
-      sprintf "%sr%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-	buff i j) p.rs ""
+		 sprintf "%sr%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+			 buff i j)
+		p.rs ""
   and m_nn =
     Sparse.fold (fun i j buff ->
-      sprintf "%sv%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-	buff i j) p.nn ""
+		 sprintf "%sv%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+			 buff i j)
+		p.nn ""
   and m_ns =
     Sparse.fold (fun i j buff ->
-      sprintf "%sv%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-	buff i j) p.ns "" in
+		 sprintf "%sv%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+			 buff i j)
+		p.ns "" in
   (root_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
 
 (* Number of edges in the DAG *)
 let edges p =
-  (Sparse.entries p.rn) + (Sparse.entries p.rs) + 
-    (Sparse.entries p.nn) + (Sparse.entries p.ns)
+  (Sparse.entries p.rn) + (Sparse.entries p.rs)
+  + (Sparse.entries p.nn) + (Sparse.entries p.ns)
 
 (* given an edge of control A -> B, find all the edges with the same type.
    return a hash table (string * string) -> (int * int) *)
 let partition_edges p n =
   let h = Hashtbl.create (Sparse.entries p.nn) in
   Sparse.iter (fun i j ->
-    let (a, b) = (Nodes.get_ctrl_exn n i, Nodes.get_ctrl_exn n j) in
-    match (a, b) with 
-    | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
-      Hashtbl.add h (a_string, b_string) (i, j)) p.nn;
+	       match (Nodes.get_ctrl_exn n i, Nodes.get_ctrl_exn n j) with
+	       | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+		  Hashtbl.add h (a_string, b_string) (i, j))
+	      p.nn;
   h
 
 type deg =
-| V of int (* only vertices *)
-| S of int (* with sites or roots *)
+  | V of int (* only vertices *)
+  | S of int (* with sites or roots *)
 
 let indeg p i =
   assert (i >= 0);
@@ -540,21 +551,22 @@ let outdeg p i =
 (* true if the degrees are compatible *)
 let compat_deg t p =
   match p with
-  | V d -> begin match t with
-    | V d' -> d = d' 
-    | S _ -> false
-    end
-  | S d -> begin match t with
-    | V d' -> d' >= d
-    | S d' -> d' >= d
-  end
+  | V d ->
+     (match t with
+      | V d' -> d = d' 
+      | S _ -> false)
+  | S d ->
+     (match t with
+      | V d' -> d' >= d
+      | S d' -> d' >= d)
 
 let compat t p t_i p_i =
-  (compat_deg (indeg t t_i) (indeg p p_i)) && 
-    (compat_deg (outdeg t t_i) (outdeg p p_i))
+  (compat_deg (indeg t t_i) (indeg p p_i))
+  && (compat_deg (outdeg t t_i) (outdeg p p_i))
 
 let eq t p t_i p_i =
-  ((indeg t t_i) = (indeg p p_i)) && ((outdeg t t_i) = (outdeg p p_i))
+  ((indeg t t_i) = (indeg p p_i))
+  && ((outdeg t t_i) = (outdeg p p_i))
 
 exception NOT_TOTAL
 
@@ -595,15 +607,11 @@ let match_list t p n_t n_p =
 
 (* Nodes with no children (both nodes and sites). *)
 let leaves p =
-  let l_n = Sparse.leaves p.nn
-  and l_s = Sparse.leaves p.ns in
-  IntSet.inter l_n l_s
+  IntSet.inter (Sparse.leaves p.nn) (Sparse.leaves p.ns)
 
 (* Dual *)
 let orphans p =
-  let o_r = Sparse.orphans p.rn
-  and o_n = Sparse.orphans p.nn in
-  IntSet.inter o_r o_n
+  IntSet.inter (Sparse.orphans p.rn) (Sparse.orphans p.nn)
 
 (* leaves (orphans) in p are matched to leaves (orphans) in t.
    C5: ij0 or ij1 or ..... *)
@@ -802,10 +810,10 @@ let check_trans t_trans v_p' c_set =
   (* check if there is a node child of co-domain, outside co-domain, such that
      one of its children in trans is in co-domain *)
   not (IntSet.exists (fun c ->
-      List.exists (fun t ->
-          IntSet.mem t v_p'
-        ) (Sparse.chl t_trans c)
-    ) c_set)
+		      List.exists (fun t ->
+				   IntSet.mem t v_p')
+				  (Sparse.chl t_trans c))
+		     c_set)
 
 (* Check if iso i : p -> t is valid *)
 let check_match t p t_trans iso =  
@@ -813,27 +821,25 @@ let check_match t p t_trans iso =
     IntSet.of_list (Iso.codom iso) in
   let c_set =
     IntSet.fold (fun j acc ->
-        let children = IntSet.diff 
-	    (IntSet.of_list (Sparse.chl t.nn j)) 
-	    v_p' in
-        IntSet.union acc children
-      ) v_p' IntSet.empty in
-  (check_sites t p v_p' c_set iso) && (check_roots t p v_p' iso) && 
-  (check_trans t_trans v_p' c_set)
+		 IntSet.diff 
+		   (IntSet.of_list (Sparse.chl t.nn j)) v_p'
+		 |> IntSet.union acc)
+		v_p' IntSet.empty in
+  (check_sites t p v_p' c_set iso)
+  && (check_roots t p v_p' iso)
+  && (check_trans t_trans v_p' c_set)
 
 (* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)
 
 let deg_roots p =
   IntSet.fold (fun r acc ->
-      let nodes = List.length (Sparse.chl p.rn r) in
-      nodes :: acc
-    ) (IntSet.of_int p.r) []
+	       (List.length (Sparse.chl p.rn r)) :: acc)
+	      (IntSet.of_int p.r) []
 
 let deg_sites p =
   IntSet.fold (fun s acc ->
-      let nodes = List.length (Sparse.prn p.ns s) in
-      nodes :: acc
-    ) (IntSet.of_int p.s) [] 
+	       (List.length (Sparse.prn p.ns s)) :: acc)
+	      (IntSet.of_int p.s) [] 
 
 let match_list_eq p t n_p n_t =
   let h = partition_edges t n_t in
@@ -869,36 +875,37 @@ let match_list_eq p t n_p n_t =
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
 let match_root_nodes a b n_a n_b =
   Sparse.fold (fun r i (acc, acc_c) ->
-      let c = Nodes.get_ctrl_exn n_a i in 
-      let children = 
-        List.filter (fun i -> 
-	    Ctrl.(=) c (Nodes.get_ctrl_exn n_b i)
-          ) (Sparse.chl b.rn r) in
-      ((List.map (fun j -> 
-           Cnf.P_var (Cnf.M_lit (i, j))
-         ) children) :: acc,
-       (*IntSet.union acc_c (IntSet.of_list children)*)
-       acc_c)
-    ) a.rn ([], IntSet.empty)
+	       let c = Nodes.get_ctrl_exn n_a i in 
+	       let children = 
+		 List.filter (fun i -> 
+			      Ctrl.(=) c (Nodes.get_ctrl_exn n_b i))
+			     (Sparse.chl b.rn r) in
+	       ((List.map (fun j -> 
+			   Cnf.P_var (Cnf.M_lit (i, j)))
+			  children) :: acc,
+		(*IntSet.union acc_c (IntSet.of_list children)*)
+		acc_c))
+	      a.rn ([], IntSet.empty)
 
 (*Dual*)
 let match_nodes_sites a b n_a n_b =
   Sparse.fold (fun i s (acc, acc_c) ->
-      let c = Nodes.get_ctrl_exn n_a i in 
-      let parents = 
-        List.filter (fun i -> 
-	    Ctrl.(=) c (Nodes.get_ctrl_exn n_b i)
-          ) (Sparse.prn b.ns s) in
-      ((List.map (fun j -> 
-           Cnf.P_var (Cnf.M_lit (i, j))
-         ) parents) :: acc, 
-       (* IntSet.union acc_c (IntSet.of_list parents) *)
-       acc_c)
-    ) a.ns ([], IntSet.empty)
+	       let c = Nodes.get_ctrl_exn n_a i in 
+	       let parents = 
+		 List.filter (fun i -> 
+			      Ctrl.(=) c (Nodes.get_ctrl_exn n_b i))
+			     (Sparse.prn b.ns s) in
+	       ((List.map (fun j -> 
+			   Cnf.P_var (Cnf.M_lit (i, j)))
+			  parents) :: acc, 
+		(* IntSet.union acc_c (IntSet.of_list parents) *)
+		acc_c))
+	      a.ns ([], IntSet.empty)
 
 (*******************************************************************************)
 (* Compute the reachable set via Depth First Search. *)
 exception NOT_PRIME
+	    
 let rec dfs_ns p l res_n marked_n =
   match l with
   | [] -> res_n
