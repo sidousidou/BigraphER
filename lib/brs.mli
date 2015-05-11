@@ -5,7 +5,7 @@
 type react =
   { rdx : Big.bg;                  (** Redex (left-hand side) *)
     rct : Big.bg;                  (** Reactum (right-hand side) *)
-    eta : int Fun.t option         (* Instantiation map *)
+    eta : int Fun.t option         (** Instantiation map: a total function from the sites on the rhs to the sites on the lhs  *)
   }
        
 (** The type of priority classes, {e i.e.} lists of reaction rules. Intermediate
