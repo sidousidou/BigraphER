@@ -236,10 +236,15 @@ let decomp t p iso =
   let v_c = 
     IntSet.diff 
       (IntSet.fold (fun i acc ->
-	   IntSet.union acc (IntSet.of_list (Sparse.prn trans_t_nn i)))
-	  v_p' IntSet.empty) v_p' in
+		    Sparse.prn trans_t_nn i
+		    |> IntSet.of_list
+		    |> IntSet.union acc)
+		   v_p' IntSet.empty)
+      v_p' in
   (* all the other nodes *)
-  let v_d = IntSet.diff (IntSet.of_int t.n) (IntSet.union v_c v_p') in
+  let v_d = IntSet.diff
+	      (IntSet.of_int t.n)
+	      (IntSet.union v_c v_p') in
   (* fix numbering of nodes in c and d : t -> c and t -> d *)
   let iso_v_c = IntSet.fix v_c 
   and iso_v_d = IntSet.fix v_d 
@@ -249,85 +254,87 @@ let decomp t p iso =
   (* c roots to d nodes *)
   let (edg_c_rs0, edg_d_rn0, s0) = 
     IntSet.fold (fun r acc ->
-        List.fold_left (fun (acc_c, acc_d, j) c ->
-	    if IntSet.mem c v_d then 
-	      ((r, j + p.r) :: acc_c, 
-	       (j + p.s, safe (Iso.apply iso_v_d c)) :: acc_d, 
-	       j + 1)
-	    else (acc_c, acc_d, j)
-          ) acc (Sparse.chl t.rn r)
-      ) tr_set ([], [], 0) in
+		 Sparse.chl t.rn r
+		 |> List.fold_left
+		      (fun (acc_c, acc_d, j) c ->
+		       if IntSet.mem c v_d then 
+			 ((r, j + p.r) :: acc_c, 
+			  (j + p.s, safe (Iso.apply iso_v_d c)) :: acc_d, 
+			  j + 1)
+		       else (acc_c, acc_d, j))
+		      acc)
+		tr_set ([], [], 0) in
   (* c roots to d sites *)
   let (edg_c_rs1, edg_d_rs0, s1) = 
     IntSet.fold (fun r acc ->
-        List.fold_left (fun (acc_c, acc_d, s) c ->
-	    ((r, s + p.r + s0) :: acc_c, 
-	     (s + p.s + s0, c) :: acc_d, 
-	     s + 1)
-          ) acc (Sparse.chl t.rs r)
-      ) tr_set ([], [], 0) in
+		 List.fold_left (fun (acc_c, acc_d, s) c ->
+				 ((r, s + p.r + s0) :: acc_c, 
+				  (s + p.s + s0, c) :: acc_d, 
+				  s + 1))
+				acc (Sparse.chl t.rs r))
+		tr_set ([], [], 0) in
   (* c nodes to d nodes *)
   let (edg_c_ns0, edg_d_rn1, s2) =
     IntSet.fold (fun i acc ->
-        List.fold_left (fun (acc_c, acc_d, j) c ->
-	    if IntSet.mem c v_d then 
-	      ((safe (Iso.apply iso_v_c i), j + p.r + s0 + s1) :: acc_c, 
-	       (j + p.s + s0 + s1, safe (Iso.apply iso_v_d c)) :: acc_d, 
-	       j + 1)
-	    else (acc_c, acc_d, j)
-          ) acc (Sparse.chl t.nn i)
-      ) v_c ([], [], 0) in
+		 List.fold_left (fun (acc_c, acc_d, j) c ->
+				 if IntSet.mem c v_d then 
+				   ((safe (Iso.apply iso_v_c i), j + p.r + s0 + s1) :: acc_c, 
+				    (j + p.s + s0 + s1, safe (Iso.apply iso_v_d c)) :: acc_d, 
+				    j + 1)
+				 else (acc_c, acc_d, j))
+				acc (Sparse.chl t.nn i))
+		v_c ([], [], 0) in
   (* c nodes to d sites *)
   let (edg_c_ns1, edg_d_rs1, s3) = 
     IntSet.fold (fun i acc ->
-        List.fold_left (fun (acc_c, acc_d, s) c ->
-	    ((safe (Iso.apply iso_v_c i), s + p.r + s0 + s1 + s2) :: acc_c, 
-	     (s + p.s + s0 + s1 + s2, c) :: acc_d, 
-	     s + 1)
-          ) acc (Sparse.chl t.ns i)
-      ) v_c ([], [], 0)
+		 List.fold_left (fun (acc_c, acc_d, s) c ->
+				 ((safe (Iso.apply iso_v_c i), s + p.r + s0 + s1 + s2) :: acc_c, 
+				  (s + p.s + s0 + s1 + s2, c) :: acc_d, 
+				  s + 1))
+				acc (Sparse.chl t.ns i))
+		v_c ([], [], 0)
   (************************** Context **************************)
   (* c roots to p nodes *)
   and edg_c_rp = 
     IntSet.fold (fun r acc ->
-        List.fold_left (fun acc c ->
-	    if IntSet.mem c v_p' then 
-              let s = 
-                List.hd (Sparse.prn p.rn (safe (Iso.apply iso' c))) in (* check c's siblings *) 
-              (r, s) :: acc
-	    else acc
-          ) acc (Sparse.chl t.rn r)
-      ) tr_set []
+		 List.fold_left (fun acc c ->
+				 if IntSet.mem c v_p' then 
+				   let s = 
+				     List.hd (Sparse.prn p.rn (safe (Iso.apply iso' c))) in (* check c's siblings *) 
+				   (r, s) :: acc
+				 else acc
+				) acc (Sparse.chl t.rn r)
+		) tr_set []
   (* c nodes to p nodes *)
   and edg_c_np = 
     IntSet.fold (fun r acc ->
-        List.fold_left (fun acc c ->
-	    if IntSet.mem c v_p' then 
-              let s = 
-                List.hd (Sparse.prn p.rn (safe (Iso.apply iso' c))) in 
-              (safe (Iso.apply iso_v_c r), s) :: acc
-	    else acc
-          ) acc (Sparse.chl t.nn r)
-      ) v_c []
+		 List.fold_left (fun acc c ->
+				 if IntSet.mem c v_p' then 
+				   let s = 
+				     List.hd (Sparse.prn p.rn (safe (Iso.apply iso' c))) in 
+				   (safe (Iso.apply iso_v_c r), s) :: acc
+				 else acc
+				) acc (Sparse.chl t.nn r)
+		) v_c []
   (************************** Parameter **************************)
   (* p nodes to d nodes *)
   and edg_d_nn = 
     IntSet.fold (fun n acc ->
-        List.fold_left (fun acc c ->
-	    if IntSet.mem c v_d then 
-	      let s = List.hd (Sparse.chl p.ns (safe (Iso.apply iso' n))) in 
-	      (s, safe (Iso.apply iso_v_d c)) :: acc
-	    else acc
-          ) acc (Sparse.chl t.nn n)
-      ) v_p' []
+		 List.fold_left (fun acc c ->
+				 if IntSet.mem c v_d then 
+				   let s = List.hd (Sparse.chl p.ns (safe (Iso.apply iso' n))) in 
+				   (s, safe (Iso.apply iso_v_d c)) :: acc
+				 else acc
+				) acc (Sparse.chl t.nn n)
+		) v_p' []
   (* p nodes to d sites *)
   and edg_d_ns = 
     IntSet.fold (fun n acc ->
-        List.fold_left (fun acc c ->
-	    let s = List.hd (Sparse.chl p.ns (safe (Iso.apply iso' n))) in 
-	    (s, c) :: acc
-          ) acc (Sparse.chl t.ns n)
-      ) v_p' [] in 
+		 List.fold_left (fun acc c ->
+				 let s = List.hd (Sparse.chl p.ns (safe (Iso.apply iso' n))) in 
+				 (s, c) :: acc
+				) acc (Sparse.chl t.ns n)
+		) v_p' [] in 
   (* size of id *)
   let j = s0 + s1 + s2 + s3 in
   (* Context c *)      
@@ -356,17 +363,17 @@ let decomp t p iso =
     } in
   (* Add old edges *)
   Sparse.iter (fun i j ->
-      if IntSet.mem j v_c then Sparse.add c.rn i (safe (Iso.apply iso_v_c j))
-    ) t.rn;
+	       if IntSet.mem j v_c then Sparse.add c.rn i (safe (Iso.apply iso_v_c j))
+	      ) t.rn;
   Sparse.iter (fun  i j ->
-      if (IntSet.mem i v_c) && (IntSet.mem j v_c) then
-        Sparse.add c.nn (safe (Iso.apply iso_v_c i)) (safe (Iso.apply iso_v_c j))
-      else if (IntSet.mem i v_d) && (IntSet.mem j v_d) then
-        Sparse.add d.nn (safe (Iso.apply iso_v_d i)) (safe (Iso.apply iso_v_d j))
-    ) t.nn;
+	       if (IntSet.mem i v_c) && (IntSet.mem j v_c) then
+		 Sparse.add c.nn (safe (Iso.apply iso_v_c i)) (safe (Iso.apply iso_v_c j))
+	       else if (IntSet.mem i v_d) && (IntSet.mem j v_d) then
+		 Sparse.add d.nn (safe (Iso.apply iso_v_d i)) (safe (Iso.apply iso_v_d j))
+	      ) t.nn;
   Sparse.iter (fun i j ->
-      if IntSet.mem i v_d then Sparse.add d.ns (safe (Iso.apply iso_v_d i)) j
-    ) t.ns;
+	       if IntSet.mem i v_d then Sparse.add d.ns (safe (Iso.apply iso_v_d i)) j
+	      ) t.ns;
   (* Add new edges *)
   Sparse.add_list c.rs (edg_c_rs0 @ edg_c_rs1 @ edg_c_rp);
   Sparse.add_list c.ns (edg_c_ns0 @ edg_c_ns1 @ edg_c_np);
@@ -587,7 +594,7 @@ let match_list t p n_t n_p =
 			 (Hashtbl.find_all h (a_string, b_string)) in
 		     if List.length t_edges = 0 then 
 		       (* No compatible edges found *)
-		       raise NOT_TOTAL
+		       raise_notrace NOT_TOTAL
 		     else 
 		       (let new_c = List.fold_left (fun acc (i', j') ->
 						    i' :: j' :: acc
@@ -626,7 +633,7 @@ let match_leaves t p n_t n_p =
 	  (IntSet.of_list (Nodes.find_all n_t c))
 	  l_t in
       if IntSet.is_empty compat_t then 
-	raise NOT_TOTAL
+	raise_notrace NOT_TOTAL
       else (
 	((IntSet.fold (fun j acc ->
 	  Cnf.P_var (Cnf.M_lit (i, j)) :: acc
@@ -648,7 +655,7 @@ let match_orphans t p n_t n_p =
 	  (IntSet.of_list (Nodes.find_all n_t c))
 	  o_t in
       if IntSet.is_empty compat_t then 
-	raise NOT_TOTAL
+	raise_notrace NOT_TOTAL
       else (
 	((IntSet.fold (fun j acc ->
 	  Cnf.P_var (Cnf.M_lit (i, j)) :: acc
@@ -668,7 +675,7 @@ let match_sites t p n_t n_p =
 	  compat_deg (indeg t j) (indeg p i)
 	) (Nodes.find_all n_t c) in
       match js with
-      | [] -> raise NOT_TOTAL
+      | [] -> raise_notrace NOT_TOTAL
       | _ -> (
 	let clause = 
 	  List.map (fun j ->
@@ -688,7 +695,7 @@ let match_roots t p n_t n_p =
 	  compat_deg (outdeg t j) (outdeg p i)
 	) (Nodes.find_all n_t c) in
       match js with
-      | [] -> raise NOT_TOTAL
+      | [] -> raise_notrace NOT_TOTAL
       | _ -> (
 	let clause = 
 	  List.map (fun j ->
@@ -857,7 +864,7 @@ let match_list_eq p t n_p n_t =
 	        ) (Hashtbl.find_all h (a_string, b_string)) in
 	    if List.length t_edges = 0 then 
 	      (* No compatible edges found *)
-	      raise NOT_TOTAL
+	      raise_notrace NOT_TOTAL
 	    else 
 	        (match
 	            Cnf.tseitin

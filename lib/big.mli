@@ -235,6 +235,7 @@ type bg_key = int * int * int * int * string * string * string
 
 val key : bg -> bg_key
 
+(** map is assumed valid (total and img subset codomain) and d is assumed prime decomposable *)		  
 val rewrite : occ -> bg -> bg -> bg -> int Fun.t option -> bg
 
 (**/**)

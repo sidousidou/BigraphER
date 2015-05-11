@@ -123,12 +123,19 @@ val is_guard : pg -> bool
 
 (** [decomp t p i] computes the decomposition of target [t] given pattern [p]
     and node isomorphism [i] from [p] to [t]. Pattern [p] is assumed epi and
-    mono. The result is context [c], identity [id], parameter [d], and nodes in
-    [c] and [d] expressed as rows of [t]. *)
+    mono. The result tuple [(c, id, d, iso_c, iso_d)] is formed by context [c],
+    identity [id], parameter [d], and nodes in [c] and [d] expressed as rows of
+    [t]. *)
 val decomp : pg -> pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
 
+(** Raised when a place graph cannot be decomposed into prime components. *)
 exception NOT_PRIME 
 
+(** Compute the prime components ({e i.e.} place graphs with one root) of a
+    place graph. The original node numbering is returned in the form of an
+    isomorphism. 
+    
+    @raise NOT_PRIME when some root is shared *)
 val prime_components : pg -> (pg * int Iso.t) list
 
 (** {6 Matching constraints} *)
@@ -137,44 +144,63 @@ val prime_components : pg -> (pg * int Iso.t) list
     target. *)
 exception NOT_TOTAL
 
-(** Compute constraints for matching edges in the DAG. 
-    @raise NOT_TOTAL when there are nodes in the pattern that are impossible
-    to match. *)
+(** [match_list t p n_t n_p] computes constraints to match edges in pattern [p]
+    with compatible edges in target [t]. [n_t] and [n_p] are the node sets of
+    [t] and [p], respectively.
+
+    @raise NOT_TOTAL when there are nodes in the pattern that cannot be
+    matched. *)
 val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
-(** @raise NOT_TOTAL when there are nodes in the pattern that are impossible
-    to match. *)
+(** [match_leaves t p n_t n_p] computes constraints to match the leaves 
+    ({e i.e.} nodes without children) in [p] with those in [t]. [n_t] and [n_p]
+     are defined as in {!Place.match_list}.
+
+    @raise NOT_TOTAL when there are leaves in the pattern that cannot be
+    matched. *)
 val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_leaves}.
-    @raise NOT_TOTAL when there are nodes in the pattern that are impossible
-    to match. *)
+   
+    @raise NOT_TOTAL when there are orphans in the pattern that cannot be matched. *)
 val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
   Cnf.clause list * IntSet.t
 
+(** Compute constraints to match roots. Arguments are as in
+    {!Place.match_list}. Only controls and degrees are checked. *)
 val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * IntSet.t
 
+(** Dual of {!Place.match_roots}. *)		      
 val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   Cnf.clause list * IntSet.t
 
+(** Compute constraints to block matches between unconnected pairs of nodes with
+    sites and nodes with roots. *)
 val match_trans : pg -> pg -> Cnf.clause list
 
+(** [check_match t p trans iso] checks if [iso] from [p] to [t] is a valid match. *)
 val check_match : pg -> pg -> Sparse.bmatrix -> int Iso.t -> bool
 
+(** Compute constraints for equality: roots must have children with the same
+    controls. *)
 val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
   Cnf.clause list * IntSet.t
 
+(** Dual of {!Place.match_root_nodes}. *)		      
 val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
   Cnf.clause list * IntSet.t
 
+(** Compute constraints for equality. Similar to {!Place.match_list}. *)		      
 val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
+(** Compute the outer degree of the roots of a place graph. *)
 val deg_roots : pg -> int list
 
+(** Compute the inner degree of the sites of a place graph. *)			  
 val deg_sites : pg -> int list
 
 (**/**)
