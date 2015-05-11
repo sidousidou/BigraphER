@@ -180,10 +180,10 @@ val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
 val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t -> 
   int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
 
-(** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained 
-    by {!Place.levels}. The output is a wiring and a list of
-    identities.*)
-val levels : Lg.t -> Base.PortSet.t list -> Lg.t * Lg.t list
+(* (\** [levels l ps] returns the levels of link graph [l]. List [ps] is obtained  *)
+(*     by {!Place.levels}. The output is a wiring and a list of *)
+(*     identities.*\) *)
+(* val levels : Lg.t -> Base.PortSet.t list -> Lg.t * Lg.t list *)
 
 
 val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
