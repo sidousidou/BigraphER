@@ -88,9 +88,9 @@ sig
       [b]. *)
   val not_sub : t -> t -> bool
 
-  (** Compute the norm of a set. The norm is a defined as a string of sorted
-      controls, separated by [';']. Example: ["A;A;C;D;T"]. *)
-  val norm : t -> string
+  (** Compute the norm of a set. The norm is a defined as a sorted list of
+      controls. Example: [["A"; "A"; "C"; "D"; "T"]]. *)
+  val norm : t -> string list
 
   (** Equality test. Node identities are ignored. *)		    
   val equal : t -> t -> bool

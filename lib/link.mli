@@ -175,6 +175,9 @@ val is_guard: Lg.t -> bool
 (** Compute the maximum number of ports in one edge of a link graph. *)			
 val max_ports : Lg.t -> int
 
+(** Compute a sorted list with the cardinalities of the port sets. *)			  
+val cardinal_ports : Lg.t -> int list
+			  
 (** Compute the number of closed edges. *)			  
 val closed_edges : Lg.t -> int
 
@@ -191,11 +194,11 @@ val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
     function from links in the pattern to links in the target. Pattern
     [p] is assumed epi and mono and [i_e] is from edges in [p] to
     edges in [t]. Isos [i_c] and [i_d] are obtained by
-    {!Place.decomp}. The results are link graph [c], [d] and [id]. *)
+    {!val:Place.decomp}. The results are link graph [c], [d] and [id]. *)
 val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t -> 
   int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
 
-(** Compute the prime components of a link graph. See {!Place.decomp}. *)					    
+(** Compute the prime components of a link graph. See {!val:Place.decomp}. *)					    
 val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
 
 (** {6 Matching constraints} *)

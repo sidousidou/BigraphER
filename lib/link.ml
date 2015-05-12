@@ -496,6 +496,11 @@ let max_ports l =
 	   if max' > max then max' else max) 
 	  l 0 
 
+let cardinal_ports l =
+  Lg.fold (fun e acc ->
+	   (PortSet.cardinal e.p) :: acc) l []
+  |> List.sort (fun a b -> a - b)
+	  
 let closed_edges l =
   Lg.filter is_closed l
   |> Lg.cardinal

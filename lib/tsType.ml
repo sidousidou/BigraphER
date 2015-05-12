@@ -162,7 +162,7 @@ module Make (R : RrType.T)
       try
     	let (old, _) =
 	  List.find (fun (_, b') ->
-		     Big.equal b b')
+		     Big.equal_opt b b')
 		    k_buket in
     	Some old            (* Is_new? FALSE *)
       with

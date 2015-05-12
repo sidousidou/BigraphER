@@ -136,11 +136,11 @@ module Nodes = struct
 	  n :: acc)
 	 s []
     |> List.fast_sort String.compare
-    |> String.concat ";"
+  (*  |> String.concat ";"*)
 
   (* Simple string comparison *)
   let equal a b =
-    (String.compare (norm a) (norm b)) = 0
+    (norm a) = (norm b)
 
 end
 

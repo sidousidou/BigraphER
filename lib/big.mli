@@ -5,7 +5,7 @@
 type bg = {
   p : Place.pg;  (** Place graph *)
   l : Link.Lg.t; (** Link graph *)
-  n : Base.Nodes.t; (** Set of nodes *)
+  n : Base.Nodes.t; (** Node set *)
 }
 
 (** The type of interfaces.*)
@@ -25,7 +25,7 @@ exception COMP_ERROR of inter * inter
    face. *)
 exception CTRL_ERROR of int * Link.Face.t
 
-(** Raised when an {!Base.Iso.t} is not total. The first element is the cardinality
+(** Raised when a {!type:Iso.t} is not total. The first element is the cardinality
     of the domain while the second is the cardinality of the isomorphism's
     domain of definition. *)
 exception ISO_ERROR of int * int
@@ -72,7 +72,7 @@ val outer : bg -> inter
 val apply_exn : int Iso.t -> bg -> bg
 
 (** [placing l r f] builds a placing with [r] roots by parsing list [l]. The
-    format of [l] is the same as the input for {!Place.parse_placing}.
+    format of [l] is the same as the input for {!val:Place.parse_placing}.
     The link graph is the idendity over face [f].*)
 val placing : int list list -> int -> Link.Face.t -> bg
 
@@ -200,14 +200,25 @@ val levels : bg -> bg list*)
 
 (** {6 Comparison} *)
 
-(** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise.*)
+(** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise. *)
 val equal : bg -> bg -> bool
 
-(* (\** [compare] function for bigraphs. *\) *)
-(* val compare : bg -> bg -> int *)
+(** The type of bigraphs keys. *)			  
+type bg_key = int * int * int * int list * int list * int * int
+	      * int * int * int list * string * string * string list
+
+(** Compute the key of a bigraph. The key is similar to a hash. Note
+    that different bigraphs can have the same key. *)
+val key : bg -> bg_key
+
+			  
+(** Same as {!Big.equal} but with less checks prior to the SAT solver invocation. This function is intended to be used after equality over keys has alreasdy failed. *)
+val equal_opt : bg -> bg -> bool
 
 (** {6 Matching} *)
 
+(** The type of occurrences: an isomorphism over nodes, an isomorphism
+    over edges and a function over hyperedges. *)
 type occ = int Iso.t * int Iso.t * int Fun.t
 
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false] otherwise.*)
@@ -230,10 +241,6 @@ val occurrences : bg -> bg -> occ list
 
 (** [auto b] computes the non-trivial automorphisms of bigraph [b].*)
 val auto : bg -> (int Iso.t * int Iso.t) list
-
-type bg_key = int * int * int * int * string * string * string
-
-val key : bg -> bg_key
 
 (** map is assumed valid (total and img subset codomain) and d is assumed prime decomposable *)		  
 val rewrite : occ -> bg -> bg -> bg -> int Fun.t option -> bg

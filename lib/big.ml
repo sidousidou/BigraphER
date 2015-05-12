@@ -423,7 +423,7 @@ let add_blocking solver v w =
 let rec filter_loop solver t p vars t_trans = 
     solver#simplify;
     match solver#solve with
-      | Minisat.UNSAT -> raise NO_MATCH
+      | Minisat.UNSAT -> raise_notrace NO_MATCH
       | Minisat.SAT ->
 	begin
 	  let iso_v = get_iso solver vars.iso_nodes
@@ -608,8 +608,8 @@ let aux_match t p t_trans =
     } in
     filter_loop solver t p vars t_trans
   with
-  | Place.NOT_TOTAL -> raise NO_MATCH
-  | Link.NOT_TOTAL -> raise NO_MATCH
+  | Place.NOT_TOTAL -> raise_notrace NO_MATCH
+  | Link.NOT_TOTAL -> raise_notrace NO_MATCH
 
 (* true when p is not a match *)
 let quick_unsat t p =
@@ -654,7 +654,7 @@ let occurrence t p t_trans =
 let occurrence_exn t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else (
-    if quick_unsat t p then raise NO_MATCH
+    if quick_unsat t p then raise_notrace NO_MATCH
     else (
       let t_trans = Sparse.trans t.p.Place.nn in
       let (s, vars) = aux_match t p t_trans in
@@ -824,18 +824,33 @@ let equal_SAT a b =
   | Link.NOT_TOTAL -> false
   | NO_MATCH -> false
 
-type bg_key = int * int * int * int * string * string * string
+type bg_key = int * int * int * int list * int list * int * int
+	      * int * int * int list * string * string * string list
 
 let key b = 
   (b.p.Place.r,
    b.p.Place.s,
    Place.edges b.p,
+   Place.deg_roots b.p,
+   Place.deg_sites b.p,
+   IntSet.cardinal (Place.leaves b.p),
+   IntSet.cardinal (Place.orphans b.p),
    Link.Lg.cardinal b.l,
+   Link.closed_edges b.l,
+   Link.cardinal_ports b.l,
    Link.string_of_face (Link.inner b.l),
    Link.string_of_face (Link.outer b.l),
-   Nodes.norm b.n
-  )
+   Nodes.norm b.n)
 
+(* Comparison over keys already performed and failed *)    
+let equal_opt a b =
+  (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
+    (* Placing or wiring *)
+    if b.n.Nodes.size = 0 then
+      (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
+    else 
+       equal_SAT a b
+    
 let equal a b =
   (a.n.Nodes.size = b.n.Nodes.size) &&
     (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l) &&
