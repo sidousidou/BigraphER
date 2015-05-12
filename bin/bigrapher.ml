@@ -351,7 +351,7 @@ let set_output_ch () =
   else
       std_formatter
        
-let _ =
+let () =
   Printexc.record_backtrace true; (* Disable for releases *)
   try
     let iter_f = print_loop in
