@@ -618,7 +618,7 @@ let quick_unsat t p =
     (Nodes.not_sub p.n t.n) ||
     (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p)) ||
     (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p)) ||
-    (Link.Lg.cardinal (Link.closed_edges p.l) > Link.Lg.cardinal (Link.closed_edges t.l)) ||
+    (Link.closed_edges p.l > Link.closed_edges t.l) ||
     (Link.max_ports p.l > Link.max_ports t.l)
 
 let occurs t p = 

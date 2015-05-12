@@ -12,11 +12,6 @@ type pg = {
   ns : Sparse.bmatrix; (** Boolean adjacency matrix nodes X sites *)
  }
 	
-(** Raised when a composition between two incompatible place graphs is
-    attempted. The two integers are the number of sites and roots involved in
-    the composition, respectively. *)
-exception COMP_ERROR of (int * int)
-
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : pg -> string
 
@@ -88,6 +83,11 @@ val compare_placing : pg -> pg -> int
 
 (** {6 Operations} *)
 
+(** Raised when a composition between two incompatible place graphs is
+    attempted. The two integers are the number of sites and roots involved in
+    the composition, respectively. *)
+exception COMP_ERROR of (int * int)
+				    
 (** [tens p0 p1] returns the tensor product of place graphs [p0] and [p1]. *)
 val tens : pg -> pg -> pg
 
@@ -107,15 +107,15 @@ val is_id : pg -> bool
 (** Test for the absence of nodes. *)
 val is_plc : pg -> bool
 
-(** [is_mono p] returns [true] if place graph [p] is monomorphic, [false]
+(** [is_mono p] is [true] if place graph [p] is monomorphic, [false]
     otherwise. *)
 val is_mono : pg -> bool
 
-(** [is_epi p] returns [true] if place graph [p] is epimorphic, [false]
+(** [is_epi p] is [true] if place graph [p] is epimorphic, [false]
     otherwise. *)
 val is_epi : pg -> bool
 
-(** [is_guard p] returns [true] if place graph [p] is guarded, [false]
+(** [is_guard p] is [true] if place graph [p] is guarded, [false]
     otherwise. *)
 val is_guard : pg -> bool
 

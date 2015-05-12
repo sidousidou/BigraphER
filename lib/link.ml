@@ -4,30 +4,28 @@ open Printf
 (* ide strings no capital letter or number at the start *)
 type name = Nam of string
 
-module Face = Set.Make (
-  struct
-    type t = name
-    let compare = fun (Nam s0) (Nam s1) -> 
-      String.compare s0 s1
-  end)
+module Face = Set.Make (struct
+			   type t = name
+			   let compare =
+			     fun (Nam s0) (Nam s1) -> 
+			     String.compare s0 s1
+			 end)
 
 (* Module used to compute equivalence classes *)
-module Face_set = Set.Make (
-  struct
-    type t = Face.t
-    let compare = Face.compare
-  end)
+module Face_set = Set.Make (struct
+			       type t = Face.t
+			       let compare = Face.compare
+			     end)
 
 (* (in, out, ports) *)
 type edg = { i: Face.t; o: Face.t; p: PortSet.t }
 
 let edg_compare (h : edg) (k : edg) =
   match Face.compare h.i k.i with
-  | 0 -> begin
-      match Face.compare h.o k.o with
+  | 0 ->
+     (match Face.compare h.o k.o with
       | 0 -> PortSet.compare h.p k.p
-      | x -> x
-    end
+      | x -> x)
   | x -> x  
 
 module Lg = Set.Make (struct
@@ -45,18 +43,29 @@ let string_of_name (Nam s) = s
 
 let parse_face =
   List.fold_left (fun acc x -> 
-      Face.add (Nam x) acc) Face.empty
+		  Face.add (Nam x) acc)
+		 Face.empty
 
 let string_of_face f =
-  sprintf "{%s}"
-    (String.concat ", " (List.map string_of_name (Face.elements f))) 
+  "{"
+  ^ (Face.elements f
+     |>List.map string_of_name
+     |> String.concat ", ")
+  ^ "}"
 
 let string_of_edge e =
-  sprintf "(%s, %s, %s)" 
-    (string_of_face e.i) (string_of_face e.o) (PortSet.to_string e.p)
+  "("
+  ^ (string_of_face e.i)
+  ^  ", "
+  ^ (string_of_face e.o)
+  ^ ", "
+  ^ (PortSet.to_string e.p)
+  ^ ")"
 
 let to_string l = 
-  String.concat "\n" (List.map string_of_edge (Lg.elements l))
+  Lg.elements l
+  |> List.map string_of_edge 
+  |> String.concat "\n" 
 
 (* Nodes are counted starting from 1 *)
 let parse lines = 
@@ -466,28 +475,30 @@ let decomp t p i_e i_c i_d f_e =
   (*   (to_string c) (to_string d) (to_string b_id); *)
   (c, d, b_id)
     
-(* Compute the levels of l. ps is a list of port levels (leaves are the last
-   element). The output is a wiring and a list of link graphs. *)
-let levels l ps =
-  (Lg.fold (fun e acc ->
-       Lg.add { i = 
-	          Face.union e.i (PortSet.fold (fun (n, p) acc ->
-	              Face.add (Nam (sprintf "n%d_%d" n p)) acc) e.p Face.empty);
-                o = e.o;
-                p = PortSet.empty} acc) l Lg.empty,
-   fst (List.fold_left (fun (acc, in_f) lvl ->
-       (elementary_id in_f) :: acc,
-       Face.union in_f (PortSet.fold (fun (n, p) acc ->
-           Face.add (Nam (sprintf "n%d_%d" n p)) acc) lvl Face.empty))
-       ([], inner l) (List.rev ps))) 
+(* (\* Compute the levels of l. ps is a list of port levels (leaves are the last *)
+(*    element). The output is a wiring and a list of link graphs. *\) *)
+(* let levels l ps = *)
+(*   (Lg.fold (fun e acc -> *)
+(*        Lg.add { i =  *)
+(* 	          Face.union e.i (PortSet.fold (fun (n, p) acc -> *)
+(* 	              Face.add (Nam (sprintf "n%d_%d" n p)) acc) e.p Face.empty); *)
+(*                 o = e.o; *)
+(*                 p = PortSet.empty} acc) l Lg.empty, *)
+(*    fst (List.fold_left (fun (acc, in_f) lvl -> *)
+(*        (elementary_id in_f) :: acc, *)
+(*        Face.union in_f (PortSet.fold (fun (n, p) acc -> *)
+(*            Face.add (Nam (sprintf "n%d_%d" n p)) acc) lvl Face.empty)) *)
+(*        ([], inner l) (List.rev ps)))  *)
 
 let max_ports l = 
   Lg.fold (fun e max -> 
-      let max' = PortSet.cardinal e.p in
-      if max' > max then max' else max 
-    ) l 0 
+	   let max' = PortSet.cardinal e.p in
+	   if max' > max then max' else max) 
+	  l 0 
 
-let closed_edges l = Lg.filter is_closed l
+let closed_edges l =
+  Lg.filter is_closed l
+  |> Lg.cardinal
 
 let filter_iso f l =
   let (l', _, _, iso) =
@@ -526,7 +537,7 @@ let match_edges t p n_t n_p =
 	      else (acc, js, (i, j) :: b, j + 1)
 	    ) t ([], [], [], 0) in
         match js with
-        | [] -> raise NOT_TOTAL (* No compatible edges found *)
+        | [] -> raise_notrace NOT_TOTAL (* No compatible edges found *)
         | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b)
       ) p ([], 0, [], []) in
   (clauses, 
@@ -576,7 +587,7 @@ let sub_edge p t n_t n_p =
   (* match with the minimum type and remove *)
   let rec find_min t ps_t acc =
     match ps_t with
-    | [] -> raise Not_found
+    | [] -> raise_notrace Not_found
     | t' :: rs -> begin
         if Str.string_match (Str.regexp_string t) t' 0 then
 	  acc @ rs
@@ -709,7 +720,7 @@ let match_peers t p n_t n_p =
 	    ) non_empty_t (0, IntSet.empty) in
         (* No compatible edges found *)
         if IntSet.is_empty compat_t then
-	  raise NOT_TOTAL
+	  raise_notrace NOT_TOTAL
         else (
 	  (* Generate possible node matches for every edge assignment. *)
 	  let clauses = 
