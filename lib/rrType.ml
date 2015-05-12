@@ -94,7 +94,7 @@ module Make (R : R) = struct
 	| None -> (s, i) in
       _fix b rules 0
 
-    (* Input list is assumed without duplicates. Examlpe: extract 4
+    (* Input list is assumed without duplicates. Example: extract 4
        [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)	   
     let rec extract (pred :'a -> bool) acc = function
       | [] -> (None, acc)

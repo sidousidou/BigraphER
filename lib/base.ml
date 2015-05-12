@@ -138,7 +138,6 @@ module Nodes = struct
     |> List.fast_sort String.compare
   (*  |> String.concat ";"*)
 
-  (* Simple string comparison *)
   let equal a b =
     (norm a) = (norm b)
 

@@ -204,9 +204,8 @@ val levels : bg -> bg list*)
 val equal : bg -> bg -> bool
 
 (** The type of bigraphs keys. *)			  
-type bg_key = int * int * int * int list * int list * int * int
-	      * int * int * int list * string * string * string list
-
+type bg_key = int
+  
 (** Compute the key of a bigraph. The key is similar to a hash. Note
     that different bigraphs can have the same key. *)
 val key : bg -> bg_key

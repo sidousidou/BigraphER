@@ -824,44 +824,42 @@ let equal_SAT a b =
   | Link.NOT_TOTAL -> false
   | NO_MATCH -> false
 
-type bg_key = int * int * int * int list * int list * int * int
-	      * int * int * int list * string * string * string list
-
-let key b = 
-  (b.p.Place.r,
-   b.p.Place.s,
-   Place.edges b.p,
-   Place.deg_roots b.p,
-   Place.deg_sites b.p,
-   IntSet.cardinal (Place.leaves b.p),
-   IntSet.cardinal (Place.orphans b.p),
-   Link.Lg.cardinal b.l,
-   Link.closed_edges b.l,
-   Link.cardinal_ports b.l,
-   Link.string_of_face (Link.inner b.l),
-   Link.string_of_face (Link.outer b.l),
-   Nodes.norm b.n)
+type bg_key = int
+		  
+let key b =
+  Hashtbl.hash 
+    (b.p.Place.r,
+     b.p.Place.s,
+     Place.edges b.p,
+     IntSet.cardinal (Place.leaves b.p),
+     IntSet.cardinal (Place.orphans b.p),
+     Link.Lg.cardinal b.l,
+     Link.closed_edges b.l,
+     Link.string_of_face (Link.inner b.l),
+     Link.string_of_face (Link.outer b.l),
+     String.concat "~" (Nodes.norm b.n))
 
 (* Comparison over keys already performed and failed *)    
 let equal_opt a b =
-  (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
-    (* Placing or wiring *)
+  (Place.deg_roots a.p = Place.deg_roots b.p)
+  && (Place.deg_sites a.p = Place.deg_sites b.p)
+  && (Sparse.(=) a.p.Place.rs b.p.Place.rs)
+  && (* Placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
-       equal_SAT a b
+      equal_SAT a b
     
 let equal a b =
-  (a.n.Nodes.size = b.n.Nodes.size) &&
-    (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l) &&
-    (inter_equal (inner a) (inner b)) && 
-    (inter_equal (outer a) (outer b)) &&
-    (Place.edges a.p = Place.edges b.p) &&
-    (Place.deg_roots a.p = Place.deg_roots b.p) &&
-    (Place.deg_sites a.p = Place.deg_sites b.p) &&
-     (Nodes.equal a.n b.n) && 
-     (Sparse.(=) a.p.Place.rs b.p.Place.rs) &&
-    (* Placing or wiring *)
+  (Link.Lg.cardinal a.l = Link.Lg.cardinal b.l)
+  && (inter_equal (inner a) (inner b))
+  && (inter_equal (outer a) (outer b))
+  && (Place.edges a.p = Place.edges b.p)
+  && (Place.deg_roots a.p = Place.deg_roots b.p)
+  && (Place.deg_sites a.p = Place.deg_sites b.p)
+  && (Nodes.equal a.n b.n)
+  && (Sparse.(=) a.p.Place.rs b.p.Place.rs)
+  && (* Placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
     else 
