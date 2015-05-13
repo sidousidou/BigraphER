@@ -22,7 +22,8 @@ FilesAB:       	bin/version.ml.ab,
                 man/bigrapher-sim.1.ab,
                 opam/url.ab,
                 opam/opam.ab,
-                README.md.ab
+                README.md.ab,
+                Makefile.config.ab
 AlphaFeatures:  ocamlbuild_more_args
 XOCamlbuildExtraArgs: -j 4
 

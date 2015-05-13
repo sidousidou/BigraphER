@@ -6,13 +6,6 @@ setup.data
 setup.log
 
 # Generated files
-bin/version.ml
-man/bigrapher.1
-man/bigrapher-full.1
-man/bigrapher-sim.1
-man/bigrapher-validate.1
-opam/opam
-opam/url
 shippable
 
 # OCaml 

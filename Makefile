@@ -40,27 +40,16 @@ configure:
 
 # OASIS_STOP
 
+-include Makefile.config
+
 EMACS ?= emacs
 
 emacs-mode: big-mode/big-mode.el
 	$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
-ARCH = bigrapher-0.6.0
-ARCH_FILES = $(shell git ls-tree --name-only -r HEAD)
-
-prepare-archive:
-	rm -f $(ARCH) $(ARCH_TARGZ)
-	ln -s . $(ARCH)
-
-complete-archive:
-	tar -czv -f - $(addprefix $(ARCH)/,$(ARCH_FILES)) > $(ARCH).tar.gz
-	rm -f $(ARCH)
+ARCH = bigrapher-$(PKG_VERSION).tar.gz
 
 dist:
-	@echo "Preparing files ..."
-	$(MAKE) prepare-archive
-	$(MAKE) complete-archive
-	@echo "Done!"
+	git archive --format=tar --prefix="bigrapher/" HEAD | gzip -n > $(ARCH)
 
-.PHONY: emacs-mode prepare-archive complete-archive dist
-
+.PHONY: emacs-mode dist
