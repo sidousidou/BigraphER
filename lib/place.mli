@@ -29,7 +29,9 @@ val parse : int -> int -> int -> string list -> pg
 val get_dot : pg -> string * string * string * string
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying isomorphism
-    [i] to [p]. *)
+    [i] to [p]. 
+    
+    @raise Not_found when isomorphism [i] is not valid. *)
 val apply_exn : int Iso.t -> pg -> pg
 
 (** [parse_placing l r] returns the placing with [r] roots defined by list [l]

@@ -52,14 +52,17 @@ let parse lines =
      int_of_string a.(2), int_of_string a.(3)) in
   let (s_n, lines_p, lines_l, _) =
     List.fold_left (fun (s_n, acc_p, acc_l, i) l ->
-      match i with
-      | 0 -> (s_n, acc_p, acc_l, 1)
-      | 1 -> (l, acc_p, acc_l, 2)
-      | _ -> begin
-	if i < 2 + r + n then (s_n, acc_p @ [l], acc_l, i + 1)
-	else if i < 2 + r + n + e then (s_n, acc_p, acc_l @ [l], i + 1)
-	else (s_n, acc_p, acc_l, i + 1)
-      end) ("", [], [], 0) lines in
+		    match i with
+		    | 0 -> (s_n, acc_p, acc_l, 1)
+		    | 1 -> (l, acc_p, acc_l, 2)
+		    | _ ->
+		       (if i < 2 + r + n then
+			  (s_n, acc_p @ [l], acc_l, i + 1)
+			else if i < 2 + r + n + e then
+			  (s_n, acc_p, acc_l @ [l], i + 1)
+			else
+			  (s_n, acc_p, acc_l, i + 1)))
+		   ("", [], [], 0) lines in
   assert (List.length lines_l = e);
   let (l, h) = Link.parse lines_l in
   { n = Nodes.parse s_n h;
@@ -108,16 +111,19 @@ let sym (Inter (m, i)) (Inter (n, j)) =
     p = Place.elementary_sym m n;
     l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
   }
-  
+
 let ion f c =
+  { n = Nodes.add (Nodes.empty ()) 0 c;
+    p = Place.elementary_ion;
+    l = Link.elementary_ion f;
+  } 
+   
+let ion_chk f c =
   if (Ctrl.arity c) <> (Link.Face.cardinal f) then
     raise (CTRL_ERROR (Ctrl.arity c, f))
   else
-    { n = Nodes.add (Nodes.empty ()) 0 c;
-      p = Place.elementary_ion;
-      l = Link.elementary_ion f;
-    } 
-
+    ion f c
+      
 let sub i o =
   { n = Nodes.empty ();
     p = Place.id0;
@@ -207,6 +213,9 @@ let close f b =
 let atom f c = 
   comp (ion f c) one
 
+let atom_chk f c =
+  comp (ion_chk f c) one
+  
 let is_mono b =
   (Place.is_mono b.p) && (Link.is_mono b.l)
   

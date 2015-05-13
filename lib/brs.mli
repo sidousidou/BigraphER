@@ -121,19 +121,27 @@ val to_lab : graph -> string
 val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
 (** Export to file the string representation in [dot] format of a transition
-    system. *)							  
+    system.
+
+    @raise Export.ERROR when an error occurs. *)
 val write_dot : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [lab] format of the
-    labelling function of a transition system. *)
+    labelling function of a transition system.
+
+    @raise Export.ERROR when an error occurs.  *)
 val write_lab : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [tra] format of a
-    transition system. *)							 
+    transition system.
+
+    @raise Export.ERROR when an error occurs.  *)
 val write_prism : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in [svg] format of a transition
-    system. *)							 
+    system.
+
+    @raise Export.ERROR when an error occurs.  *)
 val write_svg : graph -> name:string -> path:string -> int
 
 (**/**)
