@@ -1,3 +1,25 @@
+###0.7.0 (2015-05-13):###
+
+* Complete API documentation.
+* Improve performance (~3%) with hashing on bigraph keys.
+* New cli interface with subcommands `full`, `sim`, and `validate`.
+* New man pages for subcommands.
+* Support for raw `dot` output.
+
+
+###0.6.2 (2015-05-04):###
+
+* Fix occurrences counting in simulations.
+* Sort `tra` PRISM output by node index.
+
+
+###0.6.1 (2015-04-24):###
+
+* Install API reference in OPAM.
+* FIX: add menhir dependency in OPAM.
+* Compile binaries with `-O3`.
+
+
 ###0.6.0 (2015-04-11):###
 
 *  Rate for stochastic reaction rules are now specified by ```-[ rate ]->```.
