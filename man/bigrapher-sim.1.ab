@@ -1,7 +1,7 @@
-.TH "BIGRAPHER-SIM" 1 "" "BigraphER ${pkg_version}" "BigraphER Manual"
+.TH "BIGRAPHER\-SIM" 1 "" "BigraphER ${pkg_version}" "BigraphER Manual"
 
 .SH NAME
-bigrapher-sim \- Simulate a model
+bigrapher\-sim - Simulate a model
 
 .SH SYNOPSIS
 .P
@@ -10,17 +10,17 @@ bigrapher-sim \- Simulate a model
 
 .SH OPTIONS
 .PP
-.IP "-c|--const <ASSIGNMENT ...>"
-Specify a comma-separated list of variable assignments. Example: `x=4,t=.56'.
-.IP "-d|--export-decs <DIR>"
+.IP "\-c|\-\-const <ASSIGNMENT ...>"
+Specify a comma\-separated list of variable assignments. Example: `x=4,t=.56'.
+.IP "\-d|\-\-export\-decs <DIR>"
 Export each declaration in the model (bigraphs and reaction rules) to a distinct file in
 .IR DIR .
 Dummy values are used to instantiate functional values.
-.IP "-f|--format <FORMAT>"
-Specify a comma-separated list of output formats for options
-.BR -d|--export-decs ,
-.BR -t|--export-ts and
-.BR -s|--export-states .
+.IP "\-f|\-\-format <FORMAT>"
+Specify a comma\-separated list of output formats for options
+.BR \-d|\-\-export\-decs ,
+.BR \-t|\-\-export\-ts and
+.BR \-s|\-\-export\-states .
 Supported formats are
 .I svg
 and
@@ -29,51 +29,51 @@ This is equivalent to setting
 .B BIGFORMAT
 to
 .IR FORMAT .   
-.IP "-h|--help"
+.IP "\-h|\-\-help"
 Display the list of options.
-.IP "-l|--export-labels <FILE>"
+.IP "\-l|\-\-export\-labels <FILE>"
 Export the labelling function in PRISM
 .I csl
 format to
 .IR FILE .
-.IP "-p|--export-prism <FILE>"
+.IP "\-p|\-\-export\-prism <FILE>"
 Export the transition system in PRISM tra format to
 .IR FILE .
-.IP "-q|--quiet"
+.IP "\-q|\-\-quiet"
 Disable all output. This is equivalent to setting
 .B BIGQUIET
-to a non-empty value.
-.IP "-s|--export-states [DIR]"
+to a non\-empty value.
+.IP "\-s|\-\-export\-states [DIR]"
 Export each state to a file in
 .IR DIR .
 State indices are used as file names. When
 .I DIR
 is omitted, it is inferred from option
-.BR -t|--export-ts .
-.IP "-S|--simulation-steps [INT]"
+.BR \-t|\-\-export\-ts .
+.IP "\-S|\-\-simulation\-steps [INT]"
 Set the maximum number of simulation steps. This option is valid only for deterministic models.
-.IP "-t|--export-ts <FILE>"
+.IP "\-t|\-\-export\-ts <FILE>"
 Export the transition system to
 .IR FILE .
-.IP "-T|--simulation-time [FLOAT]"
+.IP "\-T|\-\-simulation\-time [FLOAT]"
 Set the maximum simulation time. This option is valid only for stochastic models.
-.IP "-v|--verbose"
+.IP "\-v|\-\-verbose"
 Be more verbose. This is equivalent to setting
 .B BIGVERBOSE
-to a non-empty value.
+to a non\-empty value.
 
 .SH ENVIRONMENT
 .PP
 .IP BIGFORMAT
-See option `-f|--format'.
+See option `\-f|\-\-format'.
 .IP BIGQUIET
-See option `-q|--quiet'.
+See option `\-q|\-\-quiet'.
 .IP BIGVERBOSE
-See option `-v|--verbose'.
+See option `\-v|\-\-verbose'.
 
 .SH AUTHORS
 .PP
-Michele Sevegnani -- \fIMichele\.Sevegnani@glasgow\.ac\.uk\fR
+Michele Sevegnani: \fIMichele\.Sevegnani@glasgow\.ac\.uk\fR
 
 .SH FURTHER DOCUMENTATION
 .PP
@@ -82,5 +82,5 @@ See \fIhttp://www\.dcs\.gla\.ac\.uk/~michele/bigrapher\.html\fR.
 .SH SEE ALSO
 .PP
 .BR bigrapher (1), 
-.BR bigrapher-full (1),
-.BR bigrapher-validate (1)
+.BR bigrapher\-full (1),
+.BR bigrapher\-validate (1)
