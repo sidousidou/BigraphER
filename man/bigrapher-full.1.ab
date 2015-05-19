@@ -71,11 +71,11 @@ See option `-v|--verbose'.
 
 .SH AUTHORS
 .PP
-Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
+Michele Sevegnani -- \fIMichele\.Sevegnani@glasgow\.ac\.uk\fR
 
 .SH FURTHER DOCUMENTATION
 .PP
-See <http://www.dcs.gla.ac.uk/~michele/bigrapher.html>.
+See \fIhttp://www\.dcs\.gla\.ac\.uk/~michele/bigrapher\.html\fR.
 
 .SH SEE ALSO
 .PP
