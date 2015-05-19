@@ -10,13 +10,13 @@ bigrapher-validate \- Parse a model and check its validity
 
 .SH OPTIONS
 .PP
-.IP "-c <ASSIGNMENT ...>, --const <ASSIGNMENT ...>"
+.IP "-c|--const <ASSIGNMENT ...>"
 Specify a comma-separated list of variable assignments. Example: `x=4,t=.56'.
-.IP "-d <DIR>, --export-decs <DIR>"
+.IP "-d|--export-decs <DIR>"
 Export each declaration in the model (bigraphs and reaction rules) to a distinct file in
 .IR DIR .
 Dummy values are used to instantiate functional values.
-.IP "-f <FORMAT>, --format <FORMAT>"
+.IP "-f|--format <FORMAT>"
 Specify a comma-separated list of output formats for options
 .BR -d|--export-decs ,
 .BR -t|--export-ts and
@@ -29,13 +29,13 @@ This is equivalent to setting
 .B BIGFORMAT
 to
 .IR FORMAT .
-.IP "-h, --help"
+.IP "-h|--help"
 Display the list of options.
-.IP "-q, --quiet"
+.IP "-q|--quiet"
 Disable all output. This is equivalent to setting
 .B BIGQUIET
 to a non-empty value.
-.IP "-v, --verbose"
+.IP "-v|--verbose"
 Be more verbose. This is equivalent to setting
 .B BIGVERBOSE
 to a non-empty value.
