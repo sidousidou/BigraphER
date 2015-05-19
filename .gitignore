@@ -31,10 +31,6 @@ massif*
 prof*
 *.stackdump
 
-# ocamldoc
-*/*.html
-*/*.html
-
 # archives
 *.gz
 

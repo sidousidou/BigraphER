@@ -52,4 +52,10 @@ ARCH = bigrapher-$(PKG_VERSION).tar.gz
 dist:
 	git archive --format=tar --prefix="bigrapher/" HEAD | gzip -n > $(ARCH)
 
-.PHONY: emacs-mode dist
+man: man/bigrapher.1 man/bigrapher-full.1 man/bigrapher-sim.1 man/bigrapher-validate.1
+	groff -mandoc -Thtml man/bigrapher.1 > man/bigrapher.html
+	groff -mandoc -Thtml man/bigrapher-full.1 > man/bigrapher-full.html
+	groff -mandoc -Thtml man/bigrapher-sim.1 > man/bigrapher-sim.html
+	groff -mandoc -Thtml man/bigrapher-validate.1 > man/bigrapher-validate.html
+
+.PHONY: emacs-mode dist man

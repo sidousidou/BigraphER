@@ -1,0 +1,162 @@
+<!-- Creator     : groff version 1.19.2 -->
+<!-- CreationDate: Tue May 19 16:48:47 2015 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p     { margin-top: 0; margin-bottom: 0; }
+       pre   { margin-top: 0; margin-bottom: 0; }
+       table { margin-top: 0; margin-bottom: 0; }
+</style>
+<title>BIGRAPHER-FULL</title>
+
+</head>
+<body>
+
+<h1 align=center>BIGRAPHER-FULL</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#AUTHORS">AUTHORS</a><br>
+<a href="#FURTHER DOCUMENTATION">FURTHER DOCUMENTATION</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<a name="NAME"></a>
+<h2>NAME</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">bigrapher-full
+&minus; Compute the transition system of a model</p>
+
+<a name="SYNOPSIS"></a>
+<h2>SYNOPSIS</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>bigrapher
+full</b> [OPTIONS] &lt;MODEL.big&gt; [PRED.bilog]</p>
+
+<a name="OPTIONS"></a>
+<h2>OPTIONS</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">-c|--const
+&lt;ASSIGNMENT ...&gt;</p>
+
+<p style="margin-left:22%;">Specify a comma-separated list
+of variable assignments. Example:
+&lsquo;x=4,t=.56&rsquo;.</p>
+
+<p style="margin-left:11%;">-d|--export-decs
+&lt;DIR&gt;</p>
+
+<p style="margin-left:22%;">Export each declaration in the
+model (bigraphs and reaction rules) to a distinct file in
+<i>DIR</i>. Dummy values are used to instantiate functional
+values.</p>
+
+<p style="margin-left:11%;">-f|--format &lt;FORMAT&gt;</p>
+
+<p style="margin-left:22%;">Specify a comma-separated list
+of output formats for options <b>-d|--export-decs</b>,
+<b>-t|--export-ts</b>and <b>-s|--export-states</b>.
+Supported formats are <i>svg</i> and <i>dot</i>. This is
+equivalent to setting <b>BIGFORMAT</b> to <i>FORMAT</i>.</p>
+
+<p style="margin-left:11%;">-h|--help</p>
+
+<p style="margin-left:22%;">Display the list of
+options.</p>
+
+<p style="margin-left:11%;">-l|--export-labels
+&lt;FILE&gt;</p>
+
+<p style="margin-left:22%;">Export the labelling function
+in PRISM <i>csl</i> format to <i>FILE</i>.</p>
+
+<p style="margin-left:11%;">-M|--max-states &lt;INT&gt;</p>
+
+<p style="margin-left:22%;">Set the maximum number of
+states.</p>
+
+<p style="margin-left:11%;">-p|--export-prism
+&lt;FILE&gt;</p>
+
+<p style="margin-left:22%;">Export the transition system in
+PRISM tra format to <i>FILE</i>.</p>
+
+<p style="margin-left:11%;">-q|--quiet</p>
+
+<p style="margin-left:22%;">Disable all output. This is
+equivalent to setting <b>BIGQUIET</b> to a non-empty
+value.</p>
+
+<p style="margin-left:11%;">-s|--export-states [DIR]</p>
+
+<p style="margin-left:22%;">Export each state to a file in
+<i>DIR</i>. State indices are used as file names. When
+<i>DIR</i> is omitted, it is inferred from option
+<b>-t|--export-ts</b>.</p>
+
+<p style="margin-left:11%;">-t|--export-ts &lt;FILE&gt;</p>
+
+<p style="margin-left:22%;">Export the transition system to
+<i>FILE</i>.</p>
+
+<p style="margin-left:11%;">-v|--verbose</p>
+
+<p style="margin-left:22%;">Be more verbose. This is
+equivalent to setting <b>BIGVERBOSE</b> to a non-empty
+value.</p>
+
+<a name="ENVIRONMENT"></a>
+<h2>ENVIRONMENT</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">BIGFORMAT</p>
+
+<p style="margin-left:22%;">See option
+&lsquo;-f|--format&rsquo;.</p>
+
+<p style="margin-left:11%;">BIGQUIET</p>
+
+<p style="margin-left:22%;">See option
+&lsquo;-q|--quiet&rsquo;.</p>
+
+<p style="margin-left:11%;">BIGVERBOSE</p>
+
+<p style="margin-left:22%;">See option
+&lsquo;-v|--verbose&rsquo;.</p>
+
+<a name="AUTHORS"></a>
+<h2>AUTHORS</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Michele
+Sevegnani -- <i>Michele.Sevegnani@glasgow.ac.uk</i></p>
+
+<a name="FURTHER DOCUMENTATION"></a>
+<h2>FURTHER DOCUMENTATION</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">See
+<i>http://www.dcs.gla.ac.uk/~michele/bigrapher.html</i>.</p>
+
+<a name="SEE ALSO"></a>
+<h2>SEE ALSO</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>bigrapher</b>(1),
+<b>bigrapher-full</b>(1), <b>bigrapher-validate</b>(1)</p>
+<hr>
+</body>
+</html>
