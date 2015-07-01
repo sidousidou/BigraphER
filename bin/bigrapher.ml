@@ -482,7 +482,7 @@ let () =
      (fprintf err_formatter "@[<v>";
       Loc.print_loc err_formatter p;
       Lexer.report_error err_formatter e;
-      pp_print_flush err_formatter ();
+      pp_print_newline err_formatter ();
       exit 1)
   | Sys_error s ->
      (fprintf err_formatter "@[%s: %s@]@." Utils.err s;
