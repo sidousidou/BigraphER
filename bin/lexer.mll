@@ -36,7 +36,7 @@ let float_literal =
       (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
     )
   )
-let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_']*
+let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let comment = '#' [^'\r' '\n']* (newline | eof)  
 
