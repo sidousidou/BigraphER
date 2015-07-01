@@ -1,5 +1,6 @@
 # Signature
 ctrl A = 1;
+ctrl A' = 1;
 ctrl Mail = 0;
 atomic ctrl M = 2;
 ctrl Snd = 0;
@@ -22,9 +23,10 @@ react lambda =
   A{a}.Fun -> A{a};
 
 react new =
-  A{a0}.New.(A{a1} | id)
+  A{a0}.(New.(A'{a1} | id) | id)
   ->
-  A{a0} | A{a1};
+  A{a0}.(id | id) | A{a1}.(id | id)
+  @ [1, 2, 0, 2];
 
 # Initial state
 big a0 =
