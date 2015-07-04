@@ -1,3 +1,9 @@
+###0.7.1 (2015-07-05):###
+
+* Allow ``'`` in control identifiers.
+* Implement `validate` switch.
+* Add ground check for `init`.
+
 ###0.7.0 (2015-05-13):###
 
 * Complete API documentation.
