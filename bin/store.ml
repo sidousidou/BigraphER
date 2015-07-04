@@ -109,7 +109,8 @@ type error =
   | Share
   | Unknown_big of int
   | Reaction of string		             (* error message *) 
-		  
+  | Init_not_ground
+      
 type warning =
   | Multiple_declaration of Id.t * Loc.t * Loc.t
 
@@ -137,7 +138,8 @@ let report_error_aux fmt = function
   | Reaction msg -> fprintf fmt "%s" msg
   | Invalid_class -> fprintf fmt "Invalid epression for a priority class"
   | Invalid_priorities -> fprintf fmt "Invalid expression for a priority structure"
-
+  | Init_not_ground -> fprintf fmt "Init bigraph is not ground"
+				  
 let report_error fmt err =
   fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
   
@@ -818,11 +820,14 @@ let eval_sprs =
   eval_p_list eval_spr (fun x -> Sbrs.is_valid_priority_list (fst x))
 			    
 let eval_init exp env env_t =
-  match exp with
-  | Init (id, p) ->
-     eval_big (Big_var (id, p)) ScopeMap.empty env env_t
-  | Init_fun (id, args, p) ->
-     eval_big (Big_var_fun (id, args, p)) ScopeMap.empty env env_t
+  let ((b, store), p) =
+    match exp with
+    | Init (id, p) ->
+       (eval_big (Big_var (id, p)) ScopeMap.empty env env_t, p)
+    | Init_fun (id, args, p) ->
+       (eval_big (Big_var_fun (id, args, p)) ScopeMap.empty env env_t, p) in
+  if Big.is_ground b then (b, store)
+  else raise (ERROR (Init_not_ground, p))
 
 (******** ADD TO STORE FUNCTIONS *********)
 	      
