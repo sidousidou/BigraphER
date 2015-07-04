@@ -19,6 +19,9 @@ tags: [
 build: [
   ["ocaml" "setup.ml" "-configure" "--disable-debug" "--prefix" prefix]
   ["ocaml" "setup.ml" "-build"]
+]
+
+install: [
   ["ocaml" "setup.ml" "-install"]
 ]
 
@@ -26,7 +29,9 @@ remove: [
   ["ocamlfind" "remove" "bigraph"]
 ]
 
-build-doc: [ "ocaml" "setup.ml" "-doc" ]
+build-doc: [
+  [ "ocaml" "setup.ml" "-doc" ]
+]
 
 depends: [
   "base-bigarray"
