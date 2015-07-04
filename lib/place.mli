@@ -109,6 +109,10 @@ val is_id : pg -> bool
 (** Test for the absence of nodes. *)
 val is_plc : pg -> bool
 
+(** [is_ground p] is [true] if place graph [p] has no sites, [false]
+    otherwise. *)
+val is_ground : pg -> bool
+		     
 (** [is_mono p] is [true] if place graph [p] is monomorphic, [false]
     otherwise. *)
 val is_mono : pg -> bool
@@ -130,8 +134,10 @@ val is_guard : pg -> bool
     [t]. *)
 val decomp : pg -> pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
 
-(** Raised when a place graph cannot be decomposed into prime components. *)
-exception NOT_PRIME 
+(** Raised when a place graph cannot be decomposed into prime components. The
+    first element is a set of shared nodes and the second a set of shared
+    sites. *)
+exception NOT_PRIME
 
 (** Compute the prime components ({e i.e.} place graphs with one root) of a
     place graph. The original node numbering is returned in the form of an
@@ -140,6 +146,11 @@ exception NOT_PRIME
     @raise NOT_PRIME when some root is shared *)
 val prime_components : pg -> (pg * int Iso.t) list
 
+(** Compute the decomposition [D = D' X D_id].
+
+     @raise NOT_PRIME when some root is shared *)					      
+val decomp_d : pg -> int -> pg * pg * int Iso.t * int Iso.t
+					      
 (** {6 Matching constraints} *)
 
 (** Raised when a node in the pattern cannot be matched to any node in the

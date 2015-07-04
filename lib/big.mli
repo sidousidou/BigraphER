@@ -208,6 +208,10 @@ val is_guard : bg -> bool
 (** [is_solid b] returns [true] if bigraph [b] is solid, [false] otherwise. *)
 val is_solid : bg -> bool
 
+(** [is_ground b] returns [true] if bigraph [b] is an ground, [false] 
+    otherwise. *)
+val is_ground : bg -> bool
+		       
 (** {6 Decompositions} *)
 
 (** [decomp t p i_v i_e f_e] computes the decomposition of target [t] given

@@ -166,11 +166,15 @@ val is_mono : Lg.t -> bool
 
 (** [is_epi l] is [true] if link graph [l] is epimorphic, [false]
     otherwise. *)
-val is_epi: Lg.t -> bool
+val is_epi : Lg.t -> bool
 
+(** [is_ground l] is [true] if link graph [l] has no inner names, [false]
+    otherwise. *)
+val is_ground : Lg.t -> bool    
+		      
 (** [is_guard l] is [true] if no edges in link graph [l] have both
     inner and outer names, [false] otherwise. *)
-val is_guard: Lg.t -> bool    
+val is_guard : Lg.t -> bool    
 
 (** Compute the maximum number of ports in one edge of a link graph. *)			
 val max_ports : Lg.t -> int

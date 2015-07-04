@@ -227,7 +227,10 @@ let is_guard b =
 
 let is_solid b =
   (is_epi b) && (is_mono b) && (is_guard b)
-  
+
+let is_ground b =
+  (Place.is_ground b.p) && (Link.is_ground b.l)
+				 
 (* TO DO *)
 (*let latex_of_big = function | Bg (ns, p, l) -> "latex representation"*)
   
@@ -879,23 +882,44 @@ let prime_components b =
     List.split (Place.prime_components b.p) in
   let lgs = Link.prime_components b.l isos in
   List.map (fun ((p, l), iso) ->
-      { p = p;
-        l = l;
-        n = Nodes.filter_apply_iso b.n iso;
-      }
-    ) (List.combine (List.combine pgs lgs) isos)
+	    { p = p;
+              l = l;
+              n = Nodes.filter_apply_iso b.n iso;
+	    })
+	   (List.combine (List.combine pgs lgs) isos)
 
 let instantiate eta b =
   let bs = prime_components b in
   Fun.fold (fun _ s acc ->
-      try ppar acc (List.nth bs s) with
-      | Failure _ | Invalid_argument _ -> assert false (* eta is assumed total *)
-    ) eta id_eps
-    
+	    try ppar acc (List.nth bs s) with
+	    | Failure _ | Invalid_argument _ ->
+			   assert false (* eta is assumed total *))
+	   eta id_eps
+
+(* Decomposition of argument D = D' x D_id *)	   
+let decomp_d d id =
+  let (p_d, p_id, iso_d, iso_id) = Place.decomp_d d.p id in
+  let lgs = Link.prime_components d.l [iso_d; iso_id] in
+  match lgs with
+  | [l_d; l_id] ->
+     ({ p = p_d;
+	l = l_d;
+	n = Nodes.filter_apply_iso d.n iso_d;
+      },
+      { p = p_id;
+	l = l_id;
+	n = Nodes.filter_apply_iso d.n iso_id;
+      })
+  | _ -> assert false
+	   
 let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   let (c, d, id) = decomp b r0 i_n i_e f_e in
   match eta with
-  | Some eta' -> comp c (comp (tens r1 id) (instantiate eta' d))
+  | Some eta' ->
+     (let (d', d_id) = decomp_d d (ord_of_inter (inner id)) in
+      comp c (comp
+		(tens r1 id)
+		(tens (instantiate eta' d') d_id)))
   | None -> comp c (comp (tens r1 id) d)
 
 let write_svg b ~name ~path =

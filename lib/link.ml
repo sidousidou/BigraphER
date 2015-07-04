@@ -238,6 +238,9 @@ let is_guard l =
   not (Lg.exists (fun e ->
       (not (Face.is_empty e.i)) && (not (Face.is_empty e.o))) l)
 
+let is_ground l =
+  Face.is_empty (inner l) 
+      
 (* Rename names in f_i and f_o *)
 let rename_shared l i f_i f_o =
   let rename_face f i shr =
@@ -791,14 +794,12 @@ let match_ports_eq p t n_p n_t clauses : Cnf.clause list list =
 (* Prime components decomposition *)
 let prime_components lg =
   List.map (fun iso ->
-      Lg.fold (fun edg acc ->
-          Lg.add { edg with
-                   p = PortSet.fold (fun (i, p) acc ->
-                       match Iso.apply iso i with
-                       | Some i' -> PortSet.add (i', p) acc
-                       | None -> acc
-                     ) PortSet.empty edg.p;
-                 } acc
-        ) lg Lg.empty 
-    ) 
- 
+	    Lg.fold (fun edg acc ->
+		     Lg.add { edg with
+			      p = PortSet.fold (fun (i, p) acc ->
+						match Iso.apply iso i with
+						| Some i' -> PortSet.add (i', p) acc
+						| None -> acc)
+					       PortSet.empty edg.p;
+			    } acc)
+		    lg Lg.empty )

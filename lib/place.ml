@@ -208,6 +208,9 @@ let is_id = function
 let is_plc p = 
   p.n = 0
 
+let is_ground p =
+  p.s = 0
+	  
 (* Is p monomorphic?: no two sites are siblings and no site is an orphan *)
 let is_mono p =
   let slice = Sparse.stack p.rs p.ns in
@@ -918,22 +921,16 @@ let rec dfs_ns p l res_n marked_n =
   | [] -> res_n
   | i :: l' -> 
     let js = IntSet.of_list (Sparse.chl p.nn i) in
-    if IntSet.disjoint marked_n js then (    
+    if IntSet.disjoint marked_n js then    
       let js' = IntSet.diff js res_n in
       dfs_ns p ((IntSet.elements js') @ l') (IntSet.union js' res_n) marked_n
-    ) else raise NOT_PRIME
+    else raise NOT_PRIME
 
-let rec dfs_orphans p l res_n =
-  match l with
-  | [] -> res_n
-  | i :: l' -> 
-    let js' = IntSet.diff (IntSet.of_list (Sparse.chl p.nn i)) res_n in
-    dfs_orphans p ((IntSet.elements js') @ l') (IntSet.union js' res_n)
-
-let dfs_r p r marked =
+let dfs_r p r marked_n =
   let js = Sparse.chl p.rn r in
-  if IntSet.disjoint (IntSet.of_list js) marked then
-    dfs_ns p js (IntSet.of_list js) marked
+  let js_set = IntSet.of_list js in
+  if IntSet.disjoint js_set marked_n then
+    dfs_ns p js js_set marked_n
   else raise NOT_PRIME
 
 let dfs p =
@@ -941,97 +938,84 @@ let dfs p =
   assert (p.s = 0);
   let rec aux i res marked_n =
     match i with
-    | 0 -> let res_n =
-      dfs_r p 0 marked_n in
-      (res_n :: res, IntSet.union res_n marked_n)
+    | 0 ->
+       let res_n = dfs_r p 0 marked_n in
+       (res_n :: res, IntSet.union res_n marked_n)
     | -1 -> (res, marked_n)
-    | _ -> let res_n =
-      dfs_r p i marked_n in
-      aux (i - 1) (res_n :: res) (IntSet.union res_n marked_n) in
-  fst (aux (p.r - 1) [] IntSet.empty)
+    | _ ->
+       let res_n = dfs_r p i marked_n in
+       aux (i - 1)
+	   (res_n :: res)
+	   (IntSet.union res_n marked_n) in
+  aux (p.r - 1) [] IntSet.empty
 
-(* Build a prime bigraph P' starting from a root, a set of nodes and a set of
-   sites. An isomorphism P -> P' is also generated. *)
+let build_comp_aux p p' nodes iso =
+  IntSet.iter (fun i ->
+	       let js = Sparse.chl p.nn i
+	       and i' = safe (Iso.apply iso i) in
+	       List.iter (fun j ->
+			  Sparse.add p'.nn i' (safe (Iso.apply iso j)))
+			 js)
+	      nodes
+      
+let rec chl_of_roots d acc stop i =
+  if i < stop then acc
+  else let acc' = Sparse.chl d.rn i
+		  |> IntSet.of_list
+		  |> IntSet.union acc in
+       chl_of_roots d acc' stop (i - 1)
+    
+let build_d p first last nodes = 
+  let n = IntSet.cardinal nodes
+  and r = last - first + 1
+  and iso = IntSet.fix nodes in
+  let p' = { r = r;
+             n = n;
+             s = 0;
+             rn = Sparse.make r n;
+             rs = Sparse.make r 0;
+             nn = Sparse.make n n;
+             ns = Sparse.make n 0;
+           } in
+  chl_of_roots p IntSet.empty first last
+  |> IntSet.iter (fun j -> 
+		Sparse.add p'.rn 0 (safe (Iso.apply iso j)));
+  build_comp_aux p p' nodes iso;
+  (p', iso)
+
+(* Build a prime component P' starting from P, a root and a set of nodes. An
+   isomorphism P -> P' is also generated. *)
 let build_component p r nodes =
-  let n = IntSet.cardinal nodes 
-  and iso = IntSet.fix nodes in
-  let p' = { r = 1;
-             n = n;
-             s = 0;
-             rn = Sparse.make 1 n;
-             rs = Sparse.make 1 0;
-             nn = Sparse.make n n;
-             ns = Sparse.make n 0;
-           } in
-  List.iter (fun j -> 
-      Sparse.add p'.rn 0 (safe (Iso.apply iso j))
-    ) (Sparse.chl p.rn r);
-  IntSet.iter (fun i ->
-      let js = Sparse.chl p.nn i
-      and i' = safe (Iso.apply iso i) in
-      List.iter (fun j ->
-          Sparse.add p'.nn i' (safe (Iso.apply iso j))
-        ) js
-    ) nodes;
-  (p', iso)
-
+  build_d p r r nodes
+	  
 let build_o_component p nodes =
-  let n = IntSet.cardinal nodes 
-  and iso = IntSet.fix nodes in
-  let p' = { r = 0;
-             n = n;
-             s = 0;
-             rn = Sparse.make 0 n;
-             rs = Sparse.make 0 0;
-             nn = Sparse.make n n;
-             ns = Sparse.make n 0;
-           } in
-  IntSet.iter (fun i ->
-      let js = Sparse.chl p.nn i
-      and i' = safe (Iso.apply iso i) in
-      List.iter (fun j ->
-          Sparse.add p'.nn i' (safe (Iso.apply iso j))
-        ) js
-    ) nodes;
-  (p', iso)
+  build_d p 0 (-1) nodes
 
-(* Merge sub-graphs rooted in an orphans having common nodes *)
-let orphan_components p = 
-  let os = IntSet. diff (Sparse.orphans p.nn) (Sparse.codom p.rn) in
-  let components = IntSet.fold (fun o acc ->
-      (dfs_orphans p [o] (IntSet.singleton o)) :: acc
-    ) os [] in
-  IntSet.merge components
-
-(* Compute new components. If o is not added, it is returned *)
-let rec merge_orphan comps o (res_c, res_o) =
-  match (comps, res_o) with
-  | ([], _) -> (res_c, res_o)
-  | (c :: comps', []) ->
-    if IntSet.disjoint c o then
-      merge_orphan comps' o (res_c @ [c], [])
-    else raise NOT_PRIME
-  | (c :: comps', _) ->
-    if IntSet.disjoint c o then
-      merge_orphan comps' o (res_c @ [c], res_o)
-    else merge_orphan comps' o (res_c @ [IntSet.union c o], [])            
-
-let merge_orphans comps o_comps =
-  List.fold_left (fun (acc, acc_o) o ->
-      match merge_orphan acc o ([], [o]) with
-      | (res_c, []) -> (res_c, acc_o)
-      | (res_c, [res_o]) -> (res_c, IntSet.union acc_o res_o)
-      | _ -> assert false
-    ) (comps, IntSet.empty) o_comps
+(* Sub-graph rooted in the orphan nodes of p. *)
+let orphan_component p marked_n = 
+  let o_set = IntSet. diff (Sparse.orphans p.nn) (Sparse.codom p.rn) in
+  dfs_ns p (IntSet.elements o_set) o_set marked_n
 
 (* Return a list of bigraphs *)
 let prime_components p =
-  let comps = dfs p      
-  and o_comps = orphan_components p in
-  let (comps', o_comp) = merge_orphans comps o_comps in
-  (List.mapi (fun r s -> build_component p r s) comps') @ 
-  [build_o_component p o_comp]
+  let (comps, marked_n) = dfs p in   
+  let o_nodes = orphan_component p marked_n in
+  (List.mapi (fun r nodes -> build_component p r nodes) comps) @ 
+    [build_o_component p o_nodes]
 
+let decomp_d d id_n =
+  let js_set = chl_of_roots d IntSet.empty 0 (d.r - id_n - 1) in
+  let js = IntSet.elements js_set in
+  let d'_nodes = dfs_ns d js js_set IntSet.empty
+  and id_set = chl_of_roots d IntSet.empty (d.r - id_n) (d.r - 1) in
+  let ids = IntSet.elements id_set in
+  let id_nodes = IntSet.union
+		   (dfs_ns d ids id_set d'_nodes)
+		   (orphan_component d d'_nodes) in
+  let (d', iso_d') = build_d d 0 (d.r - id_n - 1) d'_nodes 
+  and (id, iso_id) = build_d d (d.r - id_n) (d.r - 1) id_nodes in  
+  (d', id, iso_d', iso_id)
+      
 (*******************************************************************************)
 
 
