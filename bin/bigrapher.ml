@@ -307,6 +307,11 @@ let after_sbrs_aux fmt stats ctmc =
 let after_sbrs fmt (ctmc, stats) =
   close_progress_bar ();
   after_sbrs_aux fmt stats ctmc
+
+let check fmt =
+  print_msg fmt `yellow "Model file parsed correctly";
+  pp_print_flush err_formatter ();
+  exit 0
 		 
 (******** BIGRAPHER *********)
        
@@ -414,7 +419,7 @@ let () =
 		      ~max:Cmd.(defaults.max_states)
 		      ~iter_f
 	      |> after_brs fmt)
-	  | `check -> failwith "TO DO")
+	  | `check -> check fmt)
       | Store.S priorities ->
 	 (******** SBRS *********)
 	 (match exec_type with
@@ -441,7 +446,7 @@ let () =
 		       ~max:Cmd.(defaults.max_states)
 		       ~iter_f
 	      |>  after_sbrs fmt)
-	  | `check -> failwith "TO DO")
+	  | `check -> check fmt)
     with
     | Sbrs.MAX (ctmc, stats)
     | Sbrs.LIMIT (ctmc, stats) ->
