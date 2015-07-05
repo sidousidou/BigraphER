@@ -150,7 +150,7 @@ val tens : bg -> bg -> bg
 
 (** [comp a b] computes the composition of bigraphs [a] and [b].
     
-    @raise  COMP_ERROR when the mediating interfaces do not match. *)
+    @raise COMP_ERROR when the mediating interfaces do not match. *)
 val comp : bg -> bg -> bg
 
 (** [ppar a b] computes the parallel product of bigraphs [a] and [b]. *)

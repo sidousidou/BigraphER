@@ -130,7 +130,7 @@ let report_error_aux fmt = function
      fprintf fmt "Interfaces %s and %s do not match in the composition"
 	     (Big.string_of_inter i) (Big.string_of_inter j)
   | Tens (inner, outer) ->
-     fprintf fmt "Tensor product has common inner names %s and outer names %s"
+     fprintf fmt "Tensor product has common inner names %s and common outer names %s"
 	     (Link.string_of_face inner) (Link.string_of_face outer)
   | Share -> fprintf fmt "Invalid sharing expression"
   | Unknown_big v ->
@@ -138,7 +138,7 @@ let report_error_aux fmt = function
   | Reaction msg -> fprintf fmt "%s" msg
   | Invalid_class -> fprintf fmt "Invalid epression for a priority class"
   | Invalid_priorities -> fprintf fmt "Invalid expression for a priority structure"
-  | Init_not_ground -> fprintf fmt "Init bigraph is not ground"
+  | Init_not_ground -> fprintf fmt "init bigraph is not ground"
 				  
 let report_error fmt err =
   fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
@@ -575,7 +575,7 @@ let rec eval_big (exp : big_exp) (scope : scope)
       | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
   | Big_tens (l, r, p) -> 
      (try (binary_eval l r scope env env_t Big.tens) with
-      | Link.FACES_MISMATCH (i, o) -> raise (ERROR (Tens (i, o), p)))
+      | Link.NAMES_ALREADY_DEFINED (i, o) -> raise (ERROR (Tens (i, o), p)))
   | Big_par (l, r, _) -> 
      binary_eval l r scope env env_t Big.par
   | Big_ppar (l, r, _) -> 
