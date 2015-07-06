@@ -1,4 +1,11 @@
-BigraphER is an efficient implementation of Bigraphical Reactive
-Systems (BRS) that supports bigraphs with sharing, stochastic reaction
-rules, rule priorities, graphical output and predicate checking.
-Models can be exported to probabilistic model checker PRISM.
+BigraphER is an implementation of Bigraphical Reactive Systems (BRS)
+
+It consists of:
+
+- The command-line tool `bigrapher` which computes transition systems. It
+  supports bigraphs with sharing, stochastic reaction rules, rule priorities,
+  graphical output and predicate checking. Models can also be exported to
+  probabilistic model checker PRISM.
+
+- The library `bigraph` which provides APIs for the manipulation of BRSs,
+  bigraphs and reaction rules.

@@ -20,7 +20,6 @@ FilesAB:       	bin/version.ml.ab,
                 man/bigrapher-validate.1.ab,
                 man/bigrapher-full.1.ab,
                 man/bigrapher-sim.1.ab,
-                opam/url.ab,
                 opam/opam.ab,
                 README.md.ab,
                 Makefile.config.ab
