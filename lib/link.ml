@@ -800,6 +800,6 @@ let prime_components lg =
 						match Iso.apply iso i with
 						| Some i' -> PortSet.add (i', p) acc
 						| None -> acc)
-					       PortSet.empty edg.p;
+					       edg.p PortSet.empty;
 			    } acc)
 		    lg Lg.empty )

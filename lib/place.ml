@@ -966,7 +966,6 @@ let rec chl_of_roots d acc stop i =
        chl_of_roots d acc' stop (i - 1)
     
 let build_d p first last nodes =
-  (* print_endline ("first = " ^ (string_of_int first) ^ "\tlast = " ^ (string_of_int last)); *)
   let n = IntSet.cardinal nodes
   and r = last - first + 1
   and iso = IntSet.fix nodes in
@@ -1018,15 +1017,11 @@ let decomp_d d id_n =
   let js_set = chl_of_roots d IntSet.empty 0 (d.r - id_n - 1) in
   let js = IntSet.elements js_set in
   let d'_nodes = dfs_ns d js js_set IntSet.empty in
-  (* print_endline ("js_set = " ^ (IntSet.to_string js_set)); *)
-  (* print_endline ("d'_nodes = " ^ (IntSet.to_string d'_nodes)); *)
   let id_set = chl_of_roots d IntSet.empty (d.r - id_n) (d.r - 1) in
   let ids = IntSet.elements id_set in
   let id_nodes = IntSet.union
 		   (dfs_ns d ids id_set d'_nodes)
 		   (orphan_component d d'_nodes) in
-  (* print_endline ("id_set = " ^ (IntSet.to_string id_set)); *)
-  (* print_endline ("id_nodes = " ^ (IntSet.to_string id_nodes)); *)
   let (d', iso_d') = build_d d 0 (d.r - id_n - 1) d'_nodes 
   and (id, iso_id) = build_d d (d.r - id_n) (d.r - 1) id_nodes in  
   (d', id, iso_d', iso_id)

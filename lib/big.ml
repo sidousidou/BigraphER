@@ -883,8 +883,8 @@ let prime_components b =
   let lgs = Link.prime_components b.l isos in
   List.map (fun ((p, l), iso) ->
 	    { p = p;
-              l = l;
-              n = Nodes.filter_apply_iso b.n iso;
+	      l = l;
+	      n = Nodes.filter_apply_iso b.n iso;
 	    })
 	   (List.combine (List.combine pgs lgs) isos)
 
@@ -917,13 +917,9 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   match eta with
   | Some eta' ->
      (let (d', d_id) = decomp_d d (ord_of_inter (inner id)) in
-      (* print_endline ("\nd = \n" ^ (to_string d)); *)
-      (* print_endline ("\nid = \n" ^ (to_string id)); *)
-      (* print_endline ("d' = \n" ^ (to_string d')); *)
-      (* print_endline ("d_id = \n" ^ (to_string d_id)); *)
-      comp c (comp
-		(tens r1 id)
-		(ppar (instantiate eta' d') d_id)))
+      ppar (instantiate eta' d') d_id
+      |> comp (tens r1 id)
+      |> comp c)
   | None -> comp c (comp (tens r1 id) d)
 
 let write_svg b ~name ~path =
