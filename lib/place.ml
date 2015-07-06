@@ -965,11 +965,16 @@ let rec chl_of_roots d acc stop i =
 		  |> IntSet.union acc in
        chl_of_roots d acc' stop (i - 1)
     
-let build_d p first last nodes = 
+let build_d p first last nodes =
+  (* print_endline ("first = " ^ (string_of_int first) ^ "\tlast = " ^ (string_of_int last)); *)
   let n = IntSet.cardinal nodes
   and r = last - first + 1
   and iso = IntSet.fix nodes in
-  let p' = { r = r;
+  let root_set =
+    IntSet.of_int r
+    |> IntSet.off first in
+  let iso_roots = IntSet.fix root_set
+  and p' = { r = r;
              n = n;
              s = 0;
              rn = Sparse.make r n;
@@ -977,9 +982,15 @@ let build_d p first last nodes =
              nn = Sparse.make n n;
              ns = Sparse.make n 0;
            } in
-  chl_of_roots p IntSet.empty first last
-  |> IntSet.iter (fun j -> 
-		Sparse.add p'.rn 0 (safe (Iso.apply iso j)));
+  root_set
+  |> IntSet.iter (fun r ->
+		  let r' = safe (Iso.apply iso_roots r) in
+		  Sparse.chl p.rn r
+		  |> IntSet.of_list
+		  |> IntSet.iter (fun j -> 
+				  Sparse.add p'.rn
+					     r'
+					     (safe (Iso.apply iso j))));
   build_comp_aux p p' nodes iso;
   (p', iso)
 
@@ -1006,12 +1017,16 @@ let prime_components p =
 let decomp_d d id_n =
   let js_set = chl_of_roots d IntSet.empty 0 (d.r - id_n - 1) in
   let js = IntSet.elements js_set in
-  let d'_nodes = dfs_ns d js js_set IntSet.empty
-  and id_set = chl_of_roots d IntSet.empty (d.r - id_n) (d.r - 1) in
+  let d'_nodes = dfs_ns d js js_set IntSet.empty in
+  (* print_endline ("js_set = " ^ (IntSet.to_string js_set)); *)
+  (* print_endline ("d'_nodes = " ^ (IntSet.to_string d'_nodes)); *)
+  let id_set = chl_of_roots d IntSet.empty (d.r - id_n) (d.r - 1) in
   let ids = IntSet.elements id_set in
   let id_nodes = IntSet.union
 		   (dfs_ns d ids id_set d'_nodes)
 		   (orphan_component d d'_nodes) in
+  (* print_endline ("id_set = " ^ (IntSet.to_string id_set)); *)
+  (* print_endline ("id_nodes = " ^ (IntSet.to_string id_nodes)); *)
   let (d', iso_d') = build_d d 0 (d.r - id_n - 1) d'_nodes 
   and (id, iso_id) = build_d d (d.r - id_n) (d.r - 1) id_nodes in  
   (d', id, iso_d', iso_id)
