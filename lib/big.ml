@@ -919,7 +919,7 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
      (let (d', d_id) = decomp_d d (ord_of_inter (inner id)) in
       comp c (comp
 		(tens r1 id)
-		(tens (instantiate eta' d') d_id)))
+		(ppar (instantiate eta' d') d_id)))
   | None -> comp c (comp (tens r1 id) d)
 
 let write_svg b ~name ~path =
