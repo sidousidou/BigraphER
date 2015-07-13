@@ -352,8 +352,7 @@ let get_dot l =
 			  weight=5 ];\n"
 		   i (fst (PortSet.choose e.p))
                else PortSet.fold (fun (v, _) buff ->
-		   sprintf "%se%d -> v%d [dir=both, arrowtail=none, \
-			    tailclip=false ];\n" buff i v) e.p ""))  
+		   sprintf "%se%d -> v%d [dir=both, tailclip=false ];\n" buff i v) e.p ""))  
 	   else
              (* idle name *)
            if is_idle e then buff_adj
@@ -366,8 +365,7 @@ let get_dot l =
               else if Face.is_empty e.o then
 		if Face.is_empty e.i then
 		  (* port -> port *)
-		  sprintf "%sv%d -> v%d [ dir=both, constraint=false, arrowhead=none, \
-			   arrowtail=none ];\n" 
+		  sprintf "%sv%d -> v%d [ dir=both, constraint=false ];\n" 
 		    buff_adj (fst (PortSet.min_elt e.p)) (fst (PortSet.max_elt e.p))
 		else   
 		  (* inner name -> port *)
@@ -379,7 +377,7 @@ let get_dot l =
 		  buff_adj (fst (PortSet.choose e.p)) (string_of_name (Face.choose e.o)))    
           )       
         )
-      ) l (0, "", "", "", "edge [ color=green, arrowhead=none, arrowsize=0.3 ];\n") with
+      ) l (0, "", "", "", "edge [ color=green, arrowhead=none, arrowtail=none, arrowsize=0.3 ];\n") with
   | (_, a, b, c, d) -> (a, b, c, d)
 
 let safe f = 
