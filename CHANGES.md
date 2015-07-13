@@ -3,6 +3,10 @@
 * Allow ``'`` in control identifiers.
 * Implement `validate` switch.
 * Add ground check for `init`.
+* FIX: graphical notation for links.
+* FIX: instantiation maps.
+* FIX: dot default format if graphviz is not available.
+
 
 ###0.7.0 (2015-05-13):###
 
