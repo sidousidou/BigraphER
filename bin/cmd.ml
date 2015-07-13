@@ -153,6 +153,8 @@ type settings = {
     mutable verb : bool;
   }
 
+let default_formats = [Dot]
+		  
 let defaults = {
     consts = [];
     debug = false;
@@ -166,7 +168,7 @@ let defaults = {
     help = false;
     max_states = 1000;
     model = "";
-    out_format = [Svg];
+    out_format = default_formats;
     pred = None;
     quiet = false;
     steps = 1000;
@@ -417,21 +419,23 @@ let report_error fmt e =
 
 let check_states () =
   if defaults.export_states_flag then
-    (match (defaults.export_states, defaults.export_graph) with
-     | (None, Some f) -> defaults.export_states <- Some (Filename.dirname f)
-     | (None, None) -> raise (ERROR Malformed_states)
-     | (Some _, None )
-     | (Some _, Some _) -> ())
+    match (defaults.export_states, defaults.export_graph) with
+    | (None, Some f) -> defaults.export_states <- Some (Filename.dirname f)
+    | (None, None) -> raise (ERROR Malformed_states)
+    | (Some _, None )
+    | (Some _, Some _) -> ()
   else ()
 
-let check_dot_opt f x opt =
-  if defaults.dot_installed then
-    f x
-  else
-    report_warning err_formatter
-		   dot_msg
-		   (string_of_opt "|" opt)
-
+let check_dot () =
+  if defaults.dot_installed then ()
+  else if List.mem Svg defaults.out_format then
+    (* reset flag *)
+    (defaults.out_format <- default_formats;
+     report_warning err_formatter
+		    dot_msg
+		    (string_of_opt "|" (Ext [])))
+  else ()
+	 
 let check_brs_opt () =
   if defaults.time_flag then
     report_warning err_formatter
