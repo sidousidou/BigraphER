@@ -78,6 +78,7 @@ let () =
 	  try
 	    snd (Brs.bfs ~s0:s
 			 ~priorities:reacts
+			 ~predicates:[]
 			 ~max:1000
 			 ~iter_f)
 	  with
@@ -92,6 +93,7 @@ let () =
 	   try
 	     snd (Brs.sim ~s0:s
 			  ~priorities:reacts
+			  ~predicates:[]
 			  ~stop:1000
 			  ~init_size:50
 			  ~iter_f)
@@ -110,9 +112,10 @@ let () =
 	 let stats = 
 	   try
 	     snd (Sbrs.bfs ~s0:s
-				~priorities:sreacts
-				~max:1000
-				~iter_f)
+			   ~priorities:sreacts
+			   ~predicates:[]
+			   ~max:1000
+			   ~iter_f)
 	   with
 	   | Sbrs.MAX (_, stats) -> stats in
 	 ("sbrs",
@@ -124,10 +127,11 @@ let () =
 	 let stats = 
 	   try
 	     snd (Sbrs.sim ~s0:s
-				 ~priorities:sreacts
-				 ~stop:5000.0
-				 ~init_size:50
-				 ~iter_f)
+			   ~priorities:sreacts
+			   ~predicates:[]
+			   ~stop:5000.0
+			   ~init_size:50
+			   ~iter_f)
 	   with
 	   | Sbrs.LIMIT (_, stats)
 	   | Sbrs.DEADLOCK (_, stats, _) -> stats in 
