@@ -406,6 +406,7 @@ let () =
 	      open_progress_bar ();
 	      Brs.sim ~s0
 		      ~priorities
+		      ~predicates:[]
 		      ~init_size:Cmd.(defaults.max_states)
 		      ~stop:Cmd.(defaults.steps)
 		      ~iter_f
@@ -416,6 +417,7 @@ let () =
 	      open_progress_bar ();
 	      Brs.bfs ~s0
 		      ~priorities
+		      ~predicates:[]
 		      ~max:Cmd.(defaults.max_states)
 		      ~iter_f
 	      |> after_brs fmt)
@@ -433,6 +435,7 @@ let () =
 	      open_progress_bar ();
 	      Sbrs.sim ~s0
 		       ~priorities
+		       ~predicates:[]
 		       ~init_size:Cmd.(defaults.max_states)
 		       ~stop:Cmd.(defaults.time)
 		       ~iter_f
@@ -443,6 +446,7 @@ let () =
 	      open_progress_bar ();
 	      Sbrs.bfs ~s0
 		       ~priorities
+		       ~predicates:[]
 		       ~max:Cmd.(defaults.max_states)
 		       ~iter_f
 	      |>  after_sbrs fmt)

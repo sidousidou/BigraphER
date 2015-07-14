@@ -58,7 +58,7 @@ module PT = struct
 type graph = { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
 	       (* p : (int, Bilog) Hashtbl.t Predicates *)
 	       e : (int, R.edge) Hashtbl.t;
-	       l : (int, int) Hashtbl.t;  
+	       l : (string, int) Hashtbl.t;  
 	     }
 
 type stats =  { time : float; 

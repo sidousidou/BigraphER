@@ -3,7 +3,7 @@ module type G = sig
     type edge_type
     val init : int -> t
     val states : t -> (Big.bg_key, int * Big.bg) Hashtbl.t
-    val label : t -> (int, int) Hashtbl.t
+    val label : t -> (string, int) Hashtbl.t
     val edges : t -> (int, edge_type) Hashtbl.t
     val dest : edge_type -> int
     val string_of_arrow : edge_type -> string
@@ -82,11 +82,14 @@ module Make (R : RrType.T)
     val bfs :
       s0:Big.bg ->
       priorities:P.p_class list ->
+      predicates:(string * Big.bg) list ->
       max:int -> iter_f:(int -> Big.bg -> unit) -> t * S.t
 
     val sim :
       s0:Big.bg ->
-      priorities:P.p_class list -> init_size:int ->
+      priorities:P.p_class list ->
+      predicates:(string * Big.bg) list ->
+      init_size:int ->
       stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * S.t
 
     val to_prism : t -> string

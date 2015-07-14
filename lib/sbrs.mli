@@ -27,7 +27,7 @@ type stats =  { time : float;  (** Execution time *)
 type graph = {
   v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
   e : (int, (int * float)) Hashtbl.t;         (** Transition relation *)
-  l : (int, int) Hashtbl.t;                   (** Labelling function *) 
+  l : (string, int) Hashtbl.t;                   (** Labelling function *) 
 }
 
 (** String representation of a stochastic reaction rule. *)
@@ -79,17 +79,22 @@ val rewrite : Big.bg -> p_class list -> Big.bg * int
     states. *)
 exception MAX of graph * stats
 
-(** [bfs ~s0 ~priorities ~max ~iter_f] computes the transition system of the
-    SBRS specified by initial state [s0] and priority classes
+(** [bfs ~s0 ~priorities ~predicates ~max ~iter_f] computes the transition
+    system of the SBRS specified by initial state [s0] and priority classes
     [priorities]. Arguments [~max] and [~iter_f] are the maximum number of
     states of the transition system and a function to be applied whenever a new
-    state is discovered, respectively. Priority classes are assumed to be
-    sorted by priority, {e i.e}. the first element in the list is the class with
-    the highest priority.
+    state is discovered, respectively. Priority classes are assumed to be sorted
+    by priority, {e i.e}. the first element in the list is the class with the
+    highest priority. List of predicates [~predicates] is also checked for every
+    state.
 
     @raise Sbrs.MAX when the maximum number of states is reached. *)
-val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
-	  iter_f:(int -> Big.bg -> unit) -> graph * stats
+val bfs : s0:Big.bg ->
+	  priorities:p_class list ->
+	  predicates:(string * Big.bg) list ->
+	  max:int ->
+	  iter_f:(int -> Big.bg -> unit) ->
+	  graph * stats
 
 (** {6 Stochastic simulation traces} *)
 
@@ -109,8 +114,12 @@ exception LIMIT of graph * stats
    @raise Sbrs.LIMIT when the simulation time exceeds the maximum simulation time. *)
 val sim :
   s0:Big.bg ->
-  priorities:p_class list -> init_size:int ->
-  stop:float -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+  priorities:p_class list ->
+  predicates:(string * Big.bg) list ->
+  init_size:int ->
+  stop:float ->
+  iter_f:(int -> Big.bg -> unit) ->
+  graph * stats
 
 (** {6 Export functions} *)
 

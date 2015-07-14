@@ -26,7 +26,7 @@ type stats =  { time : float;  (** Execution time *)
 type graph = {
     v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
     e : (int, int) Hashtbl.t;                   (** Transition relation *)
-    l : (int, int) Hashtbl.t;                   (** Labelling function *) 
+    l : (string, int) Hashtbl.t;                   (** Labelling function *) 
   }
 	       
 (** String representation of a reaction reaction. *)
@@ -77,11 +77,16 @@ exception MAX of graph * stats
     states of the transition system and a function to be applied whenever a new
     state is discovered, respectively. Priority classes are assumed to be
     sorted by priority, {e i.e}. the first element in the list is the class with
-    the highest priority.
+    the highest priority. List of predicates [~predicates] is also checked for every
+    state.
 
     @raise Brs.MAX when the maximum number of states is reached. *)
-val bfs : s0:Big.bg -> priorities:p_class list -> max:int ->
-	  iter_f:(int -> Big.bg -> unit) -> graph * stats
+val bfs : s0:Big.bg ->
+	  priorities:p_class list ->
+	  predicates:(string * Big.bg) list ->
+	  max:int ->
+	  iter_f:(int -> Big.bg -> unit) ->
+	  graph * stats
 
 (** {6 Simulation traces} *)
 						      
@@ -99,10 +104,13 @@ exception LIMIT of graph * stats
  
    @raise Brs.DEADLOCK when the simulation reaches a deadlock state.
    @raise Brs.LIMIT when the simulation time exceeds the maximum simulation steps. *)
-val sim :
-  s0:Big.bg ->
-  priorities:p_class list -> init_size:int ->
-  stop:int -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+val sim : s0:Big.bg ->
+	  priorities:p_class list ->
+	  predicates:(string * Big.bg) list ->
+	  init_size:int ->
+	  stop:int ->
+	  iter_f:(int -> Big.bg -> unit) ->
+	  graph * stats
 
 (** {6 Export functions} *)
 

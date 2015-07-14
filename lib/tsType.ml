@@ -2,8 +2,8 @@ module type G = sig
     type t
     type edge_type
     val init : int -> t
-    val states : t -> (Big.bg_key, (int * Big.bg)) Hashtbl.t
-    val label : t -> (int, int) Hashtbl.t
+    val states : t -> (Big.bg_key, int * Big.bg) Hashtbl.t
+    val label : t -> (string, int) Hashtbl.t
     val edges : t -> (int, edge_type) Hashtbl.t
     val dest : edge_type -> int
     val string_of_arrow : edge_type -> string
@@ -74,20 +74,26 @@ module MakeE (G : G) = struct
       Printf.sprintf "digraph \"%s\" {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
 		     name rank states edges
 		     
+    module StringSet = Set.Make (struct
+				    type t = string
+				    let compare = String.compare
+				  end)
+
     let to_lab g =
-      let inv =
-	Hashtbl.create (Hashtbl.length (G.label g)) in
-      Hashtbl.fold (fun s p acc -> 
-		    Hashtbl.add inv p s;
-		    p :: acc)
-		   (G.label g) []
-      |>  List.map (fun p ->
-		    Hashtbl.find_all inv p
-		    |> List.map (fun s -> "x = " ^ (string_of_int s)) 
-		    |> String.concat " | " 
-		    |> fun s ->
-		       "label \"p_" ^ (string_of_int p) ^ "\" = " ^ s ^ ";")
-      |> String.concat "\n"
+      let h = G.label g in
+      (* Set of label identifiers *)
+      let ids = Hashtbl.fold (fun id _ acc ->
+			      StringSet.add id acc)
+			     h StringSet.empty in
+      StringSet.fold (fun id acc ->
+		      Hashtbl.find_all h id
+		      |> List.map (fun s -> "x = " ^ (string_of_int s)) 
+		      |> String.concat " | " 
+		      |> (fun s -> "label \"" ^ id ^ "\" = " ^ s)
+		      |> fun s -> s ::  acc)
+		     ids []  
+      |> List.rev
+      |> String.concat ";\n"
 		       
     let iter_states ~f g =
       Hashtbl.iter (fun _ (i, b) -> f i b) (G.states g)
@@ -179,8 +185,15 @@ module Make (R : RrType.T)
     			  ((i', o) :: new_acc, old_acc, i'))
     		      | Some x -> (new_acc, (R.edge_of_occ o x) :: old_acc, i))
     		     ([], [], i)
-			  
-    let rec _bfs g q i m t0 priorities max iter_f =
+
+    (* Add labels for predicates *)		     
+    let check (i, s) h =
+      List.iter (fun (id, p) ->
+		 if Big.occurs s p then
+		   Hashtbl.add h id i 
+		 else ())
+      
+    let rec _bfs g q i m t0 priorities predicates max iter_f =
       if not (Queue.is_empty q) then
 	if i > max then
 	  raise (MAX (g, S.make t0 g m))
@@ -190,16 +203,15 @@ module Make (R : RrType.T)
               P.scan (curr, i)
 		     ~part_f:(partition g i iter_f)
 		     ~const_pri:priorities priorities in
-	    (* Add new states to v *)
 	    List.iter (fun (i, o) ->
-		       let b = R.big_of_occ o in 
-		       Hashtbl.add (G.states g) (Big.key b) (i, b))
-		      new_s;
-	    (* Add new states to q *)
-	    List.iter (fun (i, o) ->
+		       let b = R.big_of_occ o in
+		       (* Add new states to v *)
+		       Hashtbl.add (G.states g) (Big.key b) (i, b);
+		       (* Add labels for new states *)
+		       check (i, b) (G.label g) predicates;
+		       (* Add new states to q *)
 		       Queue.push (i, R.big_of_occ o) q)
 		      new_s;
-	    (* TO DO: add labels for new states *)
 	    (* Add edges from v to new states *)
 	    List.iter (fun (u, o) -> 
 		       Hashtbl.add (G.edges g) v (R.edge_of_occ o u))
@@ -209,22 +221,23 @@ module Make (R : RrType.T)
 		       Hashtbl.add (G.edges g) v e)
 		      old_s;
 	    (* recursive call *)
-	    _bfs g q i' (m + m') t0 priorities max iter_f) 
+	    _bfs g q i' (m + m') t0 priorities predicates max iter_f) 
       else
 	(g, S.make t0 g m)
 
-    let bfs ~s0 ~priorities ~max ~iter_f =
+    let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
       let q = Queue.create () in
       (* Apply rewriting to s0 *)
       let (s0', m) = P.rewrite s0 priorities
       and g = G.init max in
       Queue.push (0, s0') q;
       (* Add initial state *)
-      Hashtbl.add (G.states g) (Big.key s0') (0, s0');
       iter_f 0 s0';
-      _bfs g q 0 m (Unix.gettimeofday ()) priorities max iter_f
+      Hashtbl.add (G.states g) (Big.key s0') (0, s0');
+      check (0, s0') (G.label g) predicates;
+      _bfs g q 0 m (Unix.gettimeofday ()) priorities predicates max iter_f
 	   					
-    let rec _sim trace s i t_sim m t0 priorities t_max iter_f =
+    let rec _sim trace s i t_sim m t0 priorities predicates t_max iter_f =
       if L.is_greater t_sim t_max then
 	raise (LIMIT (trace, S.make t0 trace m))
       else
@@ -237,19 +250,22 @@ module Make (R : RrType.T)
 	| (Some o, m') ->	
 	   (let s' = R.big_of_occ o in
 	    Hashtbl.add (G.states trace) (Big.key s') (i + 1, s');
-	    (* TO DO: add labels for new states *)
+	    check (i + 1, s') (G.label trace) predicates;
 	    Hashtbl.add (G.edges trace) i (R.edge_of_occ o (i + 1));
-	    _sim trace s' (i + 1) (L.increment t_sim o) (m + m') t0 priorities t_max iter_f) 
+	    _sim trace s' (i + 1) (L.increment t_sim o) (m + m')
+		 t0 priorities predicates t_max iter_f) 
 				    				    
-    let sim ~s0 ~priorities ~init_size ~stop ~iter_f =
+    let sim ~s0 ~priorities ~predicates ~init_size ~stop ~iter_f =
       Random.self_init ();
       (* Apply rewriting to s0 *)
       let (s0', m) = P.rewrite s0 priorities
       and trace = G.init init_size in
       (* Add initial state *)
-      Hashtbl.add (G.states trace) (Big.key s0') (0, s0');
       iter_f 0 s0';
-      _sim trace s0' 0 L.init m (Unix.gettimeofday ()) priorities stop iter_f
+      Hashtbl.add (G.states trace) (Big.key s0') (0, s0');
+      check (0, s0') (G.label trace) predicates;
+      _sim trace s0' 0 L.init m (Unix.gettimeofday ())
+	   priorities predicates stop iter_f
 							    
     include MakeE (G)
 	   
