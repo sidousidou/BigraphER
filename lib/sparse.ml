@@ -1,8 +1,10 @@
+open Base
+
 type bmatrix =
   { r: int;
     c: int;
-    r_major: (int, int) Hashtbl.t; (* Row-major order: i -> j,...,j' *)
-    c_major: (int, int) Hashtbl.t; (* Column-major order: j -> i,...,i' *)
+    r_major: int H_int.t; (* Row-major order: i -> j,...,j' *)
+    c_major: int H_int.t; (* Column-major order: j -> i,...,i' *)
   }
 
 (* Create an empty matrix *)
@@ -11,14 +13,14 @@ let make rows cols =
   assert (cols >= 0);
   { r = rows;
     c = cols;
-    r_major = Hashtbl.create rows;
-    c_major = Hashtbl.create cols;
+    r_major = H_int.create rows;
+    c_major = H_int.create cols;
   }
 
 let copy m =
   { m with
-    r_major = Hashtbl.copy m.r_major;
-    c_major = Hashtbl.copy m.c_major;
+    r_major = H_int.copy m.r_major;
+    c_major = H_int.copy m.c_major;
   }
 
 let ( = ) a b = 
@@ -38,7 +40,7 @@ let compare a b =
 
 let to_string m =
   let buff = Array.make_matrix m.r m.c "0" in
-  Hashtbl.iter (fun i j -> 
+  H_int.iter (fun i j -> 
 		buff.(i).(j) <- "1") m.r_major;
   buff
   |> Array.map (fun r ->
@@ -51,9 +53,9 @@ let row n =
   let m = make 1 n in (* inline to speed up *)
   for i = n - 1 downto 0 do (* fold returns the columns in ascending order *)
     (* 0 -> 0,...,n-1 *)
-    Hashtbl.add m.r_major 0 i;
+    H_int.add m.r_major 0 i;
     (* 0,...,n-1 -> 0 *)
-    Hashtbl.add m.c_major i 0
+    H_int.add m.c_major i 0
   done;
   m 
 
@@ -62,9 +64,9 @@ let col n =
   let m = make n 1 in (* inline to speed up *)
   for i = n - 1 downto 0 do
     (* 0,...,n-1 -> 0 *)  
-    Hashtbl.add m.r_major i 0;
+    H_int.add m.r_major i 0;
     (* 0 -> 0,...,n-1 *)
-    Hashtbl.add m.c_major 0 i 
+    H_int.add m.c_major 0 i 
   done;
   m 
 
@@ -72,22 +74,22 @@ let diag n =
   assert (n >= 0);
   let m = make n n in
   for i = 0 to n - 1 do
-    Hashtbl.add m.r_major i i;
-    Hashtbl.add m.c_major i i;
+    H_int.add m.r_major i i;
+    H_int.add m.c_major i i;
   done;
   m
 
 let tens a b =
   let m = make (a.r + b.r) (a.c + b.c) in
   (* Insert elements of a *)
-  Hashtbl.iter (fun i j -> 
-		Hashtbl.add m.r_major i j;
-		Hashtbl.add m.c_major j i)
+  H_int.iter (fun i j -> 
+		H_int.add m.r_major i j;
+		H_int.add m.c_major j i)
 	       a.r_major;
   (* Insert elements of b *)
-  Hashtbl.iter (fun i j -> 
-		Hashtbl.add m.r_major (i + a.r) (j + a.c);
-		Hashtbl.add m.c_major (j + a.c) (i + a.r))
+  H_int.iter (fun i j -> 
+		H_int.add m.r_major (i + a.r) (j + a.c);
+		H_int.add m.c_major (j + a.c) (i + a.r))
 	       b.r_major;
   m
     
@@ -95,14 +97,14 @@ let append (a : bmatrix) (b : bmatrix) =
   assert (Pervasives.(=) a.r b.r);
   let m = make a.r (a.c + b.c) in
   (* Insert elements of a *)
-  Hashtbl.iter (fun i j -> 
-		Hashtbl.add m.r_major i j;
-		Hashtbl.add m.c_major j i)
+  H_int.iter (fun i j -> 
+		H_int.add m.r_major i j;
+		H_int.add m.c_major j i)
 	       a.r_major;
   (* Insert elements of b *)
-  Hashtbl.iter (fun i j -> 
-		Hashtbl.add m.r_major i (j + a.c);
-		Hashtbl.add m.c_major (j + a.c) i)
+  H_int.iter (fun i j -> 
+		H_int.add m.r_major i (j + a.c);
+		H_int.add m.c_major (j + a.c) i)
 	       b.r_major;
   m
     
@@ -110,34 +112,34 @@ let stack a b =
   assert (Pervasives.(=)  a.c b.c);
   let m = make (a.r + b.r) a.c in
   (* Insert elements of a *)
-  Hashtbl.iter (fun i j -> 
-		Hashtbl.add m.r_major i j;
-		Hashtbl.add m.c_major j i)
+  H_int.iter (fun i j -> 
+		H_int.add m.r_major i j;
+		H_int.add m.c_major j i)
 	       a.r_major;
   (* Insert elements of b *)
-  Hashtbl.iter (fun i j -> 
-		Hashtbl.add m.r_major (i + a.r) j;
-		Hashtbl.add m.c_major j (i + a.r))
+  H_int.iter (fun i j -> 
+		H_int.add m.r_major (i + a.r) j;
+		H_int.add m.c_major j (i + a.r))
 	       b.r_major;
   m
 
 let apply_rows_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   let m' = make m.r m.c in
-  Hashtbl.iter (fun i j ->
+  H_int.iter (fun i j ->
 		let i' = Iso.apply_exn iso i in
-		Hashtbl.add m'.r_major i' j;
-		Hashtbl.add m'.c_major j i')
+		H_int.add m'.r_major i' j;
+		H_int.add m'.c_major j i')
 	       m.r_major;
   m'
 
 let apply_cols_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.c);
   let m' = make m.r m.c in
-  Hashtbl.iter (fun i j ->
+  H_int.iter (fun i j ->
 		let j' = Iso.apply_exn iso j in
-		Hashtbl.add m'.r_major i j';
-		Hashtbl.add m'.c_major j' i)
+		H_int.add m'.r_major i j';
+		H_int.add m'.c_major j' i)
 	       m.r_major;
   m'
 
@@ -145,11 +147,11 @@ let apply_exn iso m =
   assert (Pervasives.(=) (Iso.cardinal iso) m.r);
   assert (Pervasives.(=) m.r m.c);
   let m' = make m.r m.c in
-  Hashtbl.iter (fun i j ->
+  H_int.iter (fun i j ->
 		let (i', j') = 
 		  (Iso.apply_exn iso i, Iso.apply_exn iso j) in
-		Hashtbl.add m'.r_major i' j';
-		Hashtbl.add m'.c_major j' i')
+		H_int.add m'.r_major i' j';
+		H_int.add m'.c_major j' i')
 	       m.r_major;
   m'
 
@@ -158,8 +160,8 @@ let add m i j =
   assert (j >= 0);
   assert (i < m.r);
   assert (j < m.c);
-  Hashtbl.add m.r_major i j;
-  Hashtbl.add m.c_major j i
+  H_int.add m.r_major i j;
+  H_int.add m.c_major j i
 
 let parse_vectors adj rows =
   assert (rows >= 0);
@@ -172,30 +174,30 @@ let parse_vectors adj rows =
 let chl m i =
   assert (i >= 0);
   assert (i < m.r);
-  Hashtbl.find_all m.r_major i
+  H_int.find_all m.r_major i
 
 let chl_set m i = IntSet.of_list (chl m i)		   
 
 let prn m j =
   assert (j >= 0);
   assert (j < m.c);
-  Hashtbl.find_all m.c_major j
+  H_int.find_all m.c_major j
 
 let prn_set m j = IntSet.of_list (prn m j)
 		   
 let mul a b =
   assert (Pervasives.(=) a.c b.r);
   let m = make a.r b.c 
-  and acc = Hashtbl.create a.r in
-  Hashtbl.iter
+  and acc = H_int.create a.r in
+  H_int.iter
     (fun i j ->
-     let vec = Hashtbl.find_all b.r_major j in
+     let vec = H_int.find_all b.r_major j in
      List.iter (fun k ->
-		if List.mem k (Hashtbl.find_all acc i) then () 
+		if List.mem k (H_int.find_all acc i) then () 
 		else 
-		  (Hashtbl.add m.r_major i k;
-		   Hashtbl.add m.c_major k i;
-		   Hashtbl.add acc i k;))
+		  (H_int.add m.r_major i k;
+		   H_int.add m.c_major k i;
+		   H_int.add acc i k;))
 	       vec) 
     a.r_major;
   m
@@ -204,15 +206,15 @@ let trans m =
   let t = copy m in
   let rec fix () =
     let count =
-      Hashtbl.fold (fun i j acc ->
+      H_int.fold (fun i j acc ->
 		    acc @ (List.map (fun c -> (i, c)) (chl m j))) 
 		   t.r_major []
       |> List.fold_left (fun acc (i, c) ->
-			 if List.mem c (Hashtbl.find_all t.r_major i)
+			 if List.mem c (H_int.find_all t.r_major i)
 			 then acc
 			 else
-			   (Hashtbl.add t.r_major i c;
-			    Hashtbl.add t.c_major c i;
+			   (H_int.add t.r_major i c;
+			    H_int.add t.c_major c i;
 			    acc + 1))
 			0 in
     if count > 0 then fix ()
@@ -220,12 +222,12 @@ let trans m =
   fix ()
 
 let dom m =
-  Hashtbl.fold (fun i _ acc ->
+  H_int.fold (fun i _ acc ->
 		IntSet.add i acc)
 	       m.r_major IntSet.empty
 
 let codom m =
-  Hashtbl.fold (fun j _ acc ->
+  H_int.fold (fun j _ acc ->
 		IntSet.add j acc)
 	       m.c_major IntSet.empty
 
@@ -264,16 +266,16 @@ let partners_chk m =
 		  IntSet.is_empty (partners m i)) (dom m)
 
 let iter f m = 
-  Hashtbl.iter f m.r_major
+  H_int.iter f m.r_major
 
 let fold f m acc = 
-  Hashtbl.fold f m.r_major acc
+  H_int.fold f m.r_major acc
 
 let add_list m =
   List.iter (fun (i, j) -> add m i j)
 
 let entries m =
-  Hashtbl.length m.r_major
+  H_int.length m.r_major
 
 let levels m = 
   (* m is a graph *)

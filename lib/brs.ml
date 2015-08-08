@@ -50,9 +50,13 @@ module PT = struct
     let f_r_val _ = true
   end
 
-type graph = { v : (Big.bg_key, (int * Big.bg)) Hashtbl.t;
-	       e : (int, R.edge) Hashtbl.t;
-	       l : (string, int) Hashtbl.t;
+module H_int = Base.H_int
+
+module H_string = Base.H_string
+	 
+type graph = { v : (int * Big.bg) H_int.t;
+	       e : R.edge H_int.t;
+	       l : int H_string.t;
 	     }
 
 type stats =  { time : float; 
@@ -65,9 +69,9 @@ module G = struct
     type t = graph
     type edge_type = R.edge	       
     let init n =
-      { v = Hashtbl.create n;
-	e = Hashtbl.create n;
-	l = Hashtbl.create n; }		      
+      { v = H_int.create n;
+	e = H_int.create n;
+	l = H_string.create n; }		      
     let states g = g.v
     let label g = g.l
     let edges g = g.e
@@ -80,8 +84,8 @@ module S = struct
     type g = graph
     let make t0 g m =
       { time = (Unix.gettimeofday () -. t0);
-	states = Hashtbl.length g.v; 
-	trans = Hashtbl.length g.e;
+	states = H_int.length g.v; 
+	trans = H_int.length g.e;
 	occs = m; }
 end	       
 

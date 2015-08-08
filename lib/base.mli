@@ -2,6 +2,12 @@
     controls, nodes and ports.  
     @author Michele Sevegnani *)
 
+(** {6 Specialised hash tables} *)
+
+  module H_int : Hashtbl.S with type key = int
+
+  module H_string : Hashtbl.S with type key = string
+
 (** {6 Controls} *)
 
 (** The module of bigraphical controls. *)
@@ -35,8 +41,8 @@ sig
   (** The type of a set of nodes. *)		
   type t =
     {
-      ctrl : (int, Ctrl.t) Hashtbl.t; (** Map between node identifiers and controls. *)
-      sort : (string, int) Hashtbl.t; (** Map between controls and node identifiers. *)
+      ctrl : Ctrl.t H_int.t;          (** Map between node identifiers and controls. *)
+      sort : int H_string.t;          (** Map between controls and node identifiers. *)
       size : int                      (** Cardinality of the set. *)
     }
 
@@ -178,5 +184,5 @@ val safe : 'a option -> 'a
 
 (** Compare pairs of integers. *)			  
 val ints_compare : int * int -> int * int -> int
-			  
+					       
 (**/**)

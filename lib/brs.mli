@@ -24,9 +24,9 @@ type stats =  { time : float;  (** Execution time *)
 
 (** The type of transition systems. *)
 type graph = {
-    v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
-    e : (int, int) Hashtbl.t;                   (** Transition relation *)
-    l : (string, int) Hashtbl.t;                   (** Labelling function *) 
+    v : (int * Big.bg) Base.H_int.t;  (** States *)
+    e : int Base.H_int.t;             (** Transition relation *)
+    l : int Base.H_string.t;          (** Labelling function *) 
   }
 	       
 (** String representation of a reaction reaction. *)

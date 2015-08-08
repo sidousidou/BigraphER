@@ -2,9 +2,9 @@ module type G = sig
     type t
     type edge_type
     val init : int -> t
-    val states : t -> (Big.bg_key, int * Big.bg) Hashtbl.t
-    val label : t -> (string, int) Hashtbl.t
-    val edges : t -> (int, edge_type) Hashtbl.t
+    val states : t -> (int * Big.bg) Base.H_int.t
+    val label : t -> int Base.H_string.t
+    val edges : t -> edge_type Base.H_int.t
     val dest : edge_type -> int
     val string_of_arrow : edge_type -> string
   end

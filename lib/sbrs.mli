@@ -25,9 +25,9 @@ type stats =  { time : float;  (** Execution time *)
 		       
 (** The type of Continuous Time Markov Chains. *)
 type graph = {
-  v : (Big.bg_key, (int * Big.bg)) Hashtbl.t; (** States *)
-  e : (int, (int * float)) Hashtbl.t;         (** Transition relation *)
-  l : (string, int) Hashtbl.t;                   (** Labelling function *) 
+  v : (int * Big.bg) Base.H_int.t;      (** States *)
+  e : (int * float) Base.H_int.t;       (** Transition relation *)
+  l : int Base.H_string.t;              (** Labelling function *) 
 }
 
 (** String representation of a stochastic reaction rule. *)

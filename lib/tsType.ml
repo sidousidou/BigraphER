@@ -2,9 +2,9 @@ module type G = sig
     type t
     type edge_type
     val init : int -> t
-    val states : t -> (Big.bg_key, int * Big.bg) Hashtbl.t
-    val label : t -> (string, int) Hashtbl.t
-    val edges : t -> (int, edge_type) Hashtbl.t
+    val states : t -> (int * Big.bg) Base.H_int.t
+    val label : t -> int Base.H_string.t
+    val edges : t -> edge_type Base.H_int.t
     val dest : edge_type -> int
     val string_of_arrow : edge_type -> string
   end
@@ -31,9 +31,9 @@ module MakeE (G : G) = struct
     
     let to_prism g =
       let (s, e) =
-	(Hashtbl.length (G.states g), Hashtbl.length (G.edges g))
+	(Base.H_int.length (G.states g), Base.H_int.length (G.edges g))
       and edges =
-	Hashtbl.fold (fun v u acc ->
+	Base.H_int.fold (fun v u acc ->
 		      (v, u) :: acc) (G.edges g) [] in
       List.fast_sort (fun (v, u) (v', u') ->
 		      Base.ints_compare (v, G.dest u) (v', G.dest u'))
@@ -51,7 +51,7 @@ module MakeE (G : G) = struct
     let to_dot g ~name =
       let rank = "{ rank=source; 0 };\n" in
       let states =
-	Hashtbl.fold (fun _ (i, _) buff -> 
+	Base.H_int.fold (fun _ (i, _) buff -> 
 		      if i = 0 then
 			Printf.sprintf 
 			  "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, id=\"s%d\", \
@@ -65,7 +65,7 @@ module MakeE (G : G) = struct
 			  buff i i i i)
 		     (G.states g) ""
       and edges =
-	Hashtbl.fold (fun v u buff -> 
+	Base.H_int.fold (fun v u buff -> 
 		      Printf.sprintf
 			"%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
 			 arrowhead=\"vee\", arrowsize=0.5 ];\n" 
@@ -82,11 +82,11 @@ module MakeE (G : G) = struct
     let to_lab g =
       let h = G.label g in
       (* Set of label identifiers *)
-      let ids = Hashtbl.fold (fun id _ acc ->
+      let ids = Base.H_string.fold (fun id _ acc ->
 			      StringSet.add id acc)
 			     h StringSet.empty in
       StringSet.fold (fun id acc ->
-		      Hashtbl.find_all h id
+		      Base.H_string.find_all h id
 		      |> List.map (fun s -> "x = " ^ (string_of_int s)) 
 		      |> String.concat " | " 
 		      |> (fun s -> "label \"" ^ id ^ "\" = " ^ s)
@@ -96,7 +96,7 @@ module MakeE (G : G) = struct
       |> String.concat ";\n"
 		       
     let iter_states ~f g =
-      Hashtbl.iter (fun _ (i, b) -> f i b) (G.states g)
+      Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
 		   
     let write_svg g ~name ~path =
       Export.write_svg (to_dot g ~name) ~name ~path
@@ -164,7 +164,7 @@ module Make (R : RrType.T)
 				      
     let is_new b v =
       let k_buket =
-	Hashtbl.find_all v (Big.key b) in
+	Base.H_int.find_all v (Big.key b) in
       try
     	let (old, _) =
 	  List.find (fun (_, b') ->
@@ -190,7 +190,7 @@ module Make (R : RrType.T)
     let check (i, s) h =
       List.iter (fun (id, p) ->
 		 if Big.occurs s p then
-		   Hashtbl.add h id i 
+		   Base.H_string.add h id i 
 		 else ())
       
     let rec _bfs g q i m t0 priorities predicates max iter_f =
@@ -206,7 +206,7 @@ module Make (R : RrType.T)
 	    List.iter (fun (i, o) ->
 		       let b = R.big_of_occ o in
 		       (* Add new states to v *)
-		       Hashtbl.add (G.states g) (Big.key b) (i, b);
+		       Base.H_int.add (G.states g) (Big.key b) (i, b);
 		       (* Add labels for new states *)
 		       check (i, b) (G.label g) predicates;
 		       (* Add new states to q *)
@@ -214,11 +214,11 @@ module Make (R : RrType.T)
 		      new_s;
 	    (* Add edges from v to new states *)
 	    List.iter (fun (u, o) -> 
-		       Hashtbl.add (G.edges g) v (R.edge_of_occ o u))
+		       Base.H_int.add (G.edges g) v (R.edge_of_occ o u))
 		      new_s;
 	    (* Add edges from v to old states *)
 	    List.iter (fun e ->
-		       Hashtbl.add (G.edges g) v e)
+		       Base.H_int.add (G.edges g) v e)
 		      old_s;
 	    (* recursive call *)
 	    _bfs g q i' (m + m') t0 priorities predicates max iter_f) 
@@ -233,7 +233,7 @@ module Make (R : RrType.T)
       Queue.push (0, s0') q;
       (* Add initial state *)
       iter_f 0 s0';
-      Hashtbl.add (G.states g) (Big.key s0') (0, s0');
+      Base.H_int.add (G.states g) (Big.key s0') (0, s0');
       check (0, s0') (G.label g) predicates;
       _bfs g q 0 m (Unix.gettimeofday ()) priorities predicates max iter_f
 	   					
@@ -249,9 +249,9 @@ module Make (R : RrType.T)
 	   raise (DEADLOCK (trace, S.make t0 trace (m + m'), t_sim))
 	| (Some o, m') ->	
 	   (let s' = R.big_of_occ o in
-	    Hashtbl.add (G.states trace) (Big.key s') (i + 1, s');
+	    Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
 	    check (i + 1, s') (G.label trace) predicates;
-	    Hashtbl.add (G.edges trace) i (R.edge_of_occ o (i + 1));
+	    Base.H_int.add (G.edges trace) i (R.edge_of_occ o (i + 1));
 	    _sim trace s' (i + 1) (L.increment t_sim o) (m + m')
 		 t0 priorities predicates t_max iter_f) 
 				    				    
@@ -262,7 +262,7 @@ module Make (R : RrType.T)
       and trace = G.init init_size in
       (* Add initial state *)
       iter_f 0 s0';
-      Hashtbl.add (G.states trace) (Big.key s0') (0, s0');
+      Base.H_int.add (G.states trace) (Big.key s0') (0, s0');
       check (0, s0') (G.label trace) predicates;
       _sim trace s0' 0 L.init m (Unix.gettimeofday ())
 	   priorities predicates stop iter_f

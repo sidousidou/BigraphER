@@ -4,6 +4,20 @@ let safe = function
   | Some v -> v
   | None -> assert false
 
+module H_int =
+  Hashtbl.Make(struct
+		  type t = int
+		  let equal (x:int) y = x = y
+		  let hash = Hashtbl.hash
+		end)
+		  
+module H_string =
+  Hashtbl.Make(struct
+		  type t = string
+		  let equal (x:string) y = x = y
+		  let hash = Hashtbl.hash
+		end)
+	      	   
 module Ctrl = struct
 
     type t = Ctrl of string * int
@@ -30,15 +44,15 @@ let ints_compare (i0, p0) (i1, p1) =
   | x -> x
     
 module Nodes = struct
-
+	      
     type t =
-      { ctrl : (int, Ctrl.t) Hashtbl.t;
-	sort : (string, int) Hashtbl.t;
+      { ctrl : Ctrl.t H_int.t;
+	sort : int H_string.t;
 	size : int; }
   
     let empty () =
-      { ctrl = Hashtbl.create 20;
-	sort = Hashtbl.create 20;
+      { ctrl = H_int.create 20;
+	sort = H_string.create 20;
 	size = 0; } 
   
   let is_empty s = s.size = 0
@@ -46,21 +60,21 @@ module Nodes = struct
   let add s i = function
     | Ctrl.Ctrl (n, _) as c ->
        assert (i >= 0);
-       if Hashtbl.mem s.ctrl i then s
+       if H_int.mem s.ctrl i then s
        else
-	 (Hashtbl.add s.ctrl i c;
-	  Hashtbl.add s.sort n i;
+	 (H_int.add s.ctrl i c;
+	  H_string.add s.sort n i;
 	  { s with size = s.size + 1; })
   
   let fold f s = 
-    Hashtbl.fold f s.ctrl
+    H_int.fold f s.ctrl
 
   let get_ctrl_exn s i =
     assert (i >= 0);
-    Hashtbl.find s.ctrl i
+    H_int.find s.ctrl i
  
   let find_all s (Ctrl.Ctrl (n, _)) =
-    Hashtbl.find_all s.sort n
+    H_string.find_all s.sort n
  
   let to_string s =
     "{"
@@ -84,10 +98,10 @@ module Nodes = struct
     |>  String.concat "\n" 
 	
   let tens a b =
-    { ctrl = Hashtbl.copy a.ctrl;
-      sort = Hashtbl.copy a.sort;
+    { ctrl = H_int.copy a.ctrl;
+      sort = H_string.copy a.sort;
       size = a.size }
-    |> Hashtbl.fold (fun i c res ->
+    |> H_int.fold (fun i c res ->
 		  add res (i + a.size) c) b.ctrl
       
   let apply_exn s iso =
@@ -100,7 +114,7 @@ module Nodes = struct
   let filter_apply_iso s iso =    
     Iso.fold (fun i j acc ->
 	      try 
-		Hashtbl.find s.ctrl i
+		H_int.find s.ctrl i
 		|> add acc j
 	      with
 	      | Not_found -> acc)
@@ -124,8 +138,8 @@ module Nodes = struct
   (* true when a contains a control that is not present in b *)
   let not_sub a b =
     try 
-      Hashtbl.iter (fun c _ -> 
-		    if Hashtbl.mem b.sort c then ()
+      H_string.iter (fun c _ -> 
+		    if H_string.mem b.sort c then ()
 		    else raise_notrace FOUND) a.sort;
       false
     with
