@@ -12,7 +12,7 @@ before_script:
 
 script:
  - ./scripts/shippable-build.sh
- - ./scripts/shippable-tests.sh 
+ - ./scripts/shippable-tests.sh
+ - ./scripts/benchmark.sh
  - ./scripts/shippable-link.sh
  - ./scripts/shippable-opam-lint.sh
- - ./scripts/benchmark.sh
