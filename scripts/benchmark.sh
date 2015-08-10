@@ -1,7 +1,7 @@
 #! /usr/bin/env sh
 
 REPS=10
-CMD='time -f %e ../bigrapher.native full -q -M 2000 ../examples/savannah-general.big'
+CMD='time -f %e ./bigrapher.native full -q -M 2000 ./examples/savannah-general.big'
 RES=0
 
 for i in $(seq 1 $REPS); do
