@@ -192,15 +192,15 @@ module PortSet = struct
 
     (* Construct a list of control strings [AA;BBBB;C]*)
     let types p n =
-      let h = Hashtbl.create (cardinal p) 
+      let h = H_int.create (cardinal p) 
       and aux (Ctrl.Ctrl (s, _)) = s in
       iter (fun (i, _) ->
-            Hashtbl.add h i (aux (Nodes.get_ctrl_exn n i))) p;
-      Hashtbl.fold (fun i _ (acc, marked) ->
+            H_int.add h i (aux (Nodes.get_ctrl_exn n i))) p;
+      H_int.fold (fun i _ (acc, marked) ->
 		    if List.mem i marked then (acc, marked)
 		    else 
 		      (let s =
-			 String.concat "" (Hashtbl.find_all h i) in
+			 String.concat "" (H_int.find_all h i) in
 		       (s :: acc, i :: marked)))
 		   h ([], [])
       |> fst

@@ -529,16 +529,23 @@ let edges p =
   (Sparse.entries p.rn) + (Sparse.entries p.rs)
   + (Sparse.entries p.nn) + (Sparse.entries p.ns)
 
+module H =
+  Hashtbl.Make(struct
+		  type t = string * string
+		  let equal (x:string * string) y = x = y
+		  let hash = Hashtbl.hash
+		end)
+	      
 (* given an edge of control A -> B, find all the edges with the same type.
    return a hash table (string * string) -> (int * int) *)
 let partition_edges p n =
-  let h = Hashtbl.create (Sparse.entries p.nn) in
-  Sparse.iter (fun i j ->
-	       match (Nodes.get_ctrl_exn n i, Nodes.get_ctrl_exn n j) with
-	       | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
-		  Hashtbl.add h (a_string, b_string) (i, j))
-	      p.nn;
-  h
+  let h = H.create (Sparse.entries p.nn) in
+      Sparse.iter (fun i j ->
+		   match (Nodes.get_ctrl_exn n i, Nodes.get_ctrl_exn n j) with
+		   | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+		      H.add h (a_string, b_string) (i, j))
+		  p.nn;
+      h
 
 type deg =
   | V of int (* only vertices *)
@@ -594,7 +601,7 @@ let match_list t p n_t n_p =
 			 (fun (i', j') ->
 			  (* Degree check *)
 			  (compat t p i' i) && (compat t p j' j))
-			 (Hashtbl.find_all h (a_string, b_string)) in
+			 (H.find_all h (a_string, b_string)) in
 		     if List.length t_edges = 0 then 
 		       (* No compatible edges found *)
 		       raise_notrace NOT_TOTAL
@@ -864,7 +871,7 @@ let match_list_eq p t n_p n_t =
 	        (fun (i', j') ->
 	           (* Degree equality *)
 	           (eq t p i' i) && (eq t p j' j)
-	        ) (Hashtbl.find_all h (a_string, b_string)) in
+	        ) (H.find_all h (a_string, b_string)) in
 	    if List.length t_edges = 0 then 
 	      (* No compatible edges found *)
 	      raise_notrace NOT_TOTAL

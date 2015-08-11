@@ -618,7 +618,7 @@ let compat_clauses e_p i t h_t n_t n_p =
   let p = PortSet.to_IntSet e_p.p 
   and iso_p = PortSet.arities e_p.p in
   IntSet.fold (fun j acc ->
-      let e_t = Hashtbl.find h_t j in
+      let e_t = H_int.find h_t j in
       let iso_t = PortSet.arities e_t.p in
       let clauses : Cnf.lit list list = 
         IntSet.fold (fun v acc ->
@@ -677,10 +677,10 @@ let compat_sub p t f_e n_t n_p =
   let p_a = Array.of_list (Lg.elements p)
   and t_a = Array.of_list (Lg.elements t) in
   fst (
-    Hashtbl.fold (fun j _ (acc, marked) ->
+    H_int.fold (fun j _ (acc, marked) ->
         if List.mem j marked then (acc, marked)
         else (
-          let p_i_list = Hashtbl.find_all f_e j in
+          let p_i_list = H_int.find_all f_e j in
           let p_set = List.fold_left (fun acc i ->
               PortSet.union acc p_a.(i).p
             ) PortSet.empty p_i_list in
@@ -705,13 +705,13 @@ let match_peers t p n_t n_p =
       ) p
   and (non_empty_t, iso_open) = 
     filter_iso (fun e ->  not (PortSet.is_empty e.p)) t in
-  let h = Hashtbl.create (Lg.cardinal non_empty_t) in
+  let h = H_int.create (Lg.cardinal non_empty_t) in
   ignore (Lg.fold (fun e i ->
-      Hashtbl.add h i e;
+      H_int.add h i e;
       i + 1) non_empty_t 0);
   let r = Lg.cardinal open_p
   and c = Lg.cardinal non_empty_t in
-  let f_e = Hashtbl.create (r * c) in (* T -> P *)
+  let f_e = H_int.create (r * c) in (* T -> P *)
   let c_s = IntSet.of_int c in
   let (f, block, _) =
     Lg.fold (fun e_p (acc, block, i) ->
@@ -719,7 +719,7 @@ let match_peers t p n_t n_p =
         let (_, compat_t) = 
 	  Lg.fold (fun e_t (j, acc) ->
 	      if sub_edge e_p e_t n_t n_p then ( 
-                Hashtbl.add f_e j i;	
+                H_int.add f_e j i;	
                 (j + 1, IntSet.add j acc)
               ) else
 	        (j + 1, acc)
@@ -751,14 +751,21 @@ let edg_iso a b n_a n_b  =
 let key e =
   (Face.cardinal e.i, PortSet.cardinal e.p, Face.cardinal e.o)
 
+module H_3 =
+  Hashtbl.Make(struct
+		  type t = int * int * int
+		  let equal (x:int * int * int) y = x = y
+		  let hash = Hashtbl.hash
+		end)
+    
 (* Partition edges according to cardinalities of faces and port sets. 
    Return a hastbl : key -> (edge, index) *)
 let partition_edg l =
-  let h = Hashtbl.create (Lg.cardinal l) in
+  let h = H_3.create (Lg.cardinal l) in
   ignore (
     Lg.fold (fun e i ->
         let k = key e in 
-        Hashtbl.add h k (e, i);
+        H_3.add h k (e, i);
         i + 1
       ) l 0
   );
@@ -770,7 +777,7 @@ let match_list_eq p t n_p n_t : Cnf.clause list  * Cnf.clause list =
   let h = partition_edg t in
   let (clauses, b, _) = 
     Lg.fold (fun e_p (acc, block, i) ->
-        let t_edges = Hashtbl.find_all h (key e_p) in
+        let t_edges = H_3.find_all h (key e_p) in
         let clause = List.fold_left (fun acc (e_t, j) ->
 	    if edg_iso e_t e_p n_t n_p then 
 	      (Cnf.P_var (Cnf.M_lit (i, j))) :: acc

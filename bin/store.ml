@@ -84,7 +84,15 @@ let assign_type (v : store_val) env_t =
   | Int_param _ -> (`param `int, env_t)
   | Float_param _ -> (`param `float, env_t)
 
-type store = (Id.t, typed_store_val) Hashtbl.t
+
+module Hashtbl =
+  Hashtbl.Make(struct
+		  type t = Id.t
+		  let equal (x:string) y = x = y
+		  let hash = Hashtbl.hash
+		end)		       
+		       
+type store = typed_store_val Hashtbl.t
 
 let get_val ((v, _, _) : typed_store_val) = v
 					      
