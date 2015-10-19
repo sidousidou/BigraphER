@@ -39,7 +39,6 @@ module Make (R : RrType.T)
 			     const_pri:p_class list -> p_class list ->
 			     ((int * R.occ) list * R.edge list * int) * int
 		  val scan_sim : Big.bg ->
-				 iter_f:(int -> Big.bg -> unit) ->
 				 const_pri:p_class list -> p_class list ->
 				 R.occ option * int
 		end)

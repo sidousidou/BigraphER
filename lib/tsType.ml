@@ -127,7 +127,6 @@ module Make (R : RrType.T)
 			     const_pri:p_class list -> p_class list ->
 			     ((int * R.occ) list * R.edge list * int) * int
 		  val scan_sim : Big.bg ->
-				 iter_f:(int -> Big.bg -> unit) ->
 				 const_pri:p_class list -> p_class list ->
 				 R.occ option * int
 		end)
@@ -242,13 +241,13 @@ module Make (R : RrType.T)
 	raise (LIMIT (trace, S.make t0 trace m))
       else
 	match P.scan_sim s
-			 ~iter_f
 			 ~const_pri:priorities
 			 priorities with
 	| (None, m') ->
 	   raise (DEADLOCK (trace, S.make t0 trace (m + m'), t_sim))
 	| (Some o, m') ->	
 	   (let s' = R.big_of_occ o in
+	    iter_f (i + 1) s';
 	    Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
 	    check (i + 1, s') (G.label trace) predicates;
 	    Base.H_int.add (G.edges trace) i (R.edge_of_occ o (i + 1));

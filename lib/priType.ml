@@ -64,19 +64,19 @@ module Make (R :RrType.T)
            _scan (b, i) ~matches ~part_f ~const_pri cs in
       _scan (b, i) ~matches:0 ~part_f ~const_pri
 
-    let scan_sim b ~iter_f ~const_pri =
-      let rec _scan_sim b m ~iter_f ~const_pri = function
+    let scan_sim b ~const_pri =
+      let rec _scan_sim b m ~const_pri = function
 	| [] -> (None, m)
 	| (P_class rr) :: cs ->
     	   (match R.random_step b rr with
     	    | (None, m') -> (* Skip *)
-    	       _scan_sim b (m + m') ~iter_f ~const_pri cs
+    	       _scan_sim b (m + m') ~const_pri cs
     	    | (Some o, m') ->
     	       (let (b', m'') = rewrite (R.big_of_occ o) const_pri in
     		(Some (R.update_occ o b'), m + m' + m'')))
 	| (P_rclass _) :: cs -> (* Skip *)
-    	   _scan_sim b m ~iter_f ~const_pri cs in
-      _scan_sim b 0 ~iter_f ~const_pri
+    	   _scan_sim b m ~const_pri cs in
+      _scan_sim b 0 ~const_pri
 
     let cardinal l =
       let to_reacts = function
