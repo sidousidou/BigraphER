@@ -37,7 +37,7 @@ Executable bigrapher
 Library bigraph
   Path:            lib
   FindlibName:	   bigraph
-#  Pack:            true
+# Pack:            true
   Modules:         Base,
                    Big,
                    Brs,
