@@ -676,45 +676,29 @@ let match_orphans t p n_t n_p =
   (clauses, c)
   
 (* Only ctrl and deg check *)
-let match_sites t p n_t n_p =
+let match_ctrl_deg_aux t p n_t n_p m =
   let (clauses, c) =
     Sparse.fold (fun i _ (acc, acc_c) -> 
-      let c = Nodes.get_ctrl_exn n_p i in
-      let js = 
-	List.filter (fun j ->
-	  compat_deg (indeg t j) (indeg p i)
-	) (Nodes.find_all n_t c) in
-      match js with
-      | [] -> raise_notrace NOT_TOTAL
-      | _ -> (
-	let clause = 
-	  List.map (fun j ->
-	    Cnf.P_var (Cnf.M_lit (i, j))
-	  ) js in
-	(clause :: acc, js @ acc_c)
-      )
-    ) p.ns ([], []) in
+		 let js =
+		   Nodes.get_ctrl_exn n_p i
+		   |> Nodes.find_all n_t
+		   |> List.filter (fun j -> compat t p j i) in
+		 match js with
+		 | [] -> raise_notrace NOT_TOTAL
+		 | _ ->
+		    let clause = 
+		      List.map (fun j ->
+				Cnf.P_var (Cnf.M_lit (i, j)))
+			       js in
+		    (clause :: acc, js @ acc_c))
+		m ([], []) in
   (clauses, IntSet.of_list c)
     
+let match_sites t p n_t n_p =
+  match_ctrl_deg_aux t p n_t n_p p.ns
+    
 let match_roots t p n_t n_p =
-  let (clauses, c) =
-    Sparse.fold (fun _ i (acc, acc_c) -> 
-      let c = Nodes.get_ctrl_exn n_p i in
-      let js = 
-	List.filter (fun j ->
-	  compat_deg (outdeg t j) (outdeg p i)
-	) (Nodes.find_all n_t c) in
-      match js with
-      | [] -> raise_notrace NOT_TOTAL
-      | _ -> (
-	let clause = 
-	  List.map (fun j ->
-	    Cnf.P_var (Cnf.M_lit (i, j))
-	  ) js in
-	(clause :: acc, js @ acc_c)
-      )
-    ) p.rn ([], []) in
-  (clauses, IntSet.of_list c)
+    match_ctrl_deg_aux t p n_t n_p p.rn
 
 (* Block unconnected pairs of nodes with sites and nodes with roots. *)
 let match_trans t p : Cnf.clause list =
@@ -752,32 +736,34 @@ let check_sites t p v_p' c_set iso =
   (* Is there a set of sites with the same parent set? *)
   (* Nodes *)
   (IntSet.for_all (fun c ->
-       let prn_c = IntSet.inter 
-           v_p' (IntSet.of_list (Sparse.prn t.nn c)) in
-       (* Construct a candidate set of sites *)
-       let candidate =
-         IntSet.fold (fun s acc ->
-	     let prn_s = safe_exn (IntSet.apply_exn 
-	                             (IntSet.of_list (Sparse.prn p.ns s)) iso) in
-             if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
-             else acc
-           ) (IntSet.of_int p.s) IntSet.empty in
-       (* Equality test *)
-       IntSet.equal candidate prn_c) c_set) &&
-  (* Sites *)
-  (IntSet.for_all (fun s ->
-       let prn_s = IntSet.inter 
-	   v_p' (IntSet.of_list (Sparse.prn t.ns s)) in
-       (* Construct a candidate set of sites *)
-       let candidate =
-         IntSet.fold (fun s acc ->
-	     let prn_s' = safe_exn (IntSet.apply_exn 
-	                       (IntSet.of_list (Sparse.prn p.ns s)) iso) in
-	     if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
-	     else acc
-           ) (IntSet.of_int p.s) IntSet.empty in
-       (* Equality test *)
-       IntSet.equal candidate prn_s) s_set)
+		   let prn_c = IntSet.inter 
+				 v_p' (IntSet.of_list (Sparse.prn t.nn c)) in
+		   (* Construct a candidate set of sites *)
+		   let candidate =
+		     IntSet.fold (fun s acc ->
+				  let prn_s = safe_exn (IntSet.apply_exn 
+							  (IntSet.of_list (Sparse.prn p.ns s)) iso) in
+				  if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
+				  else acc)
+				 (IntSet.of_int p.s) IntSet.empty in
+		   (* Equality test *)
+		   IntSet.equal candidate prn_c)
+		  c_set) &&
+    (* Sites *)
+    (IntSet.for_all (fun s ->
+		     let prn_s = IntSet.inter 
+				   v_p' (IntSet.of_list (Sparse.prn t.ns s)) in
+		     (* Construct a candidate set of sites *)
+		     let candidate =
+		       IntSet.fold (fun s acc ->
+				    let prn_s' = safe_exn (IntSet.apply_exn 
+							     (IntSet.of_list (Sparse.prn p.ns s)) iso) in
+				    if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
+				    else acc)
+				   (IntSet.of_int p.s) IntSet.empty in
+		     (* Equality test *)
+		     IntSet.equal candidate prn_s)
+		    s_set)
 
 (* Dual *)
 let check_roots t p v_p' iso =
