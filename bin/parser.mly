@@ -22,6 +22,7 @@ open Cmd
 %token            SREACT
 %token            INIT
 %token            RULES
+%token		  PREDS
 %token            INT
 %token            FLOAT
 %token            FUN
@@ -59,7 +60,6 @@ open Cmd
 (* CMD *)
 
 %token <string> BIG_FILE
-%token <string> BILOG_FILE
 %token <string> PATH
 %token <Ast.const list> O_CONST
 %token <Cmd.format_op list> O_FORMAT
@@ -181,17 +181,31 @@ dec_sreact:
                                             { Sreact_fun_exp ($3, $5, $8, $12, $13, $10, loc $startpos $endpos) };
 
 brs:
-  | BRS params init rules ENDBRS            { { dbrs_pri = $4;
+  | BRS params init rules preds ENDBRS      { { dbrs_pri = $4;
 						dbrs_init = $3;
 						dbrs_params = $2;
+						dbrs_preds = $5;
 						dbrs_loc = loc $startpos $endpos; } };
 
 sbrs: 
-  | SBRS params init srules ENDSBRS         { { dsbrs_pri = $4;
+  | SBRS params init srules preds ENDSBRS   { { dsbrs_pri = $4;
 					        dsbrs_init = $3;
 						dsbrs_params = $2;
+						dsbrs_preds = $5;
 						dsbrs_loc = loc $startpos $endpos; } };
-    
+preds:
+  |					    { [ ] }
+  | PREDS EQUAL LCBR pred_list RCBR SEMICOLON
+                                            { $4 };
+
+pred_list:
+  l = separated_nonempty_list(COMMA, pred_ide)
+                                            { l };
+
+pred_ide:
+  | IDE                                     { Pred_id ($1, loc $startpos $endpos)         }
+  | IDE LPAR num_list RPAR                  { Pred_id_fun ($1, $3, loc $startpos $endpos) };
+
 init:
   | INIT IDE SEMICOLON                      { Init ($2, loc $startpos $endpos)         }
   | INIT IDE LPAR num_list RPAR SEMICOLON   { Init_fun ($2, $4, loc $startpos $endpos) };
@@ -434,26 +448,23 @@ sub_cmd:
       { eval_help_full Format.std_formatter () }
   | C_SIM O_HELP
       { eval_help_sim Format.std_formatter () }
-  | C_CHECK list(opt_chk) BIG_FILE option(BILOG_FILE)
+  | C_CHECK list(opt_chk) BIG_FILE
       { List.iter (fun x-> x) $2;
         check_dot ();
 	check_states ();
 	defaults.model <- $3;
-	defaults.pred <- $4;
         `check }
-  | C_FULL list(opt_full) BIG_FILE option(BILOG_FILE)
+  | C_FULL list(opt_full) BIG_FILE
       { List.iter (fun x-> x) $2;
         check_dot ();
 	check_states ();      
 	defaults.model <- $3;
-	defaults.pred <- $4;
         `full }
-  | C_SIM list(opt_sim) BIG_FILE option(BILOG_FILE)
+  | C_SIM list(opt_sim) BIG_FILE
       { List.iter (fun x-> x) $2;
         check_dot ();
 	check_states ();      
 	defaults.model <- $3;
-	defaults.pred <- $4;
         `sim };
 
 %%

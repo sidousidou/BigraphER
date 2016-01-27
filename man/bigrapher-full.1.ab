@@ -6,7 +6,7 @@ bigrapher-full - Compute the transition system of a model
 .SH SYNOPSIS
 .P
 .B bigrapher full
-[OPTIONS] <MODEL.big> [PRED.bilog]
+[OPTIONS] <MODEL.big>
 
 .SH OPTIONS
 .PP

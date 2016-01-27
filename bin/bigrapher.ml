@@ -371,7 +371,7 @@ let () =
       let m = Parser.model Lexer.token lexbuf in 
       close_in file; 
       let env = Store.init_env fmt Cmd.(defaults.consts) in
-      let (s0, prs, env_t) = Store.eval_model fmt m env in
+      let (s0, prs, preds, env_t) = Store.eval_model fmt m env in
       (* STATS *)
       (match prs with
        | Store.P priorities ->
@@ -406,7 +406,7 @@ let () =
 	      open_progress_bar ();
 	      Brs.sim ~s0
 		      ~priorities
-		      ~predicates:[]
+		      ~predicates:preds
 		      ~init_size:Cmd.(defaults.max_states)
 		      ~stop:Cmd.(defaults.steps)
 		      ~iter_f
@@ -417,7 +417,7 @@ let () =
 	      open_progress_bar ();
 	      Brs.bfs ~s0
 		      ~priorities
-		      ~predicates:[]
+		      ~predicates:preds
 		      ~max:Cmd.(defaults.max_states)
 		      ~iter_f
 	      |> after_brs fmt)
@@ -435,7 +435,7 @@ let () =
 	      open_progress_bar ();
 	      Sbrs.sim ~s0
 		       ~priorities
-		       ~predicates:[]
+		       ~predicates:preds
 		       ~init_size:Cmd.(defaults.max_states)
 		       ~stop:Cmd.(defaults.time)
 		       ~iter_f
@@ -446,7 +446,7 @@ let () =
 	      open_progress_bar ();
 	      Sbrs.bfs ~s0
 		       ~priorities
-		       ~predicates:[]
+		       ~predicates:preds
 		       ~max:Cmd.(defaults.max_states)
 		       ~iter_f
 	      |>  after_sbrs fmt)

@@ -14,7 +14,6 @@ float t_min = 15.;
 float rho2 = 1./(sifs + cts);
 float rho4 = 1./(sifs + ack);
 float rho5 = 1./(timeout);
-float inst = inf;
 
 # Signals (default, Locked, Clear, Error)
 fun ctrl S(t) = 1;
@@ -166,7 +165,7 @@ fun sreact r_D(t) =
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_L(t){b} || /r)
-  -[ inst ]->
+  -[ inf ]->
   share (id || M_D{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_L(t){b} || /r);  
@@ -178,7 +177,7 @@ fun sreact r_P(t,u) =
   share (id(2) || M_D{r,x}.(id | A{a}))
   by psi_3
   in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r)
-  -[ inst ]->
+  -[ inf ]->
   share (id(2) || M_P{r,x}.(id | A{a}))
   by psi_3
   in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r);  
@@ -186,7 +185,7 @@ fun sreact r_P(t,u) =
 # Reaction rule 9
 fun sreact r_B(l) = 
   m_l(l) || /r M_P{r,x}.(id | A{d})
-  -[ inst ]->
+  -[ inf ]->
   m_b(l) || /r M_P{r,x}.(id | A{d});
   
 # Reaction rule 10
@@ -199,7 +198,7 @@ fun sreact r_UD(t) =
   share (id || M_D{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r)
-  -[ inst ]->
+  -[ inf ]->
   clr(t);  
 
 # Reaction rule 11
@@ -207,7 +206,7 @@ fun sreact r_UP(t) =
   share (id || M_P{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r)
-  -[ inst ]->
+  -[ inf ]->
   clr(t);    
 
 # Reaction rule 12
@@ -215,10 +214,23 @@ fun sreact r_UC(t) =
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){a} || /r)
-  -[ inst ]->
+  -[ inf ]->
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S(t){a} || /r);
+
+
+# Phi_1: At least a trasmission error occurs
+big error = S_E{x};
+
+# Phi_2: Collision occurs
+big collision = M_B{x,y} || M_B{z,w};
+
+# Phi_3: Station A sends packet
+fun big transmission(t) =
+  share (id || /x M_L{r,x}.(id | P(8464.){x,d} | A{a})) 
+  by ([{0}, {0,1}], 2)
+  in (S_L(t){a} || id(1,{d,r,a}));
     
 sbrs
   # Parameters
@@ -237,5 +249,7 @@ sbrs
       	    (r_B(l)),
       	    {r_BACK1(z,t,l), r_BACK1E(t,l), r_BACK2(z,t,l), r_BACK2E(t,l)},
       	    {r_RTS(t,l), r_CTS(t,t',l), r_DATA(l), r_ACK(t,t',l)}
-          ];  
+          ];
+
+   preds = { error, collision, transmission(t) };
 endsbrs

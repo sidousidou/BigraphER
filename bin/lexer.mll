@@ -45,7 +45,6 @@ let const = ("--const" | "-c") argv_sep
 let format = ("--format" | "-f") argv_sep
 let path = [^'\r' '\n']+			    
 let big = path ".big"
-let bilog = path ".bilog"
 
 (* RULES *)
 
@@ -74,6 +73,7 @@ rule token =  parse
   | "sbrs"		    { SBRS }
   | "endsbrs"		    { ENDSBRS }
   | "rules"		    { RULES }
+  | "preds"                 { PREDS }
   | "share"                 { SHARE }
   | "by"                    { BY }
   | "in"                    { IN }
@@ -135,7 +135,6 @@ and cmd =  parse
   | ("--simulation-steps"
     | "-S")                 { O_STEPS } 	 
   | big                     { BIG_FILE (Lexing.lexeme lexbuf) }
-  | bilog                   { BILOG_FILE (Lexing.lexeme lexbuf) }
   | path                    { PATH (Lexing.lexeme lexbuf) }
   | eof                     { EOF }
   | _ as c                  { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }

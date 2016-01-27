@@ -10,8 +10,6 @@ exception ERROR of error
 		     
 type big_file = string
 
-type bilog_file = string option		  
-
 type path = string
 	      
 type file = string
@@ -144,7 +142,6 @@ type settings = {
     mutable max_states : int;
     mutable model : string;
     mutable out_format : format_op list;
-    mutable pred : string option;
     mutable quiet : bool;
     mutable steps : int;
     mutable steps_flag : bool;
@@ -169,7 +166,6 @@ let defaults = {
     max_states = 1000;
     model = "";
     out_format = default_formats;
-    pred = None;
     quiet = false;
     steps = 1000;
     steps_flag = false;
@@ -312,7 +308,7 @@ let help_fun fmt l cmd =
 	       else ())
 	       l in  
    fprintf fmt "@[<v 2>USAGE:@,\
-		bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@]@.@."
+		bigrapher %s [OPTIONS] <MODEL.big>@]@.@."
 	   cmd;
    fprintf fmt "@[<v 2>OPTIONS:@,%a@]@."
 	   print_man l;
@@ -411,7 +407,7 @@ let usage fmt () =
   fprintf fmt "@[<v>%a@,@[Try `bigrapher --help' for more information.@]@]" usage_str ()
 
 let usage_sub fmt cmd =
-  fprintf fmt "@[<v>USAGE: bigrapher %s [OPTIONS] <MODEL.big> [PRED.bilog]@,\
+  fprintf fmt "@[<v>USAGE: bigrapher %s [OPTIONS] <MODEL.big>@,\
 	       Try `bigrapher %s --help' for more information.@]@." cmd cmd
 	  
 let report_error fmt e =

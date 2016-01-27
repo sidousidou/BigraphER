@@ -30,6 +30,7 @@
        "endsbrs"
        "init"
        "atomic"
+       "preds"
        "rules")))
   "BigraphER mode keywords.")
 
@@ -37,6 +38,9 @@
   (eval-when-compile
     (regexp-opt
      '("->"
+       "-->"
+       "-["
+       "]->"
        "@"
        "by"
        "in"

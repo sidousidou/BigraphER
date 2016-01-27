@@ -826,7 +826,39 @@ let eval_spr env env_t pr =
 			  
 let eval_sprs =
   eval_p_list eval_spr (fun x -> Sbrs.is_valid_priority_list (fst x))
-			    
+
+let eval_pred_fun_app id args env env_t p =
+  let print_id id nums =
+    let nums_s =
+      List.map (function
+		 | Int _ | Float _ as v -> string_of_store_val v
+		 | _ -> assert false)
+	       nums in
+    id ^ "(" ^ (String.concat "," nums_s) ^ ")" in 
+  scan_for_params env args
+  |> param_scopes env
+  |> List.fold_left (fun (acc, env_t) scope ->
+		     let (nums, args_t) = eval_nums args scope env in
+		     let (exp, forms, t) = get_big_fun id args_t p env in
+		     try
+		       let env_t' = app_exn env_t (dom_of_lambda t) args_t in
+		       let scope' = extend_scope scope forms nums args_t p in
+		       let (b, env_t'') = eval_big exp scope' env env_t' in
+		       ((print_id id nums, b) :: acc, env_t'')
+		     with
+		     | UNIFICATION ->
+			raise (ERROR (Wrong_type (`lambda (args_t, `big), resolve_t env_t t), p)))
+		    ([], env_t)
+  
+let eval_preds env env_t preds =
+  let aux env_t = function
+    | Pred_id (id, p) -> ([id, get_big id p env], env_t)
+    | Pred_id_fun (id, args, p) -> eval_pred_fun_app id args env env_t p in  
+  let aux' (acc, env_t) id =
+    let (ps, env_t') = aux env_t id in
+    (acc @ ps, env_t') in
+    List.fold_left aux' ([], env_t) preds
+  
 let eval_init exp env env_t =
   let ((b, store), p) =
     match exp with
@@ -974,14 +1006,16 @@ let eval_model fmt m env =
   store_params fmt (params_of_ts m.model_rs) env;
   let (b, env_t') = eval_init (init_of_ts m.model_rs) env env_t in
   match m.model_rs with
-  | Dbrs rbs ->
+  | Dbrs brs ->
      let (p, env_t'') =
-       eval_prs env env_t' rbs.dbrs_pri rbs.dbrs_loc in
-     (b, P p, env_t'')
+       eval_prs env env_t' brs.dbrs_pri brs.dbrs_loc in
+     let (preds, env_t''') = eval_preds env env_t'' brs.dbrs_preds in
+     (b, P p, preds, env_t''')
   | Dsbrs sbrs ->
      let (p, env_t'') =
        eval_sprs env env_t' sbrs.dsbrs_pri sbrs.dsbrs_loc in
-     (b, S p, env_t'')  
+     let (preds, env_t''') = eval_preds env env_t'' sbrs.dsbrs_preds in
+     (b, S p, preds, env_t''')  
 
 (******** EXPORT STORE *********)
 		    

@@ -134,6 +134,10 @@ type rul_id =
   | Rul_id of Id.t * Loc.t
   | Rul_id_fun of Id.t * num_exp list * Loc.t
 
+type pred_id =
+  | Pred_id of Id.t * Loc.t
+  | Pred_id_fun of Id.t * num_exp list * Loc.t
+					  
 type pr_exp =
   | Pr_red of rul_id list * Loc.t 
   | Pr of rul_id list * Loc.t
@@ -142,6 +146,7 @@ type dbrs =
   { dbrs_pri : pr_exp list;
     dbrs_init: init_exp;
     dbrs_params: param_exp list;
+    dbrs_preds: pred_id list;
     dbrs_loc: Loc.t;
   }
 
@@ -157,6 +162,7 @@ type dsbrs =
   { dsbrs_pri : spr_exp list;
     dsbrs_init: init_exp;
     dsbrs_params: param_exp list;
+    dsbrs_preds: pred_id list;
     dsbrs_loc: Loc.t;
   }
 
