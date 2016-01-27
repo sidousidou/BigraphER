@@ -1,5 +1,5 @@
 (** This module provides operations on BRS.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** The type of bigraphical reaction rules.*)
 type react =

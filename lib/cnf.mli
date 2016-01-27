@@ -1,8 +1,8 @@
 (** This module provides operations for boolean formulae. It includes functions
     for conversion to {{: https://en.wikipedia.org/wiki/Conjunctive_normal_form
     } CNF}, optimisation via auxiliary variables and integration with {{:
-    http://www.dcs.gla.ac.uk/~michele/camlminisat.html } MiniSat}.
-    @author Michele Sevegnani *)
+    http://hidden/camlminisat.html } MiniSat}.
+    @author Hidden *)
 
 (** The type of literal (as index). *)
 type lit =

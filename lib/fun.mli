@@ -1,5 +1,5 @@
 (** This module provides an implementation of functions on integers.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** Type of functions on integers. *)
 type +'a t

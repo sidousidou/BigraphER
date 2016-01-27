@@ -2,7 +2,7 @@
     hash tables. The module also provides operations on graphs. These are
     intended to be used when boolean matrices are interpreted as adjacency
     matrices of Directed Acyclic Graphs (DAG).
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (*module H : Hashtbl.S with type key = int*)
 				  

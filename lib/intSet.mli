@@ -1,5 +1,5 @@
 (** This module implements sets of integers.  
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** Elements of a set. *)
 type elt = int

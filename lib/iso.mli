@@ -1,5 +1,5 @@
 (** This module provides an implementation of isomorphisms on integers.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** Type of isomorphisms on integers. *)
 type +'a t

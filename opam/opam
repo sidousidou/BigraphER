@@ -1,12 +1,12 @@
 opam-version: "1.2"
 name: "bigrapher"
 version: "1.0.0"
-maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
-authors: [ "Michele Sevegnani" ]
+maintainer: "Hidden <hidden>"
+authors: [ "Hidden" ]
 license: "BSD-3-clause"
-homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
+homepage: "http://hidden/bigrapher.html"
 
-doc: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
+doc: "http://hidden/bigrapher.html"
 bug-reports: "https://bitbucket.org/mseve/bigrapher/issues"
 dev-repo: "https://bitbucket.org/mseve/bigrapher.git"
 

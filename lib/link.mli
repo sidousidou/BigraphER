@@ -1,5 +1,5 @@
 (** This module provides operations on link graphs.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** The type of names. *)
 type name = Nam of string

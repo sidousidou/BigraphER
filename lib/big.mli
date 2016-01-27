@@ -1,5 +1,5 @@
 (** This module provides operations on bigraphs.
-@author Michele Sevegnani *)
+@author Hidden *)
 
 (** The type of bigraphs.*)
 type bg = {

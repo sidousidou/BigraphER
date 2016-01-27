@@ -1,5 +1,5 @@
 (** This module provides operations on stochastic BRS.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** The type of stochastic bigraphical reaction rules.*)
 type sreact =

@@ -1,5 +1,5 @@
 (** This module provides an implementation of binary relations on integers.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** Type of binary relations on integers. *)
 type +'a t

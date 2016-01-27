@@ -1,5 +1,5 @@
 (** Module providing export utilities.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** The type of error *)
 type error =

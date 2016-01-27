@@ -7,13 +7,13 @@ Description: BigraphER is an efficient implementation of Bigraphical Reactive
  rule priorities, graphical output and predicate checking. Models can be
  exported to probabilistic model checker PRISM.
   
-Authors:	Michele Sevegnani
-Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
+Authors:	Hidden
+Maintainers: 	Hidden <Hidden>
 License:     	BSD-2-clause
 LicenseFile:	LICENSE
 OCamlVersion:	>= 4.02.0
 Plugins:     	META (0.4), DevFiles (0.4)
-Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
+Homepage:    	http://hidden/bigrapher.html
 BuildTools:	ocamlbuild, menhir
 FilesAB:       	bin/version.ml.ab,
                 man/bigrapher.1.ab,
@@ -93,7 +93,7 @@ AlphaFeatures: ocamlbuild_more_args
 Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
-  Authors:	   Michele Sevegnani
+  Authors:	   Hidden
   BuildTools+: 	   ocamldoc
   Format:	   html
   Index:	   API.html

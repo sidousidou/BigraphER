@@ -1,5 +1,5 @@
 (** This module provides operations on place graphs.
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** The type of place graphs.*)
 type pg = {

@@ -1,6 +1,6 @@
 (** This module provides operations on basic bigraphical entities such as
     controls, nodes and ports.  
-    @author Michele Sevegnani *)
+    @author Hidden *)
 
 (** {6 Specialised hash tables} *)
 
