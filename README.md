@@ -1,6 +1,6 @@
 # BigraphER - Bigraph Evaluator & Rewriting #
 
-Version 0.7.1
+Version 1.0.0
 
 [![Build Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branchName=master)](https://app.shippable.com/projects/540f670b21c97efdb898a046/builds/latest)
 

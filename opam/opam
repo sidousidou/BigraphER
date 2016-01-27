@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "bigrapher"
-version: "0.7.1"
+version: "1.0.0"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 authors: [ "Michele Sevegnani" ]
 license: "BSD-3-clause"
