@@ -1,28 +1,30 @@
-(** This module provides an implementation of sparse boolean matrices based on
-    hash tables. The module also provides operations on graphs. These are
-    intended to be used when boolean matrices are interpreted as adjacency
+(** This module provides an implementation of sparse Boolean matrices based on
+    maps. The module also provides operations on graphs. These are
+    intended to be used when Boolean matrices are interpreted as adjacency
     matrices of Directed Acyclic Graphs (DAG).
     @author Michele Sevegnani *)
 
-(*module H : Hashtbl.S with type key = int*)
-				  
-(** The type of boolean matrices. Only true values are stored in the matrix as
-    row-column pairs. For example adding value ["(2,1)"] means that the second
+
+(** Specialised maps. *)
+module M_int : Map.S with type key = int
+
+(** The type of Boolean matrices. Only true values are stored in the matrix as
+    row-column pairs. For example adding value ["(2, 1)"] means that the second
     element in the third row of the matrix is true. *)
 type bmatrix =
   { r : int;                           (** Number of rows.          *)
     c : int;                           (** Number of columns.       *)
-    r_major : int Base.H_int.t;                 (** Row-major order index    *)
-    c_major : int Base.H_int.t;                 (** Column-major order index *)
+    r_major : IntSet.t M_int.t;        (** Row-major order index    *)
+    c_major : IntSet.t M_int.t;        (** Column-major order index *)
   }
-
+  
 (** {6 Basic operations} *)
     
 (** [make r c] returns an empty matrix with [r] rows and [c] columns. *) 
 val make : int -> int -> bmatrix
 
 (** Matrix equality. *)
-val ( = ) : bmatrix -> bmatrix -> bool
+val equal : bmatrix -> bmatrix -> bool
 
 (** Matrix comparison. *)
 val compare : bmatrix -> bmatrix -> int
@@ -30,7 +32,7 @@ val compare : bmatrix -> bmatrix -> int
 (** Return the string representation of a matrix. '0' = false and 1 = true *)
 val to_string : bmatrix -> string
 
-(** [apply_rows_exn iso m] returns a copy of matrix [m] with the rows reordered
+(** [apply_rows_exn iso m] returns matrix [m] with the rows reordered
     according to [iso]. The domain of [iso] is assumed to be [{0,...,r}] with
     [r] the number of rows of [m].
     @raise Not_found if the isomorphism is undefined. *)
@@ -56,6 +58,27 @@ val apply_exn : int Iso.t -> bmatrix -> bmatrix
 v} *)					  
 val parse_vectors : int list list -> int -> bmatrix
 
+(** Raised when a string contains characters different than ['0'] or ['1']. *)
+exception PARSE_ERROR
+					      
+(** [parse_string r n s rows] parses list [rows] of rows encoded as ['0''1']
+    strings. The resulting matrix is split as follows: 
+{v 
+    +-----------+-----------+
+    |           |           |
+    |     a     |     b     |
+    |           |           |
+    +-----------+-----------+
+    |           |           |
+    |     c     |     d     |
+    |           |           |
+    +-----------+-----------+ v}
+    with [a: r * n], [b: r * s], [c: n * n], and [d: n * s].
+
+    @raise PARSE_ERROR *)					      
+val parse_string : int -> int -> int -> String.t list ->
+		   (bmatrix * bmatrix) * (bmatrix * bmatrix)
+		   
 (** Return the domain of a matrix, that is the set of rows having at least one
     [true] element. *)
 val dom : bmatrix -> IntSet.t
@@ -64,20 +87,21 @@ val dom : bmatrix -> IntSet.t
     one [true] element. *)
 val codom : bmatrix -> IntSet.t
 
-(** Same as [Hashtbl.iter]. *)			 
+(** Same as [Map.iter]. *)			 
 val iter : (int -> int -> unit) -> bmatrix -> unit
 
-(** Same as [Hashtbl.fold]. *)						
+(** Same as [Map.fold]. *)						
 val fold : (int -> int -> 'a -> 'a) -> bmatrix -> 'a -> 'a
 
-(** [add m i j] adds [true] element [m.(i).(j)]. Arguments [i] and [j] are
-    assumed to be valid indices. *)
-val add : bmatrix -> int -> int -> unit
+(** [add i j m] adds  element [(i,j)]. Arguments [i] and [j] are
+    assumed to be valid indexes. *)
+val add : int -> int -> bmatrix -> bmatrix
 
 (** Add a list of elements as in {!Sparse.add}. *)				     
-val add_list : bmatrix -> (int * int) list -> unit
+val add_list : bmatrix -> (int * int) list -> bmatrix
 
-(** Return the number of [true] elements in a matrix. *)
+(** Return the number of [true] elements in a matrix. This is equivalent to the
+    number of edges in a graph. *)
 val entries : bmatrix -> int
 			 
 (** {6 Matrix operations} *)
@@ -145,17 +169,11 @@ val trans : bmatrix -> bmatrix
 
 (** {6 Graph operations} *)
 
-(** Return a list containing the children of a node. *)			 
-val chl : bmatrix -> int -> int list
+(** Return the children set of a node. *)			 
+val chl : bmatrix -> int -> IntSet.t
 
-(** Same as {!Sparse.chl} but return a set. *)				
-val chl_set : bmatrix -> int -> IntSet.t
-
-(** Return a list containing the parents of a node. *)				
-val prn : bmatrix -> int -> int list
-
-(** Same as {!Sparse.prn} but return a set. *)				
-val prn_set : bmatrix -> int -> IntSet.t
+(** Return the parent set of a node. *)				
+val prn : bmatrix -> int -> IntSet.t
 
 (** Return the set of leaves of a graph. *)				
 val leaves : bmatrix -> IntSet.t
@@ -167,9 +185,9 @@ val orphans : bmatrix -> IntSet.t
     they share a parent. *)
 val siblings : bmatrix -> int -> IntSet.t
 
-(** [siblings_chk m] returns [false] if any two columns in [m] are siblings. 
+(** [siblings_chk m] returns [false] if any two nodes in [m] are siblings. 
     Note that orphans are not considered siblings. *)
-val siblings_chk: bmatrix -> bool
+val siblings_chk : bmatrix -> bool
 
 (** Dual of {!Sparse.siblings}. *)
 val partners : bmatrix -> int -> IntSet.t

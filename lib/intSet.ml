@@ -15,7 +15,7 @@ let of_list =
 		  add e acc)
 		 empty
 		 
-(* given a non-nagative integer i return ordinal i = {0,1,....,i-1} i.e.   *)
+(* given a non-negative integer i return ordinal i = {0,1,....,i-1} i.e.   *)
 (* set with cardinality i                                                  *)
 let of_int i =
   assert (i >= 0);

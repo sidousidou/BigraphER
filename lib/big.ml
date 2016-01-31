@@ -855,7 +855,7 @@ let key b =
 let equal_opt a b =
   (Place.deg_roots a.p = Place.deg_roots b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
-  && (Sparse.(=) a.p.Place.rs b.p.Place.rs)
+  && (Sparse.equal a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
@@ -870,7 +870,7 @@ let equal a b =
   && (Place.deg_roots a.p = Place.deg_roots b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
   && (Nodes.equal a.n b.n)
-  && (Sparse.(=) a.p.Place.rs b.p.Place.rs)
+  && (Sparse.equal a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
     if b.n.Nodes.size = 0 then
       (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
