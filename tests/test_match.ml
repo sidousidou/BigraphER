@@ -130,7 +130,24 @@ let do_equality_tests l ts =
      xml_block "system-out" [] [msg_out],
      [xml_block "failure" attr_match [msg]])
   and error n b =
-    n ^ "\n" ^ (Big.to_string b) ^ "\n" ^ (Printexc.get_backtrace ()) in
+    let aux m =
+      "(" ^ (string_of_int m.Sparse.r) ^ " X " ^ (string_of_int m.Sparse.c) ^ ") "
+      ^ (String.concat " " (Sparse.fold (fun i j acc ->
+					 (("(" ^ (string_of_int i)
+					   ^ "," ^ (string_of_int j) ^ ")") :: acc))
+					m [])) in
+    n ^ "\n" ^ (Big.to_string b) ^ "\n"
+    ^ "edges: " ^ (string_of_int (Sparse.entries (b.p.nn))) ^ "\n"
+    ^ "rn:\n" ^  (aux b.p.rn) ^ "\n"
+    ^ "rs:\n" ^  (aux b.p.rs) ^ "\n"
+    ^ "nn:\n" ^  (aux b.p.nn) ^ "\n"
+    ^ "ns:\n" ^  (aux b.p.ns) ^ "\n"
+    ^ "top:\n" ^ (aux (Sparse.append b.p.rn b.p.rs)) ^ "\n"
+    ^ "botton:\n" ^ (aux (Sparse.append b.p.nn b.p.ns)) ^ "\n"
+    ^ "stack:\n" ^ (aux (Sparse.stack
+			   (Sparse.append b.p.rn b.p.rs)
+			   (Sparse.append b.p.nn b.p.ns))) ^ "\n"
+    ^ (Printexc.get_backtrace ()) in
   (List.map (fun (n, b) ->
 	     let s = n ^ " = " ^ n in
              try

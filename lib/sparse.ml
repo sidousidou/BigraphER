@@ -70,7 +70,7 @@ let add i j m =
 let flip_major m =
   M_int.fold (fun i js acc ->
 	      IntSet.fold (fun j acc ->
-			   add_m i j acc)
+			   add_m j i acc)
 			  js acc)
 	     m M_int.empty
     
