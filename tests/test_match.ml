@@ -85,7 +85,12 @@ let do_tests =
 						  (comp c (comp (tens t.pattern id) d))))
 					     occs
 				   |> String.concat "\n")],
-     [xml_block "failure" attr_match [msg]]) in
+     [xml_block "failure" attr_match [msg]])
+  and error n0 b0 n1 b1 =
+    (* print_endline (n0 ^ " &gt; " ^ n1); *)
+    n0 ^ "\n" ^ (Big.to_string b0) ^ "\n"
+    ^  n1 ^ "\n" ^ (Big.to_string b1) ^ "\n"
+    ^ (Printexc.get_backtrace ()) in
   List.map (fun t ->
 	    let default_fail_msg = sprintf "%s cannot be matched in %s." t.p_name t.t_name in
 	    try
@@ -106,12 +111,12 @@ let do_tests =
 		| ("T14", "P25") -> success t
 		| _ -> failure t (sprintf "Interfaces %s != %s"
 					  (string_of_inter x) (string_of_inter y)) [])
-            |  e ->
+            |  _ ->
 		(t.t_name ^ " &gt; " ^ t.p_name,
 		 module_name,
 		 xml_block "system-out" [] [error_msg],
-		 [xml_block "error" attr_err [Printexc.to_string e]]))
-
+		 [xml_block "error" attr_err
+			    [error t.t_name t.target t.p_name t.pattern]]))
 
 let do_equality_tests l ts =
   let success s msg =
@@ -123,18 +128,20 @@ let do_equality_tests l ts =
     (s,
      module_name,
      xml_block "system-out" [] [msg_out],
-     [xml_block "failure" attr_match [msg]]) in
+     [xml_block "failure" attr_match [msg]])
+  and error n b =
+    n ^ "\n" ^ (Big.to_string b) ^ "\n" ^ (Printexc.get_backtrace ()) in
   (List.map (fun (n, b) ->
 	     let s = n ^ " = " ^ n in
              try
                if Big.equal b b then success s "Bigraphs are equal"
                else failure s "Bigraphs are not equal" (sprintf "%s != %s" n n)
              with
-             | e ->
+             | _ ->
 		(s,
 		 module_name,
 		 xml_block "system-out" [] [error_msg],
-		 [xml_block "error" attr_err [Printexc.to_string e]])
+		 [xml_block "error" attr_err [error n b]])
 	    ) (List.sort (fun (x, _) (y, _) -> String.compare x y) l))
   @ (List.map (fun t ->
 	       let s = t.t_name ^ " = " ^ t.p_name in
@@ -145,11 +152,14 @@ let do_equality_tests l ts =
 		    |  _ -> failure s "Bigraphs are equal" s)
 		 else success s "Bigraphs are not equal"
 	       with
-               | e -> 
+               | _ -> 
 		  (s,
 		   module_name,
 		   xml_block "system-out" [] [error_msg],
-		   [xml_block "error" attr_err [Printexc.to_string e]])
+		   [xml_block "error" attr_err
+			      [ t.t_name ^ "\n" ^ (Big.to_string t.target) ^ "\n"
+				 ^  t.p_name ^ "\n" ^ (Big.to_string t.pattern) ^ "\n"
+				 ^ (Printexc.get_backtrace ()) ]])
 	      ) ts)
 
 let safe_exp f =
@@ -508,6 +518,7 @@ let tests bgs = (* TEST 1 *)
 
 (* Args: PATH PATH-out*)  
 let () =
+  Printexc.record_backtrace true;
   let bg_strings = parse_all Sys.argv.(1) in
   let bgs =
     List.map (fun (n, ls) -> (n, (Big.parse ls))) bg_strings in

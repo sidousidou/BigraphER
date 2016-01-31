@@ -7,7 +7,7 @@ let string_of_attributes tag attr =
 		     
 let xml_block tag attr chl_blocks =
   sprintf "<%s>\n\
-             %s\n\
+             %s\
            </%s>"
 	  (string_of_attributes tag attr)
 	  (String.concat "\n" (List.filter (fun s -> String.length s > 0) chl_blocks))

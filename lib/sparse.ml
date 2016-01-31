@@ -37,9 +37,11 @@ let compare a b =
   | x -> x
 
 let to_string m =
+  (* Printf.printf "Sparse.to_string: %d %d\n" m.r m.c; *)
   let buff = Array.make_matrix m.r m.c "0" in
   M_int.iter (fun i js ->
 	      IntSet.iter (fun j ->
+			   (* Printf.printf "printing (%d, %d)\n" i j; *)
 			   buff.(i).(j) <- "1")
 			  js)
 	     m.r_major;
@@ -275,11 +277,13 @@ let levels m =
      match mi with
      | Some js -> (t, M_int.add r js b)
      | None -> (t, b)
-      
+
+(* Dual of stack *)		 
 let split_rows r m =
   assert (r > 0);
   assert (r <= m.r);
-  let (top, bottom) = aux_split r m.r_major in
+  let (top, b) = aux_split r m.r_major in
+  let bottom = off (-r) 0 b in
   ({ r;
      c = m.c;
      r_major = top;
@@ -291,10 +295,12 @@ let split_rows r m =
      c_major = flip_major bottom;
    })
 
+(* Dual of append *)    
 let split_columns c m =
   assert (c > 0);
   assert (c <= m.c);
-  let (left, right) = aux_split c m.c_major in
+  let (left, right') = aux_split c m.c_major in
+  let right = off (-c) 0 right' in
   ({ r = m.r;
      c;
      r_major = flip_major left;

@@ -50,15 +50,16 @@ let do_tests =
 		__MODULE__,
 		xml_block "system-out" [] ["Test passed. Place graph not decomposable into prime components."],
 		[])
-            | e ->
+            | _ ->
 	       (n,
 		__MODULE__,
 		xml_block "system-out" [] [error_msg],
-		[xml_block "error" attr_err [Printexc.to_string e]]))
+		[xml_block "error" attr_err [Printexc.get_backtrace ()]]))
 	       
  
 (* Args: PATH OUT-PATH FNAME *)  
 let () =
+  Printexc.record_backtrace true;
   let bg_strings = parse_all Sys.argv.(1) in
   let bgs = 
     List.filter (fun (_, b) -> 
