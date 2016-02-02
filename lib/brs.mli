@@ -29,7 +29,7 @@ type graph = {
     l : int Base.H_string.t;          (** Labelling function *) 
   }
 	       
-(** String representation of a reaction reaction. *)
+(** String representation of reaction rules. *)
 val to_string_react : react -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
@@ -37,6 +37,21 @@ val to_string_react : react -> string
     otherwise. *)
 val is_valid_react : react -> bool
 
+(** The type of reaction validity errors. *)				
+type react_error
+       
+(** Raised when a reaction rule is not valid. *)
+exception NOT_VALID of react_error
+			 
+(** Same as {!is_valid_react} but an exception is raised when the rule is not
+    valid. 
+    
+    @raise NOT_VALID when the rule is not valid. *)
+val is_valid_react_exn : react -> bool
+
+(** String representation of reaction validity errors. *)
+val string_of_react_err : react_error -> string
+				    
 (** Return [true] if all the reaction rules in the priority class are valid,
     [false] otherwise. *)
 val is_valid_priority : p_class -> bool

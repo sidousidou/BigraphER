@@ -159,6 +159,20 @@ val append : bmatrix -> bmatrix -> bmatrix
 v}*)				     
 val stack : bmatrix -> bmatrix -> bmatrix
 
+(** [tens a b c d] computes the matrix defined below:
+{v 
+    +-----------+-----------+
+    |           |           |
+    |     a     |     b     |
+    |           |           |
+    +-----------+-----------+
+    |           |           |
+    |     c     |     d     |
+    |           |           |
+    +-----------+-----------+ v}
+ *)		    
+val glue : bmatrix -> bmatrix -> bmatrix -> bmatrix -> bmatrix
+				    
 (** [mul a b] multiplies (row by column multiplication) matrix [a] by matrix
     [b]. The number of columns of [a] is assumed to be equal to the number of
     rows of [b]. *)
@@ -185,15 +199,15 @@ val orphans : bmatrix -> IntSet.t
     they share a parent. *)
 val siblings : bmatrix -> int -> IntSet.t
 
-(** [siblings_chk m] returns [false] if any two nodes in [m] are siblings. 
-    Note that orphans are not considered siblings. *)
-val siblings_chk : bmatrix -> bool
+(* (\** [siblings_chk m] returns [false] if any two nodes in [m] are siblings.  *)
+(*     Note that orphans are not considered siblings. *\) *)
+(* val siblings_chk : bmatrix -> bool *)
 
 (** Dual of {!Sparse.siblings}. *)
 val partners : bmatrix -> int -> IntSet.t
 
-(** Dual of {!Sparse.siblings_chk}. *)
-val partners_chk : bmatrix -> bool
+(* (\** Dual of {!Sparse.siblings_chk}. *\) *)
+(* val partners_chk : bmatrix -> bool *)
 
 (** [levels m] returns the level decomposition of [m]. Each level is obtained by
     iteratively removing the leaves in the graph until no nodes are

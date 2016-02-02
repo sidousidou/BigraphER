@@ -632,7 +632,7 @@ let eval_react_aux lhs rhs scope env env_t =
   let (lhs_v, env_t') = eval_big lhs scope env env_t in
   let (rhs_v, env_t'') = eval_big rhs scope env env_t' in
   (lhs_v, rhs_v, env_t'')
-    
+		     
 let eval_react lhs rhs eta scope env env_t p =
   let (lhs_v, rhs_v, env_t') =
     eval_react_aux lhs rhs scope env env_t in
@@ -640,10 +640,17 @@ let eval_react lhs rhs eta scope env env_t p =
 	    Brs.rct = rhs_v;
 	    Brs.eta = eta;
 	  } in
-  (* Get more informative messages from Brs *)
-  if Brs.is_valid_react r then (r, env_t') 
-  else raise (ERROR (Reaction "Invalid reaction", p))
-
+  try if Brs.is_valid_react_exn r then (r, env_t')
+      else assert false with
+  | Brs.NOT_VALID err ->
+     let msg = "Invalid reaction: "
+	       ^ (Brs.string_of_react_err err) (* ^ "\n" *)
+	       (* ^ (Big.to_string lhs_v) ^ "\n" *)
+	       (* ^ (string_of_bool (Big.is_epi lhs_v)) ^ " " *)
+	       (* ^ (string_of_bool (Big.is_mono lhs_v)) ^ " " *)
+	       (* ^ (string_of_bool (Big.is_guard lhs_v)) *) in
+     raise (ERROR (Reaction msg, p))
+ 
 let eval_sreact lhs rhs eta rate scope env env_t p =
   let (lhs_v, rhs_v, env_t') =
     eval_react_aux lhs rhs scope env env_t in 
@@ -652,10 +659,17 @@ let eval_sreact lhs rhs eta rate scope env env_t p =
 	    Sbrs.rate = eval_float rate scope env;
 	    Sbrs.eta = eta;
 	  } in
-  (* Get more informative messages from Sbrs *)
-  if Sbrs.is_valid_react r then (r, env_t') 
-  else raise (ERROR (Reaction "Invalid stochastic reaction", p))
-
+  try if Sbrs.is_valid_react_exn r then (r, env_t')
+      else assert false with
+  | Sbrs.NOT_VALID err ->
+     let msg = "Invalid stochastic reaction: "
+	       ^ (Sbrs.string_of_react_err err) (* ^ "\n" *)
+	       (* ^ (Big.to_string lhs_v) ^ "\n" *)
+	       (* ^ (string_of_bool (Big.is_epi lhs_v)) ^ " " *)
+	       (* ^ (string_of_bool (Big.is_mono lhs_v)) ^ " " *)
+	       (* ^ (string_of_bool (Big.is_guard lhs_v)) *) in
+     raise (ERROR (Reaction msg, p))
+		 
 (* Compute all the combinations of input values *)	  
 let rec param_comb (pars : typed_store_val list list) = 
   match pars with

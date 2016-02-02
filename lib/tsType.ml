@@ -113,26 +113,25 @@ module MakeE (G : G) = struct
   end
 
 module Make (R : RrType.T)
-	      (P : sig
-		  type p_class =
-		    | P_class of R.t list
-		    | P_rclass of R.t list
-		  val is_valid : p_class -> bool
-		  val is_valid_list : p_class list -> bool
-		  val rewrite : Big.bg -> p_class list -> Big.bg * int
-		  val cardinal : p_class list -> int
-		  val scan : Big.bg * int ->
-			     part_f:(R.occ list ->
-				     ((int * R.occ) list * R.edge list * int)) ->
-			     const_pri:p_class list -> p_class list ->
-			     ((int * R.occ) list * R.edge list * int) * int
-		  val scan_sim : Big.bg ->
-				 const_pri:p_class list -> p_class list ->
-				 R.occ option * int
-		end)
-	      (L : L with type occ = R.occ)
-	      (G : G with type edge_type = R.edge)
-	      (S : S with type g = G.t) = struct
+	    (P : sig
+		type p_class =
+		  | P_class of R.t list
+		  | P_rclass of R.t list
+		val is_valid : p_class -> bool
+		val is_valid_list : p_class list -> bool
+		val rewrite : Big.bg -> p_class list -> Big.bg * int
+		val cardinal : p_class list -> int
+		val scan : Big.bg * int -> part_f:(R.occ list ->
+				   ((int * R.occ) list * R.edge list * int)) ->
+			   const_pri:p_class list -> p_class list ->
+			   ((int * R.occ) list * R.edge list * int) * int
+		val scan_sim : Big.bg ->
+			       const_pri:p_class list -> p_class list ->
+			       R.occ option * int
+	      end)
+	    (L : L with type occ = R.occ)
+	    (G : G with type edge_type = R.edge)
+	    (S : S with type g = G.t) = struct
 
     type t = G.t
    		    
@@ -146,11 +145,21 @@ module Make (R : RrType.T)
 
     exception DEADLOCK of t * S.t * limit
 
-    (* Override some functions *)	       
+    (* Override some functions *)
+    type react_error = R.react_error
+
+    exception NOT_VALID of react_error
+			     
     let to_string_react = R.to_string
 			    
     let is_valid_react = R.is_valid
-			   
+
+    let is_valid_react_exn r =
+      try R.is_valid_exn r with
+      | R.NOT_VALID e -> raise (NOT_VALID e)
+
+    let string_of_react_err = R.string_of_react_err 
+			       
     let fix = R.fix
 		
     let step = R.step

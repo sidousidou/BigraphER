@@ -17,6 +17,7 @@ module RT = struct
     let map r = r.eta
     let string_of_label l = string_of_float l
     let val_chk r = r.rate > 0.0
+    let val_chk_error_msg = "Non positive rate"
     let to_occ b r = (b, r.rate)
     let big_of_occ (b, _) = b
     let merge_occ (b, rho) (_, rho') = (b, rho +. rho')

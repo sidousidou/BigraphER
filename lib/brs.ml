@@ -17,6 +17,7 @@ module RT = struct
     let map r = r.eta
     let string_of_label _ = ""
     let val_chk _ = true
+    let val_chk_error_msg = ""
     let to_occ b _ = b
     let big_of_occ b = b
     let merge_occ b _ = b

@@ -38,6 +38,21 @@ val to_string_react : sreact -> string
     greater than zero. Return [false] otherwise. *)
 val is_valid_react : sreact -> bool
 
+(** The type of reaction validity errors. *)				
+type react_error
+       
+(** Raised when a reaction rule is not valid. *)
+exception NOT_VALID of react_error
+			 
+(** Same as {!is_valid_react} but an exception is raised when the rule is not
+    valid. 
+    
+    @raise NOT_VALID when the rule is not valid. *)
+val is_valid_react_exn : sreact -> bool
+
+(** String representation of reaction validity errors. *)
+val string_of_react_err : react_error -> string
+				     
 (** Return [true] if a reaction rule is instantaneous, [false] otherwise. *)
 val is_inst : sreact -> bool
 

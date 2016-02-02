@@ -11,6 +11,7 @@ module type R =
     val string_of_label : label -> string
     val map : t -> int Fun.t option
     val val_chk : t -> bool
+    val val_chk_error_msg : string
     val to_occ : Big.bg -> t -> occ
     val big_of_occ : occ -> Big.bg
     val merge_occ : occ -> occ -> occ
@@ -27,6 +28,8 @@ module type T =
     type label
     type occ
     type edge
+    type react_error
+    exception NOT_VALID of react_error
     val lhs : t -> Big.bg
     val rhs : t -> Big.bg
     val l : t -> label
@@ -39,6 +42,8 @@ module type T =
     val edge_of_occ : occ -> int -> edge
     val to_string : t -> string
     val is_valid : t -> bool
+    val is_valid_exn : t -> bool			  
+    val string_of_react_err : react_error -> string
     val is_enabled : Big.bg -> t -> bool
     val fix : Big.bg -> t list -> Big.bg * int
     val step : Big.bg -> t list -> occ list * int
@@ -58,6 +63,10 @@ sig
 
   type edge = R.edge
 
+  type react_error
+	 
+  exception NOT_VALID of react_error
+	 
   (** Return the left-hand side of a rewrite rule. *)
   val lhs : t -> Big.bg
 
@@ -94,6 +103,15 @@ sig
   (** Validity check. *)
   val is_valid : t -> bool
 
+  (** Same as {!is_valid} but an exception is raised instead of returning
+      [false].
+
+      @raise NOT_VALID when the reaction rule is not valid. *)
+  val is_valid_exn : t -> bool
+			
+  (** Convert to string the output of the validity check. *)
+  val string_of_react_err : react_error -> string
+			
   (** [is_enabled b r] checks if rewrite rule [r] can be applied to bigraph
       [b]. *)
   val is_enabled : Big.bg -> t -> bool

@@ -10,6 +10,7 @@ module type R =
     val string_of_label : label -> string
     val map : t -> int Fun.t option
     val val_chk : t -> bool
+    val val_chk_error_msg : string
     val to_occ : Big.bg -> t -> occ
     val big_of_occ : occ -> Big.bg
     val merge_occ : occ -> occ -> occ
@@ -27,6 +28,8 @@ module type T =
     type label
     type occ
     type edge
+    type react_error
+    exception NOT_VALID of react_error
     val lhs : t -> Big.bg
     val rhs : t -> Big.bg
     val l : t -> label
@@ -39,6 +42,8 @@ module type T =
     val edge_of_occ : occ -> int -> edge
     val to_string : t -> string
     val is_valid : t -> bool
+    val is_valid_exn : t -> bool			  
+    val string_of_react_err : react_error -> string
     val is_enabled : Big.bg -> t -> bool
     val fix : Big.bg -> t list -> Big.bg * int
     val step : Big.bg -> t list -> occ list * int
@@ -48,7 +53,19 @@ module type T =
 module Make (R : R) = struct
     
     include R
-		
+
+    type react_error =
+      Inter_eq | Lhs_nodes | Lhs_solid | Map_chk | Val_chk
+
+    exception NOT_VALID of react_error
+      
+    let string_of_react_err = function
+      | Inter_eq -> "Outer interfaces do not match"
+      | Lhs_nodes -> "Left hand-side has no nodes"
+      | Lhs_solid -> "Left hand-side is not solid"
+      | Map_chk -> "Instantiation map is not valid"
+      | Val_chk -> val_chk_error_msg
+							    
     let to_string r =
       (Big.to_string (lhs r))
       ^ "\n--"
@@ -72,7 +89,28 @@ module Make (R : R) = struct
       	      and s_rhs = rhs.Big.p.Place.s in
       	      (Fun.is_total s_rhs eta)
       	      && (Fun.check_codom 0 (s_lhs - 1) eta)))
-      && (val_chk r) 
+      && val_chk r
+		 
+    let is_valid_exn r =
+      let lhs = lhs r
+      and rhs = rhs r in
+      if Big.inter_equal (Big.outer lhs) (Big.outer rhs)
+      then if lhs.Big.p.Place.n > 0
+	   then if Big.is_solid lhs
+		then if (match map r with
+      			 | None -> Big.inter_equal (Big.inner lhs) (Big.inner rhs)
+      			 | Some eta ->
+      			    (let s_lhs = lhs.Big.p.Place.s
+      			     and s_rhs = rhs.Big.p.Place.s in
+      			     (Fun.is_total s_rhs eta)
+      			     && (Fun.check_codom 0 (s_lhs - 1) eta)))
+		     then if val_chk r
+			  then true
+			  else raise (NOT_VALID Val_chk)
+		     else raise (NOT_VALID Map_chk)
+		else raise (NOT_VALID Lhs_solid)
+	   else raise (NOT_VALID Lhs_nodes)
+      else raise (NOT_VALID Inter_eq)
 
     let is_enabled b r =
       Big.occurs b (lhs r)

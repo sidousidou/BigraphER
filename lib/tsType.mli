@@ -53,17 +53,25 @@ module Make (R : RrType.T)
 		 | P_rclass of R.t list
 	       
     type limit = L.t
-		   
+
+    type react_error = R.react_error
+
     exception MAX of t * S.t
 		   
     exception LIMIT of t * S.t
 
     exception DEADLOCK of t * S.t * limit
 
+    exception NOT_VALID of react_error
+
     val to_string_react : R.t -> string
 			    
     val is_valid_react : R.t -> bool
-			   
+
+    val is_valid_react_exn : R.t -> bool
+
+    val string_of_react_err : react_error -> string
+				      
     val fix : Big.bg -> R.t list -> Big.bg * int
 		
     val step : Big.bg -> R.t list -> R.occ list * int

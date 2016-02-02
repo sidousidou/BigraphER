@@ -37,11 +37,9 @@ let compare a b =
   | x -> x
 
 let to_string m =
-  (* Printf.printf "Sparse.to_string: %d %d\n" m.r m.c; *)
   let buff = Array.make_matrix m.r m.c "0" in
   M_int.iter (fun i js ->
 	      IntSet.iter (fun j ->
-			   (* Printf.printf "printing (%d, %d)\n" i j; *)
 			   buff.(i).(j) <- "1")
 			  js)
 	     m.r_major;
@@ -215,7 +213,7 @@ let leaves m =
   IntSet.diff (IntSet.of_int m.r) (dom m)
   
 let orphans m =
-  IntSet.diff (IntSet.of_int m.r) (codom m)
+  IntSet.diff (IntSet.of_int m.c) (codom m)
 
 let siblings m j = 
   IntSet.fold (fun i acc ->
@@ -223,10 +221,10 @@ let siblings m j =
 	      (prn m j) IntSet.empty
   |> IntSet.remove j
 		
-let siblings_chk m =
-  IntSet.for_all (fun j ->
-		  IntSet.is_empty (siblings m j))
-		 (codom m)
+(* let siblings_chk m = *)
+(*   IntSet.for_all (fun j -> *)
+(* 		  IntSet.is_empty (siblings m j)) *)
+(* 		 (codom m) *)
 		 
 let partners m i =
   IntSet.fold (fun j acc ->
@@ -234,10 +232,10 @@ let partners m i =
 	      (chl m i) IntSet.empty
   |> IntSet.remove i 
 
-let partners_chk m =
-  IntSet.for_all (fun i ->
-		  IntSet.is_empty (partners m i))
-		 (dom m)
+(* let partners_chk m = *)
+(*   IntSet.for_all (fun i -> *)
+(* 		  IntSet.is_empty (partners m i)) *)
+(* 		 (dom m) *)
 
 let iter f m = 
   M_int.iter (fun i js ->
@@ -316,6 +314,10 @@ let split r c m =
   let (t, b) = split_rows r m in
   (split_columns c t, split_columns c b)
 
+(* Dual of split *)    
+let glue rn rs nn ns =
+  stack (append rn rs) (append nn ns)
+    
 exception PARSE_ERROR
     
 let parse_string r n s rows =

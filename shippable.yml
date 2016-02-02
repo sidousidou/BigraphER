@@ -9,6 +9,7 @@ before_script:
  - mkdir -p shippable/codecoverage
  - mkdir -p shippable/testresults
  - mkdir -p shippable/linktest
+ - mkdir -p shippable/svg
 
 script:
  - ./scripts/shippable-build.sh

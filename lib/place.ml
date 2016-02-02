@@ -175,17 +175,45 @@ let is_plc p =
 
 let is_ground p =
   p.s = 0
+
+(* Nodes with no children (both nodes and sites children). *)
+let leaves p =
+  Sparse.glue p.rn p.rs p.nn p.ns
+  |> Sparse.leaves  (* roots and nodes *)
+  |> IntSet.off (-p.r)
+  |> IntSet.filter (fun x -> x >= 0) (* only nodes *)
+
+(* Dual *)
+let orphans p =
+  Sparse.glue p.rn p.rs p.nn p.ns
+  |> Sparse.orphans  (* nodes and sites *)
+  |> IntSet.filter (fun x -> x < p.n) (* only nodes *)
 	  
 (* Is p monomorphic?: no two sites are siblings and no site is an orphan *)
 let is_mono p =
-  let slice = Sparse.stack p.rs p.ns in
-  if IntSet.is_empty (Sparse.orphans slice) then Sparse.siblings_chk slice
+  let m = Sparse.glue p.rn p.rs p.nn p.ns in
+  if Sparse.orphans m
+     |> IntSet.filter (fun x -> x >= p.n) (* only sites *)
+     |> IntSet.is_empty
+  then IntSet.of_int p.s
+       |> IntSet.off (p.n)
+       |> IntSet.for_all (fun j ->
+			  Sparse.siblings m j
+			  |> IntSet.filter (fun x -> x >= p.n) (* only sites *)
+			  |> IntSet.is_empty)
   else false
 
 (* Is p epimorphic: no root is idle and no two roots are partners *)
 let is_epi p =
-  let slice = Sparse.append p.rn p.rs in
-  if IntSet.is_empty (Sparse.leaves slice) then Sparse.partners_chk slice
+  let m = Sparse.glue p.rn p.rs p.nn p.ns in
+  if Sparse.leaves m
+     |> IntSet.filter (fun x -> x < p.r) (* only roots *)
+     |> IntSet.is_empty
+  then IntSet.of_int p.r
+       |> IntSet.for_all (fun i ->
+			  Sparse.partners m i
+			  |> IntSet.filter (fun x -> x < p.r) (* only roots *)
+			  |> IntSet.is_empty)
   else false
 
 (* Is p guarded: no root has sites as children *)
@@ -598,14 +626,6 @@ let match_list t p n_t n_p =
 		       )))
 		p.nn ([], [], []) in
   (clauses, clauses_exc, IntSet.of_list cols) (* matched columns *)
-
-(* Nodes with no children (both nodes and sites). *)
-let leaves p =
-  IntSet.inter (Sparse.leaves p.nn) (Sparse.leaves p.ns)
-
-(* Dual *)
-let orphans p =
-  IntSet.inter (Sparse.orphans p.rn) (Sparse.orphans p.nn)
 
 (* leaves (orphans) in p are matched to leaves (orphans) in t.
    C5: ij0 or ij1 or ..... *)

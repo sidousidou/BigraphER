@@ -77,12 +77,14 @@ let do_tests =
 					      let (c, d, id) =
 						decomp t.target t.pattern i_n i_e f_e in
 					      "Occurrence "
-					      ^ (string_of_int i)
-					      ^ ":\n"
-					     ^ (to_string t.target)
-					     ^ "\n"		 
-					     ^ (to_string
-						  (comp c (comp (tens t.pattern id) d))))
+					      ^ (string_of_int i) ^ ":\nTarget:\n"
+					      ^ (to_string t.target) ^ "\nPattern:\n"
+					      ^ (to_string t.pattern) ^ "\nC:\n"
+					      ^ (to_string c) ^ "\nD:\n"
+					      ^ (to_string d) ^ "\nTensor:\n"
+					      ^ (to_string (tens t.pattern id)) ^ "\nComposition D:\n"
+					      ^ (to_string (comp (tens t.pattern id) d)) ^ "\nComposition C:\n"
+					      ^ (to_string (comp c (comp (tens t.pattern id) d))))
 					     occs
 				   |> String.concat "\n")],
      [xml_block "failure" attr_match [msg]])
@@ -97,10 +99,11 @@ let do_tests =
               let occs = occurrences t.target t.pattern in
               t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
               if (check_res t.res t.exp_res)
-		 && (List.for_all (fun o -> test_decomposition t.target t.pattern o) occs) then
-		success t
-              else
-		failure t default_fail_msg occs
+		 && (List.for_all (fun o ->
+				   test_decomposition t.target t.pattern o)
+				  occs)
+	      then success t
+              else failure t default_fail_msg occs
 	    with
 	    | NODE_FREE -> (* tests 23 and 16 are special cases *)
 	       (match (t.t_name, t.p_name) with 
@@ -130,23 +133,23 @@ let do_equality_tests l ts =
      xml_block "system-out" [] [msg_out],
      [xml_block "failure" attr_match [msg]])
   and error n b =
-    let aux m =
-      "(" ^ (string_of_int m.Sparse.r) ^ " X " ^ (string_of_int m.Sparse.c) ^ ") "
-      ^ (String.concat " " (Sparse.fold (fun i j acc ->
-					 (("(" ^ (string_of_int i)
-					   ^ "," ^ (string_of_int j) ^ ")") :: acc))
-					m [])) in
-    n ^ "\n" ^ (Big.to_string b) ^ "\n"
-    ^ "edges: " ^ (string_of_int (Sparse.entries (b.p.nn))) ^ "\n"
-    ^ "rn:\n" ^  (aux b.p.rn) ^ "\n"
-    ^ "rs:\n" ^  (aux b.p.rs) ^ "\n"
-    ^ "nn:\n" ^  (aux b.p.nn) ^ "\n"
-    ^ "ns:\n" ^  (aux b.p.ns) ^ "\n"
-    ^ "top:\n" ^ (aux (Sparse.append b.p.rn b.p.rs)) ^ "\n"
-    ^ "botton:\n" ^ (aux (Sparse.append b.p.nn b.p.ns)) ^ "\n"
-    ^ "stack:\n" ^ (aux (Sparse.stack
-			   (Sparse.append b.p.rn b.p.rs)
-			   (Sparse.append b.p.nn b.p.ns))) ^ "\n"
+    (* let aux m = *)
+    (*   "(" ^ (string_of_int m.Sparse.r) ^ " X " ^ (string_of_int m.Sparse.c) ^ ") " *)
+    (*   ^ (String.concat " " (Sparse.fold (fun i j acc -> *)
+    (* 					 (("(" ^ (string_of_int i) *)
+    (* 					   ^ "," ^ (string_of_int j) ^ ")") :: acc)) *)
+    (* 					m [])) in *)
+     n ^ "\n" ^ (Big.to_string b) ^ "\n"
+    (* ^ "edges: " ^ (string_of_int (Sparse.entries (b.p.nn))) ^ "\n" *)
+    (* ^ "rn:\n" ^  (aux b.p.rn) ^ "\n" *)
+    (* ^ "rs:\n" ^  (aux b.p.rs) ^ "\n" *)
+    (* ^ "nn:\n" ^  (aux b.p.nn) ^ "\n" *)
+    (* ^ "ns:\n" ^  (aux b.p.ns) ^ "\n" *)
+    (* ^ "top:\n" ^ (aux (Sparse.append b.p.rn b.p.rs)) ^ "\n" *)
+    (* ^ "botton:\n" ^ (aux (Sparse.append b.p.nn b.p.ns)) ^ "\n" *)
+    (* ^ "stack:\n" ^ (aux (Sparse.stack *)
+    (* 			   (Sparse.append b.p.rn b.p.rs) *)
+    (* 			   (Sparse.append b.p.nn b.p.ns))) ^ "\n" *)
     ^ (Printexc.get_backtrace ()) in
   (List.map (fun (n, b) ->
 	     let s = n ^ " = " ^ n in
@@ -543,6 +546,11 @@ let () =
   let testcases_match = do_tests ts
   and testcases_eq = do_equality_tests bgs ts in
   write_xml (testsuite "test_match" testcases_match) Sys.argv.(2) "match-junit.xml";
-  write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml"
+  write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml";
+  List.iter (fun (n, b) ->
+	     let name = n ^ ".svg" in
+	     try ignore (Big.write_svg b ~name ~path:Sys.argv.(3)) with
+	     | Export.ERROR _ -> ())
+	    bgs
 
 
