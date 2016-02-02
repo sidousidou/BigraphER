@@ -47,6 +47,7 @@ val to_string : int t -> string
 		
 (** [add_exn i j iso] adds a new pair [(i, j)] to isomorphism [iso]. If [i] was
     already bound in [iso], its previous binding disappears.
+
     @raise NOT_BIJECTIVE when [j] is already in the codomain of [iso]. *)
 val add_exn : int -> int -> int t -> int t
 
