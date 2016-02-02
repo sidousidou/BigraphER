@@ -984,7 +984,8 @@ let build_o_component p nodes =
 
 (* Sub-graph rooted in the orphan nodes of p. *)
 let orphan_component p marked_n = 
-  let o_set = IntSet. diff (Sparse.orphans p.nn) (Sparse.codom p.rn) in
+  (* let o_set = IntSet.diff (Sparse.orphans p.nn) (Sparse.codom p.rn) in *)
+  let o_set = orphans p in
   dfs_ns p (IntSet.elements o_set) o_set marked_n
 
 (* Return a list of bigraphs *)
