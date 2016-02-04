@@ -644,11 +644,7 @@ let eval_react lhs rhs eta scope env env_t p =
       else assert false with
   | Brs.NOT_VALID err ->
      let msg = "Invalid reaction: "
-	       ^ (Brs.string_of_react_err err) (* ^ "\n" *)
-	       (* ^ (Big.to_string lhs_v) ^ "\n" *)
-	       (* ^ (string_of_bool (Big.is_epi lhs_v)) ^ " " *)
-	       (* ^ (string_of_bool (Big.is_mono lhs_v)) ^ " " *)
-	       (* ^ (string_of_bool (Big.is_guard lhs_v)) *) in
+	       ^ (Brs.string_of_react_err err) in
      raise (ERROR (Reaction msg, p))
  
 let eval_sreact lhs rhs eta rate scope env env_t p =
@@ -663,11 +659,7 @@ let eval_sreact lhs rhs eta rate scope env env_t p =
       else assert false with
   | Sbrs.NOT_VALID err ->
      let msg = "Invalid stochastic reaction: "
-	       ^ (Sbrs.string_of_react_err err) (* ^ "\n" *)
-	       (* ^ (Big.to_string lhs_v) ^ "\n" *)
-	       (* ^ (string_of_bool (Big.is_epi lhs_v)) ^ " " *)
-	       (* ^ (string_of_bool (Big.is_mono lhs_v)) ^ " " *)
-	       (* ^ (string_of_bool (Big.is_guard lhs_v)) *) in
+	       ^ (Sbrs.string_of_react_err err) in
      raise (ERROR (Reaction msg, p))
 		 
 (* Compute all the combinations of input values *)	  

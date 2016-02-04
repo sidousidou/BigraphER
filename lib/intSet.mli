@@ -61,6 +61,9 @@ val fix : t -> int Iso.t
     isomorphism. *)
 val apply_exn : t -> int Iso.t -> t
 
+(** Apply an isomorphism only to the elements on which it is defined. *)
+val filter_apply : t -> int Iso.t -> t
+				    
 (** Compute the union of all the sets in a list. *)
 val union_list : t list -> t
 				    

@@ -219,7 +219,7 @@ let is_epi p =
 (* Is p guarded: no root has sites as children *)
 let is_guard p = 
   (Sparse.entries p.rs) = 0
-
+			    
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d 
    expressed as rows of t. Pattern p is mono and epi.
@@ -289,19 +289,24 @@ let decomp t p iso =
 		v_c ([], [], 0)
   (************************** Context **************************)
   (* c roots to p nodes *)
-  and edg_c_rp = 
-    IntSet.fold (fun r acc ->
-		 IntSet.fold (fun c acc ->
-			      if IntSet.mem c v_p' then 
-				let s =
-				   Iso.apply iso' c
-				  |> safe 
-				  |> Sparse.prn p.rn 
-				  |> IntSet.choose in (* check c's siblings *) 
-				(r, s) :: acc
-			      else acc)
-			     (Sparse.chl t.rn r) acc)
-		tr_set []
+  and edg_c_rp =
+    Sparse.fold_r (fun r js acc ->
+		   let sites = IntSet.filter_apply js iso'
+			       |> Sparse.row_eq p.rn in
+		   IntSet.fold (fun s acc -> (r, s) :: acc) sites acc)
+		  t.rn []
+    (* IntSet.fold (fun r acc -> *)
+    (* 		 IntSet.fold (fun c acc -> *)
+    (* 			      if IntSet.mem c v_p' then  *)
+    (* 				let s = *)
+    (* 				  Iso.apply iso' c *)
+    (* 				  |> safe  *)
+    (* 				  |> Sparse.prn p.rn  *)
+    (* 				  |> IntSet.choose in (\* check c's siblings *\)  *)
+    (* 				(r, s) :: acc *)
+    (* 			      else acc) *)
+    (* 			     (Sparse.chl t.rn r) acc) *)
+    (* 		tr_set [] *)
   (* c nodes to p nodes *)
   and edg_c_np = 
     IntSet.fold (fun r acc ->

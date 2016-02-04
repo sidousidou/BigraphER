@@ -220,22 +220,12 @@ let siblings m j =
 	       IntSet.union acc (chl m i)) 
 	      (prn m j) IntSet.empty
   |> IntSet.remove j
-		
-(* let siblings_chk m = *)
-(*   IntSet.for_all (fun j -> *)
-(* 		  IntSet.is_empty (siblings m j)) *)
-(* 		 (codom m) *)
-		 
+				 
 let partners m i =
   IntSet.fold (fun j acc ->
 	       IntSet.union acc (prn m j))
 	      (chl m i) IntSet.empty
   |> IntSet.remove i 
-
-(* let partners_chk m = *)
-(*   IntSet.for_all (fun i -> *)
-(* 		  IntSet.is_empty (partners m i)) *)
-(* 		 (dom m) *)
 
 let iter f m = 
   M_int.iter (fun i js ->
@@ -247,6 +237,12 @@ let fold f m acc =
 	      IntSet.fold (fun j acc -> f i j acc) js acc)
 	     m.r_major acc
 
+let fold_r f m =
+  M_int.fold f m.r_major
+	     
+let fold_c f m = 
+  M_int.fold f m.c_major
+      
 let add_list m =
   List.fold_left (fun acc (i, j) -> add i j acc) m
 
@@ -342,3 +338,39 @@ let parse_string r n s rows =
     r_major;
     c_major = flip_major r_major;}
   |> split r n
+
+(* Compute a set of rows such that the union of their children set is equal to
+   js. *)
+let aux_eq m js =
+  let rec aux (res_i, res_j) = function
+    | [] -> if IntSet.equal js res_j then res_i
+	    else IntSet.empty
+    | (i, js') :: xs ->
+       let (res_i', res_j') =
+	 (IntSet.add i res_i, IntSet.union res_j js') in
+       if IntSet.equal js res_j' then res_i'
+       else aux (res_i', res_j') xs in
+  let m' =
+    M_int.filter (fun _ js' -> IntSet.subset js' js) m in
+  if M_int.is_empty m' then IntSet.empty
+  else
+    try M_int.filter (fun _ js' -> IntSet.equal js' js) m'
+	|> M_int.choose
+	|> fst
+	|> IntSet.singleton
+    with
+    | Not_found -> aux (IntSet.empty, IntSet.empty) (M_int.bindings m')
+
+let row_eq m =
+  aux_eq m.r_major
+  (* let res = aux_eq m.r_major js in *)
+  (* print_endline ("row_eq:\nm:\n" *)
+  (* 		 ^ (to_string m) ^ "\njs: " *)
+  (* 		 ^ (IntSet.to_string js) ^ "\nres: " *)
+  (* 		 ^ (IntSet.to_string res)); *)
+  (* res *)
+
+let col_eq m = aux_eq m.c_major
+		      
+		       
+		       

@@ -75,7 +75,7 @@ exception PARSE_ERROR
     +-----------+-----------+ v}
     with [a: r * n], [b: r * s], [c: n * n], and [d: n * s].
 
-    @raise PARSE_ERROR *)					      
+    @raise PARSE_ERROR when the input strings are not in the correct format. *)
 val parse_string : int -> int -> int -> String.t list ->
 		   (bmatrix * bmatrix) * (bmatrix * bmatrix)
 		   
@@ -90,9 +90,15 @@ val codom : bmatrix -> IntSet.t
 (** Same as [Map.iter]. *)			 
 val iter : (int -> int -> unit) -> bmatrix -> unit
 
-(** Same as [Map.fold]. *)						
+(** Fold iterating over every pair [(i, j)] defined by the map. *)
 val fold : (int -> int -> 'a -> 'a) -> bmatrix -> 'a -> 'a
 
+(** Same as [Map.fold] over [r_major]. *)					
+val fold_r : (int -> IntSet.t -> 'a -> 'a) -> bmatrix -> 'a -> 'a
+
+(** Dual of {!Sparse.fold_r}. *)      
+val fold_c : (int -> IntSet.t -> 'a -> 'a) -> bmatrix -> 'a -> 'a
+							  
 (** [add i j m] adds  element [(i,j)]. Arguments [i] and [j] are
     assumed to be valid indexes. *)
 val add : int -> int -> bmatrix -> bmatrix
@@ -199,19 +205,19 @@ val orphans : bmatrix -> IntSet.t
     they share a parent. *)
 val siblings : bmatrix -> int -> IntSet.t
 
-(* (\** [siblings_chk m] returns [false] if any two nodes in [m] are siblings.  *)
-(*     Note that orphans are not considered siblings. *\) *)
-(* val siblings_chk : bmatrix -> bool *)
-
 (** Dual of {!Sparse.siblings}. *)
 val partners : bmatrix -> int -> IntSet.t
-
-(* (\** Dual of {!Sparse.siblings_chk}. *\) *)
-(* val partners_chk : bmatrix -> bool *)
 
 (** [levels m] returns the level decomposition of [m]. Each level is obtained by
     iteratively removing the leaves in the graph until no nodes are
     left. Argument [m] is assumed square. *)
 val levels : bmatrix -> IntSet.t list
 
+(** [row_eq m js] computes a set of rows such that the union of their children
+    set is equal to [js].*)
+val row_eq : bmatrix -> IntSet.t -> IntSet.t
+
+(** Dual of {!Sparse.row_eq}. *)	       
+val col_eq : bmatrix -> IntSet.t -> IntSet.t
+				 
 (**/**)

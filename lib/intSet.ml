@@ -37,6 +37,12 @@ let apply_exn s iso =
 	add (Iso.apply_exn iso i) acc)
        s empty
 
+let filter_apply s iso =
+  let s' = inter s (of_list (Iso.dom iso)) in
+  if is_empty s' then empty
+  else try apply_exn s' iso with
+       | Not_found -> assert false
+       
 (* Generates an isomorphism to fix the numbering of a set of int. 
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                       *)
 let fix s =
