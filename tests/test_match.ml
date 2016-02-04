@@ -89,12 +89,12 @@ let do_tests =
 				   |> String.concat "\n")],
      [xml_block "failure" attr_match [msg]])
   and error n0 b0 n1 b1 =
-    (* print_endline (n0 ^ " &gt; " ^ n1); *)
     n0 ^ "\n" ^ (Big.to_string b0) ^ "\n"
     ^  n1 ^ "\n" ^ (Big.to_string b1) ^ "\n"
     ^ (Printexc.get_backtrace ()) in
   List.map (fun t ->
-	    let default_fail_msg = sprintf "%s cannot be matched in %s." t.p_name t.t_name in
+	    let default_fail_msg =
+	      sprintf "%s cannot be matched in %s." t.p_name t.t_name in
 	    try
               let occs = occurrences t.target t.pattern in
               t.res <- List.map (fun (a, b, _) -> (a, b)) occs;

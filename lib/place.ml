@@ -295,31 +295,15 @@ let decomp t p iso =
 			       |> Sparse.row_eq p.rn in
 		   IntSet.fold (fun s acc -> (r, s) :: acc) sites acc)
 		  t.rn []
-    (* IntSet.fold (fun r acc -> *)
-    (* 		 IntSet.fold (fun c acc -> *)
-    (* 			      if IntSet.mem c v_p' then  *)
-    (* 				let s = *)
-    (* 				  Iso.apply iso' c *)
-    (* 				  |> safe  *)
-    (* 				  |> Sparse.prn p.rn  *)
-    (* 				  |> IntSet.choose in (\* check c's siblings *\)  *)
-    (* 				(r, s) :: acc *)
-    (* 			      else acc) *)
-    (* 			     (Sparse.chl t.rn r) acc) *)
-    (* 		tr_set [] *)
   (* c nodes to p nodes *)
-  and edg_c_np = 
+  and edg_c_np =
     IntSet.fold (fun r acc ->
-		 IntSet.fold (fun c acc ->
-			      if IntSet.mem c v_p' then 
-				let s =
-				  Iso.apply iso' c
-				  |> safe
-				  |> Sparse.prn p.rn
-				  |> IntSet.choose in 
-				(safe (Iso.apply iso_v_c r), s) :: acc
-			      else acc)
-			     (Sparse.chl t.nn r) acc)
+		 let sites =
+		   IntSet.filter_apply (Sparse.chl t.nn r) iso'
+		   |> Sparse.row_eq p.rn in
+		 IntSet.fold (fun s acc ->
+			      (safe (Iso.apply iso_v_c r), s) :: acc)
+			     sites acc)
 		v_c []
   (************************** Parameter **************************)
   (* p nodes to d nodes *)
@@ -395,100 +379,6 @@ let decomp t p iso =
 		       t.ns (Sparse.make n t.s);
     } in
   (c, d, elementary_id j, iso_v_c, iso_v_d)
-
-(*
-exception PLACING of bg
-
-(*  given a place graph p it returns a place graph p' a list of ions, the size
-    of an identity and a placing. Return p if it does not contain any ions. The
-    following invariant holds p = p' ((K x K x K x id) phi). An isomorphism to
-    restore the original numbering of p is also computed: p' -> p  *)
-let split_leaves p =
-  if is_plc p then raise (PLACING p)
-  else begin
-    let ions = IntSet.of_list (Sparse.leaves p.nn) in
-    (* p -> ions *)
-    let ions_iso = IntSet.fix ions 
-    and n_ions = IntSet.cardinal ions in
-    let nodes_s = IntSet.diff (IntSet.of_list (Sparse.dom p.ns)) ions
-    and roots_s = IntSet.of_list (Sparse.dom p.rs) in
-    let ns_iso = IntSet.fix nodes_s 
-    and rs_iso = IntSet.fix roots_s 
-    and j = (IntSet.cardinal nodes_s) + (IntSet.cardinal roots_s) 
-    and n_p' = IntSet.diff (IntSet.of_int p.n) ions in
-    (* p -> p'*) 
-    let p'_iso = IntSet.fix n_p' in
-    let phi = 
-      { r = n_ions + j;
-	n = 0;
-	s = p.s;
-	rn = Sparse.make (n_ions + j) 0;
-	rs = Sparse.make (n_ions + j) p.s; (* fill *)
-	nn = Sparse.make 0 0;
-	ns = Sparse.make 0 p.s;
-      }	in
-    (* edges from ions to sites *)
-    IntSet.iter (fun i -> 
-      let cs = Sparse.chl p.ns i in
-      List.iter (fun j -> 
-	Sparse.add phi.rs (Iso.find ions_iso i) j) cs) ions;
-    (* edges from id_nodes to sites *)
-    IntSet.iter (fun i -> 
-      let cs = Sparse.chl p.ns i in
-      List.iter (fun j -> 
-	Sparse.add phi.rs ((Iso.find ns_iso i) + n_ions) j) cs) nodes_s;
-    (* edges from id_roots to sites *)
-    IntSet.iter (fun i -> 
-      let cs = Sparse.chl p.rs i in
-      List.iter (fun j -> 
-	Sparse.add phi.rs 
-	  ((Iso.find rs_iso i) + n_ions + (IntSet.cardinal nodes_s)) j)
-	cs) roots_s;
-    let p' =
-      { r = p.r;
-	n = p.n - n_ions;
-	s = n_ions + j;
-	rn = Sparse.make p.r (p.n - n_ions);
-	rs = Sparse.make p.r (n_ions + j);
-	nn = Sparse.make (p.n - n_ions) (p.n - n_ions);
-	ns = Sparse.make (p.n - n_ions) (n_ions + j);
-      } in
-    (* edges from nodes to nodes/sites(ions) *)
-    IntSet.iter (fun i ->
-      let cs = Sparse.chl p.nn i in
-      List.iter (fun j ->
-	if IntSet.mem j ions then
-	  Sparse.add p'.ns (Iso.find p'_iso i) (Iso.find ions_iso j)
-	else Sparse.add p'.nn (Iso.find p'_iso i) (Iso.find p'_iso j))
-	cs) n_p';
-    (* edges from nodes to sites *)
-    Iso.iter (fun i j ->
-      Sparse.add p'.ns (Iso.find p'_iso i) (j + n_ions)) ns_iso;
-    (* edges from roots to nodes/sites(ions) *)
-    Sparse.iter (fun i j ->
-      if IntSet.mem j ions then
-	Sparse.add p'.rs r (Iso.find ions_iso j)
-      else Sparse.add p'.rn r (Iso.find p'_iso j)) p.rn;
-    (* edges from roots to sites *)
-    Iso.iter (fun i j ->
-      Sparse.add p'.rs r (j + n_ions + (IntSet.cardinal nodes_s))) rs_iso;
-    (p', ions, j, phi, Iso.inverse p'_iso)
-  end
-
-(* recursively apply split leaves until a placing is returned. At each step the
-   isos are converted to isos to p *)
-(* INCOMPLETE *)
-let levels p =
-  let rec fix p acc iso =
-    try
-      let (p', ions, j, phi, iso') = split_leaves p in
-      fix p' ((iso ions, j, phi) :: acc) (iso iso')
-    with
-    | PLACING phi -> (phi, acc) in
-  let id_p = 
-    Iso.of_list (List.combine (IntSet.of_int p.n) (IntSet.of_int p.n)) in
-  fix p [] id_p  
-*)
 
 (* Compute three strings to build a dot representation.*)
 let get_dot p =
