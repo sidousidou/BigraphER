@@ -307,31 +307,22 @@ let decomp t p iso =
 		v_c []
   (************************** Parameter **************************)
   (* p nodes to d nodes *)
-  and edg_d_nn = 
+  and edg_d_nn =
     IntSet.fold (fun n acc ->
-		 IntSet.fold (fun c acc ->
-				 if IntSet.mem c v_d then 
-				   let s =
-				     Iso.apply iso' n
-				     |> safe
-				     |> Sparse.chl p.ns
-				     |> IntSet.choose in 
-				   (s, safe (Iso.apply iso_v_d c)) :: acc
-				 else acc)
-				(Sparse.chl t.nn n) acc) 
-		v_p' []
+		 let sites =
+		   IntSet.filter_apply (Sparse.prn t.nn n) iso'
+		   |> Sparse.col_eq p.ns in
+		 IntSet.fold (fun s acc ->
+			      (s, safe (Iso.apply iso_v_d n)) :: acc)
+			     sites acc)
+		v_d []
   (* p nodes to d sites *)
-  and edg_d_ns = 
-    IntSet.fold (fun n acc ->
-		 IntSet.fold (fun c acc ->
-			      let s =
-				Iso.apply iso' n
-				|> safe
-				|> Sparse.chl p.ns
-				|> IntSet.choose in 
-			      (s, c) :: acc)
-			     (Sparse.chl t.ns n) acc) 
-		v_p' [] in 
+  and edg_d_ns =
+    Sparse.fold_c (fun s is acc ->
+		   let sites = IntSet.filter_apply is iso'
+			       |> Sparse.col_eq p.ns in
+		   IntSet.fold (fun r acc -> (r, s) :: acc) sites acc)
+		  t.ns [] in 
   (* size of id *)
   let j = s0 + s1 + s2 + s3 in
   (* Context c *)      

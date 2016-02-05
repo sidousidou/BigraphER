@@ -79,11 +79,11 @@ let do_tests =
 					      "Occurrence "
 					      ^ (string_of_int i) ^ ":\nTarget:\n"
 					      ^ (to_string t.target) ^ "\nPattern:\n"
-					      ^ (to_string t.pattern) ^ "\nC:\n"
-					      ^ (to_string c) ^ "\nD:\n"
-					      ^ (to_string d) ^ "\nTensor:\n"
-					      ^ (to_string (tens t.pattern id)) ^ "\nComposition D:\n"
-					      ^ (to_string (comp (tens t.pattern id) d)) ^ "\nComposition C:\n"
+					      ^ (to_string t.pattern) ^ "\n"
+					      (* ^ (to_string c) ^ "\nD:\n" *)
+					      (* ^ (to_string d) ^ "\nTensor:\n" *)
+					      (* ^ (to_string (tens t.pattern id)) ^ "\nComposition D:\n" *)
+					      (* ^ (to_string (comp (tens t.pattern id) d)) ^ "\nComposition C:\n" *)
 					      ^ (to_string (comp c (comp (tens t.pattern id) d))))
 					     occs
 				   |> String.concat "\n")],

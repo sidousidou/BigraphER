@@ -361,15 +361,7 @@ let aux_eq m js =
     with
     | Not_found -> aux (IntSet.empty, IntSet.empty) (M_int.bindings m')
 
-let row_eq m =
-  aux_eq m.r_major
-  (* let res = aux_eq m.r_major js in *)
-  (* print_endline ("row_eq:\nm:\n" *)
-  (* 		 ^ (to_string m) ^ "\njs: " *)
-  (* 		 ^ (IntSet.to_string js) ^ "\nres: " *)
-  (* 		 ^ (IntSet.to_string res)); *)
-  (* res *)
-
+let row_eq m = aux_eq m.r_major
 let col_eq m = aux_eq m.c_major
 		      
 		       
