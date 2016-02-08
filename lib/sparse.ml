@@ -1,11 +1,5 @@
-let int_compare a b = a - b
+open Base
        
-module M_int =
-  Map.Make (struct
-	       type t = int
-	       let compare = int_compare
-	     end)
-
 type bmatrix =
   { r: int;
     c: int;

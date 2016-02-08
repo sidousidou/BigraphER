@@ -434,8 +434,8 @@ module H =
 let partition_edges p n =
   let h = H.create (Sparse.entries p.nn) in
       Sparse.iter (fun i j ->
-		   match (Nodes.get_ctrl_exn n i, Nodes.get_ctrl_exn n j) with
-		   | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+		   match (Nodes.get_ctrl_exn i n, Nodes.get_ctrl_exn j n) with
+		   | (Ctrl.C(a_string, _), Ctrl.C(b_string, _)) ->
 		      H.add h (a_string, b_string) (i, j))
 		  p.nn;
       h
@@ -484,9 +484,9 @@ let match_list t p n_t n_p =
   let (clauses, clauses_exc, cols) = 
     Sparse.fold (fun i j (acc, exc, acc_c) ->
 		 let (a, b) = 
-		   (Nodes.get_ctrl_exn n_p i, Nodes.get_ctrl_exn n_p j) in
+		   (Nodes.get_ctrl_exn i n_p, Nodes.get_ctrl_exn j n_p) in
 		 match (a, b) with 
-		 | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) ->
+		 | (Ctrl.C(a_string, _), Ctrl.C(b_string, _)) ->
 		    (let t_edges = 
 		       List.filter 
 			 (fun (i', j') ->
@@ -520,11 +520,9 @@ let match_leaves t p n_t n_p =
   and l_t = leaves t in
   let (clauses, c) =
     IntSet.fold (fun i (acc, acc_c) ->
-      let c = Nodes.get_ctrl_exn n_p i in
+      let c = Nodes.get_ctrl_exn i n_p in
       let compat_t = 
-	IntSet.inter
-	  (IntSet.of_list (Nodes.find_all n_t c))
-	  l_t in
+	IntSet.inter (Nodes.find_all c n_t) l_t in
       if IntSet.is_empty compat_t then 
 	raise_notrace NOT_TOTAL
       else (
@@ -542,11 +540,9 @@ let match_orphans t p n_t n_p =
   and o_t = orphans t in
   let (clauses, c) =
     IntSet.fold (fun i (acc, acc_c) ->
-      let c = Nodes.get_ctrl_exn n_p i in
+      let c = Nodes.get_ctrl_exn i n_p in
       let compat_t =
-	IntSet.inter
-	  (IntSet.of_list (Nodes.find_all n_t c))
-	  o_t in
+	IntSet.inter (Nodes.find_all c n_t) o_t in
       if IntSet.is_empty compat_t then 
 	raise_notrace NOT_TOTAL
       else (
@@ -560,28 +556,24 @@ let match_orphans t p n_t n_p =
   
 (* Only ctrl and deg check *)
 let match_ctrl_deg_aux t p n_t n_p m =
-  let (clauses, c) =
-    Sparse.fold (fun i _ (acc, acc_c) -> 
-		 let js =
-		   Nodes.get_ctrl_exn n_p i
-		   |> Nodes.find_all n_t
-		   |> List.filter (fun j -> compat t p j i) in
-		 match js with
-		 | [] -> raise_notrace NOT_TOTAL
-		 | _ ->
-		    let clause = 
-		      List.map (fun j ->
-				Cnf.P_var (Cnf.M_lit (i, j)))
-			       js in
-		    (clause :: acc, js @ acc_c))
-		m ([], []) in
-  (clauses, IntSet.of_list c)
-    
+  Sparse.fold (fun i _ (acc, acc_c) -> 
+	       let js =
+		 Nodes.get_ctrl_exn i n_p
+		 |> flip Nodes.find_all n_t
+		 |> IntSet.filter (fun j -> compat t p j i) in
+	       if IntSet.is_empty js then raise_notrace NOT_TOTAL
+	       else let clause = 
+		      IntSet.fold (fun j acc ->
+				   (Cnf.P_var (Cnf.M_lit (i, j))) :: acc)
+				  js [] in
+		    (clause :: acc, IntSet.union js acc_c))
+	      m ([], IntSet.empty)
+	      
 let match_sites t p n_t n_p =
   match_ctrl_deg_aux t p n_t n_p p.ns
     
 let match_roots t p n_t n_p =
-    match_ctrl_deg_aux t p n_t n_p p.rn
+  match_ctrl_deg_aux t p n_t n_p p.rn
 
 (* Block unconnected pairs of nodes with sites and nodes with roots. *)
 let match_trans t p : Cnf.clause list =
@@ -729,9 +721,9 @@ let match_list_eq p t n_p n_t =
   let (clauses, clauses_exc, cols) = 
     Sparse.fold (fun i j (acc, exc, acc_c) ->
         let (a, b) = 
-	  (Nodes.get_ctrl_exn n_p i, Nodes.get_ctrl_exn n_p j) in
+	  (Nodes.get_ctrl_exn i n_p, Nodes.get_ctrl_exn j n_p) in
         match (a, b) with 
-        | (Ctrl.Ctrl(a_string, _), Ctrl.Ctrl(b_string, _)) -> (
+        | (Ctrl.C(a_string, _), Ctrl.C(b_string, _)) -> (
 	    let t_edges = 
 	      List.filter 
 	        (fun (i', j') ->
@@ -758,10 +750,10 @@ let match_list_eq p t n_p n_t =
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
 let match_root_nodes a b n_a n_b =
   Sparse.fold (fun r i (acc, acc_c) ->
-	       let c = Nodes.get_ctrl_exn n_a i in 
+	       let c = Nodes.get_ctrl_exn i n_a in 
 	       let children = 
 		 IntSet.filter (fun i -> 
-			      Ctrl.(=) c (Nodes.get_ctrl_exn n_b i))
+			      Ctrl.(=) c (Nodes.get_ctrl_exn i n_b))
 			     (Sparse.chl b.rn r) in
 	       ((IntSet.fold (fun j acc -> 
 			      (Cnf.P_var (Cnf.M_lit (i, j))) :: acc)
@@ -773,10 +765,10 @@ let match_root_nodes a b n_a n_b =
 (*Dual*)
 let match_nodes_sites a b n_a n_b =
   Sparse.fold (fun i s (acc, acc_c) ->
-	       let c = Nodes.get_ctrl_exn n_a i in 
+	       let c = Nodes.get_ctrl_exn i n_a in 
 	       let parents = 
 		 IntSet.filter (fun i -> 
-			      Ctrl.(=) c (Nodes.get_ctrl_exn n_b i))
+			      Ctrl.(=) c (Nodes.get_ctrl_exn i n_b))
 			     (Sparse.prn b.ns s) in
 	       ((IntSet.fold (fun j acc -> 
 			      (Cnf.P_var (Cnf.M_lit (i, j))) :: acc)

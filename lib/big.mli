@@ -5,7 +5,7 @@
 type bg = {
   p : Place.pg;     (** Place graph *)
   l : Link.Lg.t;    (** Link graph  *)
-  n : Base.Nodes.t; (** Node set    *)
+  n : Nodes.t;      (** Node set    *)
 }
 
 (** The type of interfaces.*)
@@ -113,22 +113,22 @@ val sym : inter -> inter -> bg
 
 (** [ion ns c] computes an ion of control [c]. It's outer names are [ns]. No
     arity check is performed. *)
-val ion : Link.Face.t -> Base.Ctrl.t -> bg
+val ion : Link.Face.t -> Ctrl.t -> bg
 
 (** Same as {!Big.ion} but with arity check.
 
     @raise CONTROL_ERROR when the set of names has size different than the arity
     of [c]. *)
-val ion_chk : Link.Face.t -> Base.Ctrl.t -> bg
+val ion_chk : Link.Face.t -> Ctrl.t -> bg
 					  
 (** Same as {!Big.ion} but without the site. *)
-val atom : Link.Face.t -> Base.Ctrl.t -> bg
+val atom : Link.Face.t -> Ctrl.t -> bg
 
 (** Same as {!Big.ion_chk} but without the site.
 
     @raise CONTROL_ERROR when the set of names has size different than the arity
     of [c]. *)
-val atom_chk : Link.Face.t -> Base.Ctrl.t -> bg
+val atom_chk : Link.Face.t -> Ctrl.t -> bg
 					   
 (** [sub n m] computes a substitution where [n] and [m] are the inner and outer 
     faces, respectively. *)

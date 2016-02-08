@@ -1,6 +1,6 @@
 include Set.Make (struct 
 		     type t = int
-		     let compare a b = a - b
+		     let compare = Base.int_compare
 		   end)
 		 
 let to_string s =

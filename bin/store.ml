@@ -29,9 +29,9 @@ type store_val =
   | Float of float
   | Big of Big.bg
   | Big_fun of big_exp * Id.t list
-  | Ctrl of Base.Ctrl.t
+  | Ctrl of Ctrl.t
   | Ctrl_fun of int * Id.t list
-  | A_ctrl of Base.Ctrl.t
+  | A_ctrl of Ctrl.t
   | A_ctrl_fun of int * Id.t list
   | React of Brs.react
   | React_fun of big_exp * big_exp * int Fun.t option * Id.t list
@@ -45,7 +45,7 @@ let string_of_store_val = function
   | Float x -> string_of_float x
   | Big x -> Big.to_string x
   | Big_fun _ -> "<fun big>" 
-  | A_ctrl c | Ctrl c -> Base.Ctrl.to_string c
+  | A_ctrl c | Ctrl c -> Ctrl.to_string c
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
   | React r -> Brs.to_string_react r
   | React_fun _ -> "<fun react>"
@@ -74,7 +74,7 @@ let assign_type (v : store_val) env_t =
   | Float _ -> (`num_val (`b `float), env_t)
   | Big _ -> (`big_val `big, env_t)
   | Big_fun (_, forms) -> update forms `big
-  | Ctrl c | A_ctrl c -> (`big_val (`ctrl (Base.Ctrl.arity c)), env_t)
+  | Ctrl c | A_ctrl c -> (`big_val (`ctrl (Ctrl.arity c)), env_t)
   | Ctrl_fun (arity, forms)
   | A_ctrl_fun (arity, forms) -> update forms (`ctrl arity)
   | React _ -> (`big_val `react, env_t)
@@ -235,7 +235,7 @@ let get_ctrl id arity p env =
     match Hashtbl.find env id with
     | (A_ctrl c, _, _)
     | (Ctrl c, _, _) ->
-       (let a = Base.Ctrl.arity c in
+       (let a = Ctrl.arity c in
 	if a = arity then c
 	else raise (ERROR (Arity (id, a, arity), p)))
     | (Int _,t,_)
@@ -522,7 +522,7 @@ let eval_ctrl_fun id nums arity =
     id ^ "("
     ^ (String.concat "," (List.map string_of_store_val nums))
     ^ ")" in 
-  Base.Ctrl.Ctrl (id', arity)
+  Ctrl.C (id', arity)
 
 let check_atomic id p env face c = function
   | true ->
@@ -896,11 +896,11 @@ let store_decs fmt decs env env_t =
       update fmt id v p env env_t in
     match d with
     | Dctrl (Atomic (Ctrl_exp (id, ar, _), p)) ->
-       upd id (A_ctrl (Base.Ctrl.Ctrl (id, ar))) p
+       upd id (A_ctrl (Ctrl.C (id, ar))) p
     | Dctrl (Atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
        (upd id (A_ctrl_fun (ar, forms)) p)       
     | Dctrl (Non_atomic (Ctrl_exp (id, ar, _), p)) ->
-       upd id (Ctrl (Base.Ctrl.Ctrl (id, ar))) p
+       upd id (Ctrl (Ctrl.C (id, ar))) p
     | Dctrl (Non_atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
        upd id (Ctrl_fun (ar, forms)) p
     | Dint d ->

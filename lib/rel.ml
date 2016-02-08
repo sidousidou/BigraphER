@@ -1,9 +1,4 @@
-let int_compare a b = a - b
-
-include Map.Make (struct
-		     type t = int
-		     let compare = int_compare
-		   end)
+include Base.M_int
 
 let apply_exn r i = find i r
 

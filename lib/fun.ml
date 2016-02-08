@@ -1,12 +1,5 @@
-let int_compare a b = a - b
-
-let int_equal (a : int) (b : int) = a = b
-
-include Map.Make (struct
-		     type t = int
-		     let compare = int_compare
-		   end)
-
+include Base.M_int
+	  
 let dom f =
   fold (fun i _ acc ->
 	IntSet.add i acc)
@@ -38,9 +31,9 @@ let to_string f =
      |> String.concat ", " )
   ^ "}"
       
-let equal = equal int_equal
+let equal = equal Base.int_equal
 
-let compare = compare int_compare
+let compare = compare Base.int_compare
 
 let transform_exn f i_dom i_codom =
   fold (fun i j f' ->

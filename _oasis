@@ -38,19 +38,21 @@ Library bigraph
   Path:            lib
   FindlibName:	   bigraph
 # Pack:            true
-  Modules:         Base,
+  Modules:         Ctrl,
+                   Nodes,
                    Big,
                    Brs,
+                   Link,
+                   Place,
+                   Sbrs
+  InternalModules: Base,
                    Cnf,
                    Fun,
                    IntSet,
                    Iso,
-                   Link,
-                   Place,
                    Rel,
-                   Sbrs,
-                   Sparse
-  InternalModules: RrType,
+                   Sparse,
+                   RrType,
                    PriType,
                    TsType,
                    Export

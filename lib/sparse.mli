@@ -4,18 +4,14 @@
     matrices of Directed Acyclic Graphs (DAG).
     @author Michele Sevegnani *)
 
-
-(** Specialised maps. *)
-module M_int : Map.S with type key = int
-
 (** The type of Boolean matrices. Only true values are stored in the matrix as
     row-column pairs. For example adding value ["(2, 1)"] means that the second
     element in the third row of the matrix is true. *)
 type bmatrix =
   { r : int;                           (** Number of rows.          *)
     c : int;                           (** Number of columns.       *)
-    r_major : IntSet.t M_int.t;        (** Row-major order index    *)
-    c_major : IntSet.t M_int.t;        (** Column-major order index *)
+    r_major : IntSet.t Base.M_int.t;   (** Row-major order index    *)
+    c_major : IntSet.t Base.M_int.t;   (** Column-major order index *)
   }
   
 (** {6 Basic operations} *)

@@ -1,6 +1,9 @@
 (** This module provides operations on link graphs.
     @author Michele Sevegnani *)
 
+
+(** {6 Faces} *)
+
 (** The type of names. *)
 type name = Nam of string
 
@@ -34,12 +37,88 @@ module Face :
     val choose : t -> elt
     val split : elt -> t -> t * bool * t
   end
-	
+
+(** {6 Ports} *)
+    
+(** This module provides set operations for ports of nodes. *)
+module PortSet :
+sig
+
+  (** A port is a pair [(v, w)], where [v] is an unique node identifier and [w]
+      is a port identifier which is unique within an edge. *)
+  type port = int * int
+
+  (** The type of sets of ports *)		      
+  type t
+
+  (** {6 Standard set operations} *)	 
+  (** These functions are described in the {{:
+      http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
+      library}. *)
+
+  val empty : t
+  val is_empty : t -> bool
+  val mem : port -> t -> bool
+  val add : port -> t -> t
+  val singleton : port -> t
+  val remove : port -> t -> t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val compare : t -> t -> int
+  val equal : t -> t -> bool
+  val subset : t -> t -> bool
+  val iter : (port -> unit) -> t -> unit
+  val fold : (port -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (port -> bool) -> t -> bool
+  val exists : (port -> bool) -> t -> bool
+  val filter : (port -> bool) -> t -> t
+  val partition : (port -> bool) -> t -> t * t
+  val cardinal : t -> int
+  val elements : t -> port list
+  val min_elt : t -> port
+  val max_elt : t -> port
+  val choose : t -> port
+  val split : port -> t -> t * bool * t
+
+  (** {6 Additional functions} *)
+					
+  (** [to_string s] gives the string representation of port set [s]. For
+      example: [\{(0, 0), (0, 1)\}]. *)
+  val to_string : t -> string
+
+  (** [of_nodes ns] transform a set of nodes into a set of ports. *)
+  val of_nodes : Nodes.t -> t
+
+  (** Construct a list of control strings. *)
+  val types : t -> Nodes.t -> string list
+
+  (** [to_IntSet ps] returns a set of node identifiers form a set of ports. *)
+  val to_IntSet : t -> IntSet.t
+
+  (** Apply an isomorphism.  
+
+      @raise Not_found if a node identifier is not in the domain of the
+      isomorphism. *)
+  val apply_exn : t -> int Iso.t -> t
+				      
+  (** Construct a mapping from nodes to number of port occurrences within a port
+      set. *)
+  val arities : t -> int Fun.t
+
+  (** Construct a list of possible node assignments starting from two compatible
+      port sets. *)
+  val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.lit list list
+							    
+end
+
+(** {6 Link graphs} *)
+  
 (** The type of edges. *)	
 type edg = {
-  i : Face.t; (** Inner face *)
-  o : Face.t; (** Outer face *)
-  p : Base.PortSet.t; (** Set of ports *)
+  i : Face.t;    (** Inner face *)
+  o : Face.t;    (** Outer face *)
+  p : PortSet.t; (** Set of ports *)
 }
   
 (** This module provides set operations for link graphs. *)
@@ -82,9 +161,9 @@ val string_of_face : Face.t -> string
 (** [to_string l] computes the string representation of link graph [l]. *)
 val to_string : Lg.t -> string
 
-(** Parse a list of strings. A hash table associating nodes to arities
-    is also returned. *)
-val parse : string list -> (Lg.t * (int, int) Hashtbl.t)
+(** Parse a list of strings. A map associating nodes to arities is also
+    returned. *)
+val parse : string list -> (Lg.t * int Base.M_int.t)
 
 (** [get_dot l] computes a four-elements tuple encoding the dot
     representation of link graph [l]. The first two elements represent
@@ -100,7 +179,7 @@ val inner : Lg.t -> Face.t
 val outer : Lg.t -> Face.t
 
 (** [ports l] computes the set of ports of link graph [l]. *)
-val ports : Lg.t -> Base.PortSet.t
+val ports : Lg.t -> PortSet.t
 
 (** [apply_exn i l] computes a link graph obtained by applying
     isomorphism [i] to [l].
@@ -126,7 +205,7 @@ val elementary_id: Face.t -> Lg.t
 (** [id_empty] is the empty link graph. *)
 val id_empty : Lg.t
 
-(** {6 Operations} *)
+(** {6 Operations on link graphs} *)
 
 (** Raised when the tensor product between two incompatible link
     graphs cannot be performed. The first element is the set of inner
@@ -215,12 +294,12 @@ exception NOT_TOTAL
     blocked columns and a set of blocking pairs.
 
    @raise NOT_TOTAL when no matches are found. *)
-val match_edges : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_edges : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list * IntSet.t * Cnf.clause list
 
 (** Compute constraints to match isomorphic port sets in closed
     edges. *)
-val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_ports : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
 
 (** Compute constraints to match peers in the pattern with peers in
@@ -228,18 +307,18 @@ val match_ports : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
     with open edges.
 
     @raise NOT_TOTAL when no matches are found. *)
-val match_peers : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_peers : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   int * int * Cnf.clause list list * (int * int) list * 
   Cnf.clause list * int Iso.t * int Iso.t
 
 (** Similar to {!Link.match_edges} but constraints are for
     equality. *)
-val match_list_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_list_eq : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list * Cnf.clause list
 
 (** Similar to {!Link.match_ports} but constraints are for
     equality. *)
-val match_ports_eq : Lg.t -> Lg.t -> Base.Nodes.t -> Base.Nodes.t ->
+val match_ports_eq : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
 
 (**/**)

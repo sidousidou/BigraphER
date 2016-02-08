@@ -5,7 +5,7 @@ open Minisat
 type bg = {
   p : Place.pg;     (** Place graph  *)
   l : Link.Lg.t;    (** Link graph   *)
-  n : Base.Nodes.t; (** Set of nodes *)
+  n : Nodes.t; (** Set of nodes *)
 }
 
 type inter = Inter of int * Link.Face.t
@@ -71,49 +71,49 @@ let parse lines =
   }
 
 let id (Inter (m, i)) =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.elementary_id m;
     l = Link.elementary_id i;
   }   
   
 let id_eps = 
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.id0;
     l = Link.id_empty;
   } 
   
 let merge n =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.elementary_merge n;
     l = Link.id_empty;
   }
   
 let split n =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.elementary_split n;
     l = Link.id_empty;
   }
   
 let one =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.one;
     l = Link.id_empty;
   }
   
 let zero =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.zero;
     l = Link.id_empty;
   }
   
 let sym (Inter (m, i)) (Inter (n, j)) =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.elementary_sym m n;
     l = Link.tens (Link.elementary_id i) (Link.elementary_id j) 0;
   }
 
 let ion f c =
-  { n = Nodes.add (Nodes.empty ()) 0 c;
+  { n = Nodes.add 0 c Nodes.empty;
     p = Place.elementary_ion;
     l = Link.elementary_ion f;
   } 
@@ -125,7 +125,7 @@ let ion_chk f c =
     ion f c
       
 let sub i o =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.id0;
     l = Link.elementary_sub i o;
   }
@@ -136,7 +136,7 @@ let intro o = sub Link.Face.empty o
 
 (* (l list of parents for each site) r roots *)  
 let placing l r f =
-  { n = Nodes.empty ();
+  { n = Nodes.empty;
     p = Place.parse_placing l r;
     l = Link.elementary_id f;
   }
@@ -281,7 +281,7 @@ let decomp t p i_v i_e f_e =
     (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
-   { p = p_id; l = l_id; n = Nodes.empty () })
+   { p = p_id; l = l_id; n = Nodes.empty })
 
 (*
 (* List of bigraphs. First one is the top level. *)
@@ -625,13 +625,13 @@ let aux_match t p t_trans =
 
 (* true when p is not a match *)
 let quick_unsat t p =
-  (p.n.Nodes.size > t.n.Nodes.size) || 
-    (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn) ||
-    (Nodes.not_sub p.n t.n) ||
-    (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p)) ||
-    (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p)) ||
-    (Link.closed_edges p.l > Link.closed_edges t.l) ||
-    (Link.max_ports p.l > Link.max_ports t.l)
+  (p.n.Nodes.size > t.n.Nodes.size)
+  || (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn)
+  || (Nodes.not_sub p.n t.n)
+  || (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p))
+  || (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p))
+  || (Link.closed_edges p.l > Link.closed_edges t.l)
+  || (Link.max_ports p.l > Link.max_ports t.l)
 
 let occurs t p = 
   try

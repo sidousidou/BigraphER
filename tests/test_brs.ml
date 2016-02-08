@@ -1,54 +1,53 @@
-open Base
 open Big
 open Printf
 open Junit
        
 let r_p = 
-  comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("B", 1))) one
+  comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("B", 1))) one
   
 let r =
-  par (comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("B", 1))) one)
-    (comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one)
+  par (comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("B", 1))) one)
+    (comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one)
   
 let s =
   close (Link.parse_face [ "x" ])
     (par_of_list
-       [ comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("B", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-         comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one ])
+       [ comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("B", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+	 comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+         comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one ])
   
 let g =
   par_of_list
-    [ comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("B", 1))) one;
-      comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one;
-      comp (ion (Link.parse_face [ "x" ]) (Ctrl.Ctrl ("A", 1))) one ]
+    [ comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("B", 1))) one;
+      comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one;
+      comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one ]
   
 let reacts =
   [ Brs.P_class [ { Brs.rdx = r; rct = r_p; eta = None };

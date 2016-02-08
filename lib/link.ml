@@ -17,6 +17,94 @@ module Face_set = Set.Make (struct
 			       let compare = Face.compare
 			     end)
 
+module PortSet = struct
+
+    (* node id, number of occurrences *) 
+    type port = int * int
+			
+    include Set.Make (struct
+			 type t = port
+			 let compare = ints_compare
+		       end)
+
+    let to_string ps =
+      "{"
+      ^ (elements ps
+	 |> List.map (fun (a, b) ->
+		      "("
+		      ^ (string_of_int a)
+		      ^ ", "
+		      ^ (string_of_int b)
+		      ^ ")")
+	 |> String.concat ", ")
+      ^ "}"
+	  
+    (* Transform a set of nodes in a set of ports *)
+    let of_nodes ns =
+      let of_node (n, c) =
+	assert (n >= 0);
+	let rec fold i acc =
+	  if i < 0 then acc
+	  else fold (i - 1) (add (n, i) acc) in
+	fold ((Ctrl.arity c) - 1) empty in
+      Nodes.fold (fun n c acc -> 
+		  union (of_node (n, c)) acc)
+		 ns empty
+
+    (* Construct a list of control strings [AA;BBBB;C]*)
+    let types p n =
+      let h = H_int.create (cardinal p) 
+      and aux (Ctrl.C (s, _)) = s in
+      iter (fun (i, _) ->
+            H_int.add h i (aux (Nodes.get_ctrl_exn i n)))
+	   p;
+      H_int.fold (fun i _ (acc, marked) ->
+		  if List.mem i marked then (acc, marked)
+		  else 
+		    (let s =
+		       String.concat "" (H_int.find_all h i) in
+		     (s :: acc, i :: marked)))
+		 h ([], [])
+      |> fst
+      |> List.fast_sort String.compare
+
+    let to_IntSet ps =
+      fold (fun (i, _) acc ->
+	    IntSet.add i acc) ps IntSet.empty
+
+    let apply_exn s iso =
+      fold (fun (i, p) acc ->
+	    add (Iso.apply_exn iso i, p) acc) s empty
+
+    (* Compute the arities of the nodes within a port set. The output is a map 
+       node -> arity *)
+    let arities p =
+      let rel =
+	fold (fun (i, p) r ->
+	      Rel.add i (IntSet.singleton p) r) p Rel.empty in 
+      Rel.fold (fun i ports acc ->
+		Fun.add i (IntSet.cardinal ports) acc) rel Fun.empty
+	       
+    let compat_list a b n_a n_b =
+      let ar_a = arities a
+      and ar_b = arities b
+      and i_a = to_IntSet a 
+      and i_b = to_IntSet b in
+      IntSet.fold (fun i acc ->
+		   let ar_i = safe (Fun.apply ar_a i)
+		   and c_i = Nodes.get_ctrl_exn i n_a in
+		   let pairs =
+		     IntSet.filter (fun j ->
+				    (ar_i = safe (Fun.apply ar_b j))
+				    && (Ctrl.(=) c_i (Nodes.get_ctrl_exn j n_b)))
+				   i_b
+		     |> IntSet.elements
+		     |> List.map (fun j -> Cnf.M_lit (i, j)) in 
+		   pairs :: acc)
+		  i_a []
+
+  end
+		   
 (* (in, out, ports) *)
 type edg = { i: Face.t; o: Face.t; p: PortSet.t }
 
@@ -67,33 +155,32 @@ let to_string l =
   |> List.map string_of_edge 
   |> String.concat "\n" 
 
-(* Nodes are counted starting from 1 *)
 let parse lines = 
-  let build_edge s n h =
-    let a  = Str.split (Str.regexp_string " ") s in 
-    { p =
-	List.fold_left (fun acc x ->
-	    try
-	      let j = Hashtbl.find h x in
-	      Hashtbl.add h x (j + 1);
-	      PortSet.add (x, j) acc
-	    with
-	    | Not_found -> 
-	      begin
-		Hashtbl.add h x 1;
-		PortSet.add (x, 0) acc
-	      end) PortSet.empty (List.map (fun x ->
-	    (int_of_string x) - 1) (List.tl (List.rev a)));
-      i = Face.empty;
-      o = begin
-	match List.nth a ((List.length a) - 1) with 
-	| "t" -> parse_face [sprintf "n%d" n]
-	| _ -> Face.empty
-      end;
-    } in
-  let h = Hashtbl.create (List.length lines) in
-  (fst (List.fold_left (fun (acc, i) l -> 
-       (Lg.add (build_edge l i h) acc), i + 1) (Lg.empty, 0) lines), h)
+  let build_edge s n m =
+    let a  = Str.split (Str.regexp_string " ") s in
+    let (p, m') =
+      List.rev a
+      |> List.tl
+      |> List.map (fun x -> (int_of_string x) - 1)
+      |> List.fold_left (fun (acc, m) x ->
+			 try
+			   let j = M_int.find x m in
+			   (PortSet.add (x, j) acc, M_int.add x (j + 1) m)
+			 with
+			 | Not_found ->
+			    (PortSet.add (x, 0) acc, M_int.add x 1 m))
+			(PortSet.empty, m) in
+    let edge = { p = p;
+		 i = Face.empty;
+		 o =  match List.nth a ((List.length a) - 1) with 
+		      | "t" -> parse_face ["n" ^ (string_of_int n)]
+		      | _ -> Face.empty; } in
+    (edge, m') in
+  List.fold_left (fun ((acc, m), i) l ->
+		  let (e, m') = build_edge l i m in
+		  ((Lg.add e acc), m'), i + 1)
+		 ((Lg.empty, M_int.empty), 0) lines
+  |> fst
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub f_i f_o =
@@ -622,13 +709,13 @@ let compat_clauses e_p i t h_t n_t n_p =
       let iso_t = PortSet.arities e_t.p in
       let clauses : Cnf.lit list list = 
         IntSet.fold (fun v acc ->
-	    let c_v = Nodes.get_ctrl_exn n_p v 
+	    let c_v = Nodes.get_ctrl_exn v n_p
 	    and arity_v = safe (Fun.apply iso_p v) 
 	    and p_t = PortSet.to_IntSet e_t.p in	    
 	    (* find nodes in e_t that are compatible with v *)
 	    let compat_t = 
 	      IntSet.filter (fun u ->
-	          (Ctrl.(=) c_v (Nodes.get_ctrl_exn n_t u)) &&
+	          (Ctrl.(=) c_v (Nodes.get_ctrl_exn u n_t)) &&
 	          (arity_v <= safe (Fun.apply iso_t u))
 	        ) p_t in
 	    let nodes_assign =

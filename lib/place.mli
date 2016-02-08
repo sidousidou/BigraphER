@@ -163,7 +163,7 @@ exception NOT_TOTAL
 
     @raise NOT_TOTAL when there are nodes in the pattern that cannot be
     matched. *)
-val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_list : pg -> pg -> Nodes.t -> Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
 (** [match_leaves t p n_t n_p] computes constraints to match the leaves 
@@ -172,22 +172,22 @@ val match_list : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
 
     @raise NOT_TOTAL when there are leaves in the pattern that cannot be
     matched. *)
-val match_leaves : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+val match_leaves : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_leaves}.
    
     @raise NOT_TOTAL when there are orphans in the pattern that cannot be matched. *)
-val match_orphans : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+val match_orphans : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Compute constraints to match roots. Arguments are as in
     {!Place.match_list}. Only controls and degrees are checked. *)
-val match_roots : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_roots : pg -> pg -> Nodes.t -> Nodes.t ->
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_roots}. *)		      
-val match_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_sites : pg -> pg -> Nodes.t -> Nodes.t ->
   Cnf.clause list * IntSet.t
 
 (** Compute constraints to block matches between unconnected pairs of nodes with
@@ -199,15 +199,15 @@ val check_match : pg -> pg -> Sparse.bmatrix -> int Iso.t -> bool
 
 (** Compute constraints for equality: roots must have children with the same
     controls. *)
-val match_root_nodes : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+val match_root_nodes : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_root_nodes}. *)		      
-val match_nodes_sites : pg -> pg -> Base.Nodes.t -> Base.Nodes.t -> 
+val match_nodes_sites : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Compute constraints for equality. Similar to {!Place.match_list}. *)		      
-val match_list_eq : pg -> pg -> Base.Nodes.t -> Base.Nodes.t ->
+val match_list_eq : pg -> pg -> Nodes.t -> Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
 (** Compute the outer degree of the roots of a place graph. *)
