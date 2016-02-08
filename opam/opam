@@ -16,6 +16,10 @@ tags: [
   "stochastic simulation"
 ]
 
+libraries: [
+  "bigraph"
+]
+
 build: [
   ["ocaml" "setup.ml" "-configure" "--disable-debug" "--prefix" prefix]
   ["ocaml" "setup.ml" "-build"]
@@ -39,6 +43,7 @@ depends: [
   "ocamlfind"
   "minisat"
   "menhir"
+  "ocamlbuild" {build}
 ]
 
 available: [ ocaml-version >= "4.02.0" ]
