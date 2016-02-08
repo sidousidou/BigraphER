@@ -5,7 +5,9 @@ let () =
       (Big.nest
 	 (Big.ion (Link.Face.empty) (Ctrl.C ("Snd", 0)))
 	 (Big.par
-	    (Big.ion (Link.parse_face ["a"; "v_a"]) (Ctrl.C ("M", 2)))
+	    (Big.nest
+	       (Big.ion (Link.parse_face ["a"; "v_a"]) (Ctrl.C ("M", 2)))
+	       Big.one)
 	    (Big.nest
 	       (Big.ion (Link.Face.empty) (Ctrl.C ("Ready", 0)))
 	       (Big.nest
