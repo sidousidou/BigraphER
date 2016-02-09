@@ -31,9 +31,6 @@ echo "Generating coverage reports"
 
 $BISECT bisect*.out -I $OBJ -text $BISECT_DIR/report
 $BISECT bisect*.out -I $OBJ -summary-only -text $BISECT_DIR/summary
-(cd $OBJ;
- $BISECT ../bisect*.out -no-folding -html ../$BIDECT_DIR/html;
- $BISECT ../bisect*.out -xml ../$XML_DIR/report.xml;
- $BISECT ../bisect*.out -xml-emma ../$XML_DIR/report-emma.xml)
+(cd $OBJ; $BISECT ../bisect*.out -no-folding -html ../$BISECT_DIR/html)
 
 cat $BISECT_DIR/summary

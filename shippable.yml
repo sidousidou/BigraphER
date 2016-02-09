@@ -20,7 +20,7 @@ before_script:
 
 script:
  - ./scripts/shippable-build.sh
-# - ./scripts/shippable-doc.sh
+ - ./scripts/shippable-doc.sh
  - ./scripts/shippable-link.sh
  - ./scripts/shippable-opam-lint.sh
  - ./scripts/shippable-cover.sh
