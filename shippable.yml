@@ -15,9 +15,12 @@ before_script:
  - mkdir -p shippable/linktest
  - mkdir -p shippable/svg
  - mkdir -p shippable/bisect/html
+ - mkdir -p shippable/api
+ - mkdir -p shippable/man
 
 script:
  - ./scripts/shippable-build.sh
+ - ./scripts/shippable-doc.sh
  - ./scripts/shippable-link.sh
  - ./scripts/shippable-opam-lint.sh
  - ./scripts/shippable-cover.sh
