@@ -1,3 +1,17 @@
+###1.0.1 (2016-02-08):###
+
+* Use maps instead of hash tables.
+
+
+###1.0.0 (2016-01-27):###
+
+* Add predicates checking in the BRS loop.
+* Dot files can be exported even if dot is not installed.
+* FIX: error in tensor product.
+* FIX: graphical output of links.
+* FIX: update progress bar during simulations.
+
+
 ###0.7.1 (2015-07-05):###
 
 * Allow ``'`` in control identifiers.
