@@ -119,7 +119,7 @@ Executable "matching-test"
   Path:		   tests
   MainIs:     	   test_match.ml
   CompiledObject:  best
-  BuildDepends:	   bigraph, bigraph-utils, junit 
+  BuildDepends:	   bigraph, bigraph-utils, junit
   Install:	   false
   Build$:          flag(tests)
 

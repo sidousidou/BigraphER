@@ -91,6 +91,5 @@ true: annot, bin_annot
 <tests/*.ml{,i,y}>: use_junit
 # OASIS_STOP
 
-true: warn(Ae), principal, strict_sequence, safe_string, use_menhir
+true: warn(Ae), principal, strict_sequence, safe_string, use_menhir, annot
 <bin/*.ml{,i,y}>: explain, warn(-4-32-37)
-#true: debug, profile
