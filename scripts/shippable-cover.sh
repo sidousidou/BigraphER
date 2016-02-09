@@ -16,9 +16,11 @@ ocaml setup.ml -clean
 echo "Compiling"
 
 sed -i 's/BuildDepends:/BuildDepends: bisect_ppx,/g' _oasis
+touch bin/version.ml
 oasis setup
 
 ocaml setup.ml -configure --enable-tests --prefix $PREFIX
+ocaml setup.ml -build
 
 echo "Running tests"
 
