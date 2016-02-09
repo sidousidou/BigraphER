@@ -11,7 +11,7 @@ echo "Cleaning"
 
 ocaml setup.ml -uninstall
 ocamlfind remove bigraph
-ocaml setup.ml -clean
+ocaml setup.ml -distclean
 
 echo "Compiling"
 

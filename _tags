@@ -93,3 +93,4 @@ true: annot, bin_annot
 
 true: warn(Ae), principal, strict_sequence, safe_string, use_menhir, annot
 <bin/*.ml{,i,y}>: explain, warn(-4-32-37)
+<shippable/*>: precious
