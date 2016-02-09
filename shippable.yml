@@ -20,4 +20,4 @@ script:
  - ./scripts/shippable-build.sh
  - ./scripts/shippable-link.sh
  - ./scripts/shippable-opam-lint.sh
- - ./script/shippable-cover.sh
+ - ./scripts/shippable-cover.sh
