@@ -40,9 +40,9 @@ build-doc: [
 depends: [
   "base-bigarray"
   "base-unix"
-  "ocamlfind"
+  "ocamlfind" {build}
   "minisat"
-  "menhir"
+  "menhir" {build}
   "ocamlbuild" {build}
 ]
 
