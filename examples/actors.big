@@ -11,20 +11,20 @@ ctrl Fun = 0;
 # Reaction rules
 react snd =
   A{a0}.Snd.(M{a1, v} | id) | Mail
-  ->
+  -->
   A{a0} | Mail.(M{a1, v} | id);
 
 react ready =
   A{a}.Ready | Mail.(M{a, v} | id)
-  ->
+  -->
   A{a} | Mail | {v};
 
 react lambda =
-  A{a}.Fun -> A{a};
+  A{a}.Fun --> A{a};
 
 react new =
   A{a0}.(New.(A'{a1} | id) | id)
-  ->
+  -->
   A{a0}.(id | id) | A{a1}.(id | id)
   @ [1, 2, 0, 2];
 
