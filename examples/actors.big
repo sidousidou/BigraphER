@@ -38,10 +38,11 @@ big a1 =
 big s0 = 
   a0 | a1 | Mail.1;
 
+big phi = Mail.(M{a, v} | id);
+
 # Reactive system
 brs
   init s0;
-  rules = [
-    {snd, ready, lambda, new}
-  ];
+  rules = [ {snd, ready, lambda, new} ];
+  preds = { phi };
 endbrs
