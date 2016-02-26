@@ -38,12 +38,12 @@ build-doc: [
 ]
 
 depends: [
-  "base-bigarray"
   "base-unix"
   "ocamlfind" {build}
-  "minisat"
+  "conf-minisat"
   "menhir" {build}
   "ocamlbuild" {build}
+  "conf-graphviz"
 ]
 
 available: [ ocaml-version >= "4.02.0" ]
@@ -61,14 +61,4 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
   (require 'big-mode)
 "
   {success}
-]
-
-depexts: [
-  [["debian"] ["graphviz"]]
-  [["ubuntu"] ["graphviz"]]
-  [["freebsd"] ["graphics/graphviz"]]
-  [["openbsd"] ["math/graphviz"]]
-  [["netbsd"] ["graphics/graphviz"]]
-  [["osx" "homebrew"] ["graphviz"]]
-  [["osx" "pkgsrc"] ["graphics/graphviz"]]
 ]
