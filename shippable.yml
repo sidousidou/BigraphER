@@ -3,17 +3,24 @@ archive: true
 language: java
 
 notifications:
- email: false
+  email:
+    recipients:
+      - Michele.Sevegnani@glasgow.ac.uk
+    on_success: change
+    on_failure: always
  
 before_script:
  - mkdir -p shippable/codecoverage
  - mkdir -p shippable/testresults
  - mkdir -p shippable/linktest
  - mkdir -p shippable/svg
+ - mkdir -p shippable/bisect/html
+ - mkdir -p shippable/api
+ - mkdir -p shippable/man
 
 script:
  - ./scripts/shippable-build.sh
- - ./scripts/shippable-tests.sh
-# - ./scripts/benchmark.sh
+ - ./scripts/shippable-doc.sh
  - ./scripts/shippable-link.sh
  - ./scripts/shippable-opam-lint.sh
+ - ./scripts/shippable-cover.sh
