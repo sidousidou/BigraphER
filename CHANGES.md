@@ -1,6 +1,7 @@
 ###1.0.1 (2016-02-08):###
 
 * Use maps instead of hash tables.
+* More informative messages in reaction rule validity checks.
 
 
 ###1.0.0 (2016-01-27):###
