@@ -291,6 +291,11 @@ bexp:
   | closure_list ion_exp                    { Big_closures ($1, Big_ion $2, loc $startpos $endpos)       }
   | closure_list ion_exp DOT simple_bexp    { Big_closures ($1, Big_nest ($2, $4, loc $startpos $endpos), 
 							    loc $startpos $endpos)                       }
+  | closure_list IDE                        { Big_closures ($1, Big_var ($2, loc $startpos $endpos),
+                                                            loc $startpos $endpos)                       }
+  | closure_list IDE LPAR num_list RPAR     { Big_closures ($1, Big_var_fun ($2, $4,
+                                                                             loc $startpos $endpos),
+                                                            loc $startpos $endpos)                       }
   | bexp PROD bexp                          { Big_comp ($1, $3, loc $startpos $endpos)                   }
   | bexp PLUS bexp                          { Big_tens ($1, $3, loc $startpos $endpos)                   }
   | bexp PIPE bexp                          { Big_par ($1, $3, loc $startpos $endpos)                    }
