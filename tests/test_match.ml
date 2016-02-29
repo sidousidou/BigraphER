@@ -1,24 +1,7 @@
 (* Tests for the matching engine *)
 open Printf
-open Big
 open Junit
-       
-(* parse a .big file *)
-let parse path =
-  let file = open_in path in
-  let rec read_lines out =
-    try read_lines ((input_line file) :: out)
-    with 
-    | End_of_file -> (close_in file; List.rev out)
-  in read_lines []
-  
-(* parse all the bigraphs in one dir *)
-let parse_all dir =
-  let files = Array.to_list (Sys.readdir dir) in
-  List.map (fun x -> 
-	    ((Filename.chop_extension x), (parse (Filename.concat dir x)))
-	   ) (List.filter (fun x -> Filename.check_suffix x ".big") files)
-  
+         
 type test =
   { target : Big.bg;
     t_name : string;
@@ -53,8 +36,8 @@ let check_res res exp_res =
       ) (List.combine (sort_res res) (sort_res exp_res))
 
 let test_decomposition t p (i_n, i_e, f_e) =
-  let (c, d, id) = decomp t p i_n i_e f_e in
-  equal (comp c (comp (tens p id) d)) t   
+  let (c, d, id_big) = Big.decomp t p i_n i_e f_e in
+  Big.(equal (comp c (comp (tens p id_big) d)) t)   
 
 let attr_match = [("type", "ASSERT_MATCH");
 		  ("message", "No occurrence of pattern")]
@@ -74,17 +57,17 @@ let do_tests =
 				^ "\nExpected result: " ^ (print_res t.exp_res)
 				^ "\nDecompositions:\n"
 				^ (List.mapi (fun i (i_n, i_e, f_e) ->
-					      let (c, d, id) =
-						decomp t.target t.pattern i_n i_e f_e in
+					      let (c, d, id_big) =
+						Big.decomp t.target t.pattern i_n i_e f_e in
 					      "Occurrence "
 					      ^ (string_of_int i) ^ ":\nTarget:\n"
-					      ^ (to_string t.target) ^ "\nPattern:\n"
-					      ^ (to_string t.pattern) ^ "\n"
+					      ^ (Big.to_string t.target) ^ "\nPattern:\n"
+					      ^ (Big.to_string t.pattern) ^ "\n"
 					      (* ^ (to_string c) ^ "\nD:\n" *)
 					      (* ^ (to_string d) ^ "\nTensor:\n" *)
 					      (* ^ (to_string (tens t.pattern id)) ^ "\nComposition D:\n" *)
 					      (* ^ (to_string (comp (tens t.pattern id) d)) ^ "\nComposition C:\n" *)
-					      ^ (to_string (comp c (comp (tens t.pattern id) d))))
+					      ^ (Big.to_string Big.(comp c (comp (tens t.pattern id_big) d))))
 					     occs
 				   |> String.concat "\n")],
      [xml_block "failure" attr_match [msg]])
@@ -96,7 +79,7 @@ let do_tests =
 	    let default_fail_msg =
 	      sprintf "%s cannot be matched in %s." t.p_name t.t_name in
 	    try
-              let occs = occurrences t.target t.pattern in
+              let occs = Big.occurrences t.target t.pattern in
               t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
               if (check_res t.res t.exp_res)
 		 && (List.for_all (fun o ->
@@ -105,15 +88,15 @@ let do_tests =
 	      then success t
               else failure t default_fail_msg occs
 	    with
-	    | NODE_FREE -> (* tests 23 and 16 are special cases *)
+	    | Big.NODE_FREE -> (* tests 23 and 16 are special cases *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T13", "P23") | ("T10", "P16") -> success t
 		| _ -> failure t default_fail_msg [])
-	    | COMP_ERROR (x, y) -> (* pattern in test 25 is not epi *)
+	    | Big.COMP_ERROR (x, y) -> (* pattern in test 25 is not epi *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T14", "P25") -> success t
 		| _ -> failure t (sprintf "Interfaces %s != %s"
-					  (string_of_inter x) (string_of_inter y)) [])
+					  (Big.string_of_inter x) (Big.string_of_inter y)) [])
             |  _ ->
 		(t.t_name ^ " &gt; " ^ t.p_name,
 		 module_name,
@@ -539,7 +522,9 @@ let tests bgs = (* TEST 1 *)
 (* Args: PATH PATH-out*)  
 let () =
   Printexc.record_backtrace true;
-  let bg_strings = parse_all Sys.argv.(1) in
+  let bg_strings = Io.parse_all
+		     Sys.argv.(1)
+		     (fun x -> Filename.check_suffix x ".big") in
   let bgs =
     List.map (fun (n, ls) -> (n, (Big.parse ls))) bg_strings in
   let ts = tests bgs in

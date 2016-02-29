@@ -168,3 +168,11 @@ Test "parser"
   TestTools:	   mkdir
   PreCommand:	   mkdir -p ./shippable/testresults
   Command:	   ./test_parser.native ./tests/files/parser.in ./shippable/testresults parser-junit.xml
+
+Executable "cobertura"
+  Path:            tests
+  MainIs:     	   cobertura.ml
+  CompiledObject:  best
+  BuildDepends:	   junit, unix
+  Install:	   false
+  Build$:          flag(tests)
