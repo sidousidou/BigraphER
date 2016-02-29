@@ -1,6 +1,6 @@
 (* parser for bisect files *)
 
-type item = String.t * String.t
+type item = String.t * float
 			 
 type mod_cover =
   { name : String.t;
@@ -20,8 +20,9 @@ let parse_item l =
     try first_token l '\'' '\'' with
     | Not_found -> "total"
   and percent =
-    try first_token l '(' ')' with
-    | Not_found -> "none" in
+    try
+      (float_of_string (first_token l '(' '%')) /. 100. with
+    | Not_found -> 1.0 in
   (name, percent)
     
 let parse_bisect_report = function
@@ -40,7 +41,7 @@ let parse_bisect_report = function
   |> List.rev
 
 let get_rate m =
-  m.items |> List.rev |> List.hd |> snd
+  m.items |> List.rev |> List.hd |> snd |> string_of_float
        
 let to_attribs m v =
   "line-rate=\"" ^ (get_rate m) ^ "\" "
