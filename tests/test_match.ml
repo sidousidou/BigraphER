@@ -521,6 +521,7 @@ let tests bgs = (* TEST 1 *)
 
 (* Args: PATH PATH-out*)  
 let () =
+  print_endline "test_match";
   Printexc.record_backtrace true;
   let bg_strings = Io.parse_all
 		     Sys.argv.(1)

@@ -39,6 +39,7 @@ let do_tests =
  
 (* Args: PATH OUT-PATH FNAME *)  
 let () =
+  print_endline "test_decomp";
   Printexc.record_backtrace true;
   let bg_strings = Io.parse_all
 		     Sys.argv.(1)

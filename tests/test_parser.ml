@@ -39,9 +39,11 @@ let rec diff (out : string list) (reference : string list) =
 
 (* Args: PATH OUT-PATH FNAME *)  
 let () =
+  printf "test_parser:\n";
   let (testcases : (string * string * string * string list) list) =
     Io.parse Sys.argv.(1)
     |> List.map (fun f ->
+		 printf "%s\n" f;
 		 let name = Filename.chop_extension (Filename.basename f) in
 		 let flags = set_args name in
 		 let chan_in = Unix.open_process_in (bin ^ " " ^ flags ^ " " ^ f) in
