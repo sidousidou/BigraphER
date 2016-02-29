@@ -68,8 +68,8 @@ let get_branch_rate m =
 			   || i.kind = "match/function")
   |> List.fold_left (fun (n_acc, tot_acc) i ->
 		     (n_acc +. i.n, tot_acc +. i.total))
-		    (0.0, 0.0)
-  |> fun (a, b) -> a /. b
+		    (0., 0.)
+  |> fun (a, b) -> (if b = 0. then 1. else a /. b)
   |> string_of_float
 					     
 let to_attribs m v =
