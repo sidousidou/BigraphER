@@ -20,7 +20,7 @@ let read_int lexbuf =
 
 let read_float lexbuf =
   try CFLOAT (float_of_string (Lexing.lexeme lexbuf)) with
-  | Failure _ -> assert false
+  | Failure _ -> assert false (*BISECT-IGNORE*)
 
 }
 

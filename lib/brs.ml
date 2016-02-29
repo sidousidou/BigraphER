@@ -26,7 +26,7 @@ module RT = struct
     let random_step _ b rules =
       (* Remove element with index i *)
       let rec aux i i' acc = function
-	| [] -> assert false
+	| [] -> assert false (*BISECT-IGNORE*)
 	| x :: l -> if i = i' then (x, l @ acc)
 		    else aux i (i' + 1) (x :: acc) l in
       let t = Sparse.trans b.Big.p.Place.nn in

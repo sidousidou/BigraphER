@@ -339,10 +339,6 @@ let snf b =
   | _ -> ""
     *)
   
-let safe_exn f =
-  try f with
-  | Iso.NOT_BIJECTIVE -> assert false
-
 (* Generates an iso from a matrix of assignments *)
 let get_iso solver m =
   snd (Array.fold_left (fun (i, iso) r ->
@@ -418,18 +414,17 @@ type sat_vars = {
    
 let add_blocking solver v w =
   let scan_matrix m =
-    snd
-      (Array.fold_left (fun (i, acc) r ->
-	(i + 1, 
-	 snd 
-	   (Array.fold_left (fun (j, acc) x ->
-	     match solver#value_of x with
-	     | Minisat.True -> (j + i, neg_lit x :: acc)
-	     | Minisat.False -> (j + 1, pos_lit x :: acc) (* Check if this is really necessary*)
-	     | Minisat.Unknown -> assert false) (0, acc) r
-	   )
-	)
-       ) (0, []) m) in
+    Array.fold_left (fun (i, acc) r ->
+		     (i + 1,  
+		      Array.fold_left (fun (j, acc) x ->
+				       match solver#value_of x with
+				       | Minisat.True -> (j + i, neg_lit x :: acc)
+				       | Minisat.False -> (j + 1, pos_lit x :: acc) (* Check if this is really necessary*)
+				       | Minisat.Unknown -> assert false) (*BISECT-IGNORE*)
+				      (0, acc) r)
+		     |> snd)
+		    (0, []) m
+    |> snd in
   solver#add_clause ((scan_matrix v) @ (scan_matrix w))
 
 let rec filter_loop solver t p vars t_trans = 
@@ -893,7 +888,7 @@ let instantiate eta b =
   Fun.fold (fun _ s acc ->
 	    try ppar acc (List.nth bs s) with
 	    | Failure _ | Invalid_argument _ ->
-			   assert false (* eta is assumed total *))
+			   assert false (* eta is assumed total *)) (*BISECT-IGNORE*)
 	   eta id_eps
 
 (* Decomposition of argument D = D' x D_id *)	   
@@ -910,7 +905,7 @@ let decomp_d d id =
 	l = l_id;
 	n = Nodes.filter_apply_iso d.n iso_id;
       })
-  | _ -> assert false
+  | _ -> assert false (*BISECT-IGNORE*)
 	   
 let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   let (c, d, id) = decomp b r0 i_n i_e f_e in

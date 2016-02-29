@@ -24,17 +24,17 @@ let print_descr fmt (d, c) =
 let print_float unit fmt = function
   | `f f  -> fprintf fmt "@[<h>%-3g%s@]" f unit
   | `i _
-  | `s _ -> assert false
+  | `s _ -> assert false (*BISECT-IGNORE*)
 		   
 let print_string fmt = function
   | `s s -> fprintf fmt "@[<h>%s@]" s
   | `i _
-  | `f _ -> assert false
+  | `f _ -> assert false (*BISECT-IGNORE*)
 		   
 let print_int fmt = function
   | `i i -> fprintf fmt "@[<h>%-8d@]" i
   | `f _
-  | `s _ -> assert false
+  | `s _ -> assert false (*BISECT-IGNORE*)
 
 let print_table fmt (rows : row list) =
   let pp_row fmt r =
@@ -55,7 +55,7 @@ let print_table fmt (rows : row list) =
        List.iter (pp_row fmt) rows;
        pp_close_tbox fmt ();
        Format.pp_print_newline fmt ())
-  | _ -> assert false
+  | _ -> assert false (*BISECT-IGNORE*)
 		   
 let print_header fmt () =
   if not Cmd.(defaults.debug) then
@@ -209,7 +209,7 @@ let export_ts_csl fmt ts =
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
     (match Cmd.(defaults.export_states) with
-     | None -> assert false
+     | None -> assert false (*BISECT-IGNORE*)
      | Some path ->
 	(print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
 	 f ~f:(fun i s ->

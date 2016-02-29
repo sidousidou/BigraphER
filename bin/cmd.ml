@@ -205,7 +205,7 @@ let msg_so_opt fmt = function
 let msg_opt fmt = function
   | Const _ -> fprintf fmt "@[<hov>Specify a comma-separated list of@ variable@ assignments.@,\
 			    Example: `x=4,t=.56'.@]"
-  | Debug -> assert false (* Undocumented *)
+  | Debug -> assert false (* Undocumented *) (*BISECT-IGNORE*)
   | Decs _ -> fprintf fmt "@[<hov>Export each declaration@ in@ the@ model@ \
 			   (bigraphs@ and@ reaction@ rules)@ to@ a distinct file@ in@ \
 		           %s.@ Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
@@ -275,7 +275,7 @@ let print_table fmt rows ?(offset = 0) f_l f_r =
       fprintf fmt "%a" f_r first;
       List.iter (pp_row fmt) rows;
       pp_close_tbox fmt ())
-  | _ -> assert false (* Assumed always non-empty *)
+  | _ -> assert false (* Assumed always non-empty *) (*BISECT-IGNORE*)
     
 let eval_help_top fmt () =
   let commands fmt () =

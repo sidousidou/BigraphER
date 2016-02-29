@@ -15,9 +15,13 @@ module H_string : Hashtbl.S with type key = string
 					  
 (** {6 Helper functions} *)
 
-(** [safe (Some v)] returns value [v]. Raises an exception otherwise.
-    @raise Assert_failure  when argument is [None]. *)  
+(** [safe (Some v)] returns value [v]. Raises an exception on [None].
+    @raise Assert_failure when argument is [None]. *)  
 val safe : 'a option -> 'a
+
+(** [safe_exn f] tries to execute [f].
+    @raise Assert_failure when [f] throws an exception. *)  
+val safe_exn : 'a -> 'a
 
 (** Integer equality. *)
 val int_equal : int -> int -> bool

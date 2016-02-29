@@ -16,7 +16,7 @@ let string_of_store_t = function
   | `param `float -> "float param"
 
 let dom_of_lambda = function
-  | `num_val _ | `big_val _ | `param _ -> assert false
+  | `num_val _ | `big_val _ | `param _ -> assert false (*BISECT-IGNORE*)
   | `lambda t -> fst t
 
 let resolve_t (env : store_t) = function
@@ -472,7 +472,7 @@ let rec eval_num (exp : num_exp) (scope : scope) (env : store) =
     | (Sreact _,_)
     | (Sreact_fun (_,_,_,_,_),_)
     | (Int_param _,_)
-    | (Float_param _,_) -> assert false in
+    | (Float_param _,_) -> assert false in (*BISECT-IGNORE*)
   match exp with
   | Num_int_val (v, _) -> Int v
   | Num_float_val (v, _) -> Float v
@@ -506,7 +506,7 @@ let eval_nums exps (scope : scope) (env : store) =
 	    | Sreact _
 	    | Sreact_fun (_,_,_,_,_)
 	    | Int_param _ 
-	    | Float_param _ -> assert false
+	    | Float_param _ -> assert false (*BISECT-IGNORE*)
 	   ) exps
   |> List.split
        
@@ -641,7 +641,7 @@ let eval_react lhs rhs eta scope env env_t p =
 	    Brs.eta = eta;
 	  } in
   try if Brs.is_valid_react_exn r then (r, env_t')
-      else assert false with
+      else assert false with (*BISECT-IGNORE*)
   | Brs.NOT_VALID err ->
      let msg = "Invalid reaction: "
 	       ^ (Brs.string_of_react_err err) in
@@ -656,7 +656,7 @@ let eval_sreact lhs rhs eta rate scope env env_t p =
 	    Sbrs.eta = eta;
 	  } in
   try if Sbrs.is_valid_react_exn r then (r, env_t')
-      else assert false with
+      else assert false with (*BISECT-IGNORE*)
   | Sbrs.NOT_VALID err ->
      let msg = "Invalid stochastic reaction: "
 	       ^ (Sbrs.string_of_react_err err) in
@@ -692,7 +692,7 @@ let param_to_vals = function
   | (React _,_,_)
   | (React_fun (_,_,_,_),_,_)
   | (Sreact _,_,_)
-  | (Sreact_fun (_,_,_,_,_),_,_) -> assert false
+  | (Sreact_fun (_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
 					   
 let is_param id env p =
   try
@@ -838,7 +838,7 @@ let eval_pred_fun_app id args env env_t p =
     let nums_s =
       List.map (function
 		 | Int _ | Float _ as v -> string_of_store_val v
-		 | _ -> assert false)
+		 | _ -> assert false) (*BISECT-IGNORE*)
 	       nums in
     id ^ "(" ^ (String.concat "," nums_s) ^ ")" in 
   scan_for_params env args

@@ -597,10 +597,6 @@ let match_trans t p : Cnf.clause list =
     blocks @ acc
   ) t.nn [] 
 
-let safe_exn f =
-  try f with
-  | Not_found -> assert false
-
 let check_sites t p v_p' c_set iso =
   let s_set =
     IntSet.fold (fun j acc ->

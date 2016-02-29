@@ -26,8 +26,12 @@ module H_string =
 	      
 let safe = function
   | Some v -> v
-  | None -> assert false
-	      	   
+  | None -> assert false (*BISECT-IGNORE*)
+
+let safe_exn f =
+  try f with
+  | _ -> assert false (*BISECT-IGNORE*)
+		   
 let ints_compare (i0, p0) (i1, p1) =
   match i0 - i1 with
   | 0 -> p0 - p1 

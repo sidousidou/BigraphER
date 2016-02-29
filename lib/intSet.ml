@@ -41,7 +41,7 @@ let filter_apply s iso =
   let s' = inter s (of_list (Iso.dom iso)) in
   if is_empty s' then empty
   else try apply_exn s' iso with
-       | Not_found -> assert false
+       | Not_found -> assert false (*BISECT-IGNORE*)
        
 (* Generates an isomorphism to fix the numbering of a set of int. 
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                       *)
@@ -51,7 +51,7 @@ let fix s =
     |> List.combine (elements s)
     |> Iso.of_list_exn
   with
-  | Iso.NOT_BIJECTIVE -> assert false
+  | Iso.NOT_BIJECTIVE -> assert false (*BISECT-IGNORE*)
 
 let union_list = 
   List.fold_left (fun acc s ->

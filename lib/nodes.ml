@@ -62,7 +62,7 @@ let find_all (Ctrl.C (n, _)) s =
   try
     M_string.find n s.sort
   with
-  | Not_found -> assert false
+  | Not_found -> assert false (*BISECT-IGNORE*)
        
 let to_dot s =
   fold (fun i (Ctrl.C (n, _)) acc ->

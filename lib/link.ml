@@ -467,10 +467,6 @@ let get_dot l =
       ) l (0, "", "", "", "edge [ color=green, arrowhead=none, arrowtail=none, arrowsize=0.3 ];\n") with
   | (_, a, b, c, d) -> (a, b, c, d)
 
-let safe f = 
-  try f with
-  | Not_found -> assert false
-
 (* decompose t. p is assumed epi and mono. PortSet are normalised.
    i_c and i_d are isos from t to c and d.*)
 let decomp t p i_e i_c i_d f_e =
@@ -519,7 +515,7 @@ let decomp t p i_e i_c i_d f_e =
             (acc_c, 
              Lg.add { i = e.i; 
                       o = out_d; 
-                      p = safe (PortSet.apply_exn p_d i_d);
+                      p = safe_exn (PortSet.apply_exn p_d i_d);
                     } acc_d, 
              acc_id, 
              n + 1)
@@ -529,7 +525,7 @@ let decomp t p i_e i_c i_d f_e =
             (Lg.add { 
                 i = in_c; 
                 o = e.o; 
-                p = safe (PortSet.apply_exn p_c i_c);
+                p = safe_exn (PortSet.apply_exn p_c i_c);
               } acc_c, 
              acc_d,
              acc_id, 
@@ -539,11 +535,11 @@ let decomp t p i_e i_c i_d f_e =
             let name = Face.singleton (Nam (sprintf "~%d" n)) in
             (Lg.add { i = Face.union name in_c; 
                       o = e.o; 
-                      p = safe (PortSet.apply_exn p_c i_c);
+                      p = safe_exn (PortSet.apply_exn p_c i_c);
                     } acc_c, 
              Lg.add { i = e.i; 
                       o = Face.union name out_d; 
-                      p = safe (PortSet.apply_exn p_d i_d)
+                      p = safe_exn (PortSet.apply_exn p_d i_d)
                     } acc_d, 
              Lg.add { i = name; o = name; p = PortSet.empty } acc_id, 
              n + 1)
@@ -601,7 +597,7 @@ let filter_iso f l =
             i + 1, 
             i' + 1, 
             try Iso.add_exn i' i iso with
-            | Iso.NOT_BIJECTIVE -> assert false
+            | Iso.NOT_BIJECTIVE -> assert false (*BISECT-IGNORE*)
           )
         else (acc, i + 1, i', iso)
       ) l (Lg.empty, 0, 0, Iso.empty) in

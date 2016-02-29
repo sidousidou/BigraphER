@@ -14,7 +14,7 @@ type b_clause = var * var
 let to_ij = function
   | P_var (M_lit (i, j)) -> (i, j) 
   | P_var (V_lit _)
-  | N_var _ -> assert false
+  | N_var _ -> assert false (*BISECT-IGNORE*)
 
 let string_of_lit = function
   | M_lit (i, j) -> "(" ^ (string_of_int i) ^ "," ^ (string_of_int j) ^ ")"
@@ -152,10 +152,10 @@ let group l n g =
 	 if g > 2
 	 then match res with
 	      | (v :: vs) :: res -> Some ((x @ [v]) :: vs :: res)  
-	      | _ -> assert false
+	      | _ -> assert false (*BISECT-IGNORE*)
 	 else match res with
 	      | v :: res -> Some ((x @ v) :: res)  
-	      | _ -> assert false
+	      | _ -> assert false (*BISECT-IGNORE*)
        else Some (x :: res) 
   
 (* Build a tree of commander variables. Input is a tree, output split the root 
@@ -192,7 +192,7 @@ let cmd_size = function
   | Node cmd_g -> 
      (match fst (List.hd cmd_g) with
       | V_lit n -> n + 1
-      | M_lit _ -> assert false)
+      | M_lit _ -> assert false) (*BISECT-IGNORE*)
        
 let cmd_roots = function
   | Leaf _ -> []
@@ -200,7 +200,7 @@ let cmd_roots = function
      List.map (fun (root, _) ->
 	       match root with
 	       | V_lit i -> i
-	       | M_lit _ -> assert false)
+	       | M_lit _ -> assert false) (*BISECT-IGNORE*)
 	      cmd_g
 
 (* Scan the tree and produce constraints:
@@ -264,7 +264,7 @@ let exactly_one_cmd t =
   match at_most_cmd t with
   | Cmd_at_most (cl1, cl2, cl3) ->
      Cmd_exactly (cl1, cl2, cl3, at_least_cmd t)
-  | Cmd_exactly _ -> assert false
+  | Cmd_exactly _ -> assert false (*BISECT-IGNORE*)
 
 (* let t_debug = *)
 (*   Node *)
@@ -386,13 +386,13 @@ let convert_m (m : Minisat.var array array) = function
   | P_var (M_lit (i, j)) -> Minisat.pos_lit m.(i).(j)
   | N_var (M_lit (i, j)) -> Minisat.neg_lit m.(i).(j)
   | P_var (V_lit _)
-  | N_var (V_lit _) -> assert false
+  | N_var (V_lit _) -> assert false (*BISECT-IGNORE*)
 
 let convert_v (vec : Minisat.var array) = function   
   | P_var (V_lit i) -> Minisat.pos_lit vec.(i) 
   | N_var (V_lit i) -> Minisat.neg_lit vec.(i)
   | P_var (M_lit _)
-  | N_var (M_lit _) -> assert false
+  | N_var (M_lit _) -> assert false (*BISECT-IGNORE*)
 
 (* Convert to vector z if V_lit, to matrix m otherwise *)
 let convert (z : Minisat.var array)
@@ -454,7 +454,7 @@ let post_impl clauses s w v =
 		let rhs' = 
 		  List.map (fun x -> convert_m v x) rhs in
 		s#add_clause ((convert_m w z) :: rhs')
-	     | _ -> assert false)
+	     | _ -> assert false)   (*BISECT-IGNORE*)
 	    clauses 
 
 (* Post implication to solver. Clauses are pairs in which the first element 
@@ -500,7 +500,7 @@ let _post_exactly cmd l solver m =
       _post_pairs cl3 solver z m;
       _post_list [cl4] solver z m;
       z)
-  | Cmd_at_most _ -> assert false
+  | Cmd_at_most _ -> assert false (*BISECT-IGNORE*)
 
 (* Post bijection constraints to solver and return two matrices of auxiliary
    variables. Root indices are the same for every row of the matrix. *)
@@ -519,7 +519,7 @@ let post_bij (r_cmd, c_cmd) s m =
 		    _post_list cl2 s z m;
 		    _post_pairs cl3 s z m;
 		    z)
-		| Cmd_exactly _ -> assert false)
+		| Cmd_exactly _ -> assert false) (*BISECT-IGNORE*)
 	       c_cmd.cmd,
      c_cmd.roots) in
   (aux_r, aux_c)
