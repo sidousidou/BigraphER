@@ -1,11 +1,28 @@
 open Printf
 open Junit
+open Utils
        
 let bin = "./bigrapher.native full"
-let flag = "--debug"
+let out_dir name = "./shippable/parser/" ^ name
+let dec_out path = "-f svg,dot -d " ^ path
+let l_out name = "-l " ^ name ^ ".csl"
+let prism_out name = "-p " ^ name ^ ".tra"
+let ts_out name = "-s -t " ^ name
+let extra_flags = "--debug"	     
 let path = "./tests/files"	     
 let ext = ".reference"
 
+let set_args name =
+  let path = out_dir name in
+  mkdir path;
+  let n = path / name in 
+  [ dec_out path; 
+    l_out n; 
+    prism_out n;
+    ts_out n;
+    extra_flags ]
+  |> String.concat " "
+	    
 let attr_string = [("type", "ASSERT_OUTPUT");
 		   ("message", "Output is not the same")]
 
@@ -26,7 +43,8 @@ let () =
     Io.parse Sys.argv.(1)
     |> List.map (fun f ->
 		 let name = Filename.chop_extension (Filename.basename f) in
-		 let chan_in = Unix.open_process_in (bin ^ " " ^ flag ^ " " ^ f) in
+		 let flags = set_args name in
+		 let chan_in = Unix.open_process_in (bin ^ " " ^ flags ^ " " ^ f) in
 		 let std_out = Io.read_lines [] chan_in in	      
 		 (name,
 		  __MODULE__,

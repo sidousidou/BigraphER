@@ -42,20 +42,20 @@ let format_time () =
 
 let (/) = Filename.concat
 
-(* let safe_mkdir dir = *)
-(*   if not (Sys.file_exists dir) then *)
-(*     try *)
-(*       Unix.mkdir dir 0o755 *)
-(*     with *)
-(*       Unix.Unix_error(Unix.EEXIST,_,_) -> () *)
+let safe_mkdir dir =
+  if not (Sys.file_exists dir) then
+    try
+      Unix.mkdir dir 0o755
+    with
+      Unix.Unix_error(Unix.EEXIST,_,_) -> ()
 
-(* let mkdir dir = *)
-(*   let rec aux dir = *)
-(*     if not (Sys.file_exists dir) then ( *)
-(*       aux (Filename.dirname dir); *)
-(*       safe_mkdir dir; *)
-(*     ) in *)
-(*   aux dir *)
+let mkdir dir =
+  let rec aux dir =
+    if not (Sys.file_exists dir) then (
+      aux (Filename.dirname dir);
+      safe_mkdir dir;
+    ) in
+  aux dir
 
 let dot_installed () =
   try

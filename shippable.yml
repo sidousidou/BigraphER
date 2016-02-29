@@ -14,6 +14,7 @@ before_script:
  - mkdir -p shippable/testresults
  - mkdir -p shippable/linktest
  - mkdir -p shippable/svg
+ - mkdir -p shippable/parser
  - mkdir -p shippable/bisect/html
  - mkdir -p shippable/api
  - mkdir -p shippable/man
