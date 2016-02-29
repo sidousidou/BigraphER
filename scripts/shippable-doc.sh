@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /usr/bin/env sh
 
 eval `opam config env`
 

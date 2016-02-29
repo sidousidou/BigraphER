@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /usr/bin/env sh
 
 ROOT=./shippable/linktest
 TEST=./shippable/testresults

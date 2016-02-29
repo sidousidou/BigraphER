@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /usr/bin/env sh
 
 TEST=../shippable/testresults
 SRC=../tests/files/lint
