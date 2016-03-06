@@ -20,7 +20,7 @@ AVG=$(echo "$RES / $REPS" | bc -l)
 echo "Average time: $AVG"
 
 MACHINE=$(uname -m)
-ARCH=$(uname -o)
+ARCH=$(uname)
 SHA=$(git rev-parse HEAD)
 
 mkdir -p $OUTDIR
