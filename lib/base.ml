@@ -38,3 +38,5 @@ let ints_compare (i0, p0) (i1, p1) =
   | x -> x
 
 let flip f x y = f y x
+
+let flip2 f a b c = f a c b		   

@@ -45,8 +45,9 @@ let to_string m =
 
 let add_m i j m =
   try
-    let js = M_int.find i m in
-    M_int.add i (IntSet.add j js) m
+    M_int.find i m
+    |> IntSet.add j
+    |> flip2 M_int.add i m
   with
   | Not_found -> M_int.add i (IntSet.singleton j) m
   		   
@@ -75,22 +76,22 @@ let merge_f _ l r =
   match (l, r) with
   | (Some s, Some s') -> Some (IntSet.union s s')
   | (Some s, None) | (None, Some s) -> Some s
-  | (None, None) -> None
+  | (None, None) -> None (*BISECT-IGNORE*)
     
 let row n =
   assert (n >= 0);
-  let indexes = IntSet.of_int n in
-  IntSet.fold (fun j acc -> add 0 j acc) indexes (make 1 n)
+  IntSet.of_int n
+  |> flip2 IntSet.fold (fun j acc -> add 0 j acc) (make 1 n)
   
 let col n =
   assert (n >= 0);
-  let indexes = IntSet.of_int n in
-  IntSet.fold (fun i acc -> add i 0 acc) indexes (make n 1)
+  IntSet.of_int n
+  |> flip2 IntSet.fold (fun i acc -> add i 0 acc) (make n 1)
 
 let diag n =
   assert (n >= 0);
-  let indexes = IntSet.of_int n in
-  IntSet.fold (fun i acc -> add i i acc) indexes (make n n)
+  IntSet.of_int n
+  |> flip2 IntSet.fold (fun i acc -> add i i acc) (make n n)
   
 let tens a b =  
   { r = a.r + b.r;

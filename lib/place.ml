@@ -373,18 +373,24 @@ let decomp t p iso =
 
 (* Compute three strings to build a dot representation.*)
 let get_dot p =
+  (* Attributes for roots and sits *)
+  let attr =
+    "shape=box, width=.28, height=.18, fontname=\"serif\", fontsize=9.0" 
+  (* Graph edges *)
+  and arr s d i j buff =
+    sprintf "%s%c%d -> %c%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
+	    buff s i d j in
   (* Root shapes *)
   let root_shapes =  
     IntSet.fold (fun i buff ->
-		 sprintf "%sr%d [ label=\"%d\", style=\"dashed\", shape=box, width=.28,\
-			  height=.18, fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
+		 sprintf "%sr%d [ label=\"%d\", style=\"dashed\", %s ];\n"
+			 buff i i attr)
 		(IntSet.of_int p.r) ""
   (* Site shapes *)
   and site_shapes = 
     IntSet.fold (fun i buff ->
-		 sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", shape=box,\
-			  fillcolor=\"gray\", width=.28, height=.18,\
-			  fontname=\"serif\", fontsize=9.0 ];\n" buff i i)
+		 sprintf "%ss%d [ label=\"%d\", style=\"filled,dashed\", \
+			  fillcolor=\"gray\", %s ];\n" buff i i attr)
 		(IntSet.of_int p.s) ""
   (* Ranks *)
   and ranks = 
@@ -396,25 +402,13 @@ let get_dot p =
 		   "" (Sparse.levels p.nn)
   (* Adjacency matrix *) 
   and m_rn = 
-    Sparse.fold (fun i j buff ->
-		 sprintf "%sr%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-			 buff i j)
-		p.rn ""
+    Sparse.fold (arr 'r' 'v') p.rn ""
   and m_rs =
-    Sparse.fold (fun i j buff ->
-		 sprintf "%sr%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-			 buff i j)
-		p.rs ""
+    Sparse.fold (arr 'r' 's') p.rs ""
   and m_nn =
-    Sparse.fold (fun i j buff ->
-		 sprintf "%sv%d -> v%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-			 buff i j)
-		p.nn ""
+    Sparse.fold (arr 'v' 'v') p.nn ""
   and m_ns =
-    Sparse.fold (fun i j buff ->
-		 sprintf "%sv%d -> s%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n" 
-			 buff i j)
-		p.ns "" in
+    Sparse.fold (arr 'v' 's') p.ns "" in
   (root_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
 
 (* Number of edges in the DAG *)

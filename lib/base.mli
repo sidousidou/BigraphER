@@ -34,5 +34,7 @@ val ints_compare : int * int -> int * int -> int
 
 (** Flip order of the arguments *)					       
 val flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
-					       
+
+(** Flip order of the last two arguments *)					       
+val flip2 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'c -> 'b -> 'd
 (**/**)

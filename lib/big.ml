@@ -658,7 +658,7 @@ let occurrence t p t_trans =
       with
       | NO_MATCH -> None)
       
-let occurrence_exn t p =
+(*let occurrence_exn t p =
   if p.n.Nodes.size = 0 then raise NODE_FREE 
   else (
     if quick_unsat t p then raise_notrace NO_MATCH
@@ -672,7 +672,7 @@ let occurrence_exn t p =
         Fun.transform_exn (get_fun s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c) in
       (i_v, i_e, i_h)
     )
-  )
+  ) *)
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
@@ -887,7 +887,7 @@ let instantiate eta b =
   let bs = prime_components b in
   Fun.fold (fun _ s acc ->
 	    try ppar acc (List.nth bs s) with
-	    | Failure _ | Invalid_argument _ ->
+	    | Failure _ | Invalid_argument _ ->                     (*BISECT-IGNORE*)
 			   assert false (* eta is assumed total *)) (*BISECT-IGNORE*)
 	   eta id_eps
 

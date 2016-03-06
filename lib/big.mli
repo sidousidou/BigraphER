@@ -260,11 +260,11 @@ val occurs : bg -> bg ->  bool
     @raise NODE_FREE when [p] has an empty node set. *)
 val occurrence : bg -> bg -> Sparse.bmatrix -> occ option
 
-(** Same as {!Big.occurrence}.
+(*(** Same as {!Big.occurrence}.
   
     @raise NO_MATCH when there is no match.
     @raise NODE_FREE when [p] has an empty node set. *)				 
-val occurrence_exn : bg -> bg -> occ
+val occurrence_exn : bg -> bg -> occ *)
 
 (** [occurrences t p] returns a list of occurrences.
 
