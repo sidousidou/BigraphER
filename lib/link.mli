@@ -106,9 +106,10 @@ sig
       set. *)
   val arities : t -> int Fun.t
 
-  (** Construct a list of possible node assignments starting from two compatible
+(*  (** Construct a list of possible node assignments starting from two compatible
       port sets. *)
   val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.lit list list
+ *)
 							    
 end
 
@@ -288,6 +289,7 @@ val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list
 
 exception NOT_TOTAL
 
+(*	    
 (** Compute constraints to match closed edges in the pattern to
     closed edges in the target. Controls are checked to exclude
     incompatible pairs. The output is a list of clauses a set of
@@ -320,5 +322,6 @@ val match_list_eq : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
     equality. *)
 val match_ports_eq : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
+ *)
 
 (**/**)

@@ -46,7 +46,7 @@ Library bigraph
                    Place,
                    Sbrs
   InternalModules: Base,
-                   Cnf,
+                   Smt,
                    Fun,
                    IntSet,
                    Iso,
@@ -56,11 +56,11 @@ Library bigraph
                    PriType,
                    TsType,
                    Export
-  BuildDepends:    unix, minisat, bigarray, str
+  BuildDepends:    unix, Z3, str
   CCOpt+:	   -O3
   NativeOpt+:	   -noassert
   ByteOpt+:	   -noassert
-  XMETARequires:   unix, minisat, bigarray, str
+  XMETARequires:   unix, minisat, str
   Install:	   true
 
 Library "bigraph-utils"

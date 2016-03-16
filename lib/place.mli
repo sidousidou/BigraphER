@@ -156,7 +156,7 @@ val decomp_d : pg -> int -> pg * pg * int Iso.t * int Iso.t
 (** Raised when a node in the pattern cannot be matched to any node in the
     target. *)
 exception NOT_TOTAL
-
+(*	    
 (** [match_list t p n_t n_p] computes constraints to match edges in pattern [p]
     with compatible edges in target [t]. [n_t] and [n_p] are the node sets of
     [t] and [p], respectively.
@@ -209,7 +209,8 @@ val match_nodes_sites : pg -> pg -> Nodes.t -> Nodes.t ->
 (** Compute constraints for equality. Similar to {!Place.match_list}. *)		      
 val match_list_eq : pg -> pg -> Nodes.t -> Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
-
+ *)
+	    
 (** Compute the outer degree of the roots of a place graph. *)
 val deg_roots : pg -> int list
 

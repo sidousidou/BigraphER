@@ -1,8 +1,8 @@
 # OASIS_START
-# DO NOT EDIT (digest: ddebf81720ca18cae999022690a5145f)
+# DO NOT EDIT (digest: 08f935f0a683844577ce853178ac7ff5)
 version = "1.0.1"
 description = "Implementation of bigraphical reactive systems"
-requires = "unix minisat bigarray str"
+requires = "unix minisat str"
 archive(byte) = "bigraph.cma"
 archive(byte, plugin) = "bigraph.cma"
 archive(native) = "bigraph.cmxa"

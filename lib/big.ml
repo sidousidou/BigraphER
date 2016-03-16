@@ -1,6 +1,6 @@
 open Base
 open Printf
-open Minisat
+open Smt
   
 type bg = {
   p : Place.pg;     (** Place graph  *)

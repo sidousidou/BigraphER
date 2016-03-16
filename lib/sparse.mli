@@ -215,5 +215,11 @@ val row_eq : bmatrix -> IntSet.t -> IntSet.t
 
 (** Dual of {!Sparse.row_eq}. *)	       
 val col_eq : bmatrix -> IntSet.t -> IntSet.t
-				 
+
+(** Return the out degree of a node. *)			 
+val out_deg : bmatrix -> int -> int
+
+(** Return the in degree of a node. *)				
+val in_deg : bmatrix -> int -> int
+				      
 (**/**)

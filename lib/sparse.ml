@@ -357,7 +357,14 @@ let aux_eq m js =
     | Not_found -> aux (IntSet.empty, IntSet.empty) (M_int.bindings m')
 
 let row_eq m = aux_eq m.r_major
+
 let col_eq m = aux_eq m.c_major
 		      
-		       
+let out_deg m i =
+  chl m i
+  |> IntSet.cardinal
+       
+let in_deg m j =
+  prn m j
+  |> IntSet.cardinal
 		       

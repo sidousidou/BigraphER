@@ -40,10 +40,10 @@ build-doc: [
 depends: [
   "base-unix"
   "ocamlfind" {build}
-  "minisat"
   "menhir" {build}
   "ocamlbuild" {build}
   "conf-graphviz"
+  "Z3"
 ]
 
 available: [ ocaml-version >= "4.02.0" ]

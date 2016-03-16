@@ -14,3 +14,4 @@ PKG minisat
 PKG bigarray
 PKG str
 PKG unix
+PKG Z3
