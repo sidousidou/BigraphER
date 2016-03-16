@@ -40,75 +40,72 @@ module Face :
 
 (** {6 Ports} *)
     
-(** This module provides set operations for ports of nodes. *)
-module PortSet :
+(** This module implements multisets of nodes as maps. *)
+module Ports :
 sig
 
-  (** A port is a pair [(v, w)], where [v] is an unique node identifier and [w]
-      is a port identifier which is unique within an edge. *)
-  type port = int * int
+  type key = int
+  type 'a t
 
-  (** The type of sets of ports *)		      
-  type t
-
-  (** {6 Standard set operations} *)	 
-  (** These functions are described in the {{:
-      http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
-      library}. *)
-
-  val empty : t
-  val is_empty : t -> bool
-  val mem : port -> t -> bool
-  val add : port -> t -> t
-  val singleton : port -> t
-  val remove : port -> t -> t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
-  val compare : t -> t -> int
-  val equal : t -> t -> bool
-  val subset : t -> t -> bool
-  val iter : (port -> unit) -> t -> unit
-  val fold : (port -> 'a -> 'a) -> t -> 'a -> 'a
-  val for_all : (port -> bool) -> t -> bool
-  val exists : (port -> bool) -> t -> bool
-  val filter : (port -> bool) -> t -> t
-  val partition : (port -> bool) -> t -> t * t
-  val cardinal : t -> int
-  val elements : t -> port list
-  val min_elt : t -> port
-  val max_elt : t -> port
-  val choose : t -> port
-  val split : port -> t -> t * bool * t
-
+  (** {6 Standard operations on maps} *)	   
+  val empty : int t
+  val is_empty : 'a t -> bool
+  val mem : key -> 'a t -> bool
+  val singleton : key -> 'a -> 'a t
+  val remove : key -> 'a t -> 'a t
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val for_all : (key -> 'a -> bool) -> 'a t -> bool
+  val exists : (key -> 'a -> bool) -> 'a t -> bool
+  val filter : (key -> 'a -> bool) -> 'a t -> 'a t
+  val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
+  val bindings : 'a t -> (key * 'a) list
+  val min_binding : 'a t -> key * 'a
+  val max_binding : 'a t -> key * 'a
+  val choose : 'a t -> key * 'a
+  val split : key -> 'a t -> 'a t * 'a option * 'a t
+  val find : key -> 'a t -> 'a
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
+					     
   (** {6 Additional functions} *)
 					
   (** [to_string s] gives the string representation of port set [s]. For
-      example: [\{(0, 0), (0, 1)\}]. *)
-  val to_string : t -> string
+      example: [\{(0, 0), (1, 3)\}]. *)
+  val to_string : int t -> string
 
   (** [of_nodes ns] transform a set of nodes into a set of ports. *)
-  val of_nodes : Nodes.t -> t
+  val of_nodes : Nodes.t -> int t
 
   (** Construct a list of control strings. *)
-  val types : t -> Nodes.t -> string list
+  val types : int t -> Nodes.t -> string list
 
   (** [to_IntSet ps] returns a set of node identifiers form a set of ports. *)
-  val to_IntSet : t -> IntSet.t
+  val to_IntSet : int t -> IntSet.t
 
   (** Apply an isomorphism.  
 
       @raise Not_found if a node identifier is not in the domain of the
       isomorphism. *)
-  val apply_exn : t -> int Iso.t -> t
-				      
-  (** Construct a mapping from nodes to number of port occurrences within a port
-      set. *)
-  val arities : t -> int Fun.t
+  val apply_exn : int t -> int Iso.t -> int t
 
+  val apply : int t -> int Iso.t -> int t
+
+  val arity_exn : int t -> int -> int
+		  
   (** Construct a list of possible node assignments starting from two compatible
       port sets. *)
-  val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.lit list list
+  val compat_list : int t -> int t -> Nodes.t -> Nodes.t -> Cnf.lit list list
+
+  val offset : int t -> int -> int t
+
+  val add : int -> int t -> int t
+
+  val union : int t -> int t -> int t
+
+  val cardinal : int t -> int
 							    
 end
 
@@ -118,7 +115,7 @@ end
 type edg = {
   i : Face.t;    (** Inner face *)
   o : Face.t;    (** Outer face *)
-  p : PortSet.t; (** Set of ports *)
+  p : int Ports.t; (** Set of ports *)
 }
   
 (** This module provides set operations for link graphs. *)
@@ -161,9 +158,8 @@ val string_of_face : Face.t -> string
 (** [to_string l] computes the string representation of link graph [l]. *)
 val to_string : Lg.t -> string
 
-(** Parse a list of strings. A map associating nodes to arities is also
-    returned. *)
-val parse : string list -> (Lg.t * int Base.M_int.t)
+(** Parse a list of strings. *)
+val parse : string list -> Lg.t
 
 (** [get_dot l] computes a four-elements tuple encoding the dot
     representation of link graph [l]. The first two elements represent
@@ -177,9 +173,6 @@ val inner : Lg.t -> Face.t
 
 (** [outer l] computes the outer face of link graph [l]. *)
 val outer : Lg.t -> Face.t
-
-(** [ports l] computes the set of ports of link graph [l]. *)
-val ports : Lg.t -> PortSet.t
 
 (** [apply_exn i l] computes a link graph obtained by applying
     isomorphism [i] to [l].
@@ -205,6 +198,8 @@ val elementary_id: Face.t -> Lg.t
 (** [id_empty] is the empty link graph. *)
 val id_empty : Lg.t
 
+val arities : Lg.t -> int Base.M_int.t
+		 
 (** {6 Operations on link graphs} *)
 
 (** Raised when the tensor product between two incompatible link

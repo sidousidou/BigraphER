@@ -64,8 +64,9 @@ let parse lines =
 			  (s_n, acc_p, acc_l, i + 1)))
 		   ("", [], [], 0) lines in
   assert (List.length lines_l = e);
-  let (l, h) = Link.parse lines_l in
-  { n = Nodes.parse s_n h;
+  let l = Link.parse lines_l in
+  { n = Link.arities l
+	|> Nodes.parse s_n;
     p = Place.parse r n s lines_p;
     l = l;
   }
