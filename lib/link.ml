@@ -101,7 +101,7 @@ module Ports =
       try find i ps
 	  |> (+) 1
 	  |> flip2 add i ps
-      with Not_found -> add i 0 ps
+      with Not_found -> add i 1 ps
 
     let union =
       merge (fun _ l r ->
