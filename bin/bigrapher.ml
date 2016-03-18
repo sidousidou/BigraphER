@@ -3,6 +3,11 @@ open Ast
 
 (******** PRETTY PRINTING FUNCTIONS *********)
 
+let colorise c msg =
+  if Cmd.(defaults.colors)
+  then Utils.colorise c msg
+  else msg
+       
 let max_width = 50
        
 type val_type = [ `s of string | `i of int | `f of float ]
@@ -15,11 +20,11 @@ type row =
        
 let print_msg fmt c msg =
   if not Cmd.(defaults.debug) then
-    fprintf fmt "@?@[%s@]@." (Utils.colorise c msg)
+    fprintf fmt "@?@[%s@]@." (colorise c msg)
   else ()
 	 
 let print_descr fmt (d, c) =
-  fprintf fmt "%s" (Utils.colorise c d)
+  fprintf fmt "%s" (colorise c d)
 
 let print_float unit fmt = function
   | `f f  -> fprintf fmt "@[<h>%-3g%s@]" f unit
@@ -47,7 +52,7 @@ let print_table fmt (rows : row list) =
       (pp_open_tbox fmt ();
        (* First row *)
        pp_set_tab fmt ();
-       fprintf fmt "@[<h>%s" (Utils.colorise (snd r.descr) (fst r.descr));
+       fprintf fmt "@[<h>%s" (colorise (snd r.descr) (fst r.descr));
        pp_print_break fmt (15 - (String.length (fst r.descr))) 0;
        fprintf fmt "@]";
        pp_set_tab fmt ();
@@ -60,7 +65,7 @@ let print_table fmt (rows : row list) =
 let print_header fmt () =
   if not Cmd.(defaults.debug) then
   (fprintf fmt "@[<v>@,%s@,%s@,"
-	  (Utils.colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
+	  (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
 	  "========================================";
   [{ descr = ("Version:", `blue);
      value = `s (String.trim Version.version);

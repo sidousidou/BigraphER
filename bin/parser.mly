@@ -70,6 +70,7 @@ open Cmd
 %token   C_FULL
 %token   C_SIM
 %token   O_CONF
+%token   O_COLORS
 %token   O_VERS
 %token   O_HELP
 %token   O_VERB
@@ -384,6 +385,8 @@ consts:
     { l };
 
 common_opt:
+  | O_COLORS
+      { defaults.colors <- false}
   | O_VERB
       { defaults.verb <- true }
   | O_QUIET
