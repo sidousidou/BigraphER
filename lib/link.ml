@@ -103,7 +103,7 @@ module Ports =
 	  |> flip2 add i ps
       with Not_found -> add i 1 ps
 
-    let union =
+    let sum =
       merge (fun _ l r ->
 	     match (l, r) with
 	     | (Some ar, Some ar') -> Some (ar + ar')
@@ -114,7 +114,37 @@ module Ports =
       fold (fun _ ar acc ->
 	    ar + acc)
 	   ps 0
-	   
+
+    let fold_arities f =
+      let rec rep n f x acc =
+	if n = 0 then acc
+	else rep (n - 1) f x (f x acc) in
+      fold (fun v ar acc ->
+	    rep ar f v acc)
+
+    let comp_multi (c, n) (c', n') =
+      match Ctrl.compare c c' with
+      | 0 -> int_compare n n'
+      | x -> x
+	
+    let multi_ctrl ps ns =
+      bindings ps
+      |> List.map (fun (i, ar) ->
+		   (safe_exn (Nodes.get_ctrl_exn i ns), ar))
+      |> List.fast_sort comp_multi
+			
+    let inter a b =
+      List.fold_left (fun (acc, b') (c, n) ->
+		      match List.partition (fun (c', _) ->
+					    Ctrl.(c = c'))
+					   b' with
+		      | ([], _) -> (acc, b')
+		      | ((c, n') :: l, l') -> 
+			 ((c, min n n') :: acc, l @ l'))
+		     ([], b) a
+      |> fst
+      |> List.fast_sort comp_multi
+      
   end
 		   
 (* (in, out, ports) *)
@@ -215,7 +245,7 @@ let offset (lg : Lg.t) (n : int) =
 
 let arities lg =
   Lg.fold (fun e acc ->
-	   Ports.union e.p acc)
+	   Ports.sum e.p acc)
 	  lg Ports.empty
  	  
 (* n0 is necessary because some nodes my be present in the left place      *)
@@ -270,7 +300,7 @@ let equiv_class a b =
 let merge lg =
   { i = inner lg;
     o = outer lg;
-    p = Lg.fold (fun e acc -> Ports.union e.p acc) lg Ports.empty;
+    p = Lg.fold (fun e acc -> Ports.sum e.p acc) lg Ports.empty;
   }
 
 (* Merge a set of edges on the inner face according to equivalence classes *)
@@ -290,7 +320,7 @@ let fuse a b =
   Lg.fold (fun e acc ->
       let h =
         Lg.choose (Lg.filter (fun h -> Face.equal h.o e.i) b) in
-      let new_e = {i = h.i; o = e.o; p = Ports.union e.p h.p} in
+      let new_e = {i = h.i; o = e.o; p = Ports.sum e.p h.p} in
       if Face.is_empty new_e.i && Face.is_empty new_e.o &&
          Ports.is_empty new_e.p then acc
       else Lg.add new_e acc) a Lg.empty
@@ -393,7 +423,7 @@ let is_hyp e =
   ((Ports.cardinal e.p) = 1 && (Face.is_empty e.i) && (Face.is_empty e.o))
   (* idle alias on two names *)
   || ((Face.is_empty e.i) && (Ports.is_empty e.p) && (Face.cardinal e.o = 2))  
-  (* closure xon two names *)
+  (* closure on two names *)
   || ((Face.is_empty e.o) && (Ports.is_empty e.p) && (Face.cardinal e.i = 2))  
   (* more than 2 ports or names *)
   || ((Ports.cardinal e.p) + (Face.cardinal e.i) + (Face.cardinal e.o) > 2)
@@ -443,8 +473,10 @@ let get_dot l =
 		 sprintf "e%d -> v%d [ dir=both, arrowtail=tee, tailclip=false, arrowsize=0.7, \
 			  weight=5 ];\n"
 		   i (fst (Ports.choose e.p))
-               else Ports.fold (fun v _ buff ->
-		   sprintf "%se%d -> v%d [dir=both, tailclip=false ];\n" buff i v) e.p ""))  
+               else Ports.fold_arities (fun v buff ->
+					sprintf "%se%d -> v%d [dir=both, tailclip=false ];\n"
+						buff i v)
+				       e.p ""))  
 	   else
              (* idle name *)
            if is_idle e then buff_adj
@@ -676,29 +708,10 @@ let match_ports t p n_t n_p clauses : Cnf.clause list list =
 
 (* Is p sub-hyperedge of t? *)
 let sub_edge p t n_t n_p =
-  let types_p = Ports.types p.p n_p
-  and types_t = Ports.types t.p n_t in
-  (* match with the minimum type and remove *)
-  let rec find_min t ps_t acc =
-    match ps_t with
-    | [] -> raise_notrace Not_found
-    | t' :: rs -> begin
-        if Str.string_match (Str.regexp_string t) t' 0 then
-	  acc @ rs
-        else find_min t rs (t' :: acc) 
-      end in
-  (* for each type in p find the minimum matching type in t *)
-  let rec scan_p ps_p ps_t =
-    match ps_p with
-    | [] -> true
-    | t :: rs -> begin
-        try
-	  let ps_t' = find_min t ps_t [] in
-	  scan_p rs ps_t'
-        with
-        | Not_found -> false 
-      end in
-  scan_p types_p types_t
+  let p_l = Ports.multi_ctrl p n_p
+  and t_l = Ports.multi_ctrl t n_t in
+  (Ports.inter p_l t_l) = p_l 
+ 
 
 (* Return a list of clauses on row i of matrix t. Cnf.impl will process each
    element *)
@@ -715,12 +728,12 @@ let compat_clauses e_p i t h_t n_t n_p =
 	    let compat_t = 
 	      IntSet.filter (fun u ->
 			     (Ctrl.(=) c_v (safe_exn (Nodes.get_ctrl_exn u n_t)))
-			     && (arity_v <= safe_exn (Ports.arity_exn e_t.p u))
-	        ) p_t in
+			     && (arity_v <= safe_exn (Ports.arity_exn e_t.p u)))
+			    p_t in
 	    let nodes_assign =
 	      IntSet.fold (fun j acc -> 
-	          Cnf.M_lit (v, j) :: acc
-	        ) compat_t [] in
+			   Cnf.M_lit (v, j) :: acc)
+			  compat_t [] in
 	    nodes_assign :: acc) p [] in
       (Cnf.M_lit (i, j), clauses) :: acc
     ) t []
@@ -736,13 +749,9 @@ let port_subsets p_i_list j p_a t_edge n_t n_p : Cnf.clause list =
       | _  -> ( *)
 			    let p_set =
 			      List.fold_left (fun acc i ->
-					      Ports.union acc p_a.(i).p)
+					      Ports.sum acc p_a.(i).p)
 					     Ports.empty l in
-			    not (
-				sub_edge {i = Face.empty; 
-					  o = Face.empty; 
-					  p = p_set} t_edge n_t n_p
-			      )
+			    not (sub_edge p_set t_edge.p n_t n_p)
        (* ) *)
 			   ) (subsets p_i_list) in
   List.map (fun l ->
@@ -769,11 +778,9 @@ let compat_sub p t f_e n_t n_p =
         else (
           let p_i_list = H_int.find_all f_e j in
           let p_set = List.fold_left (fun acc i ->
-              Ports.union acc p_a.(i).p
+              Ports.sum acc p_a.(i).p
             ) Ports.empty p_i_list in
-          if sub_edge {i = Face.empty; 
-                       o = Face.empty; 
-                       p = p_set} t_a.(j) n_t n_p 
+          if sub_edge p_set t_a.(j).p n_t n_p 
           then (acc, marked)
           else (
             let clauses = port_subsets p_i_list j p_a t_a.(j) n_t n_p in
@@ -805,7 +812,7 @@ let match_peers t p n_t n_p =
         (* Find compatible edges in the target *)
         let (_, compat_t) = 
 	  Lg.fold (fun e_t (j, acc) ->
-	      if sub_edge e_p e_t n_t n_p then ( 
+	      if sub_edge e_p.p e_t.p n_t n_p then ( 
                 H_int.add f_e j i;	
                 (j + 1, IntSet.add j acc)
               ) else
@@ -890,4 +897,4 @@ let prime_components lg =
 		     Lg.add { edg with
 			      p = Ports.apply edg.p iso;
 			    } acc)
-		    lg Lg.empty )
+		    lg Lg.empty)

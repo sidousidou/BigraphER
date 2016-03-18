@@ -103,7 +103,7 @@ sig
 
   val add : int -> int t -> int t
 
-  val union : int t -> int t -> int t
+  val sum : int t -> int t -> int t
 
   val cardinal : int t -> int
 							    
