@@ -55,7 +55,10 @@ let do_tests =
     (t.t_name ^ " &gt; " ^ t.p_name,
      module_name,
      xml_block "system-out" [] ["Result: " ^ (print_res t.res)
-				^ "\nExpected result: " ^ (print_res t.exp_res)],
+				^ "\nExpected result: " ^ (print_res t.exp_res)
+				^ "\nTarget:\n"
+				^ (Big.to_string t.target) ^ "\nPattern:\n"
+				^ (Big.to_string t.pattern) ^ "\n"],
      [xml_block "failure" attr_match [msg]])
   and failure_decomp t msg occs =
     (t.t_name ^ " &gt; " ^ t.p_name,
