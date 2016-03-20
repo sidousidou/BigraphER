@@ -56,11 +56,12 @@ Library bigraph
                    PriType,
                    TsType,
                    Export
-  BuildDepends:    unix, minisat, bigarray, str
+  BuildDepends:    unix, minisat, str
   CCOpt+:	   -O3
   NativeOpt+:	   -noassert
   ByteOpt+:	   -noassert
-  XMETARequires:   unix, minisat, bigarray, str
+  XMETARequires:   unix, minisat, str
+  XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems  
   Install:	   true
 
 Library "bigraph-utils"
@@ -80,7 +81,7 @@ Library "bigrapher-utils"
                    Lexer,
                    Parser,
                    Unify
-  BuildDepends:    bigraph-utils
+  BuildDepends:    bigraph-utils, str
   CCOpt+:	   -O3
   Install:	   false
 

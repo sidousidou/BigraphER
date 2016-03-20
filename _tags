@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: a43ee91b23067212d6cedbf554e93861)
+# DO NOT EDIT (digest: beff44dae625bbfaca7739f63e6e2322)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -21,7 +21,6 @@ true: annot, bin_annot
 <lib/*.ml{,i,y}>: oasis_library_bigraph_byte
 <lib/bigraph.{cma,cmxa}>: oasis_library_bigraph_native
 <lib/*.ml{,i,y}>: oasis_library_bigraph_native
-<lib/*.ml{,i,y}>: package(bigarray)
 <lib/*.ml{,i,y}>: package(minisat)
 <lib/*.ml{,i,y}>: package(str)
 <lib/*.ml{,i,y}>: package(unix)
@@ -34,14 +33,12 @@ true: annot, bin_annot
 <bin/*.ml{,i,y}>: oasis_library_bigrapher_utils_ccopt
 # Executable bigrapher
 <bin/*.ml{,i,y}>: oasis_executable_bigrapher_ccopt
-<bin/bigrapher.{native,byte}>: package(bigarray)
 <bin/bigrapher.{native,byte}>: package(minisat)
 <bin/bigrapher.{native,byte}>: package(str)
 <bin/bigrapher.{native,byte}>: package(unix)
 <bin/bigrapher.{native,byte}>: use_bigraph
 <bin/bigrapher.{native,byte}>: use_bigraph-utils
 <bin/bigrapher.{native,byte}>: use_bigrapher-utils
-<bin/*.ml{,i,y}>: package(bigarray)
 <bin/*.ml{,i,y}>: package(minisat)
 <bin/*.ml{,i,y}>: package(str)
 <bin/*.ml{,i,y}>: package(unix)
@@ -51,7 +48,6 @@ true: annot, bin_annot
 # Library junit
 "tests/junit.cmxs": use_junit
 # Executable matching-test
-<tests/test_match.{native,byte}>: package(bigarray)
 <tests/test_match.{native,byte}>: package(minisat)
 <tests/test_match.{native,byte}>: package(str)
 <tests/test_match.{native,byte}>: package(unix)
@@ -59,7 +55,6 @@ true: annot, bin_annot
 <tests/test_match.{native,byte}>: use_bigraph-utils
 <tests/test_match.{native,byte}>: use_junit
 # Executable brs-test
-<tests/test_brs.{native,byte}>: package(bigarray)
 <tests/test_brs.{native,byte}>: package(minisat)
 <tests/test_brs.{native,byte}>: package(str)
 <tests/test_brs.{native,byte}>: package(unix)
@@ -67,7 +62,6 @@ true: annot, bin_annot
 <tests/test_brs.{native,byte}>: use_bigraph-utils
 <tests/test_brs.{native,byte}>: use_junit
 # Executable decomp-test
-<tests/test_decomp.{native,byte}>: package(bigarray)
 <tests/test_decomp.{native,byte}>: package(minisat)
 <tests/test_decomp.{native,byte}>: package(str)
 <tests/test_decomp.{native,byte}>: package(unix)
@@ -75,14 +69,12 @@ true: annot, bin_annot
 <tests/test_decomp.{native,byte}>: use_bigraph-utils
 <tests/test_decomp.{native,byte}>: use_junit
 # Executable parser-test
-<tests/test_parser.{native,byte}>: package(bigarray)
 <tests/test_parser.{native,byte}>: package(minisat)
 <tests/test_parser.{native,byte}>: package(str)
 <tests/test_parser.{native,byte}>: package(unix)
 <tests/test_parser.{native,byte}>: use_bigraph
 <tests/test_parser.{native,byte}>: use_bigraph-utils
 <tests/test_parser.{native,byte}>: use_junit
-<tests/*.ml{,i,y}>: package(bigarray)
 <tests/*.ml{,i,y}>: package(minisat)
 <tests/*.ml{,i,y}>: package(str)
 <tests/*.ml{,i,y}>: use_bigraph

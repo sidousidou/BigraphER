@@ -11,6 +11,4 @@ B _build/tests
 
 PKG unix
 PKG minisat
-PKG bigarray
 PKG str
-PKG unix
