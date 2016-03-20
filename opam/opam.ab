@@ -46,7 +46,7 @@ depends: [
   "conf-graphviz"
 ]
 
-available: [ ocaml-version >= "4.02.0" ]
+available: [ ocaml-version >= "4.02.0" & ocaml-version < "4.03.0"]
 
 post-messages: [
 "bigrapher installed.
