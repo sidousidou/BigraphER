@@ -172,7 +172,12 @@ module Lg =
 			 let compare = edg_compare
 		       end)
 		     
-    let add e l = if edg_is_empty e then l else add e l
+    let add e l =
+      if edg_is_empty e then l else add e l
+						    
+    let singleton e =
+      if edg_is_empty e then empty else singleton e
+						    
   end
 
 (* tensor product fails (inner common names, outer common names)*)
@@ -227,9 +232,7 @@ let parse lines =
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub f_i f_o =
-  if Face.is_empty f_i && Face.is_empty f_o then 
-    Lg.empty
-  else Lg.singleton { i = f_i; o = f_o; p = Ports.empty }
+  Lg.singleton { i = f_i; o = f_o; p = Ports.empty }
 
 (* Node index is 0. PortSet are from 0 to |f| - 1 *)
 let elementary_ion f =
