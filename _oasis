@@ -10,7 +10,7 @@ Description: BigraphER is an efficient implementation of Bigraphical Reactive
 Authors:	Michele Sevegnani
 Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
 License:     	BSD-2-clause
-LicenseFile:	LICENSE
+LicenseFile:	LICENSE.md
 OCamlVersion:	>= 4.02.0
 Plugins:     	META (0.4), DevFiles (0.4)
 Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
