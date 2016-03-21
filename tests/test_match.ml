@@ -89,6 +89,8 @@ let do_tests =
 	    and decomp_fail_msg =
 	      sprintf "Malformed %s decompositions of %s." t.p_name t.t_name in
 	    try
+	      print_endline ("Pattern: " ^ t.p_name
+			     ^ " Target: " ^ t.t_name);
               let occs = Big.occurrences t.target t.pattern in
               t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
               if check_res t.res t.exp_res
@@ -298,7 +300,7 @@ let tests bgs = (* TEST 1 *)
       pattern = List.assoc "P14" bgs;
       exp_res =
         [ (safe_exn (Iso.of_list_exn [ (0, 0); (1, 1) ]),
-           safe_exn (Iso.of_list_exn [ (0, 1) ])) ];
+           safe_exn (Iso.of_list_exn [ (0, 0) ])) ];
       res = [];
     }; (* TEST 15 *)
     {
