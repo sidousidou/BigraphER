@@ -154,14 +154,26 @@ let edg_compare (h : edg) (k : edg) =
   match Face.compare h.i k.i with
   | 0 ->
      (match Face.compare h.o k.o with
-      | 0 -> Ports.compare int_compare h.p k.p
+      | 0 -> (match Ports.compare int_compare h.p k.p with
+	      (* Structural equality to allow duplicates *)
+	      | 0 -> if h.p == k.p then 0 else 1
+	      | x -> x)
       | x -> x)
   | x -> x  
 
-module Lg = Set.Make (struct
-    type t = edg
-    let compare = edg_compare
-  end)
+let edg_is_empty e =
+  Face.is_empty e.i && Face.is_empty e.o && Ports.is_empty e.p
+	   
+module Lg =
+  struct
+    
+    include Set.Make (struct
+			 type t = edg
+			 let compare = edg_compare
+		       end)
+		     
+    let add e l = if edg_is_empty e then l else add e l
+  end
 
 (* tensor product fails (inner common names, outer common names)*)
 exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
@@ -196,7 +208,7 @@ let to_string l =
   Lg.elements l
   |> List.map string_of_edge 
   |> String.concat "\n" 
-
+		   
 let parse lines = 
   let build_edge s n =
     let a = Str.split (Str.regexp_string " ") s in
@@ -316,31 +328,29 @@ let merge_out lg cls =
           not (Face.is_empty (Face.inter f e.o))) lg)) acc) cls Lg.empty   
 
 (* Fuse two link graphs on common names *)
-let fuse a b = 
+let fuse a b =
   Lg.fold (fun e acc ->
-      let h =
-        Lg.choose (Lg.filter (fun h -> Face.equal h.o e.i) b) in
-      let new_e = {i = h.i; o = e.o; p = Ports.sum e.p h.p} in
-      if Face.is_empty new_e.i && Face.is_empty new_e.o &&
-         Ports.is_empty new_e.p then acc
-      else Lg.add new_e acc) a Lg.empty
+	   let h =
+             Lg.choose (Lg.filter (fun h -> Face.equal h.o e.i) b) in
+	   let new_e = {i = h.i; o = e.o; p = Ports.sum e.p h.p} in
+	   Lg.add new_e acc) a Lg.empty
 
 (* Composition A o B. [n] is the number of nodes in A. *)
-let comp a b n = 
+let comp a b n =
   let x = inner a
   and y = outer b in
   if Face.equal x y 
   then 
     (let new_b = offset b n 
      and cls_in = Lg.fold (fun e acc ->
-         Face_set.add e.i acc) a Face_set.empty in
+			   Face_set.add e.i acc) a Face_set.empty in
      let cls_out = Lg.fold (fun e acc -> 
-         Face_set.add e.o acc) new_b Face_set.empty in
+			    Face_set.add e.o acc) new_b Face_set.empty in
      let cls = equiv_class cls_in cls_out in
      Lg.union (fuse (merge_in a cls) (merge_out new_b cls))
-       (Lg.union 
-	  (Lg.filter (fun e -> Face.is_empty e.i) a) 
-	  (Lg.filter (fun e -> Face.is_empty e.o) new_b)))    
+	      (Lg.union 
+		 (Lg.filter (fun e -> Face.is_empty e.i) a) 
+		 (Lg.filter (fun e -> Face.is_empty e.o) new_b)))    
   else raise (FACES_MISMATCH (x, y))
 
 (* no inner names that are siblings *)
