@@ -428,23 +428,34 @@ let add_blocking solver v w =
     |> snd in
   solver#add_clause ((scan_matrix v) @ (scan_matrix w))
 
+(* let print_solver_matrix solver v = *)
+(*   Array.iter (fun i -> *)
+(* 	      Array.iter (fun j -> *)
+(* 			  match solver#value_of j with *)
+(* 			  | Minisat.True -> print_string "t" *)
+(* 			  | Minisat.False -> print_string "f" *)
+(* 			  | Minisat.Unknown -> print_string "-") *)
+(* 			 i; *)
+(* 	      print_newline ();) *)
+(* 	     v *)
+		    
 let rec filter_loop solver t p vars t_trans = 
-    solver#simplify;
-    match solver#solve with
-      | Minisat.UNSAT -> raise_notrace NO_MATCH
-      | Minisat.SAT ->
-	begin
-	  let iso_v = get_iso solver vars.iso_nodes
-	  (* and iso_e = get_iso solver w e f *) in
-	  if (Place.check_match t.p p.p t_trans iso_v) then 
-	    (solver, vars)
-	  else begin
-	    (* eprintf "Warning: invalid match not discarded by SAT. \ *)
-            (*          Removing it ...\n"; *)
-	    add_blocking solver vars.iso_nodes vars.iso_edges;
-	    filter_loop solver t p vars t_trans
-	  end   
-	end 
+  solver#simplify;
+  match solver#solve with
+  | Minisat.UNSAT -> raise_notrace NO_MATCH
+  | Minisat.SAT ->
+     begin
+       let iso_v = get_iso solver vars.iso_nodes
+       (* and iso_e = get_iso solver w e f *) in
+       if (Place.check_match t.p p.p t_trans iso_v) then 
+	 (solver, vars)
+       else begin
+	   (* eprintf "Warning: invalid match not discarded by SAT. \ *)
+           (*          Removing it ...\n"; *)
+	   add_blocking solver vars.iso_nodes vars.iso_edges;
+	   filter_loop solver t p vars t_trans
+	 end   
+     end 
 	  
 let add_c4 t p t_n p_n solver v =
   let (t_constraints, exc_clauses, js) = 
@@ -475,7 +486,7 @@ let add_c6 t p t_n p_n solver v =
 (* Each row of the input matrix aux is the commander-variable encoding of the 
    corresponding column of the iso matrix m. *)
 let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
-  match rc_v with
+   match rc_v with
   | [] -> (
     (* No commander-variable encoding *)
     IntSet.iter (fun j ->
@@ -488,6 +499,12 @@ let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
     ) unmatch_v
   )
 
+(* let print_clauses x = *)
+(*   List.map Cnf.string_of_clause x *)
+(*   |> String.concat "; " *)
+(*   |> (fun x -> *)
+(*       print_endline ("[" ^ x ^ "]")) *)
+	   
 let add_c7 t p t_n p_n aux rc_w solver w =
   let (clauses, b_cols, b_pairs) = 
     Link.match_edges t p t_n p_n in
@@ -499,8 +516,8 @@ let add_c8 t p t_n p_n clauses solver v w =
   let constraints = 
     Link.match_ports t p t_n p_n clauses in
   List.iter (fun x ->
-    Cnf.post_impl x solver w v
-  ) constraints
+	     Cnf.post_impl x solver w v)
+	    constraints
 
 let add_c10 t p solver v =
   Cnf.post_conj_m (Place.match_trans t p) solver v
@@ -512,8 +529,8 @@ let add_c9 t p t_n p_n solver v =
     Link.match_peers t p t_n p_n in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
-      Cnf.post_impl x solver w v
-    ) constraints;
+	     Cnf.post_impl x solver w v)
+	    constraints;
   Cnf.post_conj_m blocks_f solver w;
   let (aux, _) =
     Cnf.post_tot (Cnf.tot_fun r c 6 3) solver w in
@@ -659,22 +676,6 @@ let occurrence t p t_trans =
       with
       | NO_MATCH -> None)
       
-(*let occurrence_exn t p =
-  if p.n.Nodes.size = 0 then raise NODE_FREE 
-  else (
-    if quick_unsat t p then raise_notrace NO_MATCH
-    else (
-      let t_trans = Sparse.trans t.p.Place.nn in
-      let (s, vars) = aux_match t p t_trans in
-      let i_v = get_iso s vars.iso_nodes
-      and i_e = safe_exn ( 
-          Iso.transform_exn (get_iso s vars.iso_edges) vars.map_edges_r vars.map_edges_c) 
-      and i_h = safe_exn (
-        Fun.transform_exn (get_fun s vars.iso_hyp) vars.map_hyp_r vars.map_hyp_c) in
-      (i_v, i_e, i_h)
-    )
-  ) *)
-
 (* compute non-trivial automorphisms of b *)
 let auto b =
   if b.n.Nodes.size = 0 then raise NODE_FREE 
@@ -727,8 +728,7 @@ let occurrences t p =
              (*         %s\n" (to_string t) (to_string p); *)
       (**********************************************************)
       let t_trans = Sparse.trans t.p.Place.nn in
-      let (s, vars) = aux_match t p t_trans in
-      (* print_dump s vars; *)
+      let (s, vars) = aux_match t p t_trans in    
       let autos = auto p in
       let rec loop_occur res =
 	add_blocking s vars.iso_nodes vars.iso_edges;

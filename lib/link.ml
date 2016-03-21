@@ -135,12 +135,12 @@ module Ports =
 			
     let inter a b =
       List.fold_left (fun (acc, b') (c, n) ->
-		      match List.partition (fun (c', _) ->
-					    Ctrl.(c = c'))
+		      match List.partition (fun (c', n') ->
+					    Ctrl.(c = c') && n' >= n)
 					   b' with
 		      | ([], _) -> (acc, b')
-		      | ((c, n') :: l, l') -> 
-			 ((c, min n n') :: acc, l @ l'))
+		      | (_ :: l, l') -> 
+			 ((c, n) :: acc, l @ l'))
 		     ([], b) a
       |> fst
       |> List.fast_sort comp_multi
@@ -712,48 +712,44 @@ let sub_edge p t n_t n_p =
   and t_l = Ports.multi_ctrl t n_t in
   (Ports.inter p_l t_l) = p_l 
  
-
 (* Return a list of clauses on row i of matrix t. Cnf.impl will process each
    element *)
 let compat_clauses e_p i t h_t n_t n_p =
   let p = Ports.to_IntSet e_p.p in
   IntSet.fold (fun j acc ->
-      let e_t = H_int.find h_t j in
-      let clauses : Cnf.lit list list = 
-        IntSet.fold (fun v acc ->
-	    let c_v = safe_exn (Nodes.get_ctrl_exn v n_p)
-	    and arity_v = safe_exn (Ports.arity_exn e_p.p v) 
-	    and p_t = Ports.to_IntSet e_t.p in	    
-	    (* find nodes in e_t that are compatible with v *)
-	    let compat_t = 
-	      IntSet.filter (fun u ->
-			     (Ctrl.(=) c_v (safe_exn (Nodes.get_ctrl_exn u n_t)))
-			     && (arity_v <= safe_exn (Ports.arity_exn e_t.p u)))
-			    p_t in
-	    let nodes_assign =
-	      IntSet.fold (fun j acc -> 
-			   Cnf.M_lit (v, j) :: acc)
-			  compat_t [] in
-	    nodes_assign :: acc) p [] in
-      (Cnf.M_lit (i, j), clauses) :: acc
-    ) t []
+	       let e_t = safe_exn (H_int.find h_t j) in
+	       let clauses : Cnf.lit list list = 
+		 IntSet.fold (fun v acc ->
+			      let c_v = safe_exn (Nodes.get_ctrl_exn v n_p)
+			      and arity_v = safe_exn (Ports.arity_exn e_p.p v) 
+			      and p_t = Ports.to_IntSet e_t.p in	    
+			      (* find nodes in e_t that are compatible with v *)
+			      let compat_t = 
+				IntSet.filter (fun u ->
+					       (Ctrl.(=) c_v (safe_exn (Nodes.get_ctrl_exn u n_t)))
+					       && (arity_v <= safe_exn (Ports.arity_exn e_t.p u)))
+					      p_t in
+			      let nodes_assign =
+				IntSet.fold (fun j acc -> 
+					     Cnf.M_lit (v, j) :: acc)
+					    compat_t [] in
+			      nodes_assign :: acc)
+			     p [] in
+	       (Cnf.M_lit (i, j), clauses) :: acc)
+	      t []
 
 let port_subsets p_i_list j p_a t_edge n_t n_p : Cnf.clause list = 
   let subsets xs = 
     List.fold_right (fun x rest -> 
-        rest @ List.map (fun ys -> x :: ys) rest
-      ) xs [[]] in
+		     rest @ List.map (fun ys -> x :: ys) rest)
+		    xs [[]] in
   let blocks = List.filter (fun l ->
-     (* match l with 
-      | [] -> false
-      | _  -> ( *)
-			    let p_set =
+    			    let p_set =
 			      List.fold_left (fun acc i ->
 					      Ports.sum acc p_a.(i).p)
 					     Ports.empty l in
-			    not (sub_edge p_set t_edge.p n_t n_p)
-       (* ) *)
-			   ) (subsets p_i_list) in
+			    not (sub_edge p_set t_edge.p n_t n_p))
+    			   (subsets p_i_list) in
   List.map (fun l ->
 	    List.map (fun i ->
 		      Cnf.N_var (Cnf.M_lit (i, j)))
@@ -777,9 +773,10 @@ let compat_sub p t f_e n_t n_p =
         if List.mem j marked then (acc, marked)
         else (
           let p_i_list = H_int.find_all f_e j in
-          let p_set = List.fold_left (fun acc i ->
-              Ports.sum acc p_a.(i).p
-            ) Ports.empty p_i_list in
+          let p_set =
+	    List.fold_left (fun acc i ->
+			    Ports.sum acc p_a.(i).p)
+			   Ports.empty p_i_list in
           if sub_edge p_set t_a.(j).p n_t n_p 
           then (acc, marked)
           else (
@@ -795,46 +792,49 @@ let compat_sub p t f_e n_t n_p =
 let match_peers t p n_t n_p =
   let (open_p, iso_p) = 
     filter_iso (fun e ->
-        not (Ports.is_empty e.p) && (not (is_closed e))
-      ) p
+		not (Ports.is_empty e.p) && (not (is_closed e)))
+	       p
   and (non_empty_t, iso_open) = 
-    filter_iso (fun e ->  not (Ports.is_empty e.p)) t in
+    filter_iso (fun e ->
+		not (Ports.is_empty e.p))
+	       t in
   let h = H_int.create (Lg.cardinal non_empty_t) in
   ignore (Lg.fold (fun e i ->
-      H_int.add h i e;
-      i + 1) non_empty_t 0);
+		   H_int.add h i e;
+		   i + 1)
+		  non_empty_t 0);
   let r = Lg.cardinal open_p
   and c = Lg.cardinal non_empty_t in
   let f_e = H_int.create (r * c) in (* T -> P *)
   let c_s = IntSet.of_int c in
   let (f, block, _) =
     Lg.fold (fun e_p (acc, block, i) ->
-        (* Find compatible edges in the target *)
-        let (_, compat_t) = 
-	  Lg.fold (fun e_t (j, acc) ->
-	      if sub_edge e_p.p e_t.p n_t n_p then ( 
-                H_int.add f_e j i;	
-                (j + 1, IntSet.add j acc)
-              ) else
-	        (j + 1, acc)
-	    ) non_empty_t (0, IntSet.empty) in
-        (* No compatible edges found *)
-        if IntSet.is_empty compat_t then
-	  raise_notrace NOT_TOTAL
-        else (
-	  (* Generate possible node matches for every edge assignment. *)
-	  let clauses = 
-	    List.map (fun (l, r) ->
-	        Cnf.impl l r
-	      ) (compat_clauses e_p i compat_t h n_t n_p)
-	  (* Blockig pairs *)
-	  and b =
-	    IntSet.fold (fun j acc ->
-	        (i, j) :: acc
-              ) (IntSet.diff c_s compat_t) [] in
-	  (clauses @ acc, b @ block, i + 1)
-        )
-      ) open_p ([], [], 0) in
+             (* Find compatible edges in the target *)
+             let (_, compat_t) = 
+	       Lg.fold (fun e_t (j, acc) ->
+			if sub_edge e_p.p e_t.p n_t n_p
+			then 
+			  (H_int.add f_e j i;	
+			   (j + 1, IntSet.add j acc))
+			else
+			  (j + 1, acc))
+		       non_empty_t (0, IntSet.empty) in
+             (* No compatible edges found *)
+             if IntSet.is_empty compat_t then
+	       raise_notrace NOT_TOTAL
+             else (
+	       (* Generate possible node matches for every edge assignment. *)
+	       let clauses = 
+		 List.map (fun (l, r) ->
+			   Cnf.impl l r)
+			  (compat_clauses e_p i compat_t h n_t n_p)
+	       (* Blockig pairs *)
+	       and b =
+		 IntSet.fold (fun j acc ->
+			      (i, j) :: acc)
+			     (IntSet.diff c_s compat_t) [] in
+	       (clauses @ acc, b @ block, i + 1)))
+	    open_p ([], [], 0) in
   let block_f = compat_sub open_p non_empty_t f_e n_t n_p in
   (r, c, f, block, block_f, iso_p, iso_open)
 
