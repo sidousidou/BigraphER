@@ -89,9 +89,7 @@ let do_tests =
 	    and decomp_fail_msg =
 	      sprintf "Malformed %s decompositions of %s." t.p_name t.t_name in
 	    try
-	      print_endline ("Pattern: " ^ t.p_name
-			     ^ " Target: " ^ t.t_name);
-              let occs = Big.occurrences t.target t.pattern in
+	      let occs = Big.occurrences t.target t.pattern in
               t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
               if check_res t.res t.exp_res
 	      then (if List.for_all (fun o ->
