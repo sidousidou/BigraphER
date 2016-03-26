@@ -1,7 +1,7 @@
-[36mType:[m          Stochastic BRS
-[36mBindings:[m      4       
-[36m# of rules:[m    1       
-[36mMax # states:[m  140     
-[32mStates:[m        1       
-[32mTransitions:[m   0       
-[32mOccurrences:[m   0       
+Type:          Stochastic BRS
+Bindings:      4       
+# of rules:    1       
+Max # states:  140     
+States:        1       
+Transitions:   0       
+Occurrences:   0       

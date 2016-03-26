@@ -51,12 +51,19 @@ let do_tests =
      module_name,
      xml_block "system-out" [] ["Result: " ^ (print_res t.res)],
      [])
-  and failure t msg occs =
+  and failure_occ t msg =
     (t.t_name ^ " &gt; " ^ t.p_name,
      module_name,
      xml_block "system-out" [] ["Result: " ^ (print_res t.res)
 				^ "\nExpected result: " ^ (print_res t.exp_res)
-				^ "\nDecompositions:\n"
+				^ "\nTarget:\n"
+				^ (Big.to_string t.target) ^ "\nPattern:\n"
+				^ (Big.to_string t.pattern) ^ "\n"],
+     [xml_block "failure" attr_match [msg]])
+  and failure_decomp t msg occs =
+    (t.t_name ^ " &gt; " ^ t.p_name,
+     module_name,
+     xml_block "system-out" [] ["Decompositions:\n"
 				^ (List.mapi (fun i (i_n, i_e, f_e) ->
 					      let (c, d, id_big) =
 						Big.decomp t.target t.pattern i_n i_e f_e in
@@ -64,11 +71,11 @@ let do_tests =
 					      ^ (string_of_int i) ^ ":\nTarget:\n"
 					      ^ (Big.to_string t.target) ^ "\nPattern:\n"
 					      ^ (Big.to_string t.pattern) ^ "\n"
-					      (* ^ (to_string c) ^ "\nD:\n" *)
-					      (* ^ (to_string d) ^ "\nTensor:\n" *)
-					      (* ^ (to_string (tens t.pattern id)) ^ "\nComposition D:\n" *)
-					      (* ^ (to_string (comp (tens t.pattern id) d)) ^ "\nComposition C:\n" *)
-					      ^ (Big.to_string Big.(comp c (comp (tens t.pattern id_big) d))))
+					      ^ (Big.to_string c) ^ "\nD:\n"
+					      ^ (Big.to_string d) ^ "\nTensor:\n"
+					      ^ Big.(to_string (tens t.pattern id_big)) ^ "\nComposition D:\n"
+					      ^ Big.(to_string (comp (tens t.pattern id_big) d)) ^ "\nComposition C:\n"
+					      ^ Big.(to_string (comp c (comp (tens t.pattern id_big) d))))
 					     occs
 				   |> String.concat "\n")],
      [xml_block "failure" attr_match [msg]])
@@ -78,26 +85,29 @@ let do_tests =
     ^ (Printexc.get_backtrace ()) in
   List.map (fun t ->
 	    let default_fail_msg =
-	      sprintf "%s cannot be matched in %s." t.p_name t.t_name in
+	      sprintf "%s cannot be matched in %s." t.p_name t.t_name
+	    and decomp_fail_msg =
+	      sprintf "Malformed %s decompositions of %s." t.p_name t.t_name in
 	    try
-              let occs = Big.occurrences t.target t.pattern in
+	      let occs = Big.occurrences t.target t.pattern in
               t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
-              if (check_res t.res t.exp_res)
-		 && (List.for_all (fun o ->
-				   test_decomposition t.target t.pattern o)
-				  occs)
-	      then success t
-              else failure t default_fail_msg occs
+              if check_res t.res t.exp_res
+	      then (if List.for_all (fun o ->
+				     test_decomposition t.target t.pattern o)
+				    occs
+		    then success t
+		    else failure_decomp t decomp_fail_msg occs)
+	      else failure_occ t default_fail_msg
 	    with
 	    | Big.NODE_FREE -> (* tests 23 and 16 are special cases *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T13", "P23") | ("T10", "P16") -> success t
-		| _ -> failure t default_fail_msg [])
+		| _ -> failure_occ t default_fail_msg)
 	    | Big.COMP_ERROR (x, y) -> (* pattern in test 25 is not epi *)
 	       (match (t.t_name, t.p_name) with 
 		| ("T14", "P25") -> success t
-		| _ -> failure t (sprintf "Interfaces %s != %s"
-					  (Big.string_of_inter x) (Big.string_of_inter y)) [])
+		| _ -> failure_occ t (sprintf "Interfaces %s != %s"
+					  (Big.string_of_inter x) (Big.string_of_inter y)))
             |  _ ->
 		(t.t_name ^ " &gt; " ^ t.p_name,
 		 module_name,
@@ -288,7 +298,7 @@ let tests bgs = (* TEST 1 *)
       pattern = List.assoc "P14" bgs;
       exp_res =
         [ (safe_exn (Iso.of_list_exn [ (0, 0); (1, 1) ]),
-           safe_exn (Iso.of_list_exn [ (0, 1) ])) ];
+           safe_exn (Iso.of_list_exn [ (0, 0) ])) ];
       res = [];
     }; (* TEST 15 *)
     {

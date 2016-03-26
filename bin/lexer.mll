@@ -116,6 +116,7 @@ and cmd =  parse
   | ("--quiet" | "-q")      { O_QUIET }     
   | const      	 	    { O_CONST (read_string_const (Buffer.create 20) lexbuf) }
   | "--debug"               { O_DEBUG }
+  | ("--no-colors" | "-n")  { O_COLORS } 
   (* COMMAND OPTIONS *)
   | ("--export-decs"
     | "-d")                 { O_DECS }

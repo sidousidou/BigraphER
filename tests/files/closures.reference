@@ -1,7 +1,7 @@
 Type:          BRS
-Bindings:      10      
+Bindings:      5       
 # of rules:    1       
 Max # states:  140     
 States:        2       
-Transitions:   1       
-Occurrences:   1       
+Transitions:   2       
+Occurrences:   3       

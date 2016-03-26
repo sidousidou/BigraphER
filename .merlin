@@ -10,8 +10,5 @@ B _build/utils
 B _build/tests
 
 PKG unix
-PKG minisat
-PKG bigarray
 PKG str
-PKG unix
 PKG Z3

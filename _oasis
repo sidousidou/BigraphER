@@ -10,7 +10,7 @@ Description: BigraphER is an efficient implementation of Bigraphical Reactive
 Authors:	Michele Sevegnani
 Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
 License:     	BSD-2-clause
-LicenseFile:	LICENSE
+LicenseFile:	LICENSE.md
 OCamlVersion:	>= 4.02.0
 Plugins:     	META (0.4), DevFiles (0.4)
 Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
@@ -60,7 +60,8 @@ Library bigraph
   CCOpt+:	   -O3
   NativeOpt+:	   -noassert
   ByteOpt+:	   -noassert
-  XMETARequires:   unix, minisat, str
+  XMETARequires:   unix, Z3, str
+  XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems  
   Install:	   true
 
 Library "bigraph-utils"
@@ -80,7 +81,7 @@ Library "bigrapher-utils"
                    Lexer,
                    Parser,
                    Unify
-  BuildDepends:    bigraph-utils
+  BuildDepends:    bigraph-utils, str
   CCOpt+:	   -O3
   Install:	   false
 

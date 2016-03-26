@@ -43,7 +43,61 @@ type opt =
   | Steps of int
   | Time of float
   | Verb
+  | No_colors
       
+type settings = {
+    mutable consts : Ast.const list;
+    mutable debug : bool;
+    mutable dot_installed : bool;
+    mutable export_decs : path option;
+    mutable export_graph : file option;
+    mutable export_lab : file option;
+    mutable export_prism : file option;
+    mutable export_states : path option;
+    mutable export_states_flag : bool;
+    mutable help : bool;
+    mutable max_states : int;
+    mutable model : string;
+    mutable out_format : format_op list;
+    mutable quiet : bool;
+    mutable steps : int;
+    mutable steps_flag : bool;
+    mutable time : float;
+    mutable time_flag : bool;
+    mutable verb : bool;
+    mutable colors : bool;
+  }
+
+let default_formats = [Dot]
+		  
+let defaults = {
+    consts = [];
+    debug = false;
+    dot_installed = dot_installed ();
+    export_decs = None;
+    export_graph = None;
+    export_lab = None;
+    export_prism = None;
+    export_states = None;
+    export_states_flag = false;
+    help = false;
+    max_states = 1000;
+    model = "";
+    out_format = default_formats;
+    quiet = false;
+    steps = 1000;
+    steps_flag = false;
+    time  = 1000.0;
+    time_flag = false;
+    verb = false;
+    colors = true;
+  }
+
+let colorise c msg =
+  if defaults.colors
+  then Utils.colorise c msg
+  else msg
+
 let string_of_opt sep ?(man = false) opt =
   (match opt with
    | Const _ ->
@@ -99,7 +153,8 @@ let string_of_opt sep ?(man = false) opt =
 	 let s = "[" ^ (colorise `underline "FLOAT") ^ "]" in
 	 ["-T " ^ s; "--simulation-time " ^ s]
        else  ["-T"; "--simulation-time"])
-   | Verb -> ["-v"; "--verbose"])
+   | Verb -> ["-v"; "--verbose"]
+   | No_colors -> ["-n"; "--no-colors"])
   |> String.concat sep
 		   
 let report_error_aux fmt = function
@@ -127,53 +182,7 @@ let string_of_t = function
   | Full -> "full"
   | Sim -> "sim"
   | StandAloneOpt x -> string_of_stand_alone_opt x
-  
-type settings = {
-    mutable consts : Ast.const list;
-    mutable debug : bool;
-    mutable dot_installed : bool;
-    mutable export_decs : path option;
-    mutable export_graph : file option;
-    mutable export_lab : file option;
-    mutable export_prism : file option;
-    mutable export_states : path option;
-    mutable export_states_flag : bool;
-    mutable help : bool;
-    mutable max_states : int;
-    mutable model : string;
-    mutable out_format : format_op list;
-    mutable quiet : bool;
-    mutable steps : int;
-    mutable steps_flag : bool;
-    mutable time : float;
-    mutable time_flag : bool;
-    mutable verb : bool;
-  }
-
-let default_formats = [Dot]
-		  
-let defaults = {
-    consts = [];
-    debug = false;
-    dot_installed = dot_installed ();
-    export_decs = None;
-    export_graph = None;
-    export_lab = None;
-    export_prism = None;
-    export_states = None;
-    export_states_flag = false;
-    help = false;
-    max_states = 1000;
-    model = "";
-    out_format = default_formats;
-    quiet = false;
-    steps = 1000;
-    steps_flag = false;
-    time  = 1000.0;
-    time_flag = false;
-    verb = false;
-  }
-		 
+  		 
 (* Update defaults with environment variables *)    		 
 let eval_env () =
   let parse_format s =
@@ -188,6 +197,10 @@ let eval_env () =
     | Not_found -> ());
   (try
       defaults.quiet <- (ignore (Sys.getenv "BIGQUIET"); true);
+    with
+    | Not_found -> ());
+  (try
+      defaults.colors <- (ignore (Sys.getenv "BIGNOCOLORS"); false);
     with
     | Not_found -> ());
   (try
@@ -223,6 +236,8 @@ let msg_opt fmt = function
   | Labels _ -> fprintf fmt "@[<hov>Export the labelling function in PRISM csl@ format@ \
 		                    to@ %s.@]" (colorise `underline "FILE")
   | Max _ -> fprintf fmt "@[<hov>Set the maximum number of states.@]"
+  | No_colors -> fprintf fmt "@[<hov>Disable colored output.@ This is@ equivalent to@ setting@ \
+			 $BIGNOCOLORS@ to@ a@ non-empty@ value.@]"
   | Prism _ -> fprintf fmt "@[<hov>Export the transition system in@ PRISM@ tra@ format@ \
 			           to@ %s.@]" (colorise `underline "FILE")
   | Quiet -> fprintf fmt "@[<hov>Disable progress indicator.@ This is@ equivalent to@ setting@ \
@@ -315,18 +330,18 @@ let help_fun fmt l cmd =
   exit 0
        
 let eval_help_check fmt () =
-  let opt_chk = [ Const []; Decs ""; Ext []; Help; Quiet; Verb ] in
+  let opt_chk = [ Const []; Decs ""; Ext []; Help; No_colors; Quiet; Verb ] in
   help_fun fmt opt_chk "validate"
 	   
 let eval_help_full fmt () =
   let opt_full = [ Const []; Decs ""; Ext []; Help;
-		   Labels ""; Max 0; Prism ""; Quiet; States None;
+		   Labels ""; Max 0; No_colors; Prism ""; Quiet; States None;
 		   Graph ""; Verb ] in
   help_fun fmt opt_full "full"
 		 
 let eval_help_sim fmt () =
   let opt_sim  = [ Const []; Decs ""; Ext []; Help;
-		   Labels ""; Prism ""; Quiet; States None;
+		   Labels ""; No_colors; Prism ""; Quiet; States None;
 		   Steps 0; Graph ""; Time 0.0; Verb ] in
   help_fun fmt opt_sim "sim"
 
@@ -346,7 +361,10 @@ let string_of_file = function
 let eval_config fmt () =
   let config_str fmt () =
     let conf =
-      [("consts",
+      [("colors",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%b@]" defaults.colors);
+       ("consts",
 	fun fmt () ->
 	fprintf fmt "@[<hov>%s@]" (match Ast.string_of_consts defaults.consts with
 				   | "" -> "-"

@@ -140,23 +140,20 @@ let define_deg_v f_name m nodes deg_f =
 (* Port arity *)
 let define_port_arity f_name edges =
   let body xs =
-    E.(Link.Lg.fold (fun e (i, acc) ->
-		     Link.PortSet.fold (fun (w, _)) e.p
-
-				       
-		     ite ((List.nth xs 0) = (mk_int i)
-			  && (List.nth xs 1) = (mk_int ))
-			 (mk_int arity)    
-		    )
-		    edges (0, false_)
-       |> snd
-       |> or_) in
+    E.(Link.Lg.foldi (fun i e acc ->
+		      Link.Ports.fold (fun v ar acc ->
+					 ite ((List.nth xs 0) = (mk_int i)
+					      && (List.nth xs 1) = (mk_int v))
+					     (mk_int ar)
+					     acc)
+					e.Link.p acc)
+		     edges false_) in
   define_fun ~f_name
 	     ~dom:int_sort2
 	     ~codom:int_sort
-	     ~names:(declare_symbols ["i"; "w"])
+	     ~names:(declare_symbols ["i"; "v"])
 	     ~body
-	     
+
 let isomorphic_sets p_nodes t_nodes iso =
   IntSet.fold (fun i acc ->
 	       IntSet.fold (fun j acc ->
@@ -233,7 +230,6 @@ let c7 ~p_nodes ~t_nodes ~iso_v =
 			   (* i and j have the same control *)
 			   E.((iso_v @@ [mk_int i]) = (mk_int j)) :: acc)
 			  (Nodes.find_all c t_nodes) []
-
 	      |> E.or_
 	      |> fun x -> x :: acc)
 	     p_nodes []

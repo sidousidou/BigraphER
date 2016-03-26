@@ -86,7 +86,7 @@ true: annot, bin_annot
 <tests/*.ml{,i,y}>: use_junit
 # OASIS_STOP
 
-true: warn(Ae), principal, strict_sequence, safe_string, use_menhir, annot
+true: warn(Ae), principal, strict_sequence, strict_formats, safe_string, use_menhir
 <bin/*.mly>: explain, warn(-4-32-37)
 <lib/smt.ml>: warn(-44)
 <shippable/*>: precious

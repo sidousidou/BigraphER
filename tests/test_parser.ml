@@ -8,7 +8,7 @@ let dec_out path = "-f svg,dot -d " ^ path
 let l_out name = "-l " ^ name ^ ".csl"
 let prism_out name = "-p " ^ name ^ ".tra"
 let ts_out name = "-s -t " ^ name
-let extra_flags = "--debug -M 140"	     
+let extra_flags = "--no-colors --debug -M 140"	     
 let path = "./tests/files"	     
 let ext = ".reference"
 
