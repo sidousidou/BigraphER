@@ -2,8 +2,8 @@
 
 Version 1.0.1
 
-[![Build Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)
-[![Coverage Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)
+[![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/projects/540f670b21c97efdb898a046)
+[![Coverage Badge](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)](https://app.shippable.com/projects/540f670b21c97efdb898a046)
 
 ----------------------------------------------------------------------------
 
