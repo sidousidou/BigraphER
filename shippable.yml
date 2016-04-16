@@ -8,6 +8,10 @@ build:
 #      options: "-e HOME=/root"
 
   ci:
+    - sudo apt-get -qy update
+    - sudo apt-get -qy upgrade
+    - sudo apt-get install clang
+    - opam update -y -u
     - mkdir -p shippable/codecoverage
     - mkdir -p shippable/testresults
     - mkdir -p shippable/linktest
