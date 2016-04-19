@@ -48,6 +48,7 @@ let apply f i =
 
 (* Check if there is a binding for each 0 ... (n - 1) *)
 let is_total n f =
+  assert (n >= 0);
   let rec aux i f =
     if i < 0 then true
     else match apply f i with
@@ -56,5 +57,7 @@ let is_total n f =
   aux (n - 1) f
 
 let check_codom min max f =
+  assert (max >= min);
   let c = codom f in
-  (IntSet.min_elt c >= min) && (IntSet.max_elt c <= max)
+  if IntSet.is_empty c then true
+  else (IntSet.min_elt c >= min) && (IntSet.max_elt c <= max)
