@@ -32,7 +32,8 @@ module Make (R :RrType.T)
       | P_class _ -> false
       | P_rclass _ -> true
 
-    let rewrite b =
+    (* Stop when there are no more classes or when a non reducible class is enabled *)
+    let rewrite b const_pri =
       let rec _rewrite b m = function 
 	| [] -> (b, m)
 	| (P_class rr) :: classes ->
@@ -40,8 +41,10 @@ module Make (R :RrType.T)
             else _rewrite b m classes)
 	| (P_rclass rr) :: classes ->
 	   (let (b', i) = R.fix b rr in
-            _rewrite b' (m + i) classes) in
-      _rewrite b 0
+	    if i = 0
+	    then _rewrite b' (m + i) classes
+	    else _rewrite b' (m + i) const_pri) in
+      _rewrite b 0 const_pri
 
     (* Iterate over priority classes *)
     let scan (b, i) ~part_f ~const_pri =
