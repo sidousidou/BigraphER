@@ -1,3 +1,13 @@
+###1.0.2 (2016-05-20):###
+
+* Use maps to implement ports.
+* Compile with `strict-formats`.
+* Add `--no-colors` flag to disable ANSI colouring in the output.
+* FIX: check codomain of empty instantiation maps.
+* FIX: classes with higher priority are checked again after a reducible class is
+  reduced to the fixpoint.
+
+
 ###1.0.1 (2016-02-08):###
 
 * Use maps instead of hash tables.
@@ -20,7 +30,7 @@
 * Add ground check for `init`.
 * FIX: graphical notation for links.
 * FIX: instantiation maps.
-* FIX: dot default format if graphviz is not available.
+* FIX: `dot` default format if `graphviz` is not available.
 
 
 ###0.7.0 (2015-05-13):###
@@ -41,7 +51,7 @@
 ###0.6.1 (2015-04-24):###
 
 * Install API reference in OPAM.
-* FIX: add menhir dependency in OPAM.
+* FIX: add `menhir` dependency in OPAM.
 * Compile binaries with `-O3`.
 
 

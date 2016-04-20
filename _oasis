@@ -1,6 +1,6 @@
 OASISFormat:	0.4
 Name:		bigrapher
-Version:	1.0.1
+Version:	1.0.2
 Synopsis:	Implementation of bigraphical reactive systems
 Description: BigraphER is an efficient implementation of Bigraphical Reactive
  Systems (BRS) that supports bigraphs with sharing, stochastic reaction rules,
