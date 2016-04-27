@@ -55,12 +55,19 @@ module Make (R : R) = struct
     include R
 
     type react_error =
-      Inter_eq | Lhs_nodes | Lhs_solid | Map_chk | Val_chk
+      Inter_eq_i of Big.inter * Big.inter
+      | Inter_eq_o of Big.inter * Big.inter
+      | Lhs_nodes | Lhs_solid | Map_chk | Val_chk
 
     exception NOT_VALID of react_error
       
     let string_of_react_err = function
-      | Inter_eq -> "Outer interfaces do not match"
+      | Inter_eq_o (i, i')->
+	 ("Outer interfaces " ^ (Big.string_of_inter i)
+	  ^ " and " ^ (Big.string_of_inter i') ^ " do not match")
+      | Inter_eq_i (i, i') ->
+	 ("Inner interfaces" ^ (Big.string_of_inter i)
+	  ^ " and " ^ (Big.string_of_inter i') ^ " do not match")
       | Lhs_nodes -> "Left hand-side has no nodes"
       | Lhs_solid -> "Left hand-side is not solid"
       | Map_chk -> "Instantiation map is not valid"
@@ -94,11 +101,16 @@ module Make (R : R) = struct
     let is_valid_exn r =
       let lhs = lhs r
       and rhs = rhs r in
-      if Big.inter_equal (Big.outer lhs) (Big.outer rhs)
+      let (i, i') = (Big.outer lhs, Big.outer rhs) in
+      if Big.inter_equal i i'
       then if lhs.Big.p.Place.n > 0
 	   then if Big.is_solid lhs
 		then if (match map r with
-      			 | None -> Big.inter_equal (Big.inner lhs) (Big.inner rhs)
+      			 | None ->
+			    (let (i, i') = (Big.inner lhs, Big.inner rhs) in
+			     if Big.inter_equal i i'
+			     then true
+			     else raise (NOT_VALID (Inter_eq_i (i, i'))))
       			 | Some eta ->
       			    (let s_lhs = lhs.Big.p.Place.s
       			     and s_rhs = rhs.Big.p.Place.s in
@@ -110,7 +122,7 @@ module Make (R : R) = struct
 		     else raise (NOT_VALID Map_chk)
 		else raise (NOT_VALID Lhs_solid)
 	   else raise (NOT_VALID Lhs_nodes)
-      else raise (NOT_VALID Inter_eq)
+      else raise (NOT_VALID (Inter_eq_o (i, i')))
 
     let is_enabled b r =
       Big.occurs b (lhs r)
