@@ -912,10 +912,10 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   let (c, d, id) = decomp b r0 i_n i_e f_e in
   match eta with
   | Some eta' ->
-     (let (d', d_id) = decomp_d d (ord_of_inter (inner id)) in
-      ppar (instantiate eta' d') d_id
-      |> comp (tens r1 id)
-      |> comp c)
+     let (d', d_id) = decomp_d d (ord_of_inter (inner id)) in
+     ppar (instantiate eta' d') d_id
+     |> comp (tens r1 id)
+     |> comp c
   | None -> comp c (comp (tens r1 id) d)
 
 let write_svg b ~name ~path =

@@ -457,6 +457,11 @@ let () =
 	      |>  after_sbrs fmt)
 	  | `check -> check fmt)
     with
+    | Place.NOT_PRIME ->
+       (close_progress_bar ();
+	fprintf err_formatter "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
+		Utils.err;
+	exit 1)
     | Sbrs.MAX (ctmc, stats)
     | Sbrs.LIMIT (ctmc, stats) ->
        (close_progress_bar ();
