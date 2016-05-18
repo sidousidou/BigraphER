@@ -2,6 +2,10 @@ language: none
 
 env:
   - OCAML_VERSION=4.02.0
+  - OCAML_VERSION=4.02.1
+  - OCAML_VERSION=4.02.2
+  - OCAML_VERSION=4.02.3
+  - OCAML_VERSION=4.03.0
   - OCAML_VERSION=4.03.0_flambda
 
 build:
