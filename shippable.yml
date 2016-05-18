@@ -1,9 +1,13 @@
 language: none
 
+env:
+  - OCAML_VERSION=4.02.0
+  - OCAML_VERSION=4.03.0_flambda
+
 build:
   pre_ci_boot:
       image_name: mseve/bigrapher-shippable
-      image_tag: latest
+      image_tag: ubuntu_$OCAML_VERSION
       pull: true
 #      options: "-e HOME=/root"
 
@@ -32,5 +36,4 @@ integrations:
       recipients:
         - Michele.Sevegnani@glasgow.ac.uk
       on_success: change
-      on_failure: always 
- 
+      on_failure: always
