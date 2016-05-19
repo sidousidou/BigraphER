@@ -7,7 +7,7 @@ type elt = int
 (** The type of sets. *)	     
 type t
 
-(** {6 Standard set operations} *)	 
+(** {3 Standard set operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
     library}. *)
@@ -37,7 +37,7 @@ val max_elt : t -> elt
 val choose : t -> elt
 val split : elt -> t -> t * bool * t
 
-(** {6 Additional functions} *)
+(** {3 Additional functions} *)
 				     
 (** Return the string representation of a set. Example: ["\{1,4,7\}"]. *)
 val to_string : t -> string

@@ -10,7 +10,7 @@ type +'a t
     generated. *)
 exception NOT_BIJECTIVE
 	 
-(** {6 Standard map operations} *)	 
+(** {3 Standard map operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
@@ -22,7 +22,7 @@ val iter : (int -> int -> unit) -> int t -> unit
 val fold : (int -> int -> 'b -> 'b) -> int t -> 'b -> 'b
 val cardinal : int t -> int
 
-(** {6 Additional functions} *)
+(** {3 Additional functions} *)
 			  
 (** Return the domain of an isomorphism. *)
 val dom : int t -> int list

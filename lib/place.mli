@@ -44,7 +44,7 @@ val leaves : pg -> IntSet.t
 (** Compute the set of nodes with no parents. *)		     
 val orphans : pg -> IntSet.t
 
-(** {6 Elementary place graphs} *)
+(** {3 Elementary place graphs} *)
 
 (** [elementary_id m] computes a place graph in the form of an identity of
     [m]. *)
@@ -74,7 +74,7 @@ val elementary_sym : int -> int -> pg
 (**  An ion. *)
 val elementary_ion : pg
 
-(** {6 Comparison} *)
+(** {3 Comparison} *)
 
 (** [equal_placing a b] returns [true] if placings [a] and [b] are equal.
     Inputs are assumed to be valid placing. No check is performed. *)
@@ -83,7 +83,7 @@ val  equal_placing : pg -> pg -> bool
 (** [compare_placing a b] compares placings [a] and [b]. *)
 val compare_placing : pg -> pg -> int
 
-(** {6 Operations} *)
+(** {3 Operations} *)
 
 (** Raised when a composition between two incompatible place graphs is
     attempted. The two integers are the number of sites and roots involved in
@@ -100,7 +100,7 @@ val tens_of_list : pg list -> pg
     @raise COMP_ERROR when mediating interfaces mismatch. *)
 val comp : pg -> pg -> pg
 
-(** {6 Predicates} *)
+(** {3 Predicates} *)
                                                                         
 (** [is_id p] returns [true] if place graph [p] is an identity, [false]
     otherwise. *)
@@ -125,7 +125,7 @@ val is_epi : pg -> bool
     otherwise. *)
 val is_guard : pg -> bool
 
-(** {6 Decompositions} *)
+(** {3 Decompositions} *)
 
 (** [decomp t p i] computes the decomposition of target [t] given pattern [p]
     and node isomorphism [i] from [p] to [t]. Pattern [p] is assumed epi and
@@ -151,7 +151,7 @@ val prime_components : pg -> (pg * int Iso.t) list
      @raise NOT_PRIME when some root is shared *)					      
 val decomp_d : pg -> int -> pg * pg * int Iso.t * int Iso.t
 					      
-(** {6 Matching constraints} *)
+(** {3 Matching constraints} *)
 
 (** Raised when a node in the pattern cannot be matched to any node in the
     target. *)

@@ -2,7 +2,7 @@
     @author Michele Sevegnani *)
 
 
-(** {6 Faces} *)
+(** {3 Faces} *)
 
 (** The type of names. *)
 type name = Nam of string
@@ -38,7 +38,7 @@ module Face :
     val split : elt -> t -> t * bool * t
   end
 
-(** {6 Ports} *)
+(** {3 Ports} *)
     
 (** This module implements multisets of nodes as maps. *)
 module Ports :
@@ -47,7 +47,7 @@ sig
   type key = int
   type 'a t
 
-  (** {6 Standard operations on maps} *)	   
+  (** {3 Standard operations on maps} *)	   
   val empty : int t
   val is_empty : 'a t -> bool
   val mem : key -> 'a t -> bool
@@ -70,7 +70,7 @@ sig
   val map : ('a -> 'b) -> 'a t -> 'b t
   val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
 					     
-  (** {6 Additional functions} *)
+  (** {3 Additional functions} *)
 					
   (** [to_string s] gives the string representation of port set [s]. For
       example: [\{(0, 0), (1, 3)\}]. *)
@@ -109,7 +109,7 @@ sig
 							    
 end
 
-(** {6 Link graphs} *)
+(** {3 Link graphs} *)
   
 (** The type of edges. *)	
 type edg = {
@@ -180,7 +180,7 @@ val outer : Lg.t -> Face.t
     @raise Not_found when a node is not defined in the iso. *)
 val apply_exn : int Iso.t -> Lg.t -> Lg.t
 
-(** {6 Elementary link graphs} *)
+(** {3 Elementary link graphs} *)
 
 (** [elementary_sub in out] computes a substitution consisting of a
     single edge in which [in] and [out] are the inner and outer face,
@@ -200,7 +200,7 @@ val id_empty : Lg.t
 
 val arities : Lg.t -> int Base.M_int.t
 		 
-(** {6 Operations on link graphs} *)
+(** {3 Operations on link graphs} *)
 
 (** Raised when the tensor product between two incompatible link
     graphs cannot be performed. The first element is the set of inner
@@ -228,7 +228,7 @@ val ppar : Lg.t -> Lg.t -> int-> Lg.t
     differ. *)
 val comp : Lg.t -> Lg.t -> int -> Lg.t
 
-(** {6 Predicates} *)
+(** {3 Predicates} *)
                                                                         
 (** [is_id l] is [true] if link graph [l] is an identity, [false]
     otherwise. *)
@@ -264,7 +264,7 @@ val closed_edges : Lg.t -> int
     graph to indices of edges in [l]. *)
 val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
 
-(** {6 Decompositions} *)
+(** {3 Decompositions} *)
 
 (** [decomp t p i_e i_c i_d f_e] computes the decomposition of target
     [t] given pattern [p], iso [i_e], and isos from nodes in [t] to
@@ -279,7 +279,7 @@ val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t ->
 (** Compute the prime components of a link graph. See {!val:Place.decomp}. *)					    
 val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
 
-(** {6 Matching constraints} *)
+(** {3 Matching constraints} *)
 
 exception NOT_TOTAL
 

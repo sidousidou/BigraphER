@@ -80,7 +80,7 @@ val fix : Big.bg -> react list -> Big.bg * int
     number of rewriting steps performed in the loop. *)
 val rewrite : Big.bg -> p_class list -> Big.bg * int
 						   
-(** {6 Transition systems} *)
+(** {3 Transition systems} *)
 						   
 (** Raised when the size of the transition system reaches the maximum number of
     states. *)
@@ -103,7 +103,7 @@ val bfs : s0:Big.bg ->
 	  iter_f:(int -> Big.bg -> unit) ->
 	  graph * stats
 
-(** {6 Simulation traces} *)
+(** {3 Simulation traces} *)
 						      
 (** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * stats * int
@@ -127,7 +127,7 @@ val sim : s0:Big.bg ->
 	  iter_f:(int -> Big.bg -> unit) ->
 	  graph * stats
 
-(** {6 Export functions} *)
+(** {3 Export functions} *)
 
 (** Compute the string representation in PRISM [tra] format of a transition
     system. *)							    

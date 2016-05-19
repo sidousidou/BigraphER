@@ -4,7 +4,7 @@
 (** Type of binary relations on integers. *)
 type +'a t
 
-(** {6 Standard map operations} *)	 
+(** {3 Standard map operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
@@ -16,7 +16,7 @@ val iter : (int -> IntSet.t -> unit) -> IntSet.t t -> unit
 val fold : (int -> IntSet.t -> 'b -> 'b) -> IntSet.t t -> 'b -> 'b
 val cardinal : IntSet.t t -> int
 
-(** {6 Additional functions} *)
+(** {3 Additional functions} *)
 
 (** Return the domain of a binary relation. *)
 val dom : IntSet.t t -> int list

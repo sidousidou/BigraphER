@@ -1,19 +1,19 @@
 (** This module provides some basic library functions.  
     @author Michele Sevegnani *)
 
-(** {6 Specialised maps} *)
+(** {3 Specialised maps} *)
 
 module M_int : Map.S with type key = int
 
 module M_string : Map.S with type key = String.t
 
-(** {6 Specialised hash tables} *)
+(** {3 Specialised hash tables} *)
 
 module H_int : Hashtbl.S with type key = int
 
 module H_string : Hashtbl.S with type key = string
 					  
-(** {6 Helper functions} *)
+(** {3 Helper functions} *)
 
 (** [safe (Some v)] returns value [v]. Raises an exception on [None].
     @raise Assert_failure when argument is [None]. *)  

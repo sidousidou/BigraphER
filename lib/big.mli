@@ -12,7 +12,7 @@ type bg = {
 type inter = Inter of int * Link.Face.t
 (** [Inter (i,n)] creates an interface with ordinal [i] and names [n]. *)
 
-(** {6 Exceptions} *)
+(** {3 Exceptions} *)
 
 (** Raised when the composition in a sharing expression fails. *)
 exception SHARING_ERROR
@@ -36,7 +36,7 @@ exception NO_MATCH
 (** Raised when the matching pattern has no nodes. *)
 exception NODE_FREE
 
-(** {6 Functions on interfaces} *)
+(** {3 Functions on interfaces} *)
 
 (** Equality over interfaces. *)
 val inter_equal : inter -> inter -> bool
@@ -50,7 +50,7 @@ val ord_of_inter : inter -> int
 (** Compute the face ({e i.e.} name-set) of an interface. *)
 val face_of_inter : inter -> Link.Face.t
 
-(** {6 Functions on bigraphs} *)
+(** {3 Functions on bigraphs} *)
 
 (** Compute the string representation of a bigraph. *)
 val to_string: bg -> string
@@ -88,7 +88,7 @@ val write_dot : bg -> name:string -> path:string -> int
     @raise Export.ERROR when an error occurs. *)
 val write_svg : bg -> name:string -> path:string -> int
 						       
-(** {6 Elementary bigraphs graphs} *)
+(** {3 Elementary bigraphs graphs} *)
 
 (** Identity over interface [i]. *)
 val id : inter -> bg
@@ -141,7 +141,7 @@ val closure : Link.Face.t -> bg
     function is the dual of {!Big.closure}. *)
 val intro : Link.Face.t -> bg
 
-(** {6 Operations} *)
+(** {3 Operations} *)
 
 (** [tens a b] computes the tensor product of bigraphs [a] and [b].
 
@@ -183,7 +183,7 @@ val share : bg -> bg -> bg -> bg
 (** [close f b] closes names in [f]. *)
 val close : Link.Face.t -> bg -> bg
 
-(** {6 Predicates} *)
+(** {3 Predicates} *)
 
 (** [is_id b] returns [true] if bigraph [b] is an identity, [false] otherwise. *)
 val is_id : bg -> bool
@@ -212,7 +212,7 @@ val is_solid : bg -> bool
     otherwise. *)
 val is_ground : bg -> bool
 		       
-(** {6 Decompositions} *)
+(** {3 Decompositions} *)
 
 (** [decomp t p i_v i_e f_e] computes the decomposition of target [t] given
     pattern [p], node isomorphism [i_v] and edge isomorphism [i_e]. The
@@ -225,7 +225,7 @@ val decomp :  bg -> bg -> int Iso.t -> int Iso.t -> int Fun.t ->
 (*(** [levels b] computes the decomposition in levels of [b]. *)
 val levels : bg -> bg list*)
 
-(** {6 Comparison} *)
+(** {3 Comparison} *)
 
 (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise. *)
 val equal : bg -> bg -> bool
@@ -242,7 +242,7 @@ val key : bg -> bg_key
     has already failed. *)
 val equal_opt : bg -> bg -> bool
 
-(** {6 Matching} *)
+(** {3 Matching} *)
 
 (** The type of occurrences: an isomorphism over nodes, an isomorphism
     over edges and a function over hyperedges. *)

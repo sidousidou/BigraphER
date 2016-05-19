@@ -14,7 +14,7 @@ type bmatrix =
     c_major : IntSet.t Base.M_int.t;   (** Column-major order index *)
   }
   
-(** {6 Basic operations} *)
+(** {3 Basic operations} *)
     
 (** [make r c] returns an empty matrix with [r] rows and [c] columns. *) 
 val make : int -> int -> bmatrix
@@ -106,7 +106,7 @@ val add_list : bmatrix -> (int * int) list -> bmatrix
     number of edges in a graph. *)
 val entries : bmatrix -> int
 			 
-(** {6 Matrix operations} *)
+(** {3 Matrix operations} *)
 			     
 (** [row n] returns a row vector of [n] [true] elements. *)			     
 val row : int -> bmatrix
@@ -183,7 +183,7 @@ val mul : bmatrix -> bmatrix -> bmatrix
 (** Transitive closure. *)
 val trans : bmatrix -> bmatrix
 
-(** {6 Graph operations} *)
+(** {3 Graph operations} *)
 
 (** Return the children set of a node. *)			 
 val chl : bmatrix -> int -> IntSet.t
