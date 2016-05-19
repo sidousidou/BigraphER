@@ -19,8 +19,6 @@ build:
     - sudo apt-get -qy update
     - sudo apt-get -qy upgrade
     - opam update -y -u
-    - mkdir -p shippable/codecoverage
-    - mkdir -p shippable/testresults
     - mkdir -p shippable/linktest
     - mkdir -p shippable/svg
     - mkdir -p shippable/parser
