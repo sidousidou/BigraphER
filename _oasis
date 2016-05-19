@@ -97,7 +97,8 @@ Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
   Authors:	   Michele Sevegnani
-  BuildTools+: 	   ocamldoc
+  BuildTools+: 	   ocamldoc 
+  Install:         true
   Format:	   html
   Index:	   API.html
   Abstract:
@@ -108,7 +109,7 @@ Document bigraph_api
        reactive systems with rule priorities. 
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
-  XOCamlbuildExtraArgs: "-docflags '-colorize-code -short-functors -charset utf-8'"
+  XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -charset utf-8'"
   
 Library "junit"
   Path:            tests
