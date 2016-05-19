@@ -9220,5 +9220,7 @@ code.code {
   color: #cec47f;
 }
 
-
+h3 + br {
+  display: none;
+}
 
