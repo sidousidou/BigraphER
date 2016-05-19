@@ -88,7 +88,7 @@ val write_dot : bg -> name:string -> path:string -> int
     @raise Export.ERROR when an error occurs. *)
 val write_svg : bg -> name:string -> path:string -> int
 						       
-(** {3 Elementary bigraphs graphs} *)
+(** {3 Elementary bigraphs} *)
 
 (** Identity over interface [i]. *)
 val id : inter -> bg
