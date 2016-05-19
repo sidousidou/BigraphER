@@ -10,8 +10,8 @@ env:
 
 build:
   pre_ci_boot:
-      image_name: mseve/bigrapher-shippable
-      image_tag: ubuntu_$OCAML_VERSION
+      image_name: mseve/bigrapher
+      image_tag: shippable_ubuntu_$OCAML_VERSION
       pull: true
 #      options: "-e HOME=/root"
 
