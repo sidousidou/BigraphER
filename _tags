@@ -87,5 +87,6 @@ true: annot, bin_annot
 # OASIS_STOP
 
 true: warn(Ae), principal, strict_sequence, strict_formats, safe_string, use_menhir, annot, optimize(3)
-<bin/*.ml{,i,y}>: explain, warn(-4-32-37)
+<bin/parser.mly>: explain, strict
+<bin/parser.ml{i}>: warn(-4-32-37)
 <shippable/*>: precious

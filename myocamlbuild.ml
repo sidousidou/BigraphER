@@ -808,4 +808,5 @@ let dispatch_default = MyOCamlbuildBase.dispatch_default conf package_default;;
 
 # 810 "myocamlbuild.ml"
 (* OASIS_STOP *)
+flag ["ocaml"; "menhir"; "strict"] (A "--strict"); 
 Ocamlbuild_plugin.dispatch dispatch_default;;
