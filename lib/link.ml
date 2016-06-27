@@ -136,7 +136,7 @@ module Ports =
     let inter a b =
       List.fold_left (fun (acc, b') (c, n) ->
 		      match List.partition (fun (c', n') ->
-					    Ctrl.(c = c') && n' >= n)
+					    Ctrl.(=) c c' && n' >= n)
 					   b' with
 		      | ([], _) -> (acc, b')
 		      | (_ :: l, l') -> 
