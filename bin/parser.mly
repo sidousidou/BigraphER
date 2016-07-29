@@ -29,7 +29,9 @@ open Cmd
 %token            BRS
 %token            ENDBRS
 %token            SBRS
-%token            ENDSBRS 
+%token            ENDSBRS
+%token		  MERGE
+%token		  SPLIT
 (* %token            SORT TRUE FALSE NOT *)
 %token            SHARE
 %token            BY
@@ -307,6 +309,8 @@ bexp:
 simple_bexp:
   | LPAR bexp RPAR                          { $2                                          } 
   | id_exp                                  { Big_id $1                                   }
+  | merge_exp                               { $1                                          } 
+  | split_exp                               { $1                                          }
   | closure                                 { Big_close $1                                }
   | CINT                                    { Big_num ($1, loc $startpos $endpos)         }
   | LCBR IDE RCBR                           { Big_new_name ($2, loc $startpos $endpos)    }
@@ -317,20 +321,32 @@ simple_bexp:
   | ion_exp DOT simple_bexp                 { Big_nest ($1, $3, loc $startpos $endpos)    };
 
 id_exp:
-  | ID                                      { { id_place = 1;
+  | ID o_delim_int_1                        { { id_place = $2;
 						id_link = [];
 						id_loc = loc $startpos $endpos; } } 
   | ID LCBR ide_list RCBR                   { { id_place = 0;
 						id_link = $3;
-						id_loc = loc $startpos $endpos; } }
-  | ID LPAR CINT RPAR                       { { id_place = $3;
-						id_link = [];
 						id_loc = loc $startpos $endpos; } }
   | ID LPAR CINT COMMA LCBR ide_list RCBR RPAR  
                                             { { id_place = $3;
 						id_link = $6;
 						id_loc = loc $startpos $endpos; } };
 
+merge_exp:
+  | MERGE o_delim_int_2                     { Big_merge ($2, loc $startpos $endpos) };
+
+split_exp:
+  | SPLIT o_delim_int_2                     { Big_split ($2, loc $startpos $endpos) };
+
+o_delim_int_1:
+  n = option(delimited(LPAR,CINT,RPAR))     { match n with
+                                               | None -> 1
+					       | Some n -> n };
+
+o_delim_int_2:
+  n = option(delimited(LPAR,CINT,RPAR))     { match n with
+                                               | None -> 2
+					       | Some n -> n };
 ion_exp:
   | CIDE                                    { Big_ion_exp ($1, [], loc $startpos $endpos)         }
   | CIDE LCBR ide_list RCBR                 { Big_ion_exp ($1, $3, loc $startpos $endpos)         }	

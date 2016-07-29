@@ -605,6 +605,8 @@ let rec eval_big (exp : big_exp) (scope : scope)
   | Big_id exp ->
      (Big.id (Big.Inter (exp.id_place, Link.parse_face (exp.id_link))),
       env_t)
+  | Big_merge (n, _) -> (Big.merge n, env_t)
+  | Big_split (n, _) -> (Big.split n, env_t)
   | Big_plc exp ->
      (Big.placing exp.plc_parents exp.plc_roots Link.Face.empty,
       env_t)

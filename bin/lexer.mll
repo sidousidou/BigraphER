@@ -77,7 +77,9 @@ rule token =  parse
   | "share"                 { SHARE }
   | "by"                    { BY }
   | "in"                    { IN }
-  | "id"                    { ID } 
+  | "id"                    { ID }
+  | "merge"		    { MERGE }
+  | "split"                 { SPLIT }
   | ":"                     { COLON }
   | ";"                     { SEMICOLON }
   | "="                     { EQUAL }  

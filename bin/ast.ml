@@ -84,6 +84,8 @@ type big_exp =
   | Big_share of big_exp * big_exp * big_exp * Loc.t        (* share A by psi in B *)
   | Big_num of int * Loc.t                                  (* 0 or 1 *)
   | Big_id of id_exp                                        (*id, id(1), id(3, {a, c, f}) *)
+  | Big_merge of int * Loc.t
+  | Big_split of int * Loc.t
   | Big_plc of place_exp
   | Big_nest of ion_exp * big_exp * Loc.t                   (* A . B *)
   | Big_ion of ion_exp                                      
@@ -222,7 +224,8 @@ let loc_of_big_exp = function
   | Big_var (_, p) | Big_var_fun (_, _, p) | Big_new_name (_, p)
   | Big_comp (_, _, p) | Big_tens (_, _, p) | Big_par (_, _, p)
   | Big_ppar (_, _, p) | Big_share (_, _, _, p) | Big_num (_, p)
-  | Big_nest (_, _, p) | Big_closures (_, _, p) -> p
+  | Big_nest (_, _, p) | Big_closures (_, _, p) | Big_merge (_, p)
+  | Big_split (_, p) -> p
   | Big_id e -> e.id_loc 
   | Big_plc e -> e.plc_loc
   | Big_ion e -> loc_of_ion_exp e
