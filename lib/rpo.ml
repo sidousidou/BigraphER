@@ -1,4 +1,6 @@
 
+(* let rootPrnt v pg iso Maybe better bMatrix rather than pg so we can use it for nodes and sites *) 
+
 let makeSet iso =
   IntSet.of_list (Iso.codom iso)
  
@@ -14,6 +16,7 @@ let rpo a0 iso_a0 a1 iso_a1 d0 iso_d0 d1 iso_d1 =
   let vb0 = IntSet.diff va1 va0 in
   let vb1 = IntSet.diff va0 va1 in
   let vb = IntSet.inter vd0 vd1 in
+  let mHat = [] in (* Using a list should be easier than a set of sets *)
   (* Only dummy code for compilation *)
   3 + 4
   
