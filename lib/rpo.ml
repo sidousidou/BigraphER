@@ -21,6 +21,7 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
   let vb0 = IntSet.diff va1 (Iso.codom i_a0_a1 |> IntSet.of_list) in  (* identifiers in a1 *)
   let vb1 = IntSet.diff va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* identifiers in a0 *)
   let vb = IntSet.inter vd0 (Iso.dom i_d0_d1 |> IntSet.of_list) in (* identifiers in d0 *)
+  let mHat = [] in (* Using a list should be easier than a set of sets *)
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
