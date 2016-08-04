@@ -65,7 +65,7 @@ Library bigraph
   XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems  
   Install:	   true
 
-Executable rpo-test
+Executable "rpo-test"
   Path:	lib
   MainIs:         rpo.ml
   CompiledObject: best
