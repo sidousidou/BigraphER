@@ -10,7 +10,15 @@ let node_sets b =
 
 (* Give the root parent set of a node (either empty set or singleton) *)
 let rootPrntN n b =
-  Sparse.prn b.Big.p.Place.rn n
+  let prntSet = Sparse.prn b.Big.p.Place.rn n in
+  if IntSet.equal prntSet IntSet.empty then None
+  else Some (IntSet.choose prntSet)
+
+(* As before but for sites rather than nodes *)
+let rootPrntS s b =
+  let prntSet = Sparse.prn b.Big.p.Place.rs s in
+  if IntSet.equal prntSet IntSet.empty then None
+  else Some (IntSet.choose prntSet)
 
                  
 (* RPO algorithm *)
@@ -28,10 +36,18 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
   let vb1 = IntSet.diff va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* identifiers in a0 *)
   let vb = IntSet.inter vd0 (Iso.dom i_d0_d1 |> IntSet.of_list) in (* identifiers in d0 *)
   (* Using a list of sets is easier than a set of sets. Start with the individual nodes *)
-  let rInd0 = IntSet.fold (fun i acc -> rootPrntN i (fst a) |> IntSet.union acc) vb1 IntSet.empty in
-  let rInd1 = IntSet.fold (fun i acc -> rootPrntN i (snd a) |> IntSet.union acc) vb0 IntSet.empty in
+  let rInd0 = IntSet.fold (fun i acc -> 
+                             match (rootPrntN i (fst a)) with
+                             | None -> acc
+                             | Some r -> IntSet.add r acc) 
+                          vb1 IntSet.empty in
+  let rInd1 = IntSet.fold (fun i acc -> 
+                             match (rootPrntN i (snd a)) with
+                             | None -> acc
+                             | Some r -> IntSet.add r acc)
+                          vb0 IntSet.empty in
   let mHatInd = IntSet.fold (fun i acc -> TupleSet.singleton (1,i) :: acc ) rInd1
-                  (IntSet.fold (fun i acc -> TupleSet.singleton (0,i) :: acc ) rInd0 []) in
+                   (IntSet.fold (fun i acc -> TupleSet.singleton (0,i) :: acc ) rInd0 []) in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
