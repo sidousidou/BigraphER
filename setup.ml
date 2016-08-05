@@ -7174,6 +7174,7 @@ let setup_t =
                            "Iso";
                            "Rel";
                            "Sparse";
+                           "TupleSet";
                            "RrType";
                            "PriType";
                            "TsType";

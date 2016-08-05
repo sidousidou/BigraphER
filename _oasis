@@ -53,6 +53,7 @@ Library bigraph
                    Iso,
                    Rel,
                    Sparse,
+                   TupleSet,
                    RrType,
                    PriType,
                    TsType,
