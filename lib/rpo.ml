@@ -48,6 +48,7 @@ let rec listPos ?(acc=0) l set =
   match l with
   | hd :: tl -> if (TupleSet.equal set hd) then acc else listPos ~acc:(acc+1) tl set
   | [] -> raise NOT_RESIDENT
+  
                  
 (* RPO algorithm *)
 (* The isomorphism are as follows:
@@ -102,7 +103,16 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                             let prnt = rootEqui mHat (1,i) in
                             if TupleSet.equal TupleSet.empty prnt then acc
                             else Sparse.add (listPos mHat prnt) i acc) 
-                          m1 (Sparse.make (List.length mHat) (IntSet.cardinal m1)) in 
+                          m1 (Sparse.make (List.length mHat) (IntSet.cardinal m1)) in
+  let (_,i_a0_b1) = IntSet.fold (fun i (c, acc) -> ((c+1), (Iso.add_exn i c acc)))
+                             vb1 (0, Iso.empty) in
+  let (_,i_a1_b0) = IntSet.fold (fun i (c, acc) -> ((c+1), (Iso.add_exn i c acc)))
+                             vb0 (0, Iso.empty) in
+  let i_d0_b0 = IntSet.fold (fun i acc -> Iso.add_exn i (Iso.apply_exn i_d0_a1 i |> Iso.apply_exn i_a1_b0) acc) 
+                            (Iso.dom i_d0_a1 |> IntSet.of_list) Iso.empty in
+  let i_d1_b1 = IntSet.fold (fun i acc -> Iso.add_exn i 
+                               (let inv = Iso.inverse i_a0_d1 in Iso.apply_exn inv i |> Iso.apply_exn i_a0_b1) acc) 
+                            (Iso.codom i_a0_d1 |> IntSet.of_list) Iso.empty in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
