@@ -33,6 +33,13 @@ let rec drop_value l to_drop =
     let new_tl = drop_value tl to_drop in
     if hd = to_drop then new_tl else hd :: new_tl
 
+let joinSets (r0, r1) acc = (* Lines 18 to 28 of pseudo code *)
+  let s = rootEqui acc (0,r0) in
+  let t = rootEqui acc (1,r1) in
+  let redAcc = drop_value (drop_value acc t) s in
+  let newS = if (TupleSet.equal s TupleSet.empty) then TupleSet.singleton (0,r0) else s in
+  let newT = if (TupleSet.equal t TupleSet.empty) then TupleSet.singleton (1,r1) else t in
+  (TupleSet.union newS newT) :: redAcc
                  
 (* RPO algorithm *)
 (* The isomorphism are as follows:
@@ -44,6 +51,8 @@ let rec drop_value l to_drop =
 let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
   let (va0, va1) = node_sets a in
   let (vd0, vd1) = node_sets d in
+  let h = IntSet.of_int ((fst a).Big.p.Place.s) in
+  let p = IntSet.of_int ((fst d).Big.p.Place.r) in
   (* Now to the actual algorithm *)
   let vb0 = IntSet.diff va1 (Iso.codom i_a0_a1 |> IntSet.of_list) in  (* identifiers in a1 *)
   let vb1 = IntSet.diff va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* identifiers in a0 *)
@@ -64,15 +73,14 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
   let vShared = IntSet.inter va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* Shared nodes -with ids from a1- *)
   let mHatSharedV = IntSet.fold (fun i acc ->
                                    match ((rootPrntN i (fst a), rootPrntN (Iso.apply_exn i_a0_a1 i) (snd a))) with
-                                   | (Some r0, Some r1) -> 
-                                     let s = rootEqui acc (0,r0) in
-                                     let t = rootEqui acc (1,r1) in
-                                     let redAcc = drop_value (drop_value acc t) s in
-                                     let newS = if (TupleSet.equal s TupleSet.empty) then TupleSet.singleton (0,r0) else s in
-                                     let newT = if (TupleSet.equal t TupleSet.empty) then TupleSet.singleton (1,r1) else t in
-                                     (TupleSet.union newS newT) :: redAcc 
+                                   | (Some r0, Some r1) -> joinSets (r0, r1) acc 
                                    | _ -> acc)
-                    vShared mHatInd in
+                                 vShared mHatInd in
+  let mHatShared = IntSet.fold (fun i acc ->
+                                   match ((rootPrntS i (fst a), rootPrntS i (snd a))) with
+                                   | (Some r0, Some r1) -> joinSets (r0, r1) acc 
+                                   | _ -> acc)
+                    h mHatSharedV in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
