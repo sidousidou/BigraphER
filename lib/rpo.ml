@@ -20,6 +20,19 @@ let rootPrntS s b =
   if IntSet.equal prntSet IntSet.empty then None
   else Some (IntSet.choose prntSet)
 
+let rec rootEqui mHat tuple =
+  match mHat with
+  | hd :: tl -> if (TupleSet.mem tuple hd) then hd else (rootEqui tl tuple) 
+  | [] -> TupleSet.empty
+
+(* From Real World OCaml book, page 51. Drops value of list *)
+let rec drop_value l to_drop =
+  match l with
+  | [] -> []
+  | hd :: tl ->
+    let new_tl = drop_value tl to_drop in
+    if hd = to_drop then new_tl else hd :: new_tl
+
                  
 (* RPO algorithm *)
 (* The isomorphism are as follows:
@@ -48,6 +61,18 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                           vb0 IntSet.empty in
   let mHatInd = IntSet.fold (fun i acc -> TupleSet.singleton (1,i) :: acc ) rInd1
                    (IntSet.fold (fun i acc -> TupleSet.singleton (0,i) :: acc ) rInd0 []) in
+  let vShared = IntSet.inter va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* Shared nodes -with ids from a1- *)
+  let mHatSharedV = IntSet.fold (fun i acc ->
+                                   match ((rootPrntN i (fst a), rootPrntN (Iso.apply_exn i_a0_a1 i) (snd a))) with
+                                   | (Some r0, Some r1) -> 
+                                     let s = rootEqui acc (0,r0) in
+                                     let t = rootEqui acc (1,r1) in
+                                     let redAcc = drop_value (drop_value acc t) s in
+                                     let newS = if (TupleSet.equal s TupleSet.empty) then TupleSet.singleton (0,r0) else s in
+                                     let newT = if (TupleSet.equal t TupleSet.empty) then TupleSet.singleton (1,r1) else t in
+                                     (TupleSet.union newS newT) :: redAcc 
+                                   | _ -> acc)
+                    vShared mHatInd in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
