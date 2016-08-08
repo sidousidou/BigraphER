@@ -3,6 +3,8 @@ type bound = Big.bg * Big.bg
 
 type rpo = Big.bg * Big.bg * Big.bg
 
+exception NOT_RESIDENT
+
 (* Sets of node identifiers {0, ..., size - 1} for a bound *)                 
 let node_sets b =
   let aux b f = IntSet.of_int ((f b).Big.n.Nodes.size)
@@ -40,6 +42,12 @@ let joinSets (r0, r1) acc = (* Lines 18 to 28 of pseudo code *)
   let newS = if (TupleSet.equal s TupleSet.empty) then TupleSet.singleton (0,r0) else s in
   let newT = if (TupleSet.equal t TupleSet.empty) then TupleSet.singleton (1,r1) else t in
   (TupleSet.union newS newT) :: redAcc
+
+(* Returns the integer position in which the set resides *)
+let rec listPos ?(acc=0) l set =
+  match l with
+  | hd :: tl -> if (TupleSet.equal set hd) then acc else listPos ~acc:(acc+1) tl set
+  | [] -> raise NOT_RESIDENT
                  
 (* RPO algorithm *)
 (* The isomorphism are as follows:
@@ -71,16 +79,16 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
   let mHatInd = IntSet.fold (fun i acc -> TupleSet.singleton (1,i) :: acc ) rInd1
                    (IntSet.fold (fun i acc -> TupleSet.singleton (0,i) :: acc ) rInd0 []) in
   let vShared = IntSet.inter va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* Shared nodes -with ids from a1- *)
-  let mHatSharedV = IntSet.fold (fun i acc ->
-                                   match ((rootPrntN i (fst a), rootPrntN (Iso.apply_exn i_a0_a1 i) (snd a))) with
-                                   | (Some r0, Some r1) -> joinSets (r0, r1) acc 
-                                   | _ -> acc)
-                                 vShared mHatInd in
   let mHatShared = IntSet.fold (fun i acc ->
-                                   match ((rootPrntS i (fst a), rootPrntS i (snd a))) with
-                                   | (Some r0, Some r1) -> joinSets (r0, r1) acc 
-                                   | _ -> acc)
-                    h mHatSharedV in
+                                  match ((rootPrntN i (fst a), rootPrntN (Iso.apply_exn i_a0_a1 i) (snd a))) with
+                                  | (Some r0, Some r1) -> joinSets (r0, r1) acc 
+                                  | _ -> acc)
+                                vShared mHatInd in
+  let mHat = IntSet.fold (fun i acc ->
+                            match ((rootPrntS i (fst a), rootPrntS i (snd a))) with
+                            | (Some r0, Some r1) -> joinSets (r0, r1) acc 
+                            | _ -> acc)
+                          h mHatShared in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
