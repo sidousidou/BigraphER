@@ -61,6 +61,8 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
   let (vd0, vd1) = node_sets d in
   let h = IntSet.of_int ((fst a).Big.p.Place.s) in
   let p = IntSet.of_int ((fst d).Big.p.Place.r) in
+  let m0 = IntSet.of_int ((fst a).Big.p.Place.r) in
+  let m1 = IntSet.of_int ((snd a).Big.p.Place.r) in
   (* Now to the actual algorithm *)
   let vb0 = IntSet.diff va1 (Iso.codom i_a0_a1 |> IntSet.of_list) in  (* identifiers in a1 *)
   let vb1 = IntSet.diff va0 (Iso.dom i_a0_a1 |> IntSet.of_list) in (* identifiers in a0 *)
@@ -89,6 +91,18 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                             | (Some r0, Some r1) -> joinSets (r0, r1) acc 
                             | _ -> acc)
                           h mHatShared in
+
+  (* Second page Pseudo Code *)
+  let b0RS = IntSet.fold (fun i acc ->
+                            let prnt = rootEqui mHat (0,i) in
+                            if TupleSet.equal TupleSet.empty prnt then acc
+                            else Sparse.add (listPos mHat prnt) i acc) 
+                          m0 (Sparse.make (List.length mHat) (IntSet.cardinal m0)) in 
+  let b1RS = IntSet.fold (fun i acc ->
+                            let prnt = rootEqui mHat (1,i) in
+                            if TupleSet.equal TupleSet.empty prnt then acc
+                            else Sparse.add (listPos mHat prnt) i acc) 
+                          m1 (Sparse.make (List.length mHat) (IntSet.cardinal m1)) in 
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
