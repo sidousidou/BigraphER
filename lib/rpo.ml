@@ -121,6 +121,16 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                             if List.mem n (Iso.dom i_d1_b1) then Sparse.add (Iso.apply_exn i_d1_b1 n) s acc 
                             else acc)
                           (snd d).Big.p.Place.ns (Sparse.make (IntSet.cardinal vb1) (IntSet.cardinal m1)) in
+  let b0RN = IntSet.fold (fun i acc -> 
+                            match (rootPrntN i (fst a)) with
+                            | Some r -> Sparse.add (listPos mHat (rootEqui mHat (1,r))) (Iso.apply_exn i_a1_b0 i) acc
+                            | None -> acc)
+                          vb0 (Sparse.make (List.length mHat) (IntSet.cardinal vb0)) in
+  let b1RN = IntSet.fold (fun i acc -> 
+                            match (rootPrntN i (fst a)) with
+                            | Some r -> Sparse.add (listPos mHat (rootEqui mHat (0,r))) (Iso.apply_exn i_a0_b1 i) acc
+                            | None -> acc)
+                          vb1 (Sparse.make (List.length mHat) (IntSet.cardinal vb1)) in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
