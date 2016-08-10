@@ -148,13 +148,22 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                               Iso.add_exn i (Iso.apply_exn inv i |> Iso.apply_exn i_d0_b) acc)
                             (Iso.codom i_d0_d1 |> IntSet.of_list) Iso.empty in 
   let bRS = List.fold_right (fun t acc -> 
-                              let (i,r) = TupleSet.choose t in
-                              let b = (if i==0 then (fst d) else (snd d)) in
-                              let is = (if i==0 then i_d0_b else i_d1_b) in
-                              match rootPrntS r b with
-                              | Some par -> Sparse.add par (Iso.apply_exn is r) acc 
-                              | None -> acc)
-                            mHat (Sparse.make (IntSet.cardinal p) (List.length mHat)) in
+                               let (i,r) = TupleSet.choose t in
+                               let b = (if i==0 then (fst d) else (snd d)) in
+                               match rootPrntS r b with
+                               | Some par -> Sparse.add par (listPos mHat t) acc 
+                               | None -> acc)
+                             mHat (Sparse.make (IntSet.cardinal p) (List.length mHat)) in
+  let bNS = List.fold_right (fun t acc -> 
+                               let (i,r) = TupleSet.choose t in
+                               let b = (if i==0 then (fst d) else (snd d)) in
+                               let is = (if i==0 then i_d0_b else i_d1_b) in
+                               IntSet.fold (fun n acc -> 
+                                            if List.mem n (Iso.dom is) 
+                                              then Sparse.add (Iso.apply_exn is n) (listPos mHat t) acc
+                                            else acc)
+                               (Sparse.prn b.Big.p.Place.ns r) acc)
+                            mHat (Sparse.make (IntSet.cardinal vb) (List.length mHat)) in
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
