@@ -173,6 +173,9 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                            IntSet.fold (fun par acc -> Sparse.add (Iso.apply_exn i_d0_b par) (Iso.apply_exn i_d0_b n) acc)
                                   (Sparse.prn (fst d).Big.p.Place.nn n) acc)
                          vb (Sparse.make (IntSet.cardinal vb) (IntSet.cardinal vb)) in
+  let placeB0 = (List.length mHat, IntSet.cardinal vb0, IntSet.cardinal m0, b0RN, b0RS, b0NN, b0NS) in 
+  let placeB1 = (List.length mHat, IntSet.cardinal vb1, IntSet.cardinal m1, b1RN, b1RS, b1NN, b1NS) in 
+  let placeB = (IntSet.cardinal p, IntSet.cardinal vb, List.length mHat, bRN, bRS, bNN, bNS) in 
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
