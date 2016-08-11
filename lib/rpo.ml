@@ -173,9 +173,30 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
                            IntSet.fold (fun par acc -> Sparse.add (Iso.apply_exn i_d0_b par) (Iso.apply_exn i_d0_b n) acc)
                                   (Sparse.prn (fst d).Big.p.Place.nn n) acc)
                          vb (Sparse.make (IntSet.cardinal vb) (IntSet.cardinal vb)) in
-  let placeB0 = (List.length mHat, IntSet.cardinal vb0, IntSet.cardinal m0, b0RN, b0RS, b0NN, b0NS) in 
-  let placeB1 = (List.length mHat, IntSet.cardinal vb1, IntSet.cardinal m1, b1RN, b1RS, b1NN, b1NS) in 
-  let placeB = (IntSet.cardinal p, IntSet.cardinal vb, List.length mHat, bRN, bRS, bNN, bNS) in 
+  let placeB0 = {
+      Place.r = List.length mHat; 
+      Place.n = IntSet.cardinal vb0; 
+      Place.s = IntSet.cardinal m0; 
+      Place.rn = b0RN;
+      Place.rs = b0RS; 
+      Place.nn = b0NN; 
+      Place.ns = b0NS} in 
+  let placeB1 = {
+      Place.r = List.length mHat; 
+      Place.n = IntSet.cardinal vb1; 
+      Place.s = IntSet.cardinal m1; 
+      Place.rn = b1RN;
+      Place.rs = b1RS; 
+      Place.nn = b1NN; 
+      Place.ns = b1NS} in 
+  let placeB = {
+      Place.r = IntSet.cardinal p; 
+      Place.n = IntSet.cardinal vb; 
+      Place.s = List.length mHat; 
+      Place.rn = bRN;
+      Place.rs = bRS; 
+      Place.nn = bNN; 
+      Place.ns = bNS} in 
   (* Only dummy code for compilation *)
   (Big.id_eps, Big.id_eps, Big.id_eps)
 
