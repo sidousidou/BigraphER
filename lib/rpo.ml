@@ -62,6 +62,10 @@ let rec listPos ?(acc=0) l set =
    - i_d0_d1: d0 -> d1
  *)
 let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
+  assert (Big.is_epi (fst a));
+  assert (Big.is_epi (snd a));
+  assert (Big.is_epi (fst d));
+  assert (Big.is_epi (snd d));
   let (va0, va1) = node_sets a in
   let (vd0, _) = node_sets d in
   let h = IntSet.of_int ((fst a).Big.p.Place.s) in
@@ -345,8 +349,11 @@ let () =
   assert (Big.equal (Big.comp d0 a0) (Big.comp d1 a1));
   assert (Big.equal (Big.comp b b0) d0);
   assert (Big.equal (Big.comp b b1) d1);
+  assert (Big.is_epi b0);
+  assert (Big.is_epi b1);
+  assert (Big.is_epi b);
   let (b0', b1', b') = rpo (a0, a1) (d0, d1) i_a i_a' i_d i_d' in
-  assert (Big.equal b0 b0');
+  assert (Big.equal b0 b0'); (* If equal then b0' has to be epi too *)
   assert (Big.equal b1 b1');
   assert (Big.equal b b');
   print_endline "Test OK"
