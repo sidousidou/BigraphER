@@ -293,9 +293,35 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
       rn = bRN;
       rs = bRS; 
       nn = bNN; 
-      ns = bNS} in 
-  (* Only dummy code for compilation *)
-  (Big.id_eps, Big.id_eps, Big.id_eps)
+      ns = bNS} in
+  let nodesB0 =
+       Nodes.fold
+          (fun nd ct acc ->
+             if List.mem nd (Iso.dom i_d0_b0)
+                then Nodes.add (Iso.apply_exn i_d0_b0 nd) ct acc
+             else acc)
+          (fst d).Big.n
+          Nodes.empty in 
+  let nodesB1 =
+       Nodes.fold
+          (fun nd ct acc ->
+             if List.mem nd (Iso.dom i_d1_b1)
+                then Nodes.add (Iso.apply_exn i_d1_b1 nd) ct acc
+             else acc)
+          (snd d).Big.n
+          Nodes.empty in 
+  let nodesB =
+       Nodes.fold
+          (fun nd ct acc ->
+             if List.mem nd (Iso.dom i_d0_b)
+                then Nodes.add (Iso.apply_exn i_d0_b nd) ct acc
+             else acc)
+          (fst d).Big.n
+          Nodes.empty in 
+  (* And return the calculated result *)
+  ({Big.p = placeB0; l = Link.id_empty; n = nodesB0}, 
+  {Big.p = placeB1; l = Link.id_empty; n = nodesB1}, 
+  {Big.p = placeB; l = Link.id_empty; n = nodesB})
 
 
 
