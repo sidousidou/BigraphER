@@ -120,7 +120,6 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
              | _ -> acc)
           h 
           mHatShared in
-
   (* Second page Pseudo Code *)
   let b0RS = 
        IntSet.fold 
@@ -209,12 +208,12 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
           (Sparse.make (IntSet.cardinal vb0) (IntSet.cardinal vb0)) in
   let b1NN = 
        Sparse.fold 
-          (fun nP nC acc -> 
+          (fun nP nC acc ->
              if List.mem nP (Iso.dom i_d1_b1) 
                then Sparse.add (Iso.apply_exn i_d1_b1 nP) 
                                (Iso.apply_exn i_d1_b1 nC) acc 
              else acc)
-          (snd d).Big.p.Place.ns 
+          (snd d).Big.p.Place.nn 
           (Sparse.make (IntSet.cardinal vb1) (IntSet.cardinal vb1)) in
   let (_, i_d0_b) = 
        IntSet.fold 
@@ -335,17 +334,103 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
 (* Run tests here *)
 let () =
   print_endline "Tests for RPO algorithm";
-  let a0 = Big.id_eps 
-  and a1 = Big.id_eps
-  and d0 = Big.id_eps
-  and d1 = Big.id_eps
-  and b0 = Big.id_eps
-  and b1 = Big.id_eps
-  and b =  Big.id_eps
+  let id n = Big.id (Big.Inter (n, Link.Face.empty))
+  and node ct = (Big.ion (Link.Face.empty) (Ctrl.C (ct, 0)))
+  and atom ct = (Big.atom (Link.Face.empty) (Ctrl.C (ct, 0))) in
+  
+  let d0' = Big.share
+    (Big.ppar
+      (node "V1")
+      (node "V2"))
+    (Big.placing [[0;1];[1;2]] 3 Link.Face.empty)
+    (Big.ppar
+      (Big.ppar
+        (id 1)
+        (node "V3"))
+      (node "V5"))
+  and d1' = Big.ppar
+    (Big.share
+      (Big.ppar
+        (Big.nest
+          (node "V1")
+          (node "V0"))
+        (id 1))
+      (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+      (Big.ppar
+        (id 1)
+        (node "V3")))
+    (id 1)
+  and b_ = Big.ppar
+    (Big.share
+      (Big.ppar
+        (node "V1")
+        (id 1))
+      (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+      (Big.ppar
+        (id 1)
+        (node "V3")))
+    (id 1) in
+ 
+  let a0 = Big.ppar
+    (node "V0")
+    (id 1)
+  and a1 = Big.ppar
+    (id 1)
+    (Big.share
+      (node "V2")
+      (Big.placing [[0;1]] 2 Link.Face.empty)
+      (Big.ppar
+        (id 1)
+        (node "V5")))
+  and d0 = Big.comp
+    (Big.share
+      (id 3)
+      (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+      (Big.par
+        (node "V6")
+        (node "V4")))
+    d0'
+  and d1 = Big.comp
+    (Big.share
+      (id 3)
+      (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+      (Big.par
+        (node "V6")
+        (node "V4")))
+    d1'
+  and b0 = Big.ppar
+    (id 1)
+    (Big.share
+      (node "V2")
+      (Big.placing [[0;1]] 2 Link.Face.empty)
+      (Big.ppar
+        (id 1)
+        (node "V5")))
+  and b1 = Big.ppar
+    (node "V0")
+    (id 2)
+  and b = Big.comp
+    (Big.share
+      (id 3)
+      (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+      (Big.par
+        (node "V6")
+        (node "V4")))
+    b_
   and i_a = Iso.of_list_exn []
-  and i_a' = Iso.of_list_exn []
-  and i_d = Iso.of_list_exn []
-  and i_d' = Iso.of_list_exn [] in
+  and i_a' = Iso.of_list_exn [(0,4)]
+  and i_d = Iso.of_list_exn [(5,1);(3,0)]
+  and i_d' = Iso.of_list_exn [(0,0);(1,1);(2,2);(4,3)]
+  
+  and path = "../repository/BigraphER_API_Samples/bigrapher02" in
+
+  ignore (Big.write_svg a0 ~name:"A0Input.svg" ~path:path);
+  ignore (Big.write_svg a1 ~name:"A1Input.svg" ~path:path);
+  ignore (Big.write_svg d0 ~name:"D0Input.svg" ~path:path);
+  ignore (Big.write_svg d1 ~name:"D1Input.svg" ~path:path);
+  ignore (Big.write_svg b0 ~name:"B0Expected.svg" ~path:path);
+  ignore (Big.write_svg b1 ~name:"B1Expected.svg" ~path:path);
+  ignore (Big.write_svg b ~name:"BExpected.svg" ~path:path);
   assert (Big.equal (Big.comp d0 a0) (Big.comp d1 a1));
   assert (Big.equal (Big.comp b b0) d0);
   assert (Big.equal (Big.comp b b1) d1);
@@ -353,8 +438,13 @@ let () =
   assert (Big.is_epi b1);
   assert (Big.is_epi b);
   let (b0', b1', b') = rpo (a0, a1) (d0, d1) i_a i_a' i_d i_d' in
-  assert (Big.equal b0 b0'); (* If equal then b0' has to be epi too *)
-  assert (Big.equal b1 b1');
-  assert (Big.equal b b');
+  assert (Big.is_epi b0');
+  assert (Big.is_epi b1');
+  assert (Big.is_epi b');
+  assert (Big.equal (Big.comp b b0) (Big.comp b0' b'));
+  assert (Big.equal (Big.comp b b1) (Big.comp b1' b'));
+  ignore (Big.write_svg b0' ~name:"B0Actual.svg" ~path:path);
+  ignore (Big.write_svg b1' ~name:"B1Actual.svg" ~path:path);
+  ignore (Big.write_svg b' ~name:"BActual.svg" ~path:path);
   print_endline "Test OK"
                 
