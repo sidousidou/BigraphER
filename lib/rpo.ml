@@ -338,91 +338,105 @@ let () =
   and node ct = (Big.ion (Link.Face.empty) (Ctrl.C (ct, 0)))
   and atom ct = (Big.atom (Link.Face.empty) (Ctrl.C (ct, 0))) in
   
-  let d0' = Big.share
+  let d1' = Big.share
+    (id 3)
+    (Big.placing [[0];[0;1;2];[1;2]] 3 Link.Face.empty)
     (Big.ppar
-      (node "V1")
-      (node "V2"))
-    (Big.placing [[0;1];[1;2]] 3 Link.Face.empty)
+      (Big.par
+        (atom "V4")
+        (node "V5"))
+      (Big.par
+        (node "V6")
+        (node "V7")))
+  and b' = Big.ppar
     (Big.ppar
-      (Big.ppar
-        (id 1)
-        (node "V3"))
-      (node "V5"))
-  and d1' = Big.ppar
-    (Big.share
-      (Big.ppar
-        (Big.nest
-          (node "V1")
-          (node "V0"))
-        (id 1))
-      (Big.placing [[0;1];[1]] 2 Link.Face.empty)
-      (Big.ppar
-        (id 1)
-        (node "V3")))
-    (id 1)
-  and b_ = Big.ppar
-    (Big.share
-      (Big.ppar
-        (node "V1")
-        (id 1))
-      (Big.placing [[0;1];[1]] 2 Link.Face.empty)
-      (Big.ppar
-        (id 1)
-        (node "V3")))
-    (id 1) in
- 
+      (Big.par
+        (atom "V4")
+        (id 2))
+      (Big.zero))
+    (Big.par
+      (node "V6")
+      (id 1)) in
+
   let a0 = Big.ppar
-    (node "V0")
-    (id 1)
-  and a1 = Big.ppar
     (id 1)
     (Big.share
-      (node "V2")
-      (Big.placing [[0;1]] 2 Link.Face.empty)
       (Big.ppar
-        (id 1)
-        (node "V5")))
-  and d0 = Big.comp
-    (Big.share
-      (id 3)
-      (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+        (Big.ppar
+          (node "V0")
+          (node "V1"))
+        (atom "V2"))
+      (Big.placing [[0;1];[1;2;3];[2;3]] 4 Link.Face.empty)
+      (Big.ppar
+        (Big.ppar
+          (Big.ppar
+            (id 1)
+            (node "V5"))
+          (id 1))
+        (node "V7")))
+  and a1 = Big.share
+    (Big.ppar
+      (Big.ppar
+        (Big.ppar
+          (id 1)
+          (node "V0"))
+        (node "V1"))
+      (atom "V2"))
+    (Big.placing [[0];[0;1];[2];[3]] 4 Link.Face.empty)
+    (Big.ppar
+      (node "V3")
+      (id 3))
+  and d0 = Big.ppar
+    (Big.par
       (Big.par
-        (node "V6")
-        (node "V4")))
-    d0'
+        (Big.nest
+          (node "V3")
+          (Big.par
+            (id 1)
+            (id 1)))
+        (atom "V4"))
+      (id 1))
+    (Big.par
+      (node "V6")
+      (id 1))
   and d1 = Big.comp
-    (Big.share
-      (id 3)
-      (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+    (Big.ppar
       (Big.par
-        (node "V6")
-        (node "V4")))
-    d1'
+        (id 1)
+        (id 1))
+      (id 1))
+    (Big.ppar
+      (id 1)
+      d1')
   and b0 = Big.ppar
+    (Big.share
+      (id 2)
+      (Big.placing [[0];[0;1]] 2 Link.Face.empty)
+      (Big.ppar
+        (node "V3")
+        (id 1)))
+    (id 3)
+  and b1 = Big.ppar
     (id 1)
     (Big.share
-      (node "V2")
-      (Big.placing [[0;1]] 2 Link.Face.empty)
-      (Big.ppar
-        (id 1)
-        (node "V5")))
-  and b1 = Big.ppar
-    (node "V0")
-    (id 2)
-  and b = Big.comp
-    (Big.share
       (id 3)
-      (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
-      (Big.par
-        (node "V6")
-        (node "V4")))
-    b_
-  and i_a = Iso.of_list_exn []
-  and i_a' = Iso.of_list_exn [(0,4)]
-  and i_d = Iso.of_list_exn [(5,1);(3,0)]
-  and i_d' = Iso.of_list_exn [(0,0);(1,1);(2,2);(4,3)]
-  
-  and path = "../repository/BigraphER_API_Samples/bigrapher02" in
+      (Big.placing [[0;1];[1;2;3];[2;3]] 4 Link.Face.empty)
+      (Big.ppar
+        (Big.ppar
+          (Big.ppar
+            (id 1)
+            (node "V5"))
+          (id 1))
+        (node "V7")))
+  and b = Big.comp
+    b'
+    (Big.placing [[0];[2];[1];[3];[4]] 5 Link.Face.empty)
+  and i_a = Iso.of_list_exn [(2,1);(3,2);(4,3)]
+  and i_a' = Iso.of_list_exn [(0,1);(1,3)]
+  and i_d = Iso.of_list_exn [(0,0)]
+  and i_d' = Iso.of_list_exn [(1,0);(2,2)]
+
+  and path = "../repository/BigraphER_API_Samples/bigrapher01" in
 
   ignore (Big.write_svg a0 ~name:"A0Input.svg" ~path:path);
   ignore (Big.write_svg a1 ~name:"A1Input.svg" ~path:path);

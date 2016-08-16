@@ -1,3 +1,10 @@
+(** This module provides a function to find a RPO in
+    a bound of epimorphic place graphs.
+    This module has been written within an EPSRC funded
+    research summer internship.
+    Co-author and supervisior: Michele Sevegnani
+    @author W. David Frohlingsdorf*)
+
 type bound = Big.bg * Big.bg
 type rpo = Big.bg * Big.bg * Big.bg
                         
