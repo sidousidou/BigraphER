@@ -2,11 +2,12 @@
     a bound of epimorphic place graphs.
     This module has been written within an EPSRC funded
     research summer internship.
-    Co-author and supervisior: Michele Sevegnani
+
     @author W. David Frohlingsdorf*)
 
-type bound = Big.bg * Big.bg
-type rpo = Big.bg * Big.bg * Big.bg
-                        
+type bound = Big.bg * Big.bg 
+type rpo = bound * Big.bg
+type rpo_match = int Iso.t * int Iso.t * int Iso.t * int Iso.t
+
 (** Four bigraphs Ai and Di as well as isomporphisms for each to denote the node to node relations **)
-val rpo: bound -> bound -> int Iso.t -> int Iso.t -> int Iso.t -> int Iso.t -> rpo
+val rpo: bound -> bound -> rpo_match -> rpo

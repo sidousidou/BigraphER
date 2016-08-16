@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: c21f9fd121c15117858a62c5185d4bf2)
+# DO NOT EDIT (digest: 7b50872284a675b3f999d5505b089b5c)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -21,16 +21,9 @@ true: annot, bin_annot
 <lib/*.ml{,i,y}>: oasis_library_bigraph_byte
 <lib/bigraph.{cma,cmxa}>: oasis_library_bigraph_native
 <lib/*.ml{,i,y}>: oasis_library_bigraph_native
-# Executable rpo-test
-<lib/*.ml{,i,y}>: oasis_executable_rpo_test_ccopt
-<lib/rpo.{native,byte}>: package(minisat)
-<lib/rpo.{native,byte}>: package(str)
-<lib/rpo.{native,byte}>: package(unix)
-<lib/rpo.{native,byte}>: use_bigraph
 <lib/*.ml{,i,y}>: package(minisat)
 <lib/*.ml{,i,y}>: package(str)
 <lib/*.ml{,i,y}>: package(unix)
-<lib/*.ml{,i,y}>: use_bigraph
 # Library bigraph-utils
 "utils/bigraph-utils.cmxs": use_bigraph-utils
 <utils/*.ml{,i,y}>: oasis_library_bigraph_utils_ccopt
@@ -82,14 +75,21 @@ true: annot, bin_annot
 <tests/test_parser.{native,byte}>: use_bigraph
 <tests/test_parser.{native,byte}>: use_bigraph-utils
 <tests/test_parser.{native,byte}>: use_junit
-<tests/*.ml{,i,y}>: package(minisat)
-<tests/*.ml{,i,y}>: package(str)
-<tests/*.ml{,i,y}>: use_bigraph
-<tests/*.ml{,i,y}>: use_bigraph-utils
 # Executable cobertura
 <tests/cobertura.{native,byte}>: package(unix)
 <tests/cobertura.{native,byte}>: use_junit
+# Executable rpo-test
+<tests/test_rpo.{native,byte}>: package(minisat)
+<tests/test_rpo.{native,byte}>: package(str)
+<tests/test_rpo.{native,byte}>: package(unix)
+<tests/test_rpo.{native,byte}>: use_bigraph
+<tests/test_rpo.{native,byte}>: use_bigraph-utils
+<tests/test_rpo.{native,byte}>: use_junit
+<tests/*.ml{,i,y}>: package(minisat)
+<tests/*.ml{,i,y}>: package(str)
 <tests/*.ml{,i,y}>: package(unix)
+<tests/*.ml{,i,y}>: use_bigraph
+<tests/*.ml{,i,y}>: use_bigraph-utils
 <tests/*.ml{,i,y}>: use_junit
 # OASIS_STOP
 

@@ -1,8 +1,10 @@
 
 type bound = Big.bg * Big.bg
 
-type rpo = Big.bg * Big.bg * Big.bg
+type rpo = bound * Big.bg
 
+type rpo_match = int Iso.t * int Iso.t * int Iso.t * int Iso.t
+                               
 exception NOT_RESIDENT
 
 (* Sets of node identifiers {0, ..., size - 1} for a bound *)                 
@@ -61,7 +63,7 @@ let rec listPos ?(acc=0) l set =
    - i_d0_a1: d0 -> a1 
    - i_d0_d1: d0 -> d1
  *)
-let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
+let rpo a d (i_a0_a1, i_a0_d1, i_d0_a1, i_d0_d1) =
   assert (Big.is_epi (fst a));
   assert (Big.is_epi (snd a));
   assert (Big.is_epi (fst d));
@@ -322,143 +324,7 @@ let rpo a d i_a0_a1 i_a0_d1 i_d0_a1 i_d0_d1 =
           (fst d).Big.n
           Nodes.empty in 
   (* And return the calculated result *)
-  ({Big.p = placeB0; l = Link.id_empty; n = nodesB0}, 
-  {Big.p = placeB1; l = Link.id_empty; n = nodesB1}, 
-  {Big.p = placeB; l = Link.id_empty; n = nodesB})
-
-
-
-
-
-
-(* Run tests here *)
-let () =
-  print_endline "Tests for RPO algorithm";
-  let id n = Big.id (Big.Inter (n, Link.Face.empty))
-  and node ct = (Big.ion (Link.Face.empty) (Ctrl.C (ct, 0)))
-  and atom ct = (Big.atom (Link.Face.empty) (Ctrl.C (ct, 0))) in
-  
-  let d1' = Big.share
-    (id 3)
-    (Big.placing [[0];[0;1;2];[1;2]] 3 Link.Face.empty)
-    (Big.ppar
-      (Big.par
-        (atom "V4")
-        (node "V5"))
-      (Big.par
-        (node "V6")
-        (node "V7")))
-  and b' = Big.ppar
-    (Big.ppar
-      (Big.par
-        (atom "V4")
-        (id 2))
-      (Big.zero))
-    (Big.par
-      (node "V6")
-      (id 1)) in
-
-  let a0 = Big.ppar
-    (id 1)
-    (Big.share
-      (Big.ppar
-        (Big.ppar
-          (node "V0")
-          (node "V1"))
-        (atom "V2"))
-      (Big.placing [[0;1];[1;2;3];[2;3]] 4 Link.Face.empty)
-      (Big.ppar
-        (Big.ppar
-          (Big.ppar
-            (id 1)
-            (node "V5"))
-          (id 1))
-        (node "V7")))
-  and a1 = Big.share
-    (Big.ppar
-      (Big.ppar
-        (Big.ppar
-          (id 1)
-          (node "V0"))
-        (node "V1"))
-      (atom "V2"))
-    (Big.placing [[0];[0;1];[2];[3]] 4 Link.Face.empty)
-    (Big.ppar
-      (node "V3")
-      (id 3))
-  and d0 = Big.ppar
-    (Big.par
-      (Big.par
-        (Big.nest
-          (node "V3")
-          (Big.par
-            (id 1)
-            (id 1)))
-        (atom "V4"))
-      (id 1))
-    (Big.par
-      (node "V6")
-      (id 1))
-  and d1 = Big.comp
-    (Big.ppar
-      (Big.par
-        (id 1)
-        (id 1))
-      (id 1))
-    (Big.ppar
-      (id 1)
-      d1')
-  and b0 = Big.ppar
-    (Big.share
-      (id 2)
-      (Big.placing [[0];[0;1]] 2 Link.Face.empty)
-      (Big.ppar
-        (node "V3")
-        (id 1)))
-    (id 3)
-  and b1 = Big.ppar
-    (id 1)
-    (Big.share
-      (id 3)
-      (Big.placing [[0;1];[1;2;3];[2;3]] 4 Link.Face.empty)
-      (Big.ppar
-        (Big.ppar
-          (Big.ppar
-            (id 1)
-            (node "V5"))
-          (id 1))
-        (node "V7")))
-  and b = Big.comp
-    b'
-    (Big.placing [[0];[2];[1];[3];[4]] 5 Link.Face.empty)
-  and i_a = Iso.of_list_exn [(2,1);(3,2);(4,3)]
-  and i_a' = Iso.of_list_exn [(0,1);(1,3)]
-  and i_d = Iso.of_list_exn [(0,0)]
-  and i_d' = Iso.of_list_exn [(1,0);(2,2)]
-
-  and path = "../repository/BigraphER_API_Samples/bigrapher01" in
-
-  ignore (Big.write_svg a0 ~name:"A0Input.svg" ~path:path);
-  ignore (Big.write_svg a1 ~name:"A1Input.svg" ~path:path);
-  ignore (Big.write_svg d0 ~name:"D0Input.svg" ~path:path);
-  ignore (Big.write_svg d1 ~name:"D1Input.svg" ~path:path);
-  ignore (Big.write_svg b0 ~name:"B0Expected.svg" ~path:path);
-  ignore (Big.write_svg b1 ~name:"B1Expected.svg" ~path:path);
-  ignore (Big.write_svg b ~name:"BExpected.svg" ~path:path);
-  assert (Big.equal (Big.comp d0 a0) (Big.comp d1 a1));
-  assert (Big.equal (Big.comp b b0) d0);
-  assert (Big.equal (Big.comp b b1) d1);
-  assert (Big.is_epi b0);
-  assert (Big.is_epi b1);
-  assert (Big.is_epi b);
-  let (b0', b1', b') = rpo (a0, a1) (d0, d1) i_a i_a' i_d i_d' in
-  assert (Big.is_epi b0');
-  assert (Big.is_epi b1');
-  assert (Big.is_epi b');
-  assert (Big.equal (Big.comp b b0) (Big.comp b0' b'));
-  assert (Big.equal (Big.comp b b1) (Big.comp b1' b'));
-  ignore (Big.write_svg b0' ~name:"B0Actual.svg" ~path:path);
-  ignore (Big.write_svg b1' ~name:"B1Actual.svg" ~path:path);
-  ignore (Big.write_svg b' ~name:"BActual.svg" ~path:path);
-  print_endline "Test OK"
-                
+  (({Big.p = placeB0; l = Link.id_empty; n = nodesB0}, 
+    {Big.p = placeB1; l = Link.id_empty; n = nodesB1}), 
+   {Big.p = placeB; l = Link.id_empty; n = nodesB})
+    
