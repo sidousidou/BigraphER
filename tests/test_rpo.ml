@@ -49,10 +49,113 @@ let do_tests =
 let () =
   print_endline "test_rpo";
   Printexc.record_backtrace true;
+  let id n = Big.id (Big.Inter (n, Link.Face.empty))
+  and node ct = (Big.ion (Link.Face.empty) (Ctrl.C (ct, 0)))
+  and atom ct = (Big.atom (Link.Face.empty) (Ctrl.C (ct, 0))) in
   let bgs =
     (* ((a0, a1), (d0, d1), (b0, b1, b), isos) *)
-    (* (int * Rpo.bound * Rpo.bound * Rpo.rpo * (int Iso.t * ....))*)
-    [   ] in
+    (* (Rpo.bound * Rpo.bound * Rpo.rpo * (int Iso.t * ....))*)
+    [((******** TEST 1 ********)
+       (                          (* A Bound *)
+         (Big.ppar                (* A0 *)
+           (id 1)
+           (Big.share
+             (Big.ppar
+               (Big.ppar
+                 (node "V0")
+                 (node "V1"))
+               (atom "V2"))
+             (Big.placing [[0;1];[1;2;3];[2;3]] 4 Link.Face.empty)
+             (Big.ppar
+               (Big.ppar
+                 (Big.ppar
+                   (id 1)
+                   (node "V5"))
+                 (id 1))
+               (node "V7")))),
+         (Big.share               (* A1 *)
+           (Big.ppar
+             (Big.ppar
+               (Big.ppar
+                 (id 1)
+                 (node "V0"))
+               (node "V1"))
+             (atom "V2"))
+           (Big.placing [[0];[0;1];[2];[3]] 4 Link.Face.empty)
+           (Big.ppar
+             (node "V3")
+             (id 3)))),
+       (                          (* D Bound *)
+         (Big.ppar                (* D0 *)
+           (Big.par
+             (Big.par
+               (Big.nest
+                 (node "V3")
+                 (Big.par
+                   (id 1)
+                   (id 1)))
+               (atom "V4"))
+             (id 1))
+           (Big.par
+             (node "V6")
+             (id 1))),
+         (Big.comp                (* D1 *)
+           (Big.ppar
+             (Big.par
+               (id 1)
+               (id 1))
+             (id 1))
+           (Big.ppar
+             (id 1)
+             (Big.share
+               (id 3)
+               (Big.placing [[0];[0;1;2];[1;2]] 3 Link.Face.empty)
+               (Big.ppar
+                 (Big.par
+                   (atom "V4")
+                   (node "V5"))
+                 (Big.par
+                   (node "V6")
+                   (node "V7"))))))),
+       (                          (* Expected RPO *)
+         (Big.ppar                (* B0 *)
+           (Big.share
+             (id 2)
+             (Big.placing [[0];[0;1]] 2 Link.Face.empty)
+             (Big.ppar
+               (node "V3")
+               (id 1)))
+           (id 3)),
+         (Big.ppar                (* B1 *)
+           (id 1)
+           (Big.share
+             (id 3)
+             (Big.placing [[0;1];[1;2;3];[2;3]] 4 Link.Face.empty)
+             (Big.ppar
+               (Big.ppar
+                 (Big.ppar
+                   (id 1)
+                   (node "V5"))
+               (id 1))
+             (node "V7")))),
+         (Big.comp                (* B *)
+           (Big.ppar
+             (Big.ppar
+               (Big.par
+                 (atom "V4")
+                 (id 2))
+               (Big.zero))
+             (Big.par
+               (node "V6")
+               (id 1)))
+           (Big.placing [[0];[2];[1];[3];[4]] 5 Link.Face.empty))),
+       (                          (* ISOS *)  
+         (Iso.of_list_exn [(2,1);(3,2);(4,3)]),
+         (Iso.of_list_exn [(0,1);(1,3)]),
+         (Iso.of_list_exn [(0,0)]),
+         (Iso.of_list_exn [(1,0);(2,2)])))
+
+] in
   let testcases =
     List.length bgs
     |> IntSet.of_int

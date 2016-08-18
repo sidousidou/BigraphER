@@ -326,5 +326,5 @@ let rpo a d (i_a0_a1, i_a0_d1, i_d0_a1, i_d0_d1) =
   (* And return the calculated result *)
   (({Big.p = placeB0; l = Link.id_empty; n = nodesB0}, 
     {Big.p = placeB1; l = Link.id_empty; n = nodesB1}), 
-   {Big.p = placeB; l = Link.id_empty; n = nodesB})
+    {Big.p = placeB; l = Link.id_empty; n = nodesB})
     
