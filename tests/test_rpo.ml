@@ -310,6 +310,33 @@ let () =
          (Iso.of_list_exn []),
          (Iso.of_list_exn [(0,0);(2,1);(3,2);(4,3);(5,5)]),
          (Iso.of_list_exn [(1,0)]))
+     );
+
+     (                            (********** TEST 4 **********)
+
+       (                          (* A bound *)
+         (Big.ppar                (* A0 *)
+           (Big.merge 2)
+           (Big.merge 2)),
+         (Big.ppar                (* A1 *)
+           (Big.merge 3)
+           (id 1))),
+       (                          (* D bound *)
+         (Big.nest                (* D0 *)
+           (node "V0")
+           (Big.merge 2)),
+         (Big.nest                (* D1 *)
+           (node "V0")
+           (Big.merge 2))),
+       (                          (* Expected RPO *)
+         (Big.merge 2),           (* B0 *)
+         (Big.merge 2),           (* B1 *)
+         (node "V0")),            (* B *)
+       (                          (* ISOS *)
+         (Iso.of_list_exn []),
+         (Iso.of_list_exn []),
+         (Iso.of_list_exn []),
+         (Iso.of_list_exn [(0,0)]))
      )
 
 ] in
