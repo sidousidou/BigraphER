@@ -20,7 +20,18 @@ let attr_epi = [("type", "ASSERT_RPO");
 let do_tests =
   List.map (fun (n, (a, d, b, isos)) ->
       try
-        let b' = Rpo.rpo a d isos in
+        let b' = Rpo.rpo a d isos
+        and path = "shippable/svg/rpoTest" ^ n in
+        ignore (Big.write_svg (fst a) ~name:"A0Input.svg" ~path:path);
+        ignore (Big.write_svg (snd a) ~name:"A1Input.svg" ~path:path);
+        ignore (Big.write_svg (fst d) ~name:"D0Input.svg" ~path:path);
+        ignore (Big.write_svg (snd d) ~name:"D1Input.svg" ~path:path);
+        ignore (Big.write_svg (fst (fst b)) ~name:"B0Expected.svg" ~path:path);
+        ignore (Big.write_svg (snd (fst b)) ~name:"B1Expected.svg" ~path:path);
+        ignore (Big.write_svg (snd b) ~name:"BExpected.svg" ~path:path);
+        ignore (Big.write_svg (fst (fst b')) ~name:"B0Actual.svg" ~path:path);
+        ignore (Big.write_svg (snd (fst b')) ~name:"B1Actual.svg" ~path:path);
+        ignore (Big.write_svg (snd b') ~name:"BActual.svg" ~path:path);
         if test_rpo_comp a d b b' then
           if test_rpo_epi b' then
 	    (n,
