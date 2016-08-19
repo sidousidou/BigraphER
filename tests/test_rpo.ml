@@ -56,7 +56,7 @@ let () =
     (* ((a0, a1), (d0, d1), (b0, b1, b), isos) *)
     (* (Rpo.bound * Rpo.bound * Rpo.rpo * (int Iso.t * ....))*)
 
-    [(                            (********** TEST 1 **********)
+    [(                            (********** TEST 0 (Sample 1) **********)
 
        (                          (* A Bound *)
          (Big.ppar                (* A0 *)
@@ -158,7 +158,7 @@ let () =
          (Iso.of_list_exn [(1,0);(2,2)]))
      );
 
-     (                            (********** TEST 2 **********)
+     (                            (********** TEST 1 (Sample 2) **********)
 
        (                          (* A bound *)
          (Big.ppar                (* A0 *)
@@ -245,7 +245,7 @@ let () =
          (Iso.of_list_exn [(0,0);(1,1);(2,2);(4,3)]))
      );
 
-     (                           (********** TEST 3 **********)
+     (                           (********** TEST 2 (Sample 3) **********)
        
        (                         (* A Bound *)
          (Big.ppar               (* A0 *)
@@ -312,7 +312,7 @@ let () =
          (Iso.of_list_exn [(1,0)]))
      );
 
-     (                            (********** TEST 4 **********)
+     (                            (********** TEST 3 (Sample 4) **********)
 
        (                          (* A bound *)
          (Big.ppar                (* A0 *)
@@ -337,8 +337,119 @@ let () =
          (Iso.of_list_exn []),
          (Iso.of_list_exn []),
          (Iso.of_list_exn [(0,0)]))
-     )
+     );
 
+     (                            (********** TEST 4 (Sample 5) **********)
+
+       (                          (* A bound *)
+         (Big.comp                (* A0 *)
+           (Big.share
+             (id 3)
+             (Big.placing [[0];[1;2];[3]] 4 Link.Face.empty)
+             (Big.ppar
+               (Big.par
+                 (id 1)
+                 (node "V2"))
+               (id 2)))
+           (Big.ppar
+             (node "V0")
+             (Big.share
+               (id 2)
+               (Big.placing [[0];[0;1]] 2 Link.Face.empty)
+               (Big.ppar
+                 (node "V1")
+                 (id 1))))),
+         (Big.ppar                (* A1 *)
+           (id 1)
+           (Big.comp
+             (Big.share
+               (id 3)
+               (Big.placing [[0];[1;2];[2]] 3 Link.Face.empty)
+               (Big.ppar
+                 (id 2)
+                 (node "V7")))
+             (Big.comp
+               (Big.share
+                 (id 2)
+                 (Big.placing [[0;1];[2]] 3 Link.Face.empty)
+                 (Big.ppar
+                   (Big.ppar
+                     (id 1)
+                     (node "V3"))
+                   (id 1)))
+               (Big.share
+                 (id 2)
+                 (Big.placing [[0];[0;1]] 2 Link.Face.empty)
+                 (Big.ppar
+                   (node "V1")
+                   (node "V4"))))))),
+       (                          (* D bound *)
+         (Big.ppar                (* D0 *)
+           (Big.ppar
+             (node "V5")
+             (atom "V6"))
+           (Big.share
+             (Big.ppar
+               (node "V3")
+               (node "V4"))
+             (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+             (Big.ppar
+               (id 1)
+               (node "V7")))),
+         (Big.ppar                (* D1 *)
+           (Big.ppar
+             (Big.nest
+               (node "V5")
+               (Big.par
+                 (node "V0")
+                 (node "V2")))
+             (atom "V6"))
+           (id 2))),
+       (                          (* Expected RPO *)
+         (Big.comp                (* B0 *)
+           (Big.ppar
+             (id 2)
+             (Big.share
+               (id 2)
+               (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+               (Big.ppar
+                 (id 1)
+                 (node "V7"))))
+           (Big.ppar
+             (Big.ppar
+               (id 1)
+               (Big.share
+                 (id 1)
+                 (Big.placing [[0;1]] 2 Link.Face.empty)
+                 (Big.ppar
+                   (id 1)
+                   (node "V3"))))
+             (node "V4"))),
+         (Big.ppar                (* B1 *)
+           (Big.share
+             (Big.ppar
+               (node "V0")
+               (id 1))
+             (Big.placing [[0];[1;2]] 3 Link.Face.empty)
+             (Big.ppar
+               (Big.par
+                 (id 1)
+                 (node "V2"))
+               (id 1)))
+           (id 2)),
+         (Big.ppar                (* B *)
+           (Big.ppar
+             (Big.ppar
+               (node "V5")
+               (atom "V6"))
+             (Big.zero))
+           (id 2))),
+       (                          (* ISOS *)
+         (Iso.of_list_exn [(2,2)]),
+         (Iso.of_list_exn [(1,1);(0,2)]),
+         (Iso.of_list_exn [(3,1);(4,3);(2,0)]),
+         (Iso.of_list_exn [(0,0);(1,3)]))
+     )
 ] in
   let testcases =
     List.length bgs
