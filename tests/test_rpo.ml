@@ -55,7 +55,9 @@ let () =
   let bgs =
     (* ((a0, a1), (d0, d1), (b0, b1, b), isos) *)
     (* (Rpo.bound * Rpo.bound * Rpo.rpo * (int Iso.t * ....))*)
-    [((******** TEST 1 ********)
+
+    [(                            (********** TEST 1 **********)
+
        (                          (* A Bound *)
          (Big.ppar                (* A0 *)
            (id 1)
@@ -153,7 +155,94 @@ let () =
          (Iso.of_list_exn [(2,1);(3,2);(4,3)]),
          (Iso.of_list_exn [(0,1);(1,3)]),
          (Iso.of_list_exn [(0,0)]),
-         (Iso.of_list_exn [(1,0);(2,2)])))
+         (Iso.of_list_exn [(1,0);(2,2)])));
+
+     (                            (********** TEST 2 **********)
+
+       (                          (* A bound *)
+         (Big.ppar                (* A0 *)
+           (node "V0")
+           (id 1)),
+         (Big.ppar                (* A1 *)
+           (id 1)
+           (Big.share
+             (node "V2")
+             (Big.placing [[0;1]] 2 Link.Face.empty)
+             (Big.ppar
+               (id 1)
+               (node "V5"))))),
+       (                          (* D bound *)
+         (Big.comp                (* D0 *)
+           (Big.share
+             (id 3)
+             (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+             (Big.par
+               (node "V6")
+               (node "V4")))
+           (Big.share
+             (Big.ppar
+               (node "V1")
+               (node "V2"))
+             (Big.placing [[0;1];[1;2]] 3 Link.Face.empty)
+             (Big.ppar
+               (Big.ppar
+                 (id 1)
+                 (node "V3"))
+               (node "V5")))),
+         (Big.comp                (* D1 *)
+           (Big.share
+             (id 3)
+             (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+             (Big.par
+               (node "V6")
+               (node "V4")))
+           (Big.ppar
+             (Big.share
+               (Big.ppar
+                 (Big.nest
+                   (node "V1")
+                   (node "V0"))
+                 (id 1))
+               (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+               (Big.ppar
+                 (id 1)
+                 (node "V3")))
+             (id 1)))),
+       (                          (* Expected RPO *)
+         (Big.ppar                (* B0 *)
+           (id 1)
+           (Big.share
+             (node "V2")
+             (Big.placing [[0;1]] 2 Link.Face.empty)
+             (Big.ppar
+               (id 1)
+               (node "V5")))),
+         (Big.ppar                (* B1 *)
+           (node "V0")
+           (id 2)),
+         (Big.comp                (* B *)
+           (Big.share
+             (id 3)
+             (Big.placing [[0];[0;1];[1]] 2 Link.Face.empty)
+             (Big.par
+               (node "V6")
+               (node "V4")))
+           (Big.ppar
+             (Big.share
+               (Big.ppar
+                 (node "V1")
+                 (id 1))
+               (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+               (Big.ppar
+                 (id 1)
+                 (node "V3")))
+             (id 1)))),
+       (                          (* ISOS *)
+         (Iso.of_list_exn []),
+         (Iso.of_list_exn [(0,4)]),
+         (Iso.of_list_exn [(5,1);(3,0)]),
+         (Iso.of_list_exn [(0,0);(1,1);(2,2);(4,3)]))
+     )
 
 ] in
   let testcases =
