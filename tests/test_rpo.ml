@@ -155,7 +155,8 @@ let () =
          (Iso.of_list_exn [(2,1);(3,2);(4,3)]),
          (Iso.of_list_exn [(0,1);(1,3)]),
          (Iso.of_list_exn [(0,0)]),
-         (Iso.of_list_exn [(1,0);(2,2)])));
+         (Iso.of_list_exn [(1,0);(2,2)]))
+     );
 
      (                            (********** TEST 2 **********)
 
@@ -242,6 +243,73 @@ let () =
          (Iso.of_list_exn [(0,4)]),
          (Iso.of_list_exn [(5,1);(3,0)]),
          (Iso.of_list_exn [(0,0);(1,1);(2,2);(4,3)]))
+     );
+
+     (                           (********** TEST 3 **********)
+       
+       (                         (* A Bound *)
+         (Big.ppar               (* A0 *)
+           (node "V0")
+           (id 1)),
+         (Big.share               (* A1 *)
+           (Big.ppar
+             (Big.nest
+               (node "V1")
+               (node "V0"))
+             (node "V2"))
+           (Big.placing [[0;1];[1;2]] 3 Link.Face.empty)
+           (Big.ppar
+             (Big.ppar
+               (node "V6")
+               (node "V3"))
+             (node "V5")))),
+       (                          (* D Bound *)
+         (Big.comp                (* D0 *)
+           (Big.share
+             (id 3)
+             (Big.placing [[0];[1];[1]] 2 Link.Face.empty)
+             (Big.par
+               (node "V6")
+               (node "V4")))
+           (Big.share
+             (Big.ppar
+               (node "V1")
+               (node "V2"))
+             (Big.placing [[0;1];[1;2]] 3 Link.Face.empty)
+             (Big.ppar
+               (Big.ppar
+                 (id 1)
+                 (node "V3"))
+               (node "V5")))),
+         (Big.share               (* D1 *)
+           (id 3)
+           (Big.placing [[0];[1];[1]] 2 Link.Face.empty)
+           (Big.par
+             (id 1)
+             (node "V4")))),
+       (                          (* Expected RPO *)
+         (Big.share               (* B0 *)
+           (Big.ppar
+             (node "V1")
+             (node "V2"))
+           (Big.placing [[0;1];[1;2]] 3 Link.Face.empty)
+           (Big.ppar
+             (Big.ppar
+               (node "V6")
+               (node "V3"))
+             (node "V5"))),
+         (id 3),                  (* B1 *)
+         (Big.share               (* B *)
+           (id 3)
+           (Big.placing [[0];[1];[1]] 2 Link.Face.empty)
+           (Big.par
+             (id 1)
+             (node "V4")))),
+       (                          (* ISOS *)
+         (Iso.of_list_exn [(0,4)]),
+         (Iso.of_list_exn []),
+         (Iso.of_list_exn [(0,0);(2,1);(3,2);(4,3);(5,5)]),
+         (Iso.of_list_exn [(1,0)]))
      )
 
 ] in
