@@ -11,11 +11,20 @@ let test_rpo_comp (a0, a1) (d0, d1) ((b0, b1), b) ((b0', b1'), b') =
   && (Big.equal (Big.comp b b0) (Big.comp b' b0'))
   && (Big.equal (Big.comp b b1) (Big.comp b' b1'))
 
+let test_rpo_bound (a0, a1) (d0, d1) ((b0', b1'), b') =
+  (Big.equal (Big.comp b0' a0) (Big.comp b1' a1))
+  && (Big.equal (Big.comp b' b0') d0)
+  && (Big.equal (Big.comp b' b1') d1)
+
+
 let attr_eq = [("type", "ASSERT_RPO");
 	       ("message", "Bigraphs are not equal")]
 
 let attr_epi = [("type", "ASSERT_RPO");
 		("message", "Bigraph is not epi")]
+
+let attr_bnd = [("type", "ASSERT_RPO");
+                ("message", "RPO is not a relative bound")]
 		 
 let do_tests =
   List.map (fun (n, (a, d, b, isos)) ->
@@ -33,21 +42,27 @@ let do_tests =
         ignore (Big.write_svg (snd (fst b')) ~name:"B1Actual.svg" ~path:path);
         ignore (Big.write_svg (snd b') ~name:"BActual.svg" ~path:path);
         if test_rpo_comp a d b b' then
-          if test_rpo_epi b' then
-	    (n,
-	     __MODULE__,
-	     xml_block "system-out" [] ["Test passed."],
-	     [])
+          if test_rpo_bound a d b' then
+            if test_rpo_epi b' then
+              (n,
+              __MODULE__,
+              xml_block "system-out" [] ["Test passed."],
+              [])
+            else
+              (n,
+              __MODULE__,
+              xml_block "system-out" [] ["Test failed."],
+              [xml_block "failure" attr_epi []])
           else
             (n,
-	     __MODULE__,
-	     xml_block "system-out" [] ["Test failed."],
-	     [xml_block "failure" attr_epi []])
+            __MODULE__,
+            xml_block "system-out" [] ["Test failed."],
+            [xml_block "failure" attr_bnd []])
         else
-	  (n,
-	   __MODULE__,
-	   xml_block "system-out" [] ["Test failed."],
-	   [xml_block "failure" attr_eq []])
+          (n,
+          __MODULE__,
+          xml_block "system-out" [] ["Test failed."],
+          [xml_block "failure" attr_eq []])
       with
       | _ ->
 	 (n,
@@ -465,7 +480,49 @@ let () =
          (Iso.of_list_exn [(1,1);(0,2)]),
          (Iso.of_list_exn [(3,1);(4,3);(2,0)]),
          (Iso.of_list_exn [(0,0);(1,3)]))
+     );
+
+     (                            (********* TEST 5 (Sample 6) **********)
+       
+       (                          (* A bound *)
+         (Big.comp                (* A0 *)
+           (Big.share
+             (Big.ppar
+               (node "V0")
+               (id 1))
+             (Big.placing [[0;1];[1]] 2 Link.Face.empty)
+             (Big.ppar
+               (id 1)
+               (node "V1")))
+           (Big.share
+             (id 1)
+             (Big.placing [[0;1]] 2 Link.Face.empty)
+             (id 2))),
+         (Big.share               (* A1 *)
+           (id 1)
+           (Big.placing [[0;1]] 2 Link.Face.empty)
+           (Big.par
+             (node "V0")
+             (id 1)))),
+       (                          (* D bound *)
+         (Big.ppar                (* D0 *)
+           Big.zero
+           (id 1)),
+         (node "V1")),            (* D1 *)
+       (                          (*Expected RPO *)
+         (                        (* B bound *)
+           (Big.ppar              (* B0 *)
+             Big.zero
+             (id 1)),
+           (node "V1")),          (* B1 *)
+         (id 1)),                 (* B *)
+       (                          (* ISOS *)
+         (Iso.of_list_exn [(1,0)]),
+         (Iso.of_list_exn [(0,0)]),
+         (Iso.of_list_exn []),
+         (Iso.of_list_exn []))
      )
+         
 ] in
   let testcases =
     List.length bgs

@@ -26,6 +26,7 @@ build:
     - mkdir -p shippable/svg/rpoTest2
     - mkdir -p shippable/svg/rpoTest3
     - mkdir -p shippable/svg/rpoTest4
+    - mkdir -p shippable/svg/rpoTest5
     - mkdir -p shippable/parser
     - mkdir -p shippable/bisect/html
     - mkdir -p shippable/api
