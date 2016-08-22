@@ -130,7 +130,9 @@ and cmd =  parse
   | ("--export-labels"
     | "-l")                 { O_LABELS }
   | ("--export-prism"
-    | "-p")                 { O_PRISM } 
+    | "-p")                 { O_PRISM }
+  | ("--export-ml"    
+    | "-m")                 { O_ML } 
   | ("--max-states"
     | "-M")                 { O_MAX }			    
   | ("--simulation-time"

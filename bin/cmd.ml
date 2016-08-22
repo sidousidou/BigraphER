@@ -38,6 +38,7 @@ type opt =
   | Labels of file
   | Max of int
   | Prism of file
+  | Ml of file
   | Quiet
   | States of path option
   | Steps of int
@@ -51,6 +52,7 @@ type settings = {
     mutable dot_installed : bool;
     mutable export_decs : path option;
     mutable export_graph : file option;
+    mutable export_ml : file option;
     mutable export_lab : file option;
     mutable export_prism : file option;
     mutable export_states : path option;
@@ -76,6 +78,7 @@ let defaults = {
     dot_installed = dot_installed ();
     export_decs = None;
     export_graph = None;
+    export_ml = None;
     export_lab = None;
     export_prism = None;
     export_states = None;
@@ -137,6 +140,11 @@ let string_of_opt sep ?(man = false) opt =
 	 let s = "<" ^ (colorise `underline "FILE") ^ ">" in
 	 ["-p " ^ s; "--export-prism " ^ s]
        else ["-p"; "--export-prism"])
+   | Ml _ ->
+      (if man then
+	 let s = "<" ^ (colorise `underline "FILE") ^ ">" in
+	 ["-m " ^ s; "--export-ml " ^ s]
+       else ["-m"; "--export-ml"])
    | Quiet -> ["-q"; "--quiet"]
    | States _ ->
       (if man then
@@ -239,6 +247,8 @@ let msg_opt fmt = function
   | No_colors -> fprintf fmt "@[<hov>Disable colored output.@ This is@ equivalent to@ setting@ \
 			 $BIGNOCOLORS@ to@ a@ non-empty@ value.@]"
   | Prism _ -> fprintf fmt "@[<hov>Export the transition system in@ PRISM@ tra@ format@ \
+			    to@ %s.@]" (colorise `underline "FILE")
+  | Ml _ -> fprintf fmt "@[<hov>Export the model in@ OCaml@ format@ \
 			           to@ %s.@]" (colorise `underline "FILE")
   | Quiet -> fprintf fmt "@[<hov>Disable progress indicator.@ This is@ equivalent to@ setting@ \
 			         $BIGQUIET@ to a@ non-empty@ value.@]"
@@ -330,18 +340,18 @@ let help_fun fmt l cmd =
   exit 0
        
 let eval_help_check fmt () =
-  let opt_chk = [ Const []; Decs ""; Ext []; Help; No_colors; Quiet; Verb ] in
+  let opt_chk = [ Const []; Decs ""; Ext []; Help; Ml ""; No_colors; Quiet; Verb ] in
   help_fun fmt opt_chk "validate"
 	   
 let eval_help_full fmt () =
   let opt_full = [ Const []; Decs ""; Ext []; Help;
-		   Labels ""; Max 0; No_colors; Prism ""; Quiet; States None;
+		   Labels ""; Ml ""; Max 0; No_colors; Prism ""; Quiet; States None;
 		   Graph ""; Verb ] in
   help_fun fmt opt_full "full"
 		 
 let eval_help_sim fmt () =
   let opt_sim  = [ Const []; Decs ""; Ext []; Help;
-		   Labels ""; No_colors; Prism ""; Quiet; States None;
+		   Labels ""; Ml ""; No_colors; Prism ""; Quiet; States None;
 		   Steps 0; Graph ""; Time 0.0; Verb ] in
   help_fun fmt opt_sim "sim"
 
@@ -381,9 +391,12 @@ let eval_config fmt () =
        ("export_lab",
 	fun fmt () ->
 	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab)); 
+       ("export_ml",
+	fun fmt () ->
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_ml)); 
        ("export_prism",
 	fun fmt () ->
-	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab));
+	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_prism));
        ("export_states",
 	fun fmt () ->
 	fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_states));

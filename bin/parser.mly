@@ -82,7 +82,8 @@ open Cmd
 %token   O_TS
 %token   O_STATES
 %token   O_LABELS
-%token   O_PRISM 
+%token   O_PRISM
+%token   O_ML 
 %token   O_MAX
 %token   O_TIME
 %token   O_STEPS
@@ -436,6 +437,8 @@ export_opt:
 common_export_opt:   
   | O_DECS PATH
      { defaults.export_decs <- Some $2 }
+  | O_ML PATH
+     { defaults.export_ml <- Some $2 }
   | O_FORMAT
      { defaults.out_format <- $1 };
 

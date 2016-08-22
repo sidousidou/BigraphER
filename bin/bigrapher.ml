@@ -163,7 +163,7 @@ let print_fun fmt c verb fname i =
   if verb then
     print_msg fmt c ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'")
   else ()
-	 
+         
 let export_prism fmt msg f =
   match Cmd.(defaults.export_prism) with
   | None -> ()
@@ -401,6 +401,25 @@ let () =
 			(List.map format_map Cmd.(defaults.out_format))
 			fmt
 			(print_fun fmt `white Cmd.(defaults.verb))));
+      (match Cmd.(defaults.export_ml) with
+       | None -> ()
+       | Some path ->
+          (print_msg fmt `yellow ("Exporting OCaml declarations to "
+				  ^ path ^ " ...");
+           try
+             Export.write_string (Store.ml_of_model m Cmd.(defaults.model))
+                                 ~name:(Filename.basename path)
+                                 ~path:(Filename.dirname path)
+	     |> print_fun fmt
+		          `white
+		          Cmd.(defaults.verb)
+		          path
+           with
+	   | Export.ERROR e ->
+	      (pp_print_flush fmt ();
+	       fprintf err_formatter "@[<v>";
+	       Export.report_error e
+	       |> fprintf err_formatter "@[%s: %s@]@." Utils.err)));
       match prs with
       | Store.P priorities ->
 	 (******** BRS *********)

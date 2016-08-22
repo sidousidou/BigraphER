@@ -1024,7 +1024,7 @@ let eval_model fmt m env =
        eval_sprs env env_t' sbrs.dsbrs_pri sbrs.dsbrs_loc in
      let (preds, env_t''') = eval_preds env env_t'' sbrs.dsbrs_preds in
      (b, S p, preds, env_t''')  
-
+       
 (******** EXPORT STORE *********)
 		    
 let export decs (env : store) (env_t : store_t) path
@@ -1083,36 +1083,145 @@ let export decs (env : store) (env_t : store_t) path
 			    |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
 		       decs)
 	    formats
-	    
-(******** DEBUG *********)
-	    
-(* let string_of_store env = *)
-(*   Hashtbl.fold (fun id v acc -> *)
-(* 		(id ^ ": " ^ (string_of_store_t (get_type v))) :: acc) *)
-(* 	       env [] *)
-(*   |> List.rev *)
-(*   |> String.concat "\n"   *)
 
-(* let string_of_params env = *)
-(*   Hashtbl.fold (fun id v acc -> *)
-(* 		match get_val v with *)
-(* 		| Int _ *)
-(* 		| Float _ *)
-(* 		| Big _ *)
-(* 		| Big_fun _ *)
-(* 		| Ctrl _ *)
-(* 		| Ctrl_fun _ *)
-(* 		| A_ctrl _ *)
-(* 		| A_ctrl_fun _ *)
-(* 		| React _ *)
-(* 		| React_fun _ *)
-(* 		| Sreact _ *)
-(* 		| Sreact_fun _ -> acc *)
-(* 		| v -> (id ^ " = " ^ (string_of_store_val v)) :: acc) *)
-(* 	       env [] *)
-(*   |> String.concat "\n" *)
-		   
-(* let string_of_brs p_classes = *)
-(*   List.map (fun c -> "[" ^ (string_of_int (List.length c)) ^ "]") p_classes *)
-(*   |> String.concat "\n" *)
-		   
+(**************** EXPORT TO ML ********************)
+
+let ml_of_dec id params exp =
+  match params with
+  | [] -> "let " ^ id  ^ " =\n" ^ exp (* "let id =" *)
+  | params -> "let " ^ id  ^ " " ^ (String.concat " " params) ^ " =\n" ^ exp (* "let id a b c =" *)
+
+(* TO BE FIXED *)                                                                           
+let ml_of_ctrl exp =
+  let aux id params c ar =
+    ml_of_dec ("ctrl_" ^ id) params "Ctrl.C (" ^ c ^ ", " ^ (string_of_int ar) ^ ")" in
+  match exp with
+  | Ctrl_exp (id, ar, _) ->
+     aux id [] ("\"" ^ id ^ "\"") ar
+  | Ctrl_fun_exp (id, params, ar, _) ->
+     aux id params ("\"" ^ id ^ "(\" ^ " ^ (String.concat " ^ \",\" ^ " params) ^ " ^ \")\"") ar
+
+let ml_of_list f l =
+  "[" ^ (String.concat "; " (List.map f l)) ^ "]"
+
+let ml_of_ids =
+  ml_of_list (fun x -> "\"" ^ x ^ "\"")
+
+let ml_of_ints =
+  ml_of_list string_of_int
+
+let rec ml_of_int = function
+  | Int_val (v, _) -> string_of_int v
+  | Int_var (id, _) -> (id : string)
+  | Int_plus (l, r, _) -> "(" ^ (ml_of_int l) ^ " + " ^ (ml_of_int r) ^ ")"
+  | Int_minus (l, r, _) -> "(" ^ (ml_of_int l) ^ " - " ^ (ml_of_int r) ^ ")"
+  | Int_prod (l, r, _) -> "(" ^ (ml_of_int l) ^ " * " ^ (ml_of_int r) ^ ")"
+  | Int_div (l, r, p) -> "(" ^ (ml_of_int l) ^ " / " ^ (ml_of_int r) ^ ")"
+  | Int_pow (l, r, p) -> "(pow_int " ^ (ml_of_int l) ^ " " ^ (ml_of_int r) ^ ")"
+                                 
+let rec ml_of_float =  function
+  | Float_val (v, _) -> string_of_float v
+  | Float_var (id, _) -> (id : string)
+  | Float_plus (l, r, _) -> "(" ^ (ml_of_float l) ^ " +. " ^ (ml_of_float r) ^ ")"
+  | Float_minus (l, r, _) -> "(" ^ (ml_of_float l) ^ " -. " ^ (ml_of_float r) ^ ")"
+  | Float_prod (l, r, _) -> "(" ^ (ml_of_float l) ^ " *. " ^ (ml_of_float r) ^ ")"
+  | Float_div (l, r, _) -> "(" ^ (ml_of_float l) ^ " /. " ^ (ml_of_float r) ^ ")"
+  | Float_pow (l, r, _) ->  "(pow_float " ^ (ml_of_float l) ^ " " ^ (ml_of_float r) ^ ")"
+
+(* TO BE FIXED *)
+let rec ml_of_num = function
+  | Num_int_val (v, _) -> string_of_int v
+  | Num_float_val (v, _) -> string_of_float v
+  | Num_var (id, _) -> (id : string)
+  | Num_plus (a, b, _) -> "(" ^ (ml_of_num a) ^ " + " ^ (ml_of_num b) ^ ")"
+  | Num_minus (a, b, _) -> "(" ^ (ml_of_num a) ^ " - " ^ (ml_of_num b) ^ ")"
+  | Num_prod (a, b, _) -> "(" ^ (ml_of_num a) ^ " * " ^ (ml_of_num b) ^ ")"
+  | Num_div (a, b, _) -> "(" ^ (ml_of_num a) ^ " / " ^ (ml_of_num b) ^ ")"
+  | Num_pow (a, b, _) -> "(" ^ (ml_of_num a) ^ " ^^ " ^ (ml_of_num b) ^ ")"
+
+let ml_of_params p =
+    List.map ml_of_num p 
+    |> String.concat " " 
+                                                                          
+let rec ml_of_big = function
+  | Big_var (id, _) -> (id : string)
+  | Big_var_fun  (id, params, _) ->
+     (id : string) ^ " " ^ (ml_of_params params) 
+  | Big_new_name (n, _) ->
+     "Big.intro (Link.Face.singleton (Link.Nam " ^ n ^ "))"
+  | Big_num (v, _) ->
+     (match v with
+      | 0 -> "Big.zero"
+      | 1 -> "Big.one"
+      | _ -> assert false)
+  | Big_id exp ->
+     "Big.id (Big.Inter ("
+     ^ (string_of_int exp.id_place)
+     ^ ", Link.parse_face "
+     ^ (ml_of_ids exp.id_link)
+     ^ "))"                                                                                    
+  | Big_merge (n, _) -> "Big.merge " ^ (string_of_int n)
+  | Big_split (n, _) -> "Big.split " ^ (string_of_int n)
+  | Big_close exp ->
+     "Big.closure (Link.parse_face " ^ (ml_of_ids [exp.cl_name]) ^ ")"
+  | Big_comp (a, b, _) ->
+     "Big.comp (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+  | Big_tens (a, b, _) ->
+     "Big.tens (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+  | Big_par (a, b, _) ->
+     "Big.par (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+  | Big_ppar (a, b, _) ->
+     "Big.ppar (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+  | Big_share (a, psi, b, _) ->
+     "Big.share (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big psi) ^ ") ("
+     ^ (ml_of_big b) ^ ")"
+  | Big_plc exp ->
+     "Big.placing " ^ (ml_of_list ml_of_ints exp.plc_parents) ^ " "
+     ^ (string_of_int exp.plc_roots) ^ " Link.Face.empty"
+  | Big_ion (Big_ion_exp (id, names, _)) ->
+     "Big.ion (Link.parse_face " ^ (ml_of_ids names) ^ ") ctrl_" ^ id
+  | Big_ion (Big_ion_fun_exp (id, params, names, _)) ->
+     "Big.ion (Link.parse_face " ^ (ml_of_ids names)
+     ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"   
+  | Big_nest (i, b, _) ->
+     "Big.nest (" ^  (ml_of_big (Big_ion i)) ^ ") (" ^ (ml_of_big b) ^ ")"
+  | Big_closures (c, b, _) ->
+     "Big.close (Link.parse_face" ^ (ml_of_ids (names_of_closures c))
+     ^ ") (" ^ (ml_of_big b) ^ ")"
+
+let ml_of_eta = function
+  | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
+  | None -> "None"
+
+let ml_of_react id lhs rhs eta =
+  "{rdx = " ^ (ml_of_big lhs) ^ ";\n"
+  ^ " rct = " ^ (ml_of_big rhs) ^ ";\n"
+  ^ " eta = " ^ (ml_of_eta eta) ^ ";\n"
+              
+let ml_of_dec = function
+  | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) ->
+     ml_of_ctrl exp
+  | Dbig (Big_exp (id, exp, _)) ->
+     ml_of_dec id [] (ml_of_big exp)     
+  | Dbig (Big_fun_exp (id, params, exp, _)) ->
+     ml_of_dec id params (ml_of_big exp)
+  | Dreact (React_exp (id, lhs, rhs, eta, _)) ->
+     ml_of_dec id [] ("Brs." ^ (ml_of_react id lhs rhs eta) ^ " }") 
+  | Dreact (React_fun_exp (id, params, lhs, rhs, eta, _)) ->
+     ml_of_dec id params ("Brs." ^ (ml_of_react id lhs rhs eta) ^ " }") 
+  | Dsreact (Sreact_exp (id, lhs, rhs, eta, r, _)) ->
+     ml_of_dec id [] ("Sbrs." ^ (ml_of_react id lhs rhs eta)
+                      ^ " rate = " ^ (ml_of_float r) ^ ";\n }") 
+  | Dsreact (Sreact_fun_exp (id, params, lhs, rhs, eta, r, _)) ->
+     ml_of_dec id params ("Sbrs." ^ (ml_of_react id lhs rhs eta)
+                      ^ " rate = " ^ (ml_of_float r) ^ ";\n }") 
+  | Dint exp ->
+     ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
+  | Dfloat exp  -> 
+     ml_of_dec exp.dfloat_id [] (ml_of_float exp.dfloat_exp)
+     
+let ml_of_model m file =
+  "(* " ^ file ^ " *)\n"
+  ^ (List.map ml_of_dec m.model_decs
+   |> String.concat " in\n")
+  ^ " in\n()"
