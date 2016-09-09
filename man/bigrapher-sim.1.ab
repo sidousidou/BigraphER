@@ -37,6 +37,9 @@ Export the labelling function in PRISM
 .I csl
 format to
 .IR FILE .
+.IP "\-m|\-\-export\-ml <FILE>"
+Export the model in OCaml format to
+.IR FILE .
 .IP "\-n|\-\-no\-colors"
 Disable colored output. This is equivalent to setting
 .B BIGNOCOLORS
