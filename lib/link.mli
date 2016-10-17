@@ -9,37 +9,37 @@ type name = Nam of string
 
 (** This module provides set operations for faces. *)
 module Face :
-  sig
-    type elt = name
-    type t
-    val empty : t
-    val is_empty : t -> bool
-    val mem : elt -> t -> bool
-    val add : elt -> t -> t
-    val singleton : elt -> t
-    val remove : elt -> t -> t
-    val union : t -> t -> t
-    val inter : t -> t -> t
-    val diff : t -> t -> t
-    val compare : t -> t -> int
-    val equal : t -> t -> bool
-    val subset : t -> t -> bool
-    val iter : (elt -> unit) -> t -> unit
-    val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-    val for_all : (elt -> bool) -> t -> bool
-    val exists : (elt -> bool) -> t -> bool
-    val filter : (elt -> bool) -> t -> t
-    val partition : (elt -> bool) -> t -> t * t
-    val cardinal : t -> int
-    val elements : t -> elt list
-    val min_elt : t -> elt
-    val max_elt : t -> elt
-    val choose : t -> elt
-    val split : elt -> t -> t * bool * t
-  end
+sig
+  type elt = name
+  type t
+  val empty : t
+  val is_empty : t -> bool
+  val mem : elt -> t -> bool
+  val add : elt -> t -> t
+  val singleton : elt -> t
+  val remove : elt -> t -> t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val compare : t -> t -> int
+  val equal : t -> t -> bool
+  val subset : t -> t -> bool
+  val iter : (elt -> unit) -> t -> unit
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (elt -> bool) -> t -> bool
+  val exists : (elt -> bool) -> t -> bool
+  val filter : (elt -> bool) -> t -> t
+  val partition : (elt -> bool) -> t -> t * t
+  val cardinal : t -> int
+  val elements : t -> elt list
+  val min_elt : t -> elt
+  val max_elt : t -> elt
+  val choose : t -> elt
+  val split : elt -> t -> t * bool * t
+end
 
 (** {3 Ports} *)
-    
+
 (** This module implements multisets of nodes as maps. *)
 module Ports :
 sig
@@ -69,9 +69,9 @@ sig
   val find : key -> 'a t -> 'a
   val map : ('a -> 'b) -> 'a t -> 'b t
   val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-					     
+
   (** {3 Additional functions} *)
-					
+
   (** [to_string s] gives the string representation of port set [s]. For
       example: [\{(0, 0), (1, 3)\}]. *)
   val to_string : int t -> string
@@ -94,7 +94,7 @@ sig
   val apply : int t -> int Iso.t -> int t
 
   val arity_exn : int t -> int -> int
-		  
+
   (** Construct a list of possible node assignments starting from two compatible
       port sets. *)
   val compat_list : int t -> int t -> Nodes.t -> Nodes.t -> Cnf.lit list list
@@ -106,48 +106,48 @@ sig
   val sum : int t -> int t -> int t
 
   val cardinal : int t -> int
-							    
+
 end
 
 (** {3 Link graphs} *)
-  
+
 (** The type of edges. *)	
 type edg = {
   i : Face.t;    (** Inner face *)
   o : Face.t;    (** Outer face *)
   p : int Ports.t; (** Set of ports *)
 }
-  
+
 (** This module provides set operations for link graphs. *)
 module Lg :
-  sig
-    type elt = edg
-    type t
-    val empty : t
-    val is_empty : t -> bool
-    val mem : elt -> t -> bool
-    val add : elt -> t -> t
-    val singleton : elt -> t
-    val remove : elt -> t -> t
-    val union : t -> t -> t
-    val inter : t -> t -> t
-    val diff : t -> t -> t
-    val compare : t -> t -> int
-    val equal : t -> t -> bool
-    val subset : t -> t -> bool
-    val iter : (elt -> unit) -> t -> unit
-    val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-    val for_all : (elt -> bool) -> t -> bool
-    val exists : (elt -> bool) -> t -> bool
-    val filter : (elt -> bool) -> t -> t
-    val partition : (elt -> bool) -> t -> t * t
-    val cardinal : t -> int
-    val elements : t -> elt list
-    val min_elt : t -> elt
-    val max_elt : t -> elt
-    val choose : t -> elt
-    val split : elt -> t -> t * bool * t
-  end
+sig
+  type elt = edg
+  type t
+  val empty : t
+  val is_empty : t -> bool
+  val mem : elt -> t -> bool
+  val add : elt -> t -> t
+  val singleton : elt -> t
+  val remove : elt -> t -> t
+  val union : t -> t -> t
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val compare : t -> t -> int
+  val equal : t -> t -> bool
+  val subset : t -> t -> bool
+  val iter : (elt -> unit) -> t -> unit
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (elt -> bool) -> t -> bool
+  val exists : (elt -> bool) -> t -> bool
+  val filter : (elt -> bool) -> t -> t
+  val partition : (elt -> bool) -> t -> t * t
+  val cardinal : t -> int
+  val elements : t -> elt list
+  val min_elt : t -> elt
+  val max_elt : t -> elt
+  val choose : t -> elt
+  val split : elt -> t -> t * bool * t
+end
 
 (** [parse_face ns] computes a face starting from list of string names [ns]. *)
 val parse_face : string list -> Face.t
@@ -199,7 +199,7 @@ val elementary_id: Face.t -> Lg.t
 val id_empty : Lg.t
 
 val arities : Lg.t -> int Base.M_int.t
-		 
+
 (** {3 Operations on link graphs} *)
 
 (** Raised when the tensor product between two incompatible link
@@ -210,7 +210,7 @@ exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
 (** Raised when a composition between two incompatible link graphs
     cannot be performed. *)
 exception FACES_MISMATCH of (Face.t * Face.t)
-		 
+
 (** [tens a b n] computes the tensor product of link graphs [a] and
     [b].  Argument [n] is the number of nodes of [a].
 
@@ -223,13 +223,13 @@ val ppar : Lg.t -> Lg.t -> int-> Lg.t
 
 (** [comp a b n] computes the composition of link graphs [a] and [b].
     Argument [n] is the number of nodes of [a].
-    
+
     @raise FACES_MISMATCH when names in the mediating interfaces
     differ. *)
 val comp : Lg.t -> Lg.t -> int -> Lg.t
 
 (** {3 Predicates} *)
-                                                                        
+
 (** [is_id l] is [true] if link graph [l] is an identity, [false]
     otherwise. *)
 val is_id : Lg.t -> bool
@@ -245,7 +245,7 @@ val is_epi : Lg.t -> bool
 (** [is_ground l] is [true] if link graph [l] has no inner names, [false]
     otherwise. *)
 val is_ground : Lg.t -> bool    
-		      
+
 (** [is_guard l] is [true] if no edges in link graph [l] have both
     inner and outer names, [false] otherwise. *)
 val is_guard : Lg.t -> bool    
@@ -255,7 +255,7 @@ val max_ports : Lg.t -> int
 
 (** Compute a sorted list with the cardinalities of the port sets. *)			  
 val cardinal_ports : Lg.t -> int list
-			  
+
 (** Compute the number of closed edges. *)			  
 val closed_edges : Lg.t -> int
 
@@ -288,7 +288,7 @@ exception NOT_TOTAL
     incompatible pairs. The output is a list of clauses a set of
     blocked columns and a set of blocking pairs.
 
-   @raise NOT_TOTAL when no matches are found. *)
+    @raise NOT_TOTAL when no matches are found. *)
 val match_edges : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list * IntSet.t * Cnf.clause list
 

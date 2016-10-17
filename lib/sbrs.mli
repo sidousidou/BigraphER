@@ -18,11 +18,11 @@ type p_class =
 
 (** Execution statistics. *)		      
 type stats =  { time : float;  (** Execution time *)
-		states : int;  (** Number of states *)
-		trans : int;   (** Number of transitions *)
-		occs : int;    (** Number of occurrences *)
-	      }
-		       
+                states : int;  (** Number of states *)
+                trans : int;   (** Number of transitions *)
+                occs : int;    (** Number of occurrences *)
+              }
+
 (** The type of Continuous Time Markov Chains. *)
 type graph = {
   v : (int * Big.bg) Base.H_int.t;      (** States *)
@@ -40,19 +40,19 @@ val is_valid_react : sreact -> bool
 
 (** The type of reaction validity errors. *)				
 type react_error
-       
+
 (** Raised when a reaction rule is not valid. *)
 exception NOT_VALID of react_error
-			 
+
 (** Same as {!is_valid_react} but an exception is raised when the rule is not
     valid. 
-    
+
     @raise NOT_VALID when the rule is not valid. *)
 val is_valid_react_exn : sreact -> bool
 
 (** String representation of reaction validity errors. *)
 val string_of_react_err : react_error -> string
-				     
+
 (** Return [true] if a reaction rule is instantaneous, [false] otherwise. *)
 val is_inst : sreact -> bool
 
@@ -69,7 +69,7 @@ val is_valid_priority_list : p_class list -> bool
 (** Return the total number of stochastic reaction rules in a list of priority
     classes. *)
 val cardinal : p_class list -> int
-					       
+
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a transition rate. The total
     number of occurrences is also returned. *)
@@ -105,11 +105,11 @@ exception MAX of graph * stats
 
     @raise Sbrs.MAX when the maximum number of states is reached. *)
 val bfs : s0:Big.bg ->
-	  priorities:p_class list ->
-	  predicates:(string * Big.bg) list ->
-	  max:int ->
-	  iter_f:(int -> Big.bg -> unit) ->
-	  graph * stats
+  priorities:p_class list ->
+  predicates:(string * Big.bg) list ->
+  max:int ->
+  iter_f:(int -> Big.bg -> unit) ->
+  graph * stats
 
 (** {3 Stochastic simulation traces} *)
 
@@ -118,15 +118,15 @@ exception DEADLOCK of graph * stats * float
 
 (** Raised when the simulation reaches the maximum simulation time. *)
 exception LIMIT of graph * stats
-					
+
 (** Simulate (using Gillespie SSA) the SBRS specified by initial state [s0] and
     priority classes [priorities]. Arguments [init_size] and [stop] are the
     initial size of the state set and the maximum simulation time,
     respectively. Function [iter_f] is applied to every new state discovered
     during the simulation.
- 
-   @raise Sbrs.DEADLOCK when the simulation reaches a deadlock state.
-   @raise Sbrs.LIMIT when the simulation time exceeds the maximum simulation time. *)
+
+    @raise Sbrs.DEADLOCK when the simulation reaches a deadlock state.
+    @raise Sbrs.LIMIT when the simulation time exceeds the maximum simulation time. *)
 val sim :
   s0:Big.bg ->
   priorities:p_class list ->
@@ -175,5 +175,5 @@ val write_prism : graph -> name:string -> path:string -> int
 
     @raise Export.ERROR when an error occurs. *)
 val write_svg : graph -> name:string -> path:string -> int
-							   
+
 (**/**)

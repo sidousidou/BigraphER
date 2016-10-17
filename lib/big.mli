@@ -1,5 +1,5 @@
 (** This module provides operations on bigraphs.
-@author Michele Sevegnani *)
+    @author Michele Sevegnani *)
 
 (** The type of bigraphs.*)
 type bg = {
@@ -19,10 +19,10 @@ exception SHARING_ERROR
 
 (** Raised when the composition fails. *)
 exception COMP_ERROR of inter * inter
-	    
+
 (** Raised when the arity of a control does not match the cardinality of a
-   face. The first element is the arity while the second is the mismatching
-   face. *)
+    face. The first element is the arity while the second is the mismatching
+    face. *)
 exception CTRL_ERROR of int * Link.Face.t
 
 (** Raised when a {!type:Iso.t} is not total. The first element is the
@@ -57,7 +57,7 @@ val to_string: bg -> string
 
 (** Parse a bigraph. *)
 val parse : string list -> bg
- 
+
 (** [to_dot b i] compute the string expressing bigraph [b] named [i] in 
     [dot] format. *)
 val to_dot : bg -> string -> string
@@ -69,7 +69,7 @@ val inner : bg -> inter
 val outer : bg -> inter
 
 (** [apply_exn i b] applies isomorphism [i] to bigraph [b]. 
-     
+
     @raise Not_found if isomorphism [i] is not valid. *)
 val apply_exn : int Iso.t -> bg -> bg
 
@@ -79,15 +79,15 @@ val apply_exn : int Iso.t -> bg -> bg
 val placing : int list list -> int -> Link.Face.t -> bg
 
 (** Export to file the string representation in [dot] format of a bigraph. 
-    
+
     @raise Export.ERROR when an error occurs. *)
 val write_dot : bg -> name:string -> path:string -> int
 
 (** Export to file the string representation in [svg] format of a bigraph.
-    
+
     @raise Export.ERROR when an error occurs. *)
 val write_svg : bg -> name:string -> path:string -> int
-						       
+
 (** {3 Elementary bigraphs} *)
 
 (** Identity over interface [i]. *)
@@ -120,7 +120,7 @@ val ion : Link.Face.t -> Ctrl.t -> bg
     @raise CONTROL_ERROR when the set of names has size different than the arity
     of [c]. *)
 val ion_chk : Link.Face.t -> Ctrl.t -> bg
-					  
+
 (** Same as {!Big.ion} but without the site. *)
 val atom : Link.Face.t -> Ctrl.t -> bg
 
@@ -129,7 +129,7 @@ val atom : Link.Face.t -> Ctrl.t -> bg
     @raise CONTROL_ERROR when the set of names has size different than the arity
     of [c]. *)
 val atom_chk : Link.Face.t -> Ctrl.t -> bg
-					   
+
 (** [sub n m] computes a substitution where [n] and [m] are the inner and outer 
     faces, respectively. *)
 val sub : Link.Face.t -> Link.Face.t -> bg
@@ -149,7 +149,7 @@ val intro : Link.Face.t -> bg
 val tens : bg -> bg -> bg
 
 (** [comp a b] computes the composition of bigraphs [a] and [b].
-    
+
     @raise COMP_ERROR when the mediating interfaces do not match. *)
 val comp : bg -> bg -> bg
 
@@ -169,7 +169,7 @@ val par_of_list: bg list -> bg
 
 (** [nest a b] computes the bigraph resulting from nesting bigraph [b] in 
     bigraph [a]. Common names are shared.
-   
+
     @raise COMP_ERROR if composition cannot be performed. *)
 val nest : bg -> bg -> bg
 
@@ -211,7 +211,7 @@ val is_solid : bg -> bool
 (** [is_ground b] returns [true] if bigraph [b] is an ground, [false] 
     otherwise. *)
 val is_ground : bg -> bool
-		       
+
 (** {3 Decompositions} *)
 
 (** [decomp t p i_v i_e f_e] computes the decomposition of target [t] given
@@ -223,7 +223,7 @@ val decomp :  bg -> bg -> int Iso.t -> int Iso.t -> int Fun.t ->
   bg * bg * bg
 
 (*(** [levels b] computes the decomposition in levels of [b]. *)
-val levels : bg -> bg list*)
+  val levels : bg -> bg list*)
 
 (** {3 Comparison} *)
 
@@ -232,11 +232,11 @@ val equal : bg -> bg -> bool
 
 (** The type of bigraphs keys. *)			  
 type bg_key = int
-  
+
 (** Compute the key of a bigraph. The key is similar to a hash. Note
     that different bigraphs can have the same key. *)
 val key : bg -> bg_key
-	  
+
 (** Same as {!Big.equal} but with fewer checks prior to the SAT solver
     invocation. This function is intended to be used after equality over keys
     has already failed. *)
@@ -256,15 +256,15 @@ val occurs : bg -> bg ->  bool
     occurs in target [t]. Isos [i] and [j] are defined over nodes and edges,
     respectively. Argument [trans] is the transitive closure of the induced
     graph of [t].
-    
+
     @raise NODE_FREE when [p] has an empty node set. *)
 val occurrence : bg -> bg -> Sparse.bmatrix -> occ option
 
 (*(** Same as {!Big.occurrence}.
-  
+
     @raise NO_MATCH when there is no match.
     @raise NODE_FREE when [p] has an empty node set. *)				 
-val occurrence_exn : bg -> bg -> occ *)
+  val occurrence_exn : bg -> bg -> occ *)
 
 (** [occurrences t p] returns a list of occurrences.
 

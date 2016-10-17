@@ -16,7 +16,7 @@ val name : t -> string
 
 (** Equality for type {!Ctrl.t}. *)
 val (=) : t -> t -> bool
-		      
+
 (** Comparison function. *)
 val compare : t -> t -> int			   
 

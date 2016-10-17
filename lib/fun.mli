@@ -62,12 +62,12 @@ val apply : int t -> int -> int option
     [iso_d] and [iso_c] to the domain and codomain of [f], respectively.
     @raise Not_found if the isomorphisms are undefined. *)
 val transform_exn : int t -> int Iso.t -> int Iso.t -> int t
-							   
+
 (** Return [true] if a function is total, [false] otherwise. *)
 val is_total : int -> int t -> bool
 
 (** [check_codom min max f] returns [true] if the codomain of [f] is in the
     range [[min, max]]. *)
 val check_codom : int -> int -> int t -> bool
-				 
+
 (**/**)

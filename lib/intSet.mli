@@ -11,7 +11,7 @@ type t
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
     library}. *)
-   
+
 val empty : t
 val is_empty : t -> bool
 val mem : elt -> t -> bool
@@ -38,7 +38,7 @@ val choose : t -> elt
 val split : elt -> t -> t * bool * t
 
 (** {3 Additional functions} *)
-				     
+
 (** Return the string representation of a set. Example: ["\{1,4,7\}"]. *)
 val to_string : t -> string
 
@@ -63,10 +63,10 @@ val apply_exn : t -> int Iso.t -> t
 
 (** Apply an isomorphism only to the elements on which it is defined. *)
 val filter_apply : t -> int Iso.t -> t
-				    
+
 (** Compute the union of all the sets in a list. *)
 val union_list : t list -> t
-				    
+
 (** Merge sets with common elements. *)
 val merge : t list -> t list
 

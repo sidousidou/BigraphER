@@ -1,55 +1,55 @@
 (** Type-dependent interface of rewrite rules. *)
 module type R =
-  sig    
-    type t
-    type label
-    type occ
-    type edge
-    val lhs : t -> Big.bg
-    val rhs : t -> Big.bg
-    val l : t -> label
-    val string_of_label : label -> string
-    val map : t -> int Fun.t option
-    val val_chk : t -> bool
-    val val_chk_error_msg : string
-    val to_occ : Big.bg -> t -> occ
-    val big_of_occ : occ -> Big.bg
-    val merge_occ : occ -> occ -> occ
-    val update_occ : occ -> Big.bg -> occ
-    val edge_of_occ : occ -> int -> edge
-    val random_step : (Big.bg -> t list -> occ list * int) ->
-		      Big.bg -> t list ->
-		      occ option * int
-  end
+sig    
+  type t
+  type label
+  type occ
+  type edge
+  val lhs : t -> Big.bg
+  val rhs : t -> Big.bg
+  val l : t -> label
+  val string_of_label : label -> string
+  val map : t -> int Fun.t option
+  val val_chk : t -> bool
+  val val_chk_error_msg : string
+  val to_occ : Big.bg -> t -> occ
+  val big_of_occ : occ -> Big.bg
+  val merge_occ : occ -> occ -> occ
+  val update_occ : occ -> Big.bg -> occ
+  val edge_of_occ : occ -> int -> edge
+  val random_step : (Big.bg -> t list -> occ list * int) ->
+    Big.bg -> t list ->
+    occ option * int
+end
 
 module type T =
-  sig
-    type t
-    type label
-    type occ
-    type edge
-    type react_error
-    exception NOT_VALID of react_error
-    val lhs : t -> Big.bg
-    val rhs : t -> Big.bg
-    val l : t -> label
-    val string_of_label : label -> string
-    val map : t -> int Fun.t option
-    val to_occ : Big.bg -> t -> occ
-    val big_of_occ : occ -> Big.bg
-    val merge_occ : occ -> occ -> occ
-    val update_occ : occ -> Big.bg -> occ
-    val edge_of_occ : occ -> int -> edge
-    val to_string : t -> string
-    val is_valid : t -> bool
-    val is_valid_exn : t -> bool			  
-    val string_of_react_err : react_error -> string
-    val is_enabled : Big.bg -> t -> bool
-    val fix : Big.bg -> t list -> Big.bg * int
-    val step : Big.bg -> t list -> occ list * int
-    val random_step : Big.bg -> t list -> occ option * int
-  end
-    
+sig
+  type t
+  type label
+  type occ
+  type edge
+  type react_error
+  exception NOT_VALID of react_error
+  val lhs : t -> Big.bg
+  val rhs : t -> Big.bg
+  val l : t -> label
+  val string_of_label : label -> string
+  val map : t -> int Fun.t option
+  val to_occ : Big.bg -> t -> occ
+  val big_of_occ : occ -> Big.bg
+  val merge_occ : occ -> occ -> occ
+  val update_occ : occ -> Big.bg -> occ
+  val edge_of_occ : occ -> int -> edge
+  val to_string : t -> string
+  val is_valid : t -> bool
+  val is_valid_exn : t -> bool			  
+  val string_of_react_err : react_error -> string
+  val is_enabled : Big.bg -> t -> bool
+  val fix : Big.bg -> t list -> Big.bg * int
+  val step : Big.bg -> t list -> occ list * int
+  val random_step : Big.bg -> t list -> occ option * int
+end
+
 (** Module for the concrete implementation of basic operations on rewrite
     rules. *)
 module Make (R : R) :
@@ -58,15 +58,15 @@ sig
   type t = R.t
 
   type label = R.label
-		 
+
   type occ = R.occ
 
   type edge = R.edge
 
   type react_error
-	 
+
   exception NOT_VALID of react_error
-	 
+
   (** Return the left-hand side of a rewrite rule. *)
   val lhs : t -> Big.bg
 
@@ -75,7 +75,7 @@ sig
 
   (** Return the label of a rewrite rule. *)
   val l : t -> label
-		 
+
   (** Return the string representation of a label. *)
   val string_of_label : label -> string
 
@@ -87,7 +87,7 @@ sig
 
   (** Return the bigraph component of an occurrence. *)				  
   val big_of_occ : occ -> Big.bg
-			    
+
   (** Merge two occurrences. *)			 
   val merge_occ : occ -> occ -> occ
 
@@ -108,10 +108,10 @@ sig
 
       @raise NOT_VALID when the reaction rule is not valid. *)
   val is_valid_exn : t -> bool
-			
+
   (** Convert to string the output of the validity check. *)
   val string_of_react_err : react_error -> string
-			
+
   (** [is_enabled b r] checks if rewrite rule [r] can be applied to bigraph
       [b]. *)
   val is_enabled : Big.bg -> t -> bool
@@ -127,7 +127,7 @@ sig
   val step : Big.bg -> t list -> occ list * int
 
   val random_step : Big.bg -> t list -> occ option * int
-					      
+
 end
 
 

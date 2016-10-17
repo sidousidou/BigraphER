@@ -13,9 +13,9 @@ type bmatrix =
     r_major : IntSet.t Base.M_int.t;   (** Row-major order index    *)
     c_major : IntSet.t Base.M_int.t;   (** Column-major order index *)
   }
-  
+
 (** {3 Basic operations} *)
-    
+
 (** [make r c] returns an empty matrix with [r] rows and [c] columns. *) 
 val make : int -> int -> bmatrix
 
@@ -46,7 +46,7 @@ val apply_exn : int Iso.t -> bmatrix -> bmatrix
 (** [parse_vectors l r] parses list [l] of column vectors to a matrix with [r]
     rows and [c] columns, with [c] the length of [l] . Example: [parse_vectors
     [[0;1;2];[1;2]] 4] is parsed to the following 4x2 matrix
-{v
+    {v
     10
     11
     11
@@ -56,10 +56,10 @@ val parse_vectors : int list list -> int -> bmatrix
 
 (** Raised when a string contains characters different than ['0'] or ['1']. *)
 exception PARSE_ERROR
-					      
+
 (** [parse_string r n s rows] parses list [rows] of rows encoded as ['0''1']
     strings. The resulting matrix is split as follows: 
-{v 
+    {v 
     +-----------+-----------+
     |           |           |
     |     a     |     b     |
@@ -73,8 +73,8 @@ exception PARSE_ERROR
 
     @raise PARSE_ERROR when the input strings are not in the correct format. *)
 val parse_string : int -> int -> int -> String.t list ->
-		   (bmatrix * bmatrix) * (bmatrix * bmatrix)
-		   
+  (bmatrix * bmatrix) * (bmatrix * bmatrix)
+
 (** Return the domain of a matrix, that is the set of rows having at least one
     [true] element. *)
 val dom : bmatrix -> IntSet.t
@@ -94,7 +94,7 @@ val fold_r : (int -> IntSet.t -> 'a -> 'a) -> bmatrix -> 'a -> 'a
 
 (** Dual of {!Sparse.fold_r}. *)      
 val fold_c : (int -> IntSet.t -> 'a -> 'a) -> bmatrix -> 'a -> 'a
-							  
+
 (** [add i j m] adds  element [(i,j)]. Arguments [i] and [j] are
     assumed to be valid indexes. *)
 val add : int -> int -> bmatrix -> bmatrix
@@ -105,9 +105,9 @@ val add_list : bmatrix -> (int * int) list -> bmatrix
 (** Return the number of [true] elements in a matrix. This is equivalent to the
     number of edges in a graph. *)
 val entries : bmatrix -> int
-			 
+
 (** {3 Matrix operations} *)
-			     
+
 (** [row n] returns a row vector of [n] [true] elements. *)			     
 val row : int -> bmatrix
 
@@ -120,7 +120,7 @@ val diag : int -> bmatrix
 
 (** [tens a b] returns the tensor product of matrices [a] and [b]. The tensor
     product is defined according to the following schema: 
-{v 
+    {v 
     +-----------+-----------+
     |           |           |
     |     a     |           |
@@ -130,13 +130,13 @@ val diag : int -> bmatrix
     |           |     b     |
     |           |           |
     +-----------+-----------+ v}
- *)		    
+*)		    
 val tens : bmatrix -> bmatrix -> bmatrix
 
 (** [append a b] appends matrix [b] to the right of matrix [a]. The two matrices
     are assumed to have the same number of rows. This operation is described by
     the diagram below:
-{v 
+    {v 
     +-----------+-----------+
     |           |           |
     |     a     |     b     |
@@ -148,7 +148,7 @@ val append : bmatrix -> bmatrix -> bmatrix
 (** [stack a b] stacks matrix [a] on top of matrix [b]. The two matrices are
     assumed to have the same number of columns. This operation is described by
     the following diagram:
-{v
+    {v
     +-----------+ 
     |           |
     |     a     |
@@ -162,7 +162,7 @@ v}*)
 val stack : bmatrix -> bmatrix -> bmatrix
 
 (** [tens a b c d] computes the matrix defined below:
-{v 
+    {v 
     +-----------+-----------+
     |           |           |
     |     a     |     b     |
@@ -172,9 +172,9 @@ val stack : bmatrix -> bmatrix -> bmatrix
     |     c     |     d     |
     |           |           |
     +-----------+-----------+ v}
- *)		    
+*)		    
 val glue : bmatrix -> bmatrix -> bmatrix -> bmatrix -> bmatrix
-				    
+
 (** [mul a b] multiplies (row by column multiplication) matrix [a] by matrix
     [b]. The number of columns of [a] is assumed to be equal to the number of
     rows of [b]. *)
@@ -215,5 +215,5 @@ val row_eq : bmatrix -> IntSet.t -> IntSet.t
 
 (** Dual of {!Sparse.row_eq}. *)	       
 val col_eq : bmatrix -> IntSet.t -> IntSet.t
-				 
+
 (**/**)

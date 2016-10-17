@@ -8,7 +8,7 @@ let apply r i =
 
 let add i js r = 
   add i (IntSet.union (apply r i) js) r
-      
+
 let dom r =
   fst (List.split (bindings r))
 
@@ -25,27 +25,27 @@ let to_string r =
   "{"
   ^ (bindings r
      |> List.map (fun (i, js) ->
-		  "("
-		  ^ (string_of_int i)
-		  ^ ", "
-		  ^ (IntSet.to_string js))
+         "("
+         ^ (string_of_int i)
+         ^ ", "
+         ^ (IntSet.to_string js))
      |> String.concat ", " )
   ^ "}"
-      
+
 let to_list = bindings
 
 let of_list =
   List.fold_left (fun acc (i, js) ->
-		  add i (IntSet.of_list js) acc)
-		 empty
+      add i (IntSet.of_list js) acc)
+    empty
 
 let inverse r =
   fold (fun i js acc ->
-	IntSet.fold (fun j acc ->
-		     add j (IntSet.singleton i) acc) js acc)
-       r empty
-       
+      IntSet.fold (fun j acc ->
+          add j (IntSet.singleton i) acc) js acc)
+    r empty
+
 let transform_exn r i_dom i_codom =
   fold (fun i js r' ->
-	add (Iso.apply_exn i_dom i) (IntSet.apply_exn js i_codom) r')
-       r empty
+      add (Iso.apply_exn i_dom i) (IntSet.apply_exn js i_codom) r')
+    r empty

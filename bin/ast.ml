@@ -1,8 +1,8 @@
 module Id = struct
-    type t = string
-    let compare = String.compare 
-  end
-	      
+  type t = string
+  let compare = String.compare 
+end
+
 type int_exp =
   | Int_val of int * Loc.t
   | Int_var of Id.t * Loc.t
@@ -67,7 +67,7 @@ type place_exp =                                            (* ({{0,2,3}, {}}, 5
     plc_roots : int;
     plc_loc : Loc.t;
   }         
-                                         
+
 type closure_exp =                                          (* /x *)
   { cl_name : Id.t;
     cl_loc : Loc.t;
@@ -93,7 +93,7 @@ type big_exp =
   | Big_closures of closure_exp list * big_exp  * Loc.t     (* /x/y/z A *)
 
 type eta_exp = int list * Loc.t
-  
+
 type dbig =
   | Big_exp of Id.t * big_exp * Loc.t 
   | Big_fun_exp of Id.t * Id.t list * big_exp * Loc.t
@@ -139,7 +139,7 @@ type rul_id =
 type pred_id =
   | Pred_id of Id.t * Loc.t
   | Pred_id_fun of Id.t * num_exp list * Loc.t
-					  
+
 type pr_exp =
   | Pr_red of rul_id list * Loc.t 
   | Pr of rul_id list * Loc.t
@@ -233,7 +233,7 @@ let loc_of_big_exp = function
 
 let names_of_closures =
   List.fold_left (fun acc c -> c.cl_name :: acc) []
-		     
+
 let init_of_ts = function
   | Dbrs dbrs -> dbrs.dbrs_init 
   | Dsbrs dsbrs -> dsbrs.dsbrs_init
@@ -272,6 +272,6 @@ let params_of_ts = function
 
 let string_of_consts l =
   List.map (function
-	     | Cint x ->  x.dint_id ^ "=<exp>" (*x.dint_exp*)
-	     | Cfloat x -> x.dfloat_id ^ "=<exp>" (*x.dfloat_exp)*)) l
+      | Cint x ->  x.dint_id ^ "=<exp>" (*x.dint_exp*)
+      | Cfloat x -> x.dfloat_id ^ "=<exp>" (*x.dfloat_exp)*)) l
   |> String.concat ","

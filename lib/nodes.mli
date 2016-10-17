@@ -27,12 +27,12 @@ val to_string : t -> string
 (** Return a string representation of the sorts of a node set. Example:
     ["\{Ready, A, Fun, Snd\}"]. *)
 val string_of_sorts : t -> string
-		       
+
 (** [to_dot ns] returns a string expressing node shapes in dot format. *)
 val to_dot: t -> string
-		   
+
 (** [get_ctrl_exn i ns] returns the control of node [i] in node set [ns].  
-    
+
     @raise Not_found if the node identifier is not present in the set. *)
 val get_ctrl_exn : int -> t -> Ctrl.t 
 
@@ -46,7 +46,7 @@ val tens : t -> t -> t
       is a map between node identifiers and arities. An example for [s] is: ["A
       A B D"]. *)
 val parse : string -> int Base.M_int.t -> t
-				       
+
 (** Apply an isomorphism.
 
     @raise Not_found if a node identifier is not in the domain of the

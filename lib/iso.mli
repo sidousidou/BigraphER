@@ -9,7 +9,7 @@ type +'a t
     both [1] and [3]. This exception is raised when an invalid isomorphism is
     generated. *)
 exception NOT_BIJECTIVE
-	 
+
 (** {3 Standard map operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
@@ -23,7 +23,7 @@ val fold : (int -> int -> 'b -> 'b) -> int t -> 'b -> 'b
 val cardinal : int t -> int
 
 (** {3 Additional functions} *)
-			  
+
 (** Return the domain of an isomorphism. *)
 val dom : int t -> int list
 
@@ -44,7 +44,7 @@ val of_list_exn : (int * int) list -> int t
 (** Return the string representation of an isomorphism. Example: ["\{(1, 1), (2,
     3), (5, 2) \}"]. *)
 val to_string : int t -> string
-		
+
 (** [add_exn i j iso] adds a new pair [(i, j)] to isomorphism [iso]. If [i] was
     already bound in [iso], its previous binding disappears.
 
@@ -63,7 +63,7 @@ val apply_exn : int t -> int -> int
 
 (** Same as {!Iso.apply_exn} but with error-aware return type. *)
 val apply : int t -> int -> int option
-				      
+
 (** [transform_exn i iso_d iso_c] returns the isomorphism obtained by
     applying [iso_d] and [iso_c] to the domain and codomain of [i],
     respectively.  

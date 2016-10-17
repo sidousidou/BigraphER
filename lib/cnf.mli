@@ -30,10 +30,10 @@ type tseitin_clause =
                                        list binary disjunctions *)	   
 
 (** {3 Manipulation of boolean formulae} *)
-			     
+
 (** Return the string representation of a clause. For example: ["1 V 2 V 3"]. *)
 val string_of_clause : clause -> string
-				   
+
 (** [to_ij v] unboxes a positive variable stored in a matrix.  
     @raise Assert_failure when [v] is a negative literal or if it is stored as a
     vector. *)
@@ -67,7 +67,7 @@ val blocking_pairs : (int * int) list -> clause list
 
     @param l a list of pairs interpreted as ["(X1 and Y1) or (X2 and Y2) or
              ... or (Xn and Yn)"]
-   
+
     @return A clause in the form ["(Z1 or Z2 or ... or Zn)"] for the auxiliary
             variables, and a conjunction of binary clauses: ["(!Z1 or X1) and
             (!Z1 or Y1) and ... (!Zn or Xn) and (!Zn or Yn)"].  Note, the
@@ -77,9 +77,9 @@ val blocking_pairs : (int * int) list -> clause list
 val tseitin : (lit * lit) list -> tseitin_clause
 
 (** [impl x l] returns the CNF encoding of boolean implications.
-  
+
     @param x is the left-hand side of the implication.
-  
+
     @param l is the right-hand side of the implication: ["(clause0 and clause1
            and ...)"]
 
@@ -88,12 +88,12 @@ val tseitin : (lit * lit) list -> tseitin_clause
 val impl : lit -> lit list list -> clause list 
 
 (** [equiv m clauses] returns the CNF encoding of {e if and only if} boolean formulae.
-    
+
     @param m is the left-hand side of the formula
-    
+
     @param clauses is a conjunction of clauses ["(X0 or X1 or ...) and (Y0 or Y1
            or ...) and ..."]
-    
+
     @return a conjunction of binary disjunctions ["(M or !X0) and (M or !X1) and
             ... (M or !Y0)"] and a conjunction of clauses ["(!M or X0 or X1 or
             ...) and (!M or Y0 or Y1 or ...) and ..."]. *)
@@ -105,10 +105,10 @@ val equiv : lit -> lit list list -> b_clause list * clause list
     in this {{:
     http://www.cs.cmu.edu/~wklieber/papers/2007_efficient-cnf-encoding-for-selecting-1.pdf
     } paper}. *)
-							   
+
 (** A group in the encoding corresponds to a list of literals. *)
 type group = lit list
-		 
+
 (** N-ary tree for the encoding of the auxiliary variables introduced by the encoding. *)	   
 type cmd_tree = 
   | Leaf of group
@@ -126,10 +126,10 @@ val cmd_init : group -> int -> int -> cmd_tree
 
 (** Return encoding of constraint {e "at most a literal in the input tree is
     [true]}. *)
-val at_most_cmd : cmd_tree -> cmd_constraint
+    val at_most_cmd : cmd_tree -> cmd_constraint
 
-(** Return encoding of constraint {e "at least a literal in the input tree is
-   [true]}. *)
+    (** Return encoding of constraint {e "at least a literal in the input tree is
+    [true]}. *)
 val at_least_cmd : cmd_tree -> clause
 
 (** Return encoding of constraint {e "exactly one literal in the input tree is
@@ -184,39 +184,39 @@ val post_conj_m : clause list -> Minisat.solver -> Minisat.var array array -> un
 (** Post Tseitin constraints to solver and return array of auxiliary 
     variables. *)
 val post_tseitin : clause * b_clause list -> Minisat.solver -> 
-		   Minisat.var array array -> Minisat.var array
+  Minisat.var array array -> Minisat.var array
 
 (** Post implication constraints to solver. Left hand-sides are stored in
     matrix w. *)
 val post_impl : clause list -> Minisat.solver ->
-		Minisat.var array array -> Minisat.var array array -> unit
+  Minisat.var array array -> Minisat.var array array -> unit
 
 (** Post equivalence constraints to solver. Left hand-sides are stored in matrix
     w. *)
 val post_equiv : b_clause list * clause list -> Minisat.solver ->
-		 Minisat.var array array -> Minisat.var array array -> unit
+  Minisat.var array array -> Minisat.var array array -> unit
 
 (** Post bijection constraints to solver and return auxiliary variables. *)
 val post_bij : (cmd * cmd) -> Minisat.solver -> Minisat.var array array ->
-	       (Minisat.var array array * int list) * (Minisat.var array array * int list)
+  (Minisat.var array array * int list) * (Minisat.var array array * int list)
 
 (** Post total non-surjective function constraints to solver and return
     auxiliary variables. *)
 val post_tot : cmd -> Minisat.solver -> Minisat.var array array -> 
-	       Minisat.var array array * int list
+  Minisat.var array array * int list
 
 (** Post one to one function constraints to solver and return auxiliary 
     variables. *)				
 val post_one_to_one : (cmd_constraint list * int) * (cmd_constraint list * int) -> 
-		      Minisat.solver -> Minisat.var array array -> unit
+  Minisat.solver -> Minisat.var array array -> unit
 
 (** Post constraints to block a commander variable row. *)
 val post_block_cmd : int -> Minisat.solver -> Minisat.var array array -> 
-		     int list -> unit
+  int list -> unit
 
 (** Post constraint to block a column. *)
 val post_block : int -> Minisat.solver -> Minisat.var array array -> unit
 
 (** Post implication constraints to solver. *)
 val post_impl2 : var list -> var list -> Minisat.solver -> 
-		 Minisat.var array array -> Minisat.var array array -> unit
+  Minisat.var array array -> Minisat.var array array -> unit

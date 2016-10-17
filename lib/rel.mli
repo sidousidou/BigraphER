@@ -8,7 +8,7 @@ type +'a t
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
-	 
+
 val empty : IntSet.t t
 val is_empty : IntSet.t t -> bool
 val mem : int -> IntSet.t t -> bool
@@ -26,7 +26,7 @@ val codom : IntSet.t t -> IntSet.t
 
 (** Return the inverse of a binary relation. *)			    
 val inverse : IntSet.t t -> IntSet.t t
-				     
+
 (** Return the list of pairs defined by a binary relation. *)
 val to_list : IntSet.t t -> (int * IntSet.t) list
 
@@ -37,7 +37,7 @@ val of_list : (int * int list) list -> IntSet.t t
 (** Return the string representation of a binary relation. Example: ["\{(1, \{1,
     2, 3\}), (2, \{3, 4\})\}"]. *)
 val to_string : IntSet.t t -> string
-			     
+
 (** Equality between binary relations. *)
 val equal : IntSet.t t -> IntSet.t t -> bool
 

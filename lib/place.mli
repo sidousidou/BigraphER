@@ -10,8 +10,8 @@ type pg = {
   rs : Sparse.bmatrix; (** Boolean adjacency matrix roots X sites *)
   nn : Sparse.bmatrix; (** Boolean adjacency matrix nodes X nodes *)
   ns : Sparse.bmatrix; (** Boolean adjacency matrix nodes X sites *)
- }
-	
+}
+
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : pg -> string
 
@@ -30,7 +30,7 @@ val get_dot : pg -> string * string * string * string
 
 (** [apply_iso i p] returns a fresh place graph obtained by applying isomorphism
     [i] to [p]. 
-    
+
     @raise Not_found when isomorphism [i] is not valid. *)
 val apply_exn : int Iso.t -> pg -> pg
 
@@ -89,7 +89,7 @@ val compare_placing : pg -> pg -> int
     attempted. The two integers are the number of sites and roots involved in
     the composition, respectively. *)
 exception COMP_ERROR of (int * int)
-				    
+
 (** [tens p0 p1] returns the tensor product of place graphs [p0] and [p1]. *)
 val tens : pg -> pg -> pg
 
@@ -101,7 +101,7 @@ val tens_of_list : pg list -> pg
 val comp : pg -> pg -> pg
 
 (** {3 Predicates} *)
-                                                                        
+
 (** [is_id p] returns [true] if place graph [p] is an identity, [false]
     otherwise. *)
 val is_id : pg -> bool
@@ -112,7 +112,7 @@ val is_plc : pg -> bool
 (** [is_ground p] is [true] if place graph [p] has no sites, [false]
     otherwise. *)
 val is_ground : pg -> bool
-		     
+
 (** [is_mono p] is [true] if place graph [p] is monomorphic, [false]
     otherwise. *)
 val is_mono : pg -> bool
@@ -142,7 +142,7 @@ exception NOT_PRIME
 (** Compute the prime components ({e i.e.} place graphs with one root) of a
     place graph. The original node numbering is returned in the form of an
     isomorphism. 
-    
+
     @raise NOT_PRIME when some root is shared *)
 val prime_components : pg -> (pg * int Iso.t) list
 
@@ -150,7 +150,7 @@ val prime_components : pg -> (pg * int Iso.t) list
 
      @raise NOT_PRIME when some root is shared *)					      
 val decomp_d : pg -> int -> pg * pg * int Iso.t * int Iso.t
-					      
+
 (** {3 Matching constraints} *)
 
 (** Raised when a node in the pattern cannot be matched to any node in the
@@ -176,7 +176,7 @@ val match_leaves : pg -> pg -> Nodes.t -> Nodes.t ->
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_leaves}.
-   
+
     @raise NOT_TOTAL when there are orphans in the pattern that cannot be matched. *)
 val match_orphans : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t

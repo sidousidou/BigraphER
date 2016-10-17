@@ -12,7 +12,7 @@ module M_string : Map.S with type key = String.t
 module H_int : Hashtbl.S with type key = int
 
 module H_string : Hashtbl.S with type key = string
-					  
+
 (** {3 Helper functions} *)
 
 (** [safe (Some v)] returns value [v]. Raises an exception on [None].
@@ -28,7 +28,7 @@ val int_equal : int -> int -> bool
 
 (** Compare integers. *)			  
 val int_compare : int -> int -> int
-			
+
 (** Compare pairs of integers. *)			  
 val ints_compare : int * int -> int * int -> int
 

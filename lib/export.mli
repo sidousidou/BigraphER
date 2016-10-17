@@ -15,10 +15,10 @@ exception ERROR of error
 
 (** Return a string describing the error.*)
 val report_error : error -> string
-			      
+
 val write_svg : string -> name:string -> path:string -> int
 
 val write_string : string -> name:string -> path:string -> int
-							  
+
 (**/**)
-							  
+
