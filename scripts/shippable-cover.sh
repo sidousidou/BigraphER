@@ -1,4 +1,4 @@
-#! /usr/bin/env sh
+#! /usr/bin/env sh -ex
 
 eval `opam config env`
 
@@ -18,7 +18,6 @@ echo "Compiling for coverage"
 
 sed -i 's/BuildDepends:/BuildDepends: bisect_ppx,/g' _oasis
 touch bin/version.ml
-cat _oasis
 oasis setup
 
 ocaml setup.ml -configure --enable-tests --prefix $PREFIX
@@ -32,7 +31,10 @@ echo "Generating coverage reports"
 
 $BISECT -I $OBJ -text $BISECT_DIR/report bisect*.out 
 $BISECT -I $OBJ -summary-only -text $BISECT_DIR/summary bisect*.out 
-(cd $OBJ; $BISECT -html ../$BISECT_DIR/html ../bisect*.out)
-./cobertura.native $BISECT_DIR/report $XML_DIR coverage.xml $COMMIT
+$BISECT -I $OBJ -html $BISECT_DIR/html bisect*.out
 
 cat $BISECT_DIR/summary
+
+./cobertura.native $BISECT_DIR/report $XML_DIR coverage.xml $COMMIT
+
+
