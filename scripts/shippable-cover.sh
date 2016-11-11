@@ -13,7 +13,6 @@ BISECT=$(opam config var bin)/bisect-ppx-report
 
 echo "Cleaning"
 
-ocaml setup.ml -uninstall
 ocamlfind remove bigraph
 ocaml setup.ml -distclean
 
