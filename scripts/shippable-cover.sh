@@ -18,6 +18,7 @@ echo "Compiling for coverage"
 
 sed -i 's/BuildDepends:/BuildDepends: bisect_ppx,/g' _oasis
 touch bin/version.ml
+cat _oasis
 oasis setup
 
 ocaml setup.ml -configure --enable-tests --prefix $PREFIX
