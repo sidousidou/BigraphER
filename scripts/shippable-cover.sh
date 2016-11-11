@@ -29,9 +29,9 @@ ocaml setup.ml -test
 
 echo "Generating coverage reports"
 
-$BISECT bisect*.out -I $OBJ -text $BISECT_DIR/report
-$BISECT bisect*.out -I $OBJ -summary-only -text $BISECT_DIR/summary
-(cd $OBJ; $BISECT ../bisect*.out -no-folding -html ../$BISECT_DIR/html)
+$BISECT -I $OBJ -text $BISECT_DIR/report bisect*.out 
+$BISECT -I $OBJ -summary-only -text $BISECT_DIR/summary bisect*.out 
+(cd $OBJ; $BISECT -html ../$BISECT_DIR/html ../bisect*.out)
 ./cobertura.native $BISECT_DIR/report $XML_DIR coverage.xml $COMMIT
 
 cat $BISECT_DIR/summary
