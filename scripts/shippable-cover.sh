@@ -1,4 +1,7 @@
-#! /usr/bin/env sh -ex
+#! /usr/bin/env sh
+
+set -e
+set -x
 
 eval `opam config env`
 
@@ -33,8 +36,7 @@ $BISECT -I $OBJ -text $BISECT_DIR/report bisect*.out
 $BISECT -I $OBJ -summary-only -text $BISECT_DIR/summary bisect*.out 
 $BISECT -I $OBJ -html $BISECT_DIR/html bisect*.out
 
-cat $BISECT_DIR/summary
-
 ./cobertura.native $BISECT_DIR/report $XML_DIR coverage.xml $COMMIT
 
+cat $BISECT_DIR/summary
 
