@@ -6,7 +6,7 @@ Description: BigraphER is an efficient implementation of Bigraphical Reactive
  Systems (BRS) that supports bigraphs with sharing, stochastic reaction rules,
  rule priorities, graphical output and predicate checking. Models can be
  exported to probabilistic model checker PRISM.
-  
+
 Authors:	Michele Sevegnani
 Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
 License:     	BSD-2-clause
@@ -33,7 +33,7 @@ Executable bigrapher
   BuildDepends:	  bigraph, bigrapher-utils
   CCOpt+:	  -O3
   Install:	  true
-  
+
 Library bigraph
   Path:            lib
   FindlibName:	   bigraph
@@ -91,8 +91,6 @@ SourceRepository master
   Branch: 	   master
   Browser: 	   https://bitbucket.org/mseve/bigrapher
 
-AlphaFeatures: ocamlbuild_more_args
-
 Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
@@ -110,7 +108,7 @@ Document bigraph_api
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
   XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -charset utf-8'"
-  
+
 Library "junit"
   Path:            tests
   Modules:         Junit
@@ -136,7 +134,7 @@ Executable "brs-test"
   BuildDepends:	   bigraph, bigraph-utils, junit
   Install:	   false
   Build$:          flag(tests)
-  
+
 Test "brs"
   Run$:            flag(tests)
   TestTools:	   mkdir
@@ -164,7 +162,7 @@ Executable "parser-test"
   BuildDepends:	   bigraph, bigraph-utils, junit, unix
   Install:	   false
   Build$:          flag(tests)
-  
+
 Test "parser"
   Run$:            flag(tests)
   TestTools:	   mkdir
