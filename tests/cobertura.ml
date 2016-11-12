@@ -22,6 +22,9 @@ let parse_filename s =
 let parse_coverage s =
   let s' = first_token s '(' ')' in
   String.sub s' 0 (String.length s' - 1)
+  |> float_of_string
+  |> (fun x -> x /. 100.0)
+  |> string_of_float
 
 let to_attribs m v =
   "line-rate=\"" ^ (parse_coverage m) ^ "\" "
