@@ -1,5 +1,7 @@
 language: none
 
+archive: true
+
 env:
   - OCAML_VERSION=4.02.0
   - OCAML_VERSION=4.02.3
