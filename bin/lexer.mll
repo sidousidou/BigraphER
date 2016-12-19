@@ -180,6 +180,7 @@ and read_consts = parse
 and read_format = parse 
   | "svg"                   { F_SVG }
   | "dot"                   { F_DOT }
+  | "txt"                   { F_TXT }
   | ","                     { COMMA }
   | eof  		    { EOF }
   | _ as c      	    { raise (ERROR (Unknown_char c, Loc.curr lexbuf)) }

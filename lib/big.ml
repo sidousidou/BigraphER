@@ -918,6 +918,9 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
     |> comp c
   | None -> comp c (comp (tens r1 id) d)
 
+let write_txt b ~name ~path =
+  Export.write_string (to_string b) ~name ~path
+          
 let write_svg b ~name ~path =
   Export.write_svg (to_dot b name) ~name ~path
 

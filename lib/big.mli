@@ -78,6 +78,11 @@ val apply_exn : int Iso.t -> bg -> bg
     The link graph is the identity over face [f]. *)
 val placing : int list list -> int -> Link.Face.t -> bg
 
+(** Export to file the string representation in [txt] format of a bigraph. 
+
+    @raise Export.ERROR when an error occurs. *)
+val write_txt : bg -> name:string -> path:string -> int
+  
 (** Export to file the string representation in [dot] format of a bigraph. 
 
     @raise Export.ERROR when an error occurs. *)

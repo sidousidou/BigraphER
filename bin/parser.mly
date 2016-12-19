@@ -68,6 +68,7 @@ open Cmd
 
 %token   F_SVG
 %token   F_DOT
+%token   F_TXT
 %token   C_CHECK
 %token   C_FULL
 %token   C_SIM
@@ -419,7 +420,8 @@ format:
 
 ext:
   | F_SVG { Svg }
-  | F_DOT { Dot };
+  | F_DOT { Dot }
+  | F_TXT { Txt };
 
 export_opt:
   | O_TS PATH

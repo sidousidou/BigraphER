@@ -27,6 +27,7 @@ let string_of_stand_alone_opt = function
 type format_op =
   | Dot
   | Svg
+  | Txt
 
 type opt =
   | Const of Ast.const list 
@@ -361,7 +362,8 @@ let eval_version fmt () =
 let string_of_format f =
   List.map (function
       | Svg -> "svg"
-      | Dot -> "dot") f
+      | Dot -> "dot"
+      | Txt -> "txt") f
   |> String.concat ","
 
 let string_of_file = function

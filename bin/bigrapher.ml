@@ -234,7 +234,8 @@ let export_states fmt f g =
                  |> fprintf err_formatter "@[%s: %s@]@." Utils.err) in
             List.iter (function 
                 | Cmd.Svg -> aux i s Big.write_svg ".svg"
-                | Cmd.Dot -> aux i s Big.write_dot ".dot")
+                | Cmd.Dot -> aux i s Big.write_dot ".dot"
+                | Cmd.Txt -> aux i s Big.write_txt ".txt")
               Cmd.(defaults.out_format))
           g))
   else ()
@@ -272,7 +273,8 @@ let export_ts fmt msg formats =
 let after_brs_aux fmt stats ts =
   let format_map = function
     | Cmd.Svg -> (Brs.write_svg ts, ".svg")
-    | Cmd.Dot -> (Brs.write_dot ts, ".dot") in
+    | Cmd.Dot -> (Brs.write_dot ts, ".dot")
+    | Cmd.Txt -> (Brs.write_prism ts, ".txt") in
   print_stats fmt
     stats.Brs.time
     stats.Brs.states
@@ -294,7 +296,8 @@ let after_brs fmt (ts,stats) =
 let after_sbrs_aux fmt stats ctmc =
   let format_map = function
     | Cmd.Svg -> (Sbrs.write_svg ctmc, ".svg")
-    | Cmd.Dot -> (Sbrs.write_dot ctmc, ".dot") in
+    | Cmd.Dot -> (Sbrs.write_dot ctmc, ".dot")
+    | Cmd.Txt -> (Sbrs.write_prism ctmc, ".txt") in
   print_stats fmt
     stats.Sbrs.time
     stats.Sbrs.states
@@ -391,7 +394,8 @@ let () =
        | Some path ->
          (let format_map = function
              | Cmd.Svg -> (Big.write_svg, ".svg")
-             | Cmd.Dot -> (Big.write_dot, ".dot") in
+             | Cmd.Dot -> (Big.write_dot, ".dot")
+             | Cmd.Txt -> (Big.write_txt, ".txt") in
           print_msg fmt `yellow ("Exporting declarations to "
                                  ^ path ^ " ...");
           Store.export m.model_decs
