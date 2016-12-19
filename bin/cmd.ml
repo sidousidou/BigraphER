@@ -233,7 +233,7 @@ let msg_opt fmt = function
                            		           %s.@ Dummy@ values@ are@ used@ to@ instantiate@ functional@ values.@]"
                 (colorise `underline "DIR")
   | Ext _ ->  fprintf fmt "@[<hov>Specify a comma-separated list@ of@ output@ formats@ for@ options@ \
-                           			          `%s',@ `%s'@ and@ `%s'.@ Supported@ formats@ are@ `svg'@ and@ `dot'.@ \
+                           			          `%s',@ `%s'@ and@ `%s'.@ Supported@ formats@ are@ `dot',@ `svg'@ and@ `txt'.@ \
                            			   This@ is@ equivalent@ to@ setting@ $BIGFORMAT@ to@ %s.@]"
                 (string_of_opt "|" (Decs ""))
                 (string_of_opt "|" (Graph ""))
