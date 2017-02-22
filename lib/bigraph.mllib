@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 89f7f9b8a4757d5d289aadf985f07d7c)
+# DO NOT EDIT (digest: 145a02845ad627db274cd1368f2a6e0d)
 Ctrl
 Nodes
 Big
@@ -9,6 +9,7 @@ Place
 Sbrs
 Base
 Cnf
+Mcs
 Fun
 IntSet
 Iso

@@ -47,6 +47,7 @@ Library bigraph
                    Sbrs
   InternalModules: Base,
                    Cnf,
+                   Mcs,
                    Fun,
                    IntSet,
                    Iso,
