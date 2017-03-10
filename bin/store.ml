@@ -118,6 +118,7 @@ type error =
   | Unknown_big of int
   | Reaction of string		             (* error message *) 
   | Init_not_ground
+  | Not_face of Id.t list
 
 type warning =
   | Multiple_declaration of Id.t * Loc.t * Loc.t
@@ -147,7 +148,10 @@ let report_error_aux fmt = function
   | Invalid_class -> fprintf fmt "Invalid epression for a priority class"
   | Invalid_priorities -> fprintf fmt "Invalid expression for a priority structure"
   | Init_not_ground -> fprintf fmt "init bigraph is not ground"
-
+  | Not_face ns ->
+     fprintf fmt "Expression {%s} is not a valid interface as it contains duplicate names"
+             (String.concat "," ns)
+                     
 let report_error fmt err =
   fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
 
@@ -532,15 +536,21 @@ let check_atomic id p env face c = function
     (if is_atomic id p env then raise (ERROR (Atomic_ctrl id, p))
      else Big.ion face c)
 
+let parse_face ns p =
+  let f =  Link.parse_face ns
+  in if List.length ns != Link.Face.cardinal f
+     then raise (ERROR (Not_face ns, p))
+     else f
+    
 (* flag=true  Atomic controls allowed *)
 let eval_ion scope env env_t flag = function
   | Big_ion_exp (id, names, p) ->
     (let c = get_ctrl id (List.length names) p env
-     and face = Link.parse_face names in
+     and face = parse_face names p in
      (check_atomic id p env face c flag, env_t))
   | Big_ion_fun_exp (id, args, names, p) ->
     (let (nums, args_t) = eval_nums args scope env
-     and face = Link.parse_face names in
+     and face = parse_face names p in
      let (a, _, t) =
        get_ctrl_fun id (List.length names) args_t p env in
      try
@@ -603,7 +613,7 @@ let rec eval_big (exp : big_exp) (scope : scope)
      | 1 -> (Big.one, env_t)
      | _ -> raise (ERROR (Unknown_big v, p)))
   | Big_id exp ->
-    (Big.id (Big.Inter (exp.id_place, Link.parse_face (exp.id_link))),
+    (Big.id (Big.Inter (exp.id_place, parse_face exp.id_link exp.id_loc)),
      env_t)
   | Big_merge (n, _) -> (Big.merge n, env_t)
   | Big_split (n, _) -> (Big.split n, env_t)
@@ -621,14 +631,14 @@ let rec eval_big (exp : big_exp) (scope : scope)
   | Big_close exp ->
      (Big.closure (Link.parse_face [exp.cl_name]), env_t)
   | Big_sub exp ->
-     (Big.sub (Link.parse_face exp.in_names) (Link.parse_face [exp.out_name]), env_t)
+     (Big.sub (parse_face exp.in_names exp.sub_loc) (Link.parse_face [exp.out_name]), env_t)
   | Big_wire (c, b, _) ->
     (let (b_v, env_t') = eval_big b scope env env_t in
      match c with
      | Close_exp cs ->
         (Big.close (Link.parse_face (names_of_closures cs)) b_v, env_t')
      | Sub_exp s ->
-        (Big.rename (Link.parse_face s.in_names) (Link.parse_face [s.out_name]) b_v, env_t'))
+        (Big.rename (parse_face s.in_names s.sub_loc) (Link.parse_face [s.out_name]) b_v, env_t'))
 
 let eval_eta = function
   | Some (l, _) -> Some (Fun.parse l)
