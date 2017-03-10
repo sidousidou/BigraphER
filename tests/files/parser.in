@@ -7,3 +7,4 @@
 ./examples/hospital.big
 ./examples/closures.big
 ./examples/merge.big
+./examples/spec.big
