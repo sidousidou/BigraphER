@@ -1,3 +1,16 @@
+###1.1.0 (2017-03-10): ###
+
+* Improve error messages in reaction rules interface checks
+* Use new CSS for the documentation
+* Add `merge` and `split` keywords
+* Add `--export-ml` flag to export models to OCaml
+* Add support for `txt` output format
+* Extend parser to support renamings. Example: `x/{x0,x1} b`
+* Disallow duplicate names when specifying interfaces
+* FIX: capture `NOT_PRIME` exception at run-time
+* FIX: typos in the documentation
+* FIX: warning 44
+
 ###1.0.2 (2016-05-20):###
 
 * Use maps to implement ports.
