@@ -379,9 +379,8 @@ wire_exp:
                                                 in_names = $4;
                                                 sub_loc = loc $startpos $endpos; }};
 
-closures: /* LENGHT > 1 */
-  | c = closure; cs = nonempty_list(closure)
-                                            { c :: cs }; 
+closures: 
+  | cs = nonempty_list(closure)             { cs }; 
 
 closure:
   | SLASH IDE                               { { cl_name = $2; 
