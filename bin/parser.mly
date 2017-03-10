@@ -139,7 +139,7 @@ ctrl_exp:
 
 ide_list:
   ides = separated_list(COMMA, IDE)         { ides };
- 
+
 int_exp:
   | CINT                                    { Int_val ($1, loc $startpos $endpos)       }
   | IDE                                     { Int_var ($1, loc $startpos $endpos)       } 
@@ -291,16 +291,16 @@ srule_ide:
   | IDE LPAR num_list RPAR                  { Srul_id_fun ($1, $3, loc $startpos $endpos) };
 
 bexp:
-  | simple_bexp                             { $1                                                         }
-  | closure_list LPAR bexp RPAR             { Big_closures ($1, $3, loc $startpos $endpos)               }
-  | closure_list ion_exp                    { Big_closures ($1, Big_ion $2, loc $startpos $endpos)       }
-  | closure_list ion_exp DOT simple_bexp    { Big_closures ($1, Big_nest ($2, $4, loc $startpos $endpos), 
+  | wire_exp LPAR bexp RPAR                 { Big_wire ($1, $3, loc $startpos $endpos)                   }
+  | wire_exp ion_exp                        { Big_wire ($1, Big_ion $2, loc $startpos $endpos)           }
+  | wire_exp ion_exp DOT simple_bexp        { Big_wire ($1, Big_nest ($2, $4, loc $startpos $endpos), 
 							    loc $startpos $endpos)                       }
-  | closure_list IDE                        { Big_closures ($1, Big_var ($2, loc $startpos $endpos),
+  | wire_exp IDE                            { Big_wire ($1, Big_var ($2, loc $startpos $endpos),
                                                             loc $startpos $endpos)                       }
-  | closure_list IDE LPAR num_list RPAR     { Big_closures ($1, Big_var_fun ($2, $4,
+  | wire_exp IDE LPAR num_list RPAR         { Big_wire ($1, Big_var_fun ($2, $4,
                                                                              loc $startpos $endpos),
                                                             loc $startpos $endpos)                       }
+  | simple_bexp                             { $1                                                         }
   | bexp PROD bexp                          { Big_comp ($1, $3, loc $startpos $endpos)                   }
   | bexp PLUS bexp                          { Big_tens ($1, $3, loc $startpos $endpos)                   }
   | bexp PIPE bexp                          { Big_par ($1, $3, loc $startpos $endpos)                    }
@@ -309,13 +309,18 @@ bexp:
                                             { Big_share ($2, $4, $6, loc $startpos $endpos)              };  
 
 simple_bexp:
-  | LPAR bexp RPAR                          { $2                                          } 
+  | LPAR bexp RPAR                          { $2                                          }
+  | LPAR bexp RPAR LPAR bexp RPAR           { Big_comp ($2, $5, loc $startpos $endpos)    }	
   | id_exp                                  { Big_id $1                                   }
   | merge_exp                               { $1                                          } 
   | split_exp                               { $1                                          }
-  | closure                                 { Big_close $1                                }
-  | CINT                                    { Big_num ($1, loc $startpos $endpos)         }
+  | SLASH IDE                               { Big_close { cl_name = $2; 
+					                  cl_loc = loc $startpos $endpos;}}
+  | IDE SLASH LCBR ide_list RCBR            { Big_sub { out_name = $1;
+                                                        in_names = $4;
+                                                        sub_loc = loc $startpos $endpos; }}
   | LCBR IDE RCBR                           { Big_new_name ($2, loc $startpos $endpos)    }
+  | CINT                                    { Big_num ($1, loc $startpos $endpos)         }
   | place_exp                               { Big_plc $1                                  }
   | IDE                                     { Big_var ($1, loc $startpos $endpos)         }
   | IDE LPAR num_list RPAR                  { Big_var_fun ($1, $3, loc $startpos $endpos) }
@@ -366,13 +371,21 @@ int_list_list
   : /* EMPTY */                             { [ ] }
   | LCBR int_list RCBR                      { [ $2 ] }				
   | LCBR int_list RCBR COMMA int_list_list  { $2 :: $5 }
-    
-closure_list:
-  l = nonempty_list(closure)                { l }; 
+
+
+wire_exp:
+  | closures                                { Close_exp $1  }
+  | IDE SLASH LCBR ide_list RCBR            { Sub_exp { out_name = $1;
+                                                in_names = $4;
+                                                sub_loc = loc $startpos $endpos; }};
+
+closures: /* LENGHT > 1 */
+  | c = closure; cs = nonempty_list(closure)
+                                            { c :: cs }; 
 
 closure:
   | SLASH IDE                               { { cl_name = $2; 
-						cl_loc = loc $startpos $endpos; } };
+					        cl_loc = loc $startpos $endpos; } };
 		
 (* COMMAND LINE *)
 

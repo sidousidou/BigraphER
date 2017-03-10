@@ -65,14 +65,21 @@ type ion_exp =
 type place_exp =                                            (* ({{0,2,3}, {}}, 5) *)
   { plc_parents : int list list;
     plc_roots : int;
-    plc_loc : Loc.t;
-  }         
+    plc_loc : Loc.t; }         
 
-type closure_exp =                                          (* /x *)
+type closure_exp =   (* /x *)
   { cl_name : Id.t;
-    cl_loc : Loc.t;
-  }
+    cl_loc : Loc.t; }
 
+type sub_exp =       (* x/{x0, x1} *)
+  { out_name : Id.t;
+    in_names : Id.t list;
+    sub_loc : Loc.t; }
+    
+type wire_exp =
+  | Close_exp of closure_exp list
+  | Sub_exp of sub_exp
+    
 type big_exp =
   | Big_var of Id.t * Loc.t                                 (* b *)
   | Big_var_fun of Id.t * num_exp list * Loc.t              (* b(1, 5.67) *)
@@ -90,7 +97,8 @@ type big_exp =
   | Big_nest of ion_exp * big_exp * Loc.t                   (* A . B *)
   | Big_ion of ion_exp                                      
   | Big_close of closure_exp                                (* closure *)
-  | Big_closures of closure_exp list * big_exp  * Loc.t     (* /x/y/z A *)
+  | Big_sub of sub_exp                                      (* substitution *)
+  | Big_wire of wire_exp * big_exp  * Loc.t            (* /x y/{y0, y1} /z A *)
 
 type eta_exp = int list * Loc.t
 
@@ -219,21 +227,23 @@ let face_of_ion_exp = function
 
 let loc_of_ion_exp = function
   | Big_ion_exp (_, _, l) | Big_ion_fun_exp (_, _, _, l) -> l
-
+                                                          
 let loc_of_big_exp = function
   | Big_var (_, p) | Big_var_fun (_, _, p) | Big_new_name (_, p)
   | Big_comp (_, _, p) | Big_tens (_, _, p) | Big_par (_, _, p)
   | Big_ppar (_, _, p) | Big_share (_, _, _, p) | Big_num (_, p)
-  | Big_nest (_, _, p) | Big_closures (_, _, p) | Big_merge (_, p)
+  | Big_nest (_, _, p) | Big_wire (_, _, p) | Big_merge (_, p)
   | Big_split (_, p) -> p
   | Big_id e -> e.id_loc 
   | Big_plc e -> e.plc_loc
   | Big_ion e -> loc_of_ion_exp e
   | Big_close e -> e.cl_loc
-
+  | Big_sub e -> e.sub_loc
+               
 let names_of_closures =
-  List.fold_left (fun acc c -> c.cl_name :: acc) []
-
+  List.fold_left (fun acc c ->
+      c.cl_name :: acc) []
+  
 let init_of_ts = function
   | Dbrs dbrs -> dbrs.dbrs_init 
   | Dsbrs dsbrs -> dsbrs.dsbrs_init

@@ -619,11 +619,16 @@ let rec eval_big (exp : big_exp) (scope : scope)
      | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
   | Big_ion ion -> eval_ion scope env env_t true ion
   | Big_close exp ->
-    (Big.closure (Link.parse_face [exp.cl_name]), env_t)
-  | Big_closures (c, b, _) ->
+     (Big.closure (Link.parse_face [exp.cl_name]), env_t)
+  | Big_sub exp ->
+     (Big.sub (Link.parse_face exp.in_names) (Link.parse_face [exp.out_name]), env_t)
+  | Big_wire (c, b, _) ->
     (let (b_v, env_t') = eval_big b scope env env_t in
-     (Big.close (Link.parse_face (names_of_closures c)) b_v,
-      env_t'))
+     match c with
+     | Close_exp cs ->
+        (Big.close (Link.parse_face (names_of_closures cs)) b_v, env_t')
+     | Sub_exp s ->
+        (Big.rename (Link.parse_face s.in_names) (Link.parse_face [s.out_name]) b_v, env_t'))
 
 let eval_eta = function
   | Some (l, _) -> Some (Fun.parse l)
@@ -1116,8 +1121,8 @@ let rec ml_of_int = function
   | Int_plus (l, r, _) -> "(" ^ (ml_of_int l) ^ " + " ^ (ml_of_int r) ^ ")"
   | Int_minus (l, r, _) -> "(" ^ (ml_of_int l) ^ " - " ^ (ml_of_int r) ^ ")"
   | Int_prod (l, r, _) -> "(" ^ (ml_of_int l) ^ " * " ^ (ml_of_int r) ^ ")"
-  | Int_div (l, r, p) -> "(" ^ (ml_of_int l) ^ " / " ^ (ml_of_int r) ^ ")"
-  | Int_pow (l, r, p) -> "(pow_int " ^ (ml_of_int l) ^ " " ^ (ml_of_int r) ^ ")"
+  | Int_div (l, r, _) -> "(" ^ (ml_of_int l) ^ " / " ^ (ml_of_int r) ^ ")"
+  | Int_pow (l, r, _) -> "(pow_int " ^ (ml_of_int l) ^ " " ^ (ml_of_int r) ^ ")"
 
 let rec ml_of_float =  function
   | Float_val (v, _) -> string_of_float v
@@ -1163,7 +1168,10 @@ let rec ml_of_big = function
   | Big_merge (n, _) -> "Big.merge " ^ (string_of_int n)
   | Big_split (n, _) -> "Big.split " ^ (string_of_int n)
   | Big_close exp ->
-    "Big.closure (Link.parse_face " ^ (ml_of_ids [exp.cl_name]) ^ ")"
+     "Big.closure (Link.parse_face " ^ (ml_of_ids [exp.cl_name]) ^ ")"
+  | Big_sub exp ->
+     "Big.sub (Link.parse_face " ^ (ml_of_ids exp.in_names)
+     ^ ") (Link.parse_face " ^ (ml_of_ids [exp.out_name]) ^ ")"
   | Big_comp (a, b, _) ->
     "Big.comp (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
   | Big_tens (a, b, _) ->
@@ -1184,16 +1192,22 @@ let rec ml_of_big = function
     "Big.ion (Link.parse_face " ^ (ml_of_ids names)
     ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"   
   | Big_nest (i, b, _) ->
-    "Big.nest (" ^  (ml_of_big (Big_ion i)) ^ ") (" ^ (ml_of_big b) ^ ")"
-  | Big_closures (c, b, _) ->
-    "Big.close (Link.parse_face" ^ (ml_of_ids (names_of_closures c))
-    ^ ") (" ^ (ml_of_big b) ^ ")"
-
+     "Big.nest (" ^  (ml_of_big (Big_ion i)) ^ ") (" ^ (ml_of_big b) ^ ")"
+  | Big_wire (c, b, _) ->
+     match c with
+     | Close_exp cs ->
+        "Big.close (Link.parse_face " ^ (ml_of_ids (names_of_closures cs))
+        ^ ") (" ^ (ml_of_big b) ^ ")"
+     | Sub_exp s ->
+        "Big.rename (Link.parse_face " ^ (ml_of_ids s.in_names)
+        ^ ") (Link.parse_face " ^ (ml_of_ids [s.out_name])
+        ^ ") (" ^ (ml_of_big b) ^ ")"     
+ 
 let ml_of_eta = function
   | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
   | None -> "None"
 
-let ml_of_react id lhs rhs eta =
+let ml_of_react lhs rhs eta =
   "{rdx = " ^ (ml_of_big lhs) ^ ";\n"
   ^ " rct = " ^ (ml_of_big rhs) ^ ";\n"
   ^ " eta = " ^ (ml_of_eta eta) ^ ";\n"
@@ -1206,14 +1220,14 @@ let ml_of_dec = function
   | Dbig (Big_fun_exp (id, params, exp, _)) ->
     ml_of_dec id params (ml_of_big exp)
   | Dreact (React_exp (id, lhs, rhs, eta, _)) ->
-    ml_of_dec id [] ("Brs." ^ (ml_of_react id lhs rhs eta) ^ " }") 
+    ml_of_dec id [] ("Brs." ^ (ml_of_react lhs rhs eta) ^ " }") 
   | Dreact (React_fun_exp (id, params, lhs, rhs, eta, _)) ->
-    ml_of_dec id params ("Brs." ^ (ml_of_react id lhs rhs eta) ^ " }") 
+    ml_of_dec id params ("Brs." ^ (ml_of_react lhs rhs eta) ^ " }") 
   | Dsreact (Sreact_exp (id, lhs, rhs, eta, r, _)) ->
-    ml_of_dec id [] ("Sbrs." ^ (ml_of_react id lhs rhs eta)
+    ml_of_dec id [] ("Sbrs." ^ (ml_of_react lhs rhs eta)
                      ^ " rate = " ^ (ml_of_float r) ^ ";\n }") 
   | Dsreact (Sreact_fun_exp (id, params, lhs, rhs, eta, r, _)) ->
-    ml_of_dec id params ("Sbrs." ^ (ml_of_react id lhs rhs eta)
+    ml_of_dec id params ("Sbrs." ^ (ml_of_react lhs rhs eta)
                          ^ " rate = " ^ (ml_of_float r) ^ ";\n }") 
   | Dint exp ->
     ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)

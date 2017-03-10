@@ -203,7 +203,7 @@ let share f psi g =
   then comp (comp g (tens psi (id (Inter (0, face_of_inter (outer f)))))) f
   else raise SHARING_ERROR
 
-(* not checking if f is a subset of outern b names *)
+(* not checking if f is a subset of b's outer names *)
 let close f b =   
   let g = Link.Face.diff (face_of_inter (outer b)) f 
   and n = ord_of_inter (outer b) 
@@ -211,6 +211,13 @@ let close f b =
       closure (Link.Face.singleton n)) (Link.Face.elements f)) in
   comp (tens cs (id (Inter (n, g)))) b
 
+(* renaming through subsitution (o/i * b) *)  
+let rename i o b =
+  let g = Link.Face.diff (face_of_inter (outer b)) i
+  and n = ord_of_inter (outer b)
+  and s = sub i o in
+  comp (tens s (id (Inter (n, g)))) b
+  
 let atom f c = 
   comp (ion f c) one
 

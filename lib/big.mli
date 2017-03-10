@@ -188,6 +188,9 @@ val share : bg -> bg -> bg -> bg
 (** [close f b] closes names in [f]. *)
 val close : Link.Face.t -> bg -> bg
 
+(** [rename in out b] renames the names in [in] to the names in [out]. *)  
+val rename : Link.Face.t -> Link.Face.t -> bg -> bg
+  
 (** {3 Predicates} *)
 
 (** [is_id b] returns [true] if bigraph [b] is an identity, [false] otherwise. *)
