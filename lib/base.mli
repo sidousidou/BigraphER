@@ -7,6 +7,10 @@ module M_int : Map.S with type key = int
 
 module M_string : Map.S with type key = String.t
 
+(** {3 Specialised sets} *)
+
+module S_string : Set.S with type elt = String.t
+     
 (** {3 Specialised hash tables} *)
 
 module H_int : Hashtbl.S with type key = int

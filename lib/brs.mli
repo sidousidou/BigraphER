@@ -26,7 +26,8 @@ type stats =  { time : float;  (** Execution time *)
 type graph = {
   v : (int * Big.bg) Base.H_int.t;  (** States *)
   e : int Base.H_int.t;             (** Transition relation *)
-  l : int Base.H_string.t;          (** Labelling function *) 
+  l : int Base.H_string.t;          (** Labelling function *)
+  preds : Base.S_string.t;          (** Predicate identifiers *)
 }
 
 (** String representation of reaction rules. *)

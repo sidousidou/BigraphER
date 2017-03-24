@@ -1,9 +1,9 @@
 module type G = sig
   type t
   type edge_type
-  val init : int -> t
+  val init : int -> String.t list -> t
   val states : t -> (int * Big.bg) Base.H_int.t
-  val label : t -> int Base.H_string.t
+  val label : t -> (Base.S_string.t * int Base.H_string.t)
   val edges : t -> edge_type Base.H_int.t
   val dest : edge_type -> int
   val string_of_arrow : edge_type -> string
@@ -74,27 +74,18 @@ module MakeE (G : G) = struct
     Printf.sprintf "digraph \"%s\" {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
       name rank states edges
 
-  module StringSet = Set.Make (struct
-      type t = string
-      let compare = String.compare
-    end)
-
   let to_lab g =
-    let h = G.label g in
-    (* Set of label identifiers *)
-    let ids = Base.H_string.fold (fun id _ acc ->
-        StringSet.add id acc)
-        h StringSet.empty in
-    StringSet.fold (fun id acc ->
-        Base.H_string.find_all h id
-        |> List.map (fun s -> "x = " ^ (string_of_int s)) 
-        |> String.concat " | " 
-        |> (fun s -> "label \"" ^ id ^ "\" = " ^ s)
-        |> fun s -> s ::  acc)
-      ids []  
+    let (preds, h) = G.label g in
+    Base.S_string.fold (fun p acc ->
+        (match Base.H_string.find_all h p with
+         | [] -> "false"
+         | xs -> (List.map (fun s -> "x = " ^ (string_of_int s)) xs 
+                  |> String.concat " | "))
+        |> fun s -> "label \"" ^ p ^ "\" = " ^ s
+        |> fun s -> s ::  acc) preds []
     |> List.rev
     |> String.concat ";\n"
-
+    
   let iter_states ~f g =
     Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
 
@@ -195,12 +186,12 @@ module Make (R : RrType.T)
       ([], [], i)
 
   (* Add labels for predicates *)		     
-  let check (i, s) h =
+  let check (i, s) (_, h) =
     List.iter (fun (id, p) ->
         if Big.occurs s p then
           Base.H_string.add h id i 
         else ())
-
+    
   let rec _bfs g q i m t0 priorities predicates max iter_f =
     if not (Queue.is_empty q) then
       if i > max then
@@ -237,7 +228,10 @@ module Make (R : RrType.T)
     let q = Queue.create () in
     (* Apply rewriting to s0 *)
     let (s0', m) = P.rewrite s0 priorities
-    and g = G.init max in
+    and g =
+      List.split predicates
+      |> fst
+      |> G.init max in
     Queue.push (0, s0') q;
     (* Add initial state *)
     iter_f 0 s0';
@@ -267,7 +261,10 @@ module Make (R : RrType.T)
     Random.self_init ();
     (* Apply rewriting to s0 *)
     let (s0', m) = P.rewrite s0 priorities
-    and trace = G.init init_size in
+    and trace =
+      List.split predicates
+      |> fst
+      |> G.init init_size in
     (* Add initial state *)
     iter_f 0 s0';
     Base.H_int.add (G.states trace) (Big.key s0') (0, s0');

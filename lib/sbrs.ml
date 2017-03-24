@@ -59,27 +59,29 @@ end
 module H_int = Base.H_int
 
 module H_string = Base.H_string
+                
+module S_string = Base.S_string
 
 type graph = { v : (int * Big.bg) H_int.t;
                e : R.edge H_int.t;
                l : int H_string.t;  
-             }
+               preds : S_string.t; }
 
 type stats =  { time : float; 
                 states : int;  
                 trans : int;  
-                occs : int;
-              }
+                occs : int; }
 
 module G = struct
   type t = graph
   type edge_type = RT.edge	       
-  let init n =
+  let init n preds =
     { v = H_int.create n;
       e = H_int.create n;
-      l = H_string.create n; }		      
+      l = H_string.create n;
+      preds = S_string.of_list preds; }		      
   let states g = g.v
-  let label g = g.l
+  let label g = (g.preds, g.l)
   let edges g = g.e
   let dest u = fst u
   let string_of_arrow u = string_of_float (snd u)

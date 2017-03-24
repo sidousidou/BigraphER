@@ -10,6 +10,8 @@ module M_int =
 
 module M_string = Map.Make (String)
 
+module S_string = Set.Make (String)
+
 module H_int =
   Hashtbl.Make(struct
     type t = int

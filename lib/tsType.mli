@@ -1,9 +1,9 @@
 module type G = sig
   type t
   type edge_type
-  val init : int -> t
+  val init : int -> String.t list -> t
   val states : t -> (int * Big.bg) Base.H_int.t
-  val label : t -> int Base.H_string.t
+  val label : t -> (Base.S_string.t * int Base.H_string.t)
   val edges : t -> edge_type Base.H_int.t
   val dest : edge_type -> int
   val string_of_arrow : edge_type -> string
