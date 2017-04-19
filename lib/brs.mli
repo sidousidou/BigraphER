@@ -29,6 +29,9 @@ type graph = {
   l : int Base.H_string.t;          (** Labelling function *) 
 }
 
+(** String with type of transition system: ["BRS"]. *)
+val typ : string
+
 (** String representation of reaction rules. *)
 val to_string_react : react -> string
 

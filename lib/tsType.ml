@@ -19,6 +19,11 @@ module type L = sig
   val is_greater : t -> t -> bool
 end
 
+(* Type of transition system *)
+module type T = sig
+  val typ : string
+end
+
 (* Execution statistics *)
 module type S = sig
   type t
@@ -131,12 +136,15 @@ module Make (R : RrType.T)
      end)
     (L : L with type occ = R.occ)
     (G : G with type edge_type = R.edge)
-    (S : S with type g = G.t) = struct
+    (S : S with type g = G.t)
+    (Ty : T) = struct
 
   type t = G.t
 
   include P
-
+ 
+  include Ty
+      
   type limit = L.t
 
   exception MAX of t * S.t

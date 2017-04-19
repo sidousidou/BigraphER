@@ -30,6 +30,9 @@ type graph = {
   l : int Base.H_string.t;              (** Labelling function *) 
 }
 
+(** String with type of transition system: ["SBRS"]. *)
+val typ : string
+
 (** String representation of a stochastic reaction rule. *)
 val to_string_react : sreact -> string
 

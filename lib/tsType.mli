@@ -18,6 +18,10 @@ module type L = sig
   val is_greater : t -> t -> bool
 end
 
+module type T = sig
+  val typ : string
+end
+
 module type S = sig
   type t
   type g
@@ -44,7 +48,8 @@ module Make (R : RrType.T)
      end)
     (L : L with type occ = R.occ)
     (G : G with type edge_type = R.edge)
-    (S : S with type g = G.t): sig
+    (S : S with type g = G.t)
+    (Ty : T): sig
 
   type t = G.t
 
@@ -64,6 +69,8 @@ module Make (R : RrType.T)
 
   exception NOT_VALID of react_error
 
+  val typ : string
+    
   val to_string_react : R.t -> string
 
   val is_valid_react : R.t -> bool

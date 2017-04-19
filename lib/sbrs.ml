@@ -103,4 +103,8 @@ module L = struct
   let is_greater = ( > )
 end
 
-include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (S)
+module T = struct
+  let typ = "SBRS"
+end
+
+include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (S) (T)
