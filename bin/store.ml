@@ -84,15 +84,7 @@ let assign_type (v : store_val) env_t =
   | Int_param _ -> (`param `int, env_t)
   | Float_param _ -> (`param `float, env_t)
 
-
-module Hashtbl =
-  Hashtbl.Make(struct
-    type t = Id.t
-    let equal (x:string) y = x = y
-    let hash = Hashtbl.hash
-  end)		       
-
-type store = typed_store_val Hashtbl.t
+type store = typed_store_val Base.H_string.t
 
 let get_val ((v, _, _) : typed_store_val) = v
 
@@ -100,7 +92,7 @@ let get_type ((_ , t, _) : typed_store_val) = t
 
 let get_pos ((_, _, p) : typed_store_val) = p
 
-let bindings = Hashtbl.length
+let bindings = Base.H_string.length
 
 type p_class_list = P of Brs.p_class list | S of Sbrs.p_class list
 
@@ -174,7 +166,7 @@ type scope = typed_store_val ScopeMap.t
 let fetch id p (aux : typed_store_val -> 'a) (scope : scope) (env : store) =
   try aux (ScopeMap.find id scope) with
   | Not_found ->
-    try aux (Hashtbl.find env id) with
+    try aux (Base.H_string.find env id) with
     | Not_found -> raise (ERROR (Unbound_variable id, p))
 
 let get_int id p scope env =
@@ -236,7 +228,7 @@ let get_num id p scope env =
 
 let get_ctrl id arity p env =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (A_ctrl c, _, _)
     | (Ctrl c, _, _) ->
       (let a = Ctrl.arity c in
@@ -259,7 +251,7 @@ let get_ctrl id arity p env =
 
 let get_ctrl_fun id arity act_types p env =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (A_ctrl_fun (a, forms), t, _)
     | (Ctrl_fun (a, forms), t, _) ->
       (if a = arity then (a, forms, t) else raise (ERROR (Arity (id, a, arity), p))) 
@@ -280,7 +272,7 @@ let get_ctrl_fun id arity act_types p env =
 
 let is_atomic id p env =
   try 
-    match get_val (Hashtbl.find env id) with
+    match get_val (Base.H_string.find env id) with
     | A_ctrl _ |  A_ctrl_fun _ -> true
     | Int _
     | Float _
@@ -299,7 +291,7 @@ let is_atomic id p env =
 
 let get_big id p env =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (Big b, _, _) -> b
     | (Int _,t,_)
     | (Float _,t,_)
@@ -319,7 +311,7 @@ let get_big id p env =
 
 let get_big_fun id arg_types p env =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (Big_fun (exp, forms), t, _) -> (exp, forms, t)
     | (Int _,t,_)
     | (Float _,t,_)
@@ -339,7 +331,7 @@ let get_big_fun id arg_types p env =
 
 let get_react id p (env : store) =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (React r, _, _) -> r
     | (Int _,t,_)
     | (Float _,t,_)
@@ -359,7 +351,7 @@ let get_react id p (env : store) =
 
 let get_react_fun id arg_types p env =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (React_fun (l, r, eta, forms), t, _) -> (l, r, eta, forms, t)
     | (Int _,t,_)
     | (Float _,t,_)
@@ -379,7 +371,7 @@ let get_react_fun id arg_types p env =
 
 let get_sreact id p (env : store) =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (Sreact r, _, _) -> r
     | (Int _,t,_)
     | (Float _,t,_)
@@ -399,7 +391,7 @@ let get_sreact id p (env : store) =
 
 let get_sreact_fun id arg_types p env =
   try
-    match Hashtbl.find env id with
+    match Base.H_string.find env id with
     | (Sreact_fun (l, r, eta, rate, forms), t, _) -> (l, r, eta, rate, forms, t)
     | (Int _,t,_)
     | (Float _,t,_)
@@ -713,7 +705,7 @@ let param_to_vals = function
 
 let is_param id env p =
   try
-    match get_val (Hashtbl.find env id) with
+    match get_val (Base.H_string.find env id) with
     | Int_param _ 
     | Float_param _ -> true
     | Int _
@@ -756,7 +748,7 @@ let scan_for_params env args =
 let param_scopes env = function
   | [] -> [ScopeMap.empty]
   | ids ->
-    List.map (fun id -> param_to_vals (Hashtbl.find env id)) ids
+    List.map (fun id -> param_to_vals (Base.H_string.find env id)) ids
     |> param_comb
     |> List.map (fun comb ->
         List.fold_left2 (fun acc id v ->
@@ -896,11 +888,11 @@ let eval_init exp env env_t =
 
 let add_to_store fmt env id (v : typed_store_val) =
   (try
-     let p = get_pos (Hashtbl.find env id) in
+     let p = get_pos (Base.H_string.find env id) in
      report_warning fmt (Multiple_declaration (id, p, get_pos v));
    with
    | Not_found -> ());
-  Hashtbl.replace env id v
+  Base.H_string.replace env id v
 
 let update fmt id (v : store_val) p env env_t =
   let (t, env_t') = assign_type v env_t in
@@ -1020,7 +1012,7 @@ let store_params fmt (params : param_exp list) env =
 (******** INSTANTIATE REACTIVE SYSTEM *********)
 
 let init_env fmt consts =
-  let store = Hashtbl.create 1000 in
+  let store = Base.H_string.create 1000 in
   store_consts fmt consts store;
   store
 
@@ -1057,7 +1049,7 @@ let export decs (env : store) (env_t : store_t) path
     resolve_types env_t args_t
     |> List.map def_val in
   let aux id = 
-    let args_t = dom_of_lambda (get_type (Hashtbl.find env id)) in
+    let args_t = dom_of_lambda (get_type (Base.H_string.find env id)) in
     dummy_args args_t in
   let aux' eval_f id args p =
     eval_f id args env env_t p |> fst |> List.hd in
