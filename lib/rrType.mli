@@ -17,6 +17,7 @@ sig
   val merge_occ : occ -> occ -> occ
   val update_occ : occ -> Big.bg -> occ
   val edge_of_occ : occ -> int -> edge
+  val step : Big.bg -> t list -> occ list * int
   val random_step : (Big.bg -> t list -> occ list * int) ->
     Big.bg -> t list ->
     occ option * int
@@ -130,5 +131,16 @@ sig
 
 end
 
-
+(** Generic step function *)
+val gen_step :
+  Big.bg ->
+  'b list ->
+  big_of_occ:('a -> Big.bg) ->
+  to_occ:(Big.bg -> 'b -> 'a) ->
+  merge_occ:('a -> 'a -> 'a) ->
+  lhs:('b -> Big.bg) ->
+  rhs:('b -> Big.bg) ->
+  map:('b -> int Fun.t option) ->
+  'a list * int
+                                                                    
 (**/**)

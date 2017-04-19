@@ -17,7 +17,7 @@ sig
   val update_occ : occ -> Big.bg -> occ
   (* Replace the bigraph in an occurrence with an index *)
   val edge_of_occ : occ -> int -> edge
-  (* Type specific for now *)			      
+  val step : Big.bg -> t list -> occ list * int
   val random_step : (Big.bg -> t list -> occ list * int) ->
     Big.bg -> t list -> occ option * int
 end
@@ -49,6 +49,34 @@ sig
   val step : Big.bg -> t list -> occ list * int
   val random_step : Big.bg -> t list -> occ option * int
 end
+
+(* Generic step function *)
+let gen_step b rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
+  (* Input list is assumed without duplicates. Example: extract 4
+     [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)	   
+  let rec extract (pred :'a -> bool) acc = function
+    | [] -> (None, acc)
+    | x :: l -> if pred x then (Some x, l @ acc)
+      else extract pred (x :: acc) l in
+  let filter_iso l =
+    let aux1 acc o =
+      let (iso, non_iso) =
+        extract (fun o' ->
+            Big.equal (big_of_occ o) (big_of_occ o'))
+          [] acc in
+      match iso with
+      | None -> o :: acc
+      | Some iso_o -> (merge_occ o iso_o) :: non_iso in
+    (List.fold_left aux1 [] l, List.length l) in
+  let aux2 acc r =
+    (Big.occurrences b (lhs r)
+     (* Parmap.parmap *)			 
+     |> List.map (fun o ->
+         to_occ
+           (Big.rewrite o b (lhs r) (rhs r) (map r)) r))
+    @ acc in
+  List.fold_left aux2 [] rules
+  |> filter_iso
 
 module Make (R : R) = struct
 
@@ -143,34 +171,6 @@ module Make (R : R) = struct
       | Some b ->  _fix b rules (i + 1)
       | None -> (s, i) in
     _fix b rules 0
-
-  (* Input list is assumed without duplicates. Example: extract 4
-     [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)	   
-  let rec extract (pred :'a -> bool) acc = function
-    | [] -> (None, acc)
-    | x :: l -> if pred x then (Some x, l @ acc)
-      else extract pred (x :: acc) l
-
-  let step b rules =
-    let filter_iso (l : occ list) =
-      let aux1 acc o =
-        let (iso, non_iso) =
-          extract (fun o' ->
-              Big.equal (big_of_occ o) (big_of_occ o'))
-            [] acc in
-        match iso with
-        | None -> o :: acc
-        | Some iso_o -> (merge_occ o iso_o) :: non_iso in
-      (List.fold_left aux1 [] l, List.length l) in
-    let aux2 acc r =
-      (Big.occurrences b (lhs r)
-       (* Parmap.parmap *)			 
-       |> List.map (fun o ->
-           to_occ
-             (Big.rewrite o b (lhs r) (rhs r) (map r)) r))
-      @ acc in
-    List.fold_left aux2 [] rules
-    |> filter_iso
 
   let random_step = random_step step
 

@@ -23,6 +23,8 @@ module RT = struct
   let merge_occ b _ = b
   let update_occ _ b = b
   let edge_of_occ _ i = i
+  let step b rules = RrType.gen_step b rules
+      ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
   let random_step _ b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function

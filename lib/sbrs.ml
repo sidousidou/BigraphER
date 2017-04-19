@@ -23,6 +23,8 @@ module RT = struct
   let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
   let update_occ (_, rho) b' = (b', rho)
   let edge_of_occ (_, rho) i = (i, rho)
+ let step b rules = RrType.gen_step b rules
+      ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
   let random_step step_f b rules =
     (* Sort transitions by rate *)
     let (ss, m) = step_f b rules in
