@@ -16,16 +16,72 @@ module type L = sig
   val increment : t -> occ -> t
   (* is_greater a b = a > b *)
   val is_greater : t -> t -> bool
+  val to_string : t -> string
 end
 
 module type T = sig
-  val typ : string
+  val typ : Rs.t
 end
 
 module type S = sig
   type t
   type g
-  val make : float -> g -> int -> t
+  val create : float -> g -> int -> t
+  val to_string : t -> (string * string * bool) list
+end
+
+(* The interface of a Reactive System *)
+module type RS = sig
+  type react
+  type p_class
+  type stats
+  type graph
+  type react_error
+  type occ
+  type limit
+  val typ : Rs.t
+  val string_of_stats : stats -> (string * string * bool) list
+  val string_of_react : react -> string
+  val string_of_limit : limit -> string
+  val is_valid_react : react -> bool
+  exception NOT_VALID of react_error
+  val is_valid_react_exn : react -> bool
+  val string_of_react_err : react_error -> string
+  (*  val is_inst : react -> bool *)
+  val is_valid_priority : p_class -> bool
+  val is_valid_priority_list : p_class list -> bool
+  val cardinal : p_class list -> int
+  val step : Big.bg -> react list -> occ list * int
+  val random_step : Big.bg -> react list -> occ option * int
+  val fix : Big.bg -> react list -> Big.bg * int
+  val rewrite : Big.bg -> p_class list -> Big.bg * int  
+  exception MAX of graph * stats
+  val bfs :
+    s0:Big.bg ->
+    priorities:p_class list ->
+    predicates:(Base.H_string.key * Big.bg) list ->
+    max:int -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+  exception DEADLOCK of graph * stats * limit
+  exception LIMIT of graph * stats  
+  val sim :
+    s0:Big.bg ->
+    priorities:p_class list ->
+    predicates:(Base.H_string.key * Big.bg) list ->
+    init_size:int -> stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+  val to_prism : graph -> string
+  val to_dot : graph -> name:string -> string
+  val to_lab : graph -> string
+  val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
+  val write_svg : graph -> name:string -> path:string -> int
+  val write_prism : graph -> name:string -> path:string -> int
+  val write_lab : graph -> name:string -> path:string -> int
+  val write_dot : graph -> name:string -> path:string -> int
+end
+
+(* Discrete time or continuous time *)
+module type TT = sig
+  type t
+  val stop : t
 end
 
 module Make (R : RrType.T)
@@ -57,6 +113,10 @@ module Make (R : RrType.T)
     | P_class of R.t list
     | P_rclass of R.t list
 
+  type stats = S.t
+  
+  type occ = R.occ
+  
   type limit = L.t
 
   type react_error = R.react_error
@@ -69,10 +129,14 @@ module Make (R : RrType.T)
 
   exception NOT_VALID of react_error
 
-  val typ : string
-    
-  val to_string_react : R.t -> string
+  val typ : Rs.t
 
+  val string_of_stats : stats -> (string * string * bool) list
+
+  val string_of_react : R.t -> string
+
+  val string_of_limit : limit -> string
+  
   val is_valid_react : R.t -> bool
 
   val is_valid_react_exn : R.t -> bool

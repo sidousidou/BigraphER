@@ -59,14 +59,7 @@ module H_string = Base.H_string
 
 type graph = { v : (int * Big.bg) H_int.t;
                e : R.edge H_int.t;
-               l : int H_string.t;
-             }
-
-type stats =  { time : float; 
-                states : int;  
-                trans : int;  
-                occs : int;
-              }
+               l : int H_string.t; }
 
 module G = struct
   type t = graph
@@ -83,13 +76,21 @@ module G = struct
 end
 
 module S = struct
-  type t = stats
+  type t = { time : float; 
+              states : int;  
+              trans : int;  
+              occs : int; } 
   type g = graph
-  let make t0 g m =
+  let create t0 g m =
     { time = (Unix.gettimeofday () -. t0);
       states = H_int.length g.v; 
       trans = H_int.length g.e;
       occs = m; }
+  let to_string stats =
+    [ ("Build time:", Printf.sprintf "%-3g" stats.time, true);
+      ("States:", string_of_int stats.states, false);
+      ("Transitions:", string_of_int stats.trans, false);
+      ("Occurrences:", string_of_int stats.occs, false) ]
 end	       
 
 module L = struct
@@ -98,10 +99,11 @@ module L = struct
   let init = 0
   let increment t _ = t + 1
   let is_greater = ( > )
+  let to_string = string_of_int
 end
 
 module T = struct
-  let typ = "BRS"
+  let typ = Rs.BRS
 end
 
 include TsType.Make (R)	(PriType.Make (R) (PT)) (L) (G) (S) (T)

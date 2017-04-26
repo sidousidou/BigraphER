@@ -17,18 +17,20 @@ module type L = sig
   val increment : t -> occ -> t
   (* is_greater a b = a > b *)
   val is_greater : t -> t -> bool
+  val to_string : t -> string
 end
 
-(* Type of transition system *)
 module type T = sig
-  val typ : string
+  val typ : Rs.t
 end
 
 (* Execution statistics *)
 module type S = sig
   type t
   type g
-  val make : float -> g -> int -> t
+  val create : float -> g -> int -> t
+  (* Returns a list of string triples (description, value, run dependant) *)
+  val to_string : t -> (string * string * bool) list
 end
 
 (* Export functions *)
@@ -117,6 +119,61 @@ module MakeE (G : G) = struct
 
 end
 
+(* The interface of a Reactive System *)
+module type RS =
+sig
+  type react
+  type p_class
+  type stats
+  type graph
+  type react_error
+  type occ
+  type limit
+  val typ : Rs.t
+  val string_of_stats : stats -> (string * string * bool) list
+  val string_of_react : react -> string
+  val string_of_limit : limit -> string
+  val is_valid_react : react -> bool
+  exception NOT_VALID of react_error
+  val is_valid_react_exn : react -> bool
+  val string_of_react_err : react_error -> string
+  (* val is_inst : react -> bool *)
+  val is_valid_priority : p_class -> bool
+  val is_valid_priority_list : p_class list -> bool
+  val cardinal : p_class list -> int
+  val step : Big.bg -> react list -> occ list * int
+  val random_step : Big.bg -> react list -> occ option * int
+  val fix : Big.bg -> react list -> Big.bg * int
+  val rewrite : Big.bg -> p_class list -> Big.bg * int  
+  exception MAX of graph * stats
+  val bfs :
+    s0:Big.bg ->
+    priorities:p_class list ->
+    predicates:(Base.H_string.key * Big.bg) list ->
+    max:int -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+  exception DEADLOCK of graph * stats * limit
+  exception LIMIT of graph * stats  
+  val sim :
+    s0:Big.bg ->
+    priorities:p_class list ->
+    predicates:(Base.H_string.key * Big.bg) list ->
+    init_size:int -> stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+  val to_prism : graph -> string
+  val to_dot : graph -> name:string -> string
+  val to_lab : graph -> string
+  val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
+  val write_svg : graph -> name:string -> path:string -> int
+  val write_prism : graph -> name:string -> path:string -> int
+  val write_lab : graph -> name:string -> path:string -> int
+  val write_dot : graph -> name:string -> path:string -> int
+end
+
+(* Discrete time or continuous time *)
+module type TT = sig
+  type t
+  val stop : t
+end
+
 module Make (R : RrType.T)
     (P : sig
        type p_class =
@@ -144,7 +201,11 @@ module Make (R : RrType.T)
   include P
  
   include Ty
-      
+
+  type stats = S.t
+  
+  type occ = R.occ
+  
   type limit = L.t
 
   exception MAX of t * S.t
@@ -157,9 +218,13 @@ module Make (R : RrType.T)
   type react_error = R.react_error
 
   exception NOT_VALID of react_error
+      
+  let string_of_stats = S.to_string
 
-  let to_string_react = R.to_string
+  let string_of_react = R.to_string
 
+  let string_of_limit = L.to_string
+                          
   let is_valid_react = R.is_valid
 
   let is_valid_react_exn r =
@@ -212,7 +277,7 @@ module Make (R : RrType.T)
   let rec _bfs g q i m t0 priorities predicates max iter_f =
     if not (Queue.is_empty q) then
       if i > max then
-        raise (MAX (g, S.make t0 g m))
+        raise (MAX (g, S.create t0 g m))
       else 
         (let (v, curr) = Queue.pop q in
          let ((new_s, old_s, i'), m') = 
@@ -239,7 +304,7 @@ module Make (R : RrType.T)
          (* recursive call *)
          _bfs g q i' (m + m') t0 priorities predicates max iter_f) 
     else
-      (g, S.make t0 g m)
+      (g, S.create t0 g m)
 
   let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
     let q = Queue.create () in
@@ -255,13 +320,13 @@ module Make (R : RrType.T)
 
   let rec _sim trace s i t_sim m t0 priorities predicates t_max iter_f =
     if L.is_greater t_sim t_max then
-      raise (LIMIT (trace, S.make t0 trace m))
+      raise (LIMIT (trace, S.create t0 trace m))
     else
       match P.scan_sim s
               ~const_pri:priorities
               priorities with
       | (None, m') ->
-        raise (DEADLOCK (trace, S.make t0 trace (m + m'), t_sim))
+        raise (DEADLOCK (trace, S.create t0 trace (m + m'), t_sim))
       | (Some o, m') ->	
         (let s' = R.big_of_occ o in
          iter_f (i + 1) s';

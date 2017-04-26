@@ -16,11 +16,11 @@ type p_class =
   | P_rclass of react list (** Reducible priority class *)
 
 (** Execution statistics. *)		      
-type stats =  { time : float;  (** Execution time *)
+type stats (* = { time : float;  (** Execution time *)
                 states : int;  (** Number of states *)
                 trans : int;   (** Number of transitions *)
                 occs : int;    (** Number of occurrences *)
-              }
+              }*)
 
 (** The type of transition systems. *)
 type graph = {
@@ -29,11 +29,25 @@ type graph = {
   l : int Base.H_string.t;          (** Labelling function *) 
 }
 
-(** String with type of transition system: ["BRS"]. *)
-val typ : string
+(** Type of occurrences *)
+type occ = Big.bg
+
+(** Type of simulation limit *)
+type limit = int
+
+(** Type of transition system: {{!Rs.t}[BRS]}. *)
+val typ : Rs.t
+
+(** Stats are representated as a list whose elements are strings in the
+    following form: [(description, value, flag)]. [flag] is [true] iff it is
+    attached to a value that depends on the current run. *)
+val string_of_stats : stats -> (string * string * bool) list
 
 (** String representation of reaction rules. *)
-val to_string_react : react -> string
+val string_of_react : react -> string
+
+(** String representation of a simulation limit. *)
+val string_of_limit : limit -> string
 
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal, the redex is solid and the instantiation map is total. Return [false]

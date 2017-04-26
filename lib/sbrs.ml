@@ -1,4 +1,4 @@
-type sreact =
+type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
     eta : int Fun.t option;        (* Instantiation map *)
@@ -6,7 +6,7 @@ type sreact =
   }
 
 module RT = struct
-  type t = sreact
+  type t = react
   type label = float 
   type occ = Big.bg * float
   type edge = int * float
@@ -64,14 +64,7 @@ module H_string = Base.H_string
 
 type graph = { v : (int * Big.bg) H_int.t;
                e : R.edge H_int.t;
-               l : int H_string.t;  
-             }
-
-type stats =  { time : float; 
-                states : int;  
-                trans : int;  
-                occs : int;
-              }
+               l : int H_string.t; }
 
 module G = struct
   type t = graph
@@ -84,17 +77,25 @@ module G = struct
   let label g = g.l
   let edges g = g.e
   let dest u = fst u
-  let string_of_arrow u = string_of_float (snd u)
+  let string_of_arrow u = Printf.sprintf "%.4g" (snd u)
 end
 
 module S = struct
-  type t = stats
+  type t = { time : float; 
+             states : int;  
+             trans : int;  
+             occs : int; }
   type g = graph
-  let make t0 g m =
+  let create t0 g m =
     { time = (Unix.gettimeofday () -. t0);
       states = H_int.length g.v; 
       trans = H_int.length g.e;
       occs = m; }
+  let to_string stats =
+    [ ("Build time:", Printf.sprintf "%-3g" stats.time, true);             
+      ("States:", string_of_int stats.states, false);
+      ("Transitions:", string_of_int stats.trans, false);
+      ("Occurrences:", string_of_int stats.occs, false) ]
 end	       
 
 module L = struct
@@ -103,10 +104,11 @@ module L = struct
   let init = 0.0
   let increment t o = t +. (snd (R.edge_of_occ o 0))
   let is_greater = ( > )
+  let to_string = Printf.sprintf "%.4g" 
 end
 
 module T = struct
-  let typ = "SBRS"
+  let typ = Rs.SBRS
 end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (S) (T)

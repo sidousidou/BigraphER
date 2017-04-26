@@ -2,7 +2,7 @@
     @author Michele Sevegnani *)
 
 (** The type of stochastic bigraphical reaction rules.*)
-type sreact =
+type react =
   { rdx : Big.bg;                  (** Redex (left-hand side) *)
     rct : Big.bg;                  (** Reactum (right-hand side) *)
     eta : int Fun.t option;        (** Instantiation map: a total function from the sites on the rhs to the sites on the lhs  *)
@@ -13,15 +13,15 @@ type sreact =
     rules. Intermediate states resulting from the application of reaction rules
     in reducible priority classes are ignored. *)
 type p_class = 
-  | P_class of sreact list  (** Priority class *)
-  | P_rclass of sreact list (** Reducible priority class *)
+  | P_class of react list  (** Priority class *)
+  | P_rclass of react list (** Reducible priority class *)
 
 (** Execution statistics. *)		      
-type stats =  { time : float;  (** Execution time *)
+type stats (* =  { time : float;  (** Execution time *)
                 states : int;  (** Number of states *)
                 trans : int;   (** Number of transitions *)
                 occs : int;    (** Number of occurrences *)
-              }
+              }*)
 
 (** The type of Continuous Time Markov Chains. *)
 type graph = {
@@ -30,16 +30,30 @@ type graph = {
   l : int Base.H_string.t;              (** Labelling function *) 
 }
 
-(** String with type of transition system: ["SBRS"]. *)
-val typ : string
+(** Type of occurrences *)
+type occ = Big.bg * float
+
+(** Type of simulation limit *)
+type limit = float
+
+(** String with type of transition system: {{!Rs.t}[SBRS]} . *)
+val typ : Rs.t
+
+(** Stats are representated as a list whose elements are strings in the
+    following form: [(description, value, flag)]. [flag] is [true] iff it is
+    attached to a value that depends on the current run. *)
+val string_of_stats : stats -> (string * string * bool) list
 
 (** String representation of a stochastic reaction rule. *)
-val to_string_react : sreact -> string
+val string_of_react : react -> string
 
+(** String representation of a simulation limit. *)
+val string_of_limit : limit -> string
+  
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal, the redex is solid, the instantiation map is total and the rate is
     greater than zero. Return [false] otherwise. *)
-val is_valid_react : sreact -> bool
+val is_valid_react : react -> bool
 
 (** The type of reaction validity errors. *)				
 type react_error
@@ -51,13 +65,13 @@ exception NOT_VALID of react_error
     valid. 
 
     @raise NOT_VALID when the rule is not valid. *)
-val is_valid_react_exn : sreact -> bool
+val is_valid_react_exn : react -> bool
 
 (** String representation of reaction validity errors. *)
 val string_of_react_err : react_error -> string
 
 (** Return [true] if a reaction rule is instantaneous, [false] otherwise. *)
-val is_inst : sreact -> bool
+val is_inst : react -> bool
 
 (** Return [true] if all the reaction rules in a priority class are
     valid, all the reaction rules in a reducible classes are
@@ -76,15 +90,15 @@ val cardinal : p_class list -> int
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a transition rate. The total
     number of occurrences is also returned. *)
-val step : Big.bg -> sreact list -> (Big.bg * float) list * int
+val step : Big.bg -> react list -> (Big.bg * float) list * int
 
 (** Select step of {{: https://en.wikipedia.org/wiki/Gillespie_algorithm}
     Gillespie SSA}. The total number of occurrences is also returned. *)
-val random_step : Big.bg -> sreact list -> (Big.bg * float) option * int 
+val random_step : Big.bg -> react list -> (Big.bg * float) option * int 
 
 (** Reduce a reducible class to the fixed point. The number of rewriting steps
     is also returned. *)
-val fix : Big.bg -> sreact list -> Big.bg * int
+val fix : Big.bg -> react list -> Big.bg * int
 
 (** Scan priority classes and reduce a state. Stop when no more rules can be
     applied or when a non reducible priority class is enabled. Also return the

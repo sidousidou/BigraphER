@@ -55,6 +55,7 @@ Library bigraph
                    RrType,
                    PriType,
                    TsType,
+                   Rs,
                    Export
   BuildDepends:    unix, minisat, str
   CCOpt+:	   -O3

@@ -35,7 +35,7 @@ type store_val =
   | A_ctrl_fun of int * Id.t list
   | React of Brs.react
   | React_fun of big_exp * big_exp * int Fun.t option * Id.t list
-  | Sreact of Sbrs.sreact
+  | Sreact of Sbrs.react
   | Sreact_fun of big_exp * big_exp * int Fun.t option * float_exp * Id.t list
   | Int_param of int list
   | Float_param of float list
@@ -47,9 +47,9 @@ let string_of_store_val = function
   | Big_fun _ -> "<fun big>" 
   | A_ctrl c | Ctrl c -> Ctrl.to_string c
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
-  | React r -> Brs.to_string_react r
+  | React r -> Brs.string_of_react r
   | React_fun _ -> "<fun react>"
-  | Sreact r -> Sbrs.to_string_react r
+  | Sreact r -> Sbrs.string_of_react r
   | Sreact_fun _ -> "<fun sreact>"
   | Int_param p ->
     "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
