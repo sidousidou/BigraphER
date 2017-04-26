@@ -335,7 +335,7 @@ module Run
       ~iter_f:print_loop
     |> after fmt close_progress_bar
   
-  let run fmt s0 priorities preds iter_f = function
+  let run fmt s0 priorities preds = function
     | `sim ->
       begin
         try sim fmt s0 priorities preds with
@@ -413,7 +413,6 @@ let set_output_ch () =
 let () =
   (* Printexc.record_backtrace true; *) (* Disabled for releases *)
   try
-    let iter_f = print_loop in
     let exec_type = parse_cmd Sys.argv in
     let fmt = set_output_ch () in
     print_header fmt ();
@@ -426,7 +425,6 @@ let () =
       close_in file; 
       let env = Store.init_env fmt Cmd.(defaults.consts) in
       let (s0, prs, preds, env_t) = Store.eval_model fmt m env in
-      (* STATS *)
       (match prs with (* Use Rs.t instead *)
        | Store.P priorities ->
          begin
@@ -437,7 +435,7 @@ let () =
              end) in
            R.print_stats_store fmt env priorities;
            export_model fmt m env env_t;
-           R.run fmt s0 priorities preds iter_f exec_type;
+           R.run fmt s0 priorities preds exec_type;
          end
        | Store.S priorities ->
          begin
@@ -448,7 +446,7 @@ let () =
              end) in
            R.print_stats_store fmt env priorities;
            export_model fmt m env env_t;
-           R.run fmt s0 priorities preds iter_f exec_type;
+           R.run fmt s0 priorities preds exec_type;
          end);
     with
     | Place.NOT_PRIME ->

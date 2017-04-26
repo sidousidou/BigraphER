@@ -16,11 +16,12 @@ type p_class =
   | P_rclass of react list (** Reducible priority class *)
 
 (** Execution statistics. *)		      
-type stats (* = { time : float;  (** Execution time *)
+type stats  = TsType.stats_t
+(*  { time : float;  (** Execution time *)
                 states : int;  (** Number of states *)
                 trans : int;   (** Number of transitions *)
                 occs : int;    (** Number of occurrences *)
-              }*)
+              } *)
 
 (** The type of transition systems. *)
 type graph = {

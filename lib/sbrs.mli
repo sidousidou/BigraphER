@@ -17,7 +17,8 @@ type p_class =
   | P_rclass of react list (** Reducible priority class *)
 
 (** Execution statistics. *)		      
-type stats (* =  { time : float;  (** Execution time *)
+type stats = TsType.stats_t
+(* =  { time : float;  (** Execution time *)
                 states : int;  (** Number of states *)
                 trans : int;   (** Number of transitions *)
                 occs : int;    (** Number of occurrences *)
@@ -36,7 +37,7 @@ type occ = Big.bg * float
 (** Type of simulation limit *)
 type limit = float
 
-(** String with type of transition system: {{!Rs.t}[SBRS]} . *)
+(** Type of transition system: {{!Rs.t}[SBRS]} . *)
 val typ : Rs.t
 
 (** Stats are representated as a list whose elements are strings in the

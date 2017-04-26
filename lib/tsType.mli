@@ -23,10 +23,15 @@ module type T = sig
   val typ : Rs.t
 end
 
+type stats_t = { time : float; 
+               states : int;  
+               trans : int;  
+               occs : int; }
+
 module type S = sig
-  type t
+  type t = stats_t
   type g
-  val create : float -> g -> int -> t
+  val init : float -> g -> int -> t
   val to_string : t -> (string * string * bool) list
 end
 
@@ -34,7 +39,7 @@ end
 module type RS = sig
   type react
   type p_class
-  type stats
+  type stats = stats_t
   type graph
   type react_error
   type occ
@@ -104,7 +109,6 @@ module Make (R : RrType.T)
      end)
     (L : L with type occ = R.occ)
     (G : G with type edge_type = R.edge)
-    (S : S with type g = G.t)
     (Ty : T): sig
 
   type t = G.t
@@ -113,7 +117,7 @@ module Make (R : RrType.T)
     | P_class of R.t list
     | P_rclass of R.t list
 
-  type stats = S.t
+  type stats = stats_t
   
   type occ = R.occ
   
@@ -121,11 +125,11 @@ module Make (R : RrType.T)
 
   type react_error = R.react_error
 
-  exception MAX of t * S.t
+  exception MAX of t * stats
 
-  exception LIMIT of t * S.t
+  exception LIMIT of t * stats
 
-  exception DEADLOCK of t * S.t * limit
+  exception DEADLOCK of t * stats * limit
 
   exception NOT_VALID of react_error
 
@@ -161,14 +165,14 @@ module Make (R : RrType.T)
     s0:Big.bg ->
     priorities:P.p_class list ->
     predicates:(string * Big.bg) list ->
-    max:int -> iter_f:(int -> Big.bg -> unit) -> t * S.t
+    max:int -> iter_f:(int -> Big.bg -> unit) -> t * stats
 
   val sim :
     s0:Big.bg ->
     priorities:P.p_class list ->
     predicates:(string * Big.bg) list ->
     init_size:int ->
-    stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * S.t
+    stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * stats
 
   val to_prism : t -> string
 

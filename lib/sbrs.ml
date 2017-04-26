@@ -80,24 +80,6 @@ module G = struct
   let string_of_arrow u = Printf.sprintf "%.4g" (snd u)
 end
 
-module S = struct
-  type t = { time : float; 
-             states : int;  
-             trans : int;  
-             occs : int; }
-  type g = graph
-  let create t0 g m =
-    { time = (Unix.gettimeofday () -. t0);
-      states = H_int.length g.v; 
-      trans = H_int.length g.e;
-      occs = m; }
-  let to_string stats =
-    [ ("Build time:", Printf.sprintf "%-3g" stats.time, true);             
-      ("States:", string_of_int stats.states, false);
-      ("Transitions:", string_of_int stats.trans, false);
-      ("Occurrences:", string_of_int stats.occs, false) ]
-end	       
-
 module L = struct
   type t = float
   type occ = R.occ
@@ -111,4 +93,4 @@ module T = struct
   let typ = Rs.SBRS
 end
 
-include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (S) (T)
+include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
