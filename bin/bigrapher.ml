@@ -90,11 +90,18 @@ let print_header fmt () =
      |> print_table fmt)
   else ()
 
-let print_max fmt = function
-  | Rs.BRS -> [{ descr = ("Max # states:", `cyan);
-                 value = `i Cmd.(defaults.max_states);
-                 pp_val = print_int;
-                 display = true; }]
+let print_max fmt =
+  [{ descr = ("Max # states:", `cyan);
+     value = `i Cmd.(defaults.max_states);
+     pp_val = print_int;
+     display = true; }]
+  |> print_table fmt
+
+let print_max_sim fmt = function
+  | Rs.BRS -> [{ descr = ("Max sim steps:", `cyan);
+                  value = `i Cmd.(defaults.steps);
+                  pp_val = print_int;
+                  display = true; }]
               |> print_table fmt
   | Rs.SBRS -> [{ descr = ("Max sim time:", `cyan);
                   value = `f Cmd.(defaults.time);
@@ -314,7 +321,7 @@ module Run
   
   let sim fmt s0 priorities preds =
     print_msg fmt `yellow ("Starting " ^ (Rs.sim_type T.typ) ^ " ...");
-    print_max fmt T.typ;
+    print_max_sim fmt T.typ;
     open_progress_bar ();
     T.sim ~s0
       ~priorities
@@ -326,7 +333,7 @@ module Run
 
   let full fmt s0 priorities preds = 
     print_msg fmt `yellow ("Computing " ^ (Rs.ts_type T.typ) ^ " ...");
-    print_max fmt T.typ;
+    print_max fmt;
     open_progress_bar ();
     T.bfs ~s0
       ~priorities
