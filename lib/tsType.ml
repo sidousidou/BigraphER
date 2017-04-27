@@ -52,9 +52,9 @@ module MakeS (G : G) = struct
     
   let to_string stats =
     [ ("Build time:", Printf.sprintf "%-3g" stats.time, true);
-      ("States:", string_of_int stats.states, false);
-      ("Transitions:", string_of_int stats.trans, false);
-      ("Occurrences:", string_of_int stats.occs, false) ]
+      ("States:", Printf.sprintf "%-8d" stats.states, false);
+      ("Transitions:", Printf.sprintf "%-8d" stats.trans, false);
+      ("Occurrences:", Printf.sprintf "%-8d" stats.occs, false) ]
   
   end
 
