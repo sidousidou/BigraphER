@@ -17,11 +17,6 @@ type p_class =
 
 (** Execution statistics. *)		      
 type stats  = TsType.stats_t
-(*  { time : float;  (** Execution time *)
-                states : int;  (** Number of states *)
-                trans : int;   (** Number of transitions *)
-                occs : int;    (** Number of occurrences *)
-              } *)
 
 (** The type of transition systems. *)
 type graph = {
@@ -39,7 +34,7 @@ type limit = int
 (** Type of transition system: {{!Rs.t}[BRS]}. *)
 val typ : Rs.t
 
-(** Stats are representated as a list whose elements are strings in the
+(** Stats are represented as a list whose elements are strings in the
     following form: [(description, value, flag)]. [flag] is [true] iff it is
     attached to a value that depends on the current run. *)
 val string_of_stats : stats -> (string * string * bool) list
@@ -85,8 +80,9 @@ val cardinal : p_class list -> int
     are merged. The total number of occurrences is also returned. *)
 val step : Big.bg -> react list -> Big.bg list * int
 
-(** Compute a random state reachable in one step. The total number of
-    occurrences is also returned. *)
+(** Compute a random state reachable in one step. State selection is performed
+    according to a uniform distribution over all the possible states reachable
+    in one step. The total number of occurrences is also returned. *)
 val random_step : Big.bg -> react list -> Big.bg option * int
 
 (** Reduce a reducible class to the fixed point. The number of rewriting steps
@@ -141,7 +137,7 @@ val sim : s0:Big.bg ->
   priorities:p_class list ->
   predicates:(string * Big.bg) list ->
   init_size:int ->
-  stop:int ->
+  stop:limit ->
   iter_f:(int -> Big.bg -> unit) ->
   graph * stats
 

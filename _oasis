@@ -3,9 +3,9 @@ Name:		bigrapher
 Version:	1.2.0
 Synopsis:	Implementation of bigraphical reactive systems
 Description: BigraphER is an efficient implementation of Bigraphical Reactive
- Systems (BRS) that supports bigraphs with sharing, stochastic reaction rules,
- rule priorities, graphical output and predicate checking. Models can be
- exported to probabilistic model checker PRISM.
+ Systems (BRS) that supports bigraphs with sharing, stochastic and probabilistic
+ reaction rules, rule priorities, graphical output and predicate
+ checking. Models can be exported to probabilistic model checker PRISM.
 
 Authors:	Michele Sevegnani
 Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
@@ -40,22 +40,23 @@ Library bigraph
 # Pack:            true
   Modules:         Ctrl,
                    Nodes,
+                   Iso,
+                   Rs,
+                   Place,
+                   Link,
                    Big,
                    Brs,
-                   Link,
-                   Place,
-                   Sbrs
-  InternalModules: Base,
+                   Sbrs,
+                   Pbrs
+ InternalModules:  Base,
                    Cnf,
                    Fun,
                    IntSet,
-                   Iso,
                    Rel,
                    Sparse,
                    RrType,
                    PriType,
                    TsType,
-                   Rs,
                    Export
   BuildDepends:    unix, minisat, str
   CCOpt+:	   -O3
@@ -101,11 +102,11 @@ Document bigraph_api
   Format:	   html
   Index:	   API.html
   Abstract:
-    API reference for library [bigraph]. It provides modules for:
-     * manipulation of place graphs link graphs and bigraphs with sharing,
-     * definition of (stochastic) reaction rules with support for instantiation maps,
-     * full generation of the state space and simulation of (stochastic) bigraphical
-       reactive systems with rule priorities. 
+    API reference for library [bigraph]. It provides modules for: * manipulation
+    of place graphs link graphs and bigraphs with sharing, * definition of
+    reaction rules with support for probabilities, stochastic rates, and
+    instantiation maps, * full generation of the state space and simulation of
+    bigraphical reactive systems with rule priorities.
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
   XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -charset utf-8'"

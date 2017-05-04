@@ -25,7 +25,7 @@ module RT = struct
   let edge_of_occ _ i = i
   let step b rules = RrType.gen_step b rules
       ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
-  let random_step _ b rules =
+  let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function
       | [] -> assert false (*BISECT-IGNORE*)

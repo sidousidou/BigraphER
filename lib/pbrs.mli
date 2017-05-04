@@ -1,12 +1,12 @@
-(** This module provides operations on stochastic BRS.
+(** This module provides operations on probabilistic BRS.
     @author Michele Sevegnani *)
 
-(** The type of stochastic bigraphical reaction rules.*)
+(** The type of probabilistic bigraphical reaction rules. *)
 type react =
   { rdx : Big.bg;                  (** Redex (left-hand side) *)
     rct : Big.bg;                  (** Reactum (right-hand side) *)
     eta : int Fun.t option;        (** Instantiation map: a total function from the sites on the rhs to the sites on the lhs  *)
-    rate : float                   (** Stochastic rate (always > 0) *)
+    p : float                        (** Probability [0 < p <= 1] *)
   }
 
 (** The type of priority classes, {e i.e.} lists of stochastic reaction
@@ -18,13 +18,8 @@ type p_class =
 
 (** Execution statistics. *)		      
 type stats = TsType.stats_t
-(* =  { time : float;  (** Execution time *)
-                states : int;  (** Number of states *)
-                trans : int;   (** Number of transitions *)
-                occs : int;    (** Number of occurrences *)
-              }*)
 
-(** The type of Continuous Time Markov Chains (CTMC). *)
+(** The type of Discrete Time Markov Chains (DTMC). *)
 type graph = {
   v : (int * Big.bg) Base.H_int.t;      (** States *)
   e : (int * float) Base.H_int.t;       (** Transition relation *)
@@ -35,25 +30,26 @@ type graph = {
 type occ = Big.bg * float
 
 (** Type of simulation limit *)
-type limit = float
+type limit = int
 
-(** Type of transition system: {{!Rs.t}[SBRS]} . *)
+(** Type of transition system: {{!Rs.t}[PBRS]} . *)
 val typ : Rs.t
 
-(** Stats are represented as a list whose elements are strings in the
+(** Stats are representated as a list whose elements are strings in the
     following form: [(description, value, flag)]. [flag] is [true] iff it is
     attached to a value that depends on the current run. *)
 val string_of_stats : stats -> (string * string * bool) list
 
-(** String representation of a stochastic reaction rule. *)
+(** String representation of a probabilistic reaction rule. *)
 val string_of_react : react -> string
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string
   
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
-    equal, the redex is solid, the instantiation map is total and the rate is
-    greater than zero. Return [false] otherwise. *)
+    equal, the redex is solid, the instantiation map is total and the
+    probability is greater than zero and less or equal than one. Return [false]
+    otherwise. *)
 val is_valid_react : react -> bool
 
 (** The type of reaction validity errors. *)				
@@ -71,30 +67,31 @@ val is_valid_react_exn : react -> bool
 (** String representation of reaction validity errors. *)
 val string_of_react_err : react_error -> string
 
-(** Return [true] if a reaction rule is instantaneous, [false] otherwise. *)
-val is_inst : react -> bool
+(** Return [true] if a reaction rule is deterministic ({e i.e.} its probability
+    is one), [false] otherwise. *)
+val is_determ : react -> bool
 
-(** Return [true] if all the reaction rules in a priority class are
-    valid, all the reaction rules in a reducible classes are
-    instantaneous and no instantaneous reaction rules are present in
-    a non reducible class. Return [false] otherwise. *)
+(** Return [true] if all the reaction rules in a priority class are valid, all
+    the reaction rules in a reducible classes are deterministic. Return [false]
+    otherwise. *)
 val is_valid_priority : p_class -> bool
 
 (** Return [true] if a list of priority classes contains at least a non
     reducible priority class, [false] otherwise. *)
 val is_valid_priority_list : p_class list -> bool
 
-(** Return the total number of stochastic reaction rules in a list of priority
+(** Return the total number of probabilistic reaction rules in a list of priority
     classes. *)
 val cardinal : p_class list -> int
 
 (** Compute the set of reachable states in one step. Note that isomorphic states
-    are merged and each state is associated to a transition rate. The total
+    are merged and each state is associated to a probability rate. The total
     number of occurrences is also returned. *)
 val step : Big.bg -> react list -> (Big.bg * float) list * int
 
-(** Select step of {{: https://en.wikipedia.org/wiki/Gillespie_algorithm}
-    Gillespie SSA}. The total number of occurrences is also returned. *)
+(** Compute a random state reachable in one step. The probability of reaching a
+    given state depends on the probability associated to the reaction rule
+    generating it. The total number of occurrences is also returned. *)
 val random_step : Big.bg -> react list -> (Big.bg * float) option * int 
 
 (** Reduce a reducible class to the fixed point. The number of rewriting steps
@@ -106,14 +103,14 @@ val fix : Big.bg -> react list -> Big.bg * int
     number of rewriting steps performed in the loop. *)
 val rewrite : Big.bg -> p_class list -> Big.bg * int
 
-(** {3 Continuous Time Markov Chains} *)
+(** {3 Discrete Time Markov Chains} *)
 
 (** Raised when the size of the transition system reaches the maximum number of
     states. *)
 exception MAX of graph * stats
 
 (** [bfs ~s0 ~priorities ~predicates ~max ~iter_f] computes the transition
-    system of the SBRS specified by initial state [s0] and priority classes
+    system of the PBRS specified by initial state [s0] and priority classes
     [priorities]. Arguments [~max] and [~iter_f] are the maximum number of
     states of the transition system and a function to be applied whenever a new
     state is discovered, respectively. Priority classes are assumed to be sorted
@@ -121,7 +118,7 @@ exception MAX of graph * stats
     highest priority. List of predicates [~predicates] is also checked for every
     state.
 
-    @raise Sbrs.MAX when the maximum number of states is reached. *)
+    @raise Pbrs.MAX when the maximum number of states is reached. *)
 val bfs : s0:Big.bg ->
   priorities:p_class list ->
   predicates:(string * Big.bg) list ->
@@ -129,22 +126,22 @@ val bfs : s0:Big.bg ->
   iter_f:(int -> Big.bg -> unit) ->
   graph * stats
 
-(** {3 Stochastic simulation traces} *)
+(** {3 Simulation traces} *)
 
 (** Raised when the simulation reaches a deadlock state. *)			     
-exception DEADLOCK of graph * stats * float
+exception DEADLOCK of graph * stats * limit
 
-(** Raised when the simulation reaches the maximum simulation time. *)
+(** Raised when the simulation reaches the maximum number of simulation steps. *)
 exception LIMIT of graph * stats
 
-(** Simulate (using Gillespie SSA) the SBRS specified by initial state [s0] and
+(** Simulate the PBRS specified by initial state [s0] and
     priority classes [priorities]. Arguments [init_size] and [stop] are the
-    initial size of the state set and the maximum simulation time,
+    initial size of the state set and the maximum simulation steps,
     respectively. Function [iter_f] is applied to every new state discovered
     during the simulation.
 
-    @raise Sbrs.DEADLOCK when the simulation reaches a deadlock state.
-    @raise Sbrs.LIMIT when the simulation time exceeds the maximum simulation time. *)
+    @raise Pbrs.DEADLOCK when the simulation reaches a deadlock state.
+    @raise Pbrs.LIMIT when the simulation time exceeds the maximum simulation steps. *)
 val sim :
   s0:Big.bg ->
   priorities:p_class list ->
@@ -156,37 +153,37 @@ val sim :
 
 (** {3 Export functions} *)
 
-(** Compute the string representation in PRISM [tra] format of a CTMC. *)
+(** Compute the string representation in PRISM [tra] format of a DTMC. *)
 val to_prism : graph -> string
 
-(** Compute the string representation in [dot] format of a CTMC. *)
+(** Compute the string representation in [dot] format of a DTMC. *)
 val to_dot : graph -> name:string -> string
 
 (** Compute the string representation in PRISM [lab] format of the labelling
-    function of a CTMC. *)
+    function of a DTMC. *)
 val to_lab : graph -> string
 
 (** Apply [f] to every state. *)			
 val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
-(** Export to file the string representation in [dot] format of a CTMC. 
+(** Export to file the string representation in [dot] format of a DTMC. 
 
     @raise Export.ERROR when an error occurs. *)
 val write_dot : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [lab] format of the
-    labelling function of a CTMC. 
+    labelling function of a DTMC. 
 
     @raise Export.ERROR when an error occurs. *)
 val write_lab : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [tra] format of a
-    CTMC. 
+    DTMC. 
 
     @raise Export.ERROR when an error occurs. *)
 val write_prism : graph -> name:string -> path:string -> int
 
-(** Export to file the string representation in [svg] format of a CTMC. 
+(** Export to file the string representation in [svg] format of a DTMC. 
 
     @raise Export.ERROR when an error occurs. *)
 val write_svg : graph -> name:string -> path:string -> int

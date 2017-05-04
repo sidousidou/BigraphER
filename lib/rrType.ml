@@ -18,8 +18,7 @@ sig
   (* Replace the bigraph in an occurrence with an index *)
   val edge_of_occ : occ -> int -> edge
   val step : Big.bg -> t list -> occ list * int
-  val random_step : (Big.bg -> t list -> occ list * int) ->
-    Big.bg -> t list -> occ option * int
+  val random_step : Big.bg -> t list -> occ option * int
 end
 
 module type T =
@@ -171,7 +170,5 @@ module Make (R : R) = struct
       | Some b ->  _fix b rules (i + 1)
       | None -> (s, i) in
     _fix b rules 0
-
-  let random_step = random_step step
 
 end

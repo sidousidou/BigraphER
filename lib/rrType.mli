@@ -18,9 +18,7 @@ sig
   val update_occ : occ -> Big.bg -> occ
   val edge_of_occ : occ -> int -> edge
   val step : Big.bg -> t list -> occ list * int
-  val random_step : (Big.bg -> t list -> occ list * int) ->
-    Big.bg -> t list ->
-    occ option * int
+  val random_step : Big.bg -> t list -> occ option * int
 end
 
 module type T =

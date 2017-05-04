@@ -15,9 +15,9 @@ module RT = struct
   let rhs r = r.rct
   let l r = r.rate
   let map r = r.eta
-  let string_of_label l = string_of_float l
+  let string_of_label = Printf.sprintf "%-3g"
   let val_chk r = r.rate > 0.0
-  let val_chk_error_msg = "Non positive rate"
+  let val_chk_error_msg = "Not a stochastic rate"
   let to_occ b r = (b, r.rate)
   let big_of_occ (b, _) = b
   let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
@@ -25,9 +25,9 @@ module RT = struct
   let edge_of_occ (_, rho) i = (i, rho)
  let step b rules = RrType.gen_step b rules
       ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
-  let random_step step_f b rules =
+  let random_step b rules =
     (* Sort transitions by rate *)
-    let (ss, m) = step_f b rules in
+    let (ss, m) = step b rules in
     let ss_sorted =
       List.fast_sort (fun a b ->
           compare (snd a) (snd b))

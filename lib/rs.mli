@@ -1,7 +1,7 @@
 (** Types of rective systems.
     @author Michele Sevegnani *)
 
-type t = BRS | SBRS
+type t = BRS | PBRS | SBRS
          
 val to_string : t -> string
 
