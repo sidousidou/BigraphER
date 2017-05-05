@@ -98,11 +98,12 @@ let print_max fmt =
   |> print_table fmt
 
 let print_max_sim fmt = function
-  | Rs.BRS -> [{ descr = ("Max sim steps:", `cyan);
-                  value = `i Cmd.(defaults.steps);
-                  pp_val = print_int;
-                  display = true; }]
-              |> print_table fmt
+  | Rs.BRS | Rs. PBRS ->
+    [{ descr = ("Max sim steps:", `cyan);
+       value = `i Cmd.(defaults.steps);
+       pp_val = print_int;
+       display = true; }]
+    |> print_table fmt
   | Rs.SBRS -> [{ descr = ("Max sim time:", `cyan);
                   value = `f Cmd.(defaults.time);
                   pp_val = print_float "";
@@ -341,10 +342,19 @@ module Run
       ~max:Cmd.(defaults.max_states)
       ~iter_f:print_loop
     |> after fmt close_progress_bar
+
+  let set_trap fmt  =
+    Sys.set_signal Sys.sigint
+      (Sys.Signal_handle (fun _ ->
+           close_progress_bar ();
+           print_msg fmt `yellow ("Execution interrupted by the user.");
+           pp_print_flush err_formatter ();
+           exit 0))
   
   let run fmt s0 priorities preds = function
     | `sim ->
       begin
+        set_trap fmt;
         try sim fmt s0 priorities preds with
         | T.LIMIT (graph, stats) ->
           after fmt
@@ -363,6 +373,7 @@ module Run
       end
     | `full ->
       begin
+        set_trap fmt;
         try full fmt s0 priorities preds with
         | T.MAX (graph, stats) ->
           after fmt
