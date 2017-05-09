@@ -19,8 +19,8 @@ big w1 = R.(M{b,a}.1 | M{b,c}.1) | T.(T.(M{c,d}.1 | M{a,d}.1)) || R.(ND{x,a,b,c,
 
 big phi = w/{w0,w1} M{w0,w1}.1;
 
-brs
+begin brs
   init w1;
   rules = [ {rx1,rx2} ];
   preds = { phi };
-endbrs
+end

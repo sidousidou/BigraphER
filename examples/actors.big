@@ -41,8 +41,8 @@ big s0 =
 big phi = Mail.(M{a, v} | id);
 
 # Reactive system
-brs
+begin brs
   init s0;
   rules = [ {snd, ready, lambda, new} ];
   preds = { phi };
-endbrs
+end

@@ -107,7 +107,7 @@ big field =
 
 ###### Bigraphical reactive system
 
-brs
+begin brs
   # Area 0
   int p0, p0' = {0, 1, 5, 6, 8};
   # Area 1
@@ -145,5 +145,4 @@ brs
       # mov2(0, 1, 1, 10), mov2(1, 0, 10, 1),
       # mov2(2, 1, 4, 11), mov2(1, 2, 11, 4) }
   ];
-endbrs
-
+end

@@ -23,9 +23,9 @@ big rcfs = N{v0,t0}.1;
 big sys = arch | rcfs;
 
 #System
-brs
+begin brs
   init sys;
   rules = [ {new} ];
-endbrs
+end
 
 

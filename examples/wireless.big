@@ -8,9 +8,9 @@ big n_0 =
   by ([{0,1}, {0,1,2}, {1,2}], 3)
   in (id{a_A,a_B,a_C} | S{a_A} | S{a_B} | S{a_C});
 
-sreact r = S{a}.1 -[2.3]-> {a} | 1; 
+react r = S{a}.1 -[2.3]-> {a} | 1; 
        
-sbrs
+begin sbrs
   init n_0;
   rules = [ {r} ];  
-endsbrs
+end

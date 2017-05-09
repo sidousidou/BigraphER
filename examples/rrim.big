@@ -20,9 +20,9 @@ big rcfs = N{t0, v0}.1;
 big sys = arch | rcfs;
 
 # System
-brs
+begin brs
   init sys;
   rules = [ { new } ];
-endbrs
+end
 
 
