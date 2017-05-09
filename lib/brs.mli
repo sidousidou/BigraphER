@@ -1,7 +1,7 @@
 (** This module provides operations on BRS.
     @author Michele Sevegnani *)
 
-(** The type of bigraphical reaction rules.*)
+(** The type of bigraphical reaction rules. *)
 type react =
   { rdx : Big.bg;                  (** Redex (left-hand side) *)
     rct : Big.bg;                  (** Reactum (right-hand side) *)

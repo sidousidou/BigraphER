@@ -1,7 +1,11 @@
 (** Types of rective systems.
     @author Michele Sevegnani *)
 
-type t = BRS | PBRS | SBRS
+(** Kinds of transition systems. *)
+type t =
+  | BRS  (** Bigraphical Reactive Systems *)
+  | PBRS (** Probabilistic Bigraphical Reactive Systems *)
+  | SBRS (** Stochasrtic Bigraphical Reactive Systems *)
          
 val to_string : t -> string
 
