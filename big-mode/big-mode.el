@@ -16,8 +16,7 @@
        "ctrl"
        "float"
        "int"
-       "react"
-       "sreact")))
+       "react")))
   "BigraphER mode types.")
 
 (defconst big-keywords
@@ -25,9 +24,10 @@
     (regexp-opt
      '("fun"
        "brs"
-       "endbrs"
+       "end"
        "sbrs"
-       "endsbrs"
+       "pbrs"
+       "begin"
        "init"
        "atomic"
        "preds"
@@ -104,7 +104,7 @@
   (if (bobp)
       (indent-line-to 0)   ; First line is always non-indented
     (let ((not-indented t) cur-indent)
-      (if (looking-at "^[ \t]*\\(endbrs\\|endsbrs\\|)\\|;\\)") ; If the line we are looking at is the end of a block, then decrease the indentation
+      (if (looking-at "^[ \t]*\\(end\\|)\\|;\\)") ; If the line we are looking at is the end of a block, then decrease the indentation
 	  (progn
 	    (save-excursion
 	      (forward-line -1)
@@ -114,11 +114,11 @@
 	(save-excursion
 	  (while not-indented ; Iterate backwards until we find an indentation hint
 	    (forward-line -1)
-	    (if (looking-at "^[ \t]*\\(endbrs\\|endsbrs\\|)\\)") ; This hint indicates that we need to indent at the level of the end_ token
+	    (if (looking-at "^[ \t]*\\(endbrs\\|)\\)") ; This hint indicates that we need to indent at the level of the end_ token
 		(progn
 		  (setq cur-indent (current-indentation))
 		  (setq not-indented nil))
-	      (if (looking-at "^[ \t]*\\(=\\|(\\|sbrs\\|brs\\)") ; This hint indicates that we need to indent an extra level
+	      (if (looking-at "^[ \t]*\\(=\\|(\\|begin\\)") ; This hint indicates that we need to indent an extra level
 		  (progn
 		    (setq cur-indent (+ (current-indentation) 2)) ; Do the actual indenting
 		    (setq not-indented nil))
