@@ -107,12 +107,8 @@ type dbig =
   | Big_fun_exp of Id.t * Id.t list * big_exp * Loc.t
 
 type dreact =
-  | React_exp of Id.t * big_exp * big_exp * eta_exp option * Loc.t 
-  | React_fun_exp of Id.t * Id.t list * big_exp * big_exp * eta_exp option * Loc.t
-
-type dsreact =
-  | Sreact_exp of Id.t * big_exp * big_exp * eta_exp option * float_exp * Loc.t 
-  | Sreact_fun_exp of Id.t * Id.t list * big_exp * big_exp * eta_exp option * float_exp * Loc.t
+  | React_exp of Id.t * big_exp * big_exp * float_exp option * eta_exp option * Loc.t 
+  | React_fun_exp of Id.t * Id.t list * big_exp * big_exp * float_exp option * eta_exp option * Loc.t
 
 type dec =
   | Dctrl of dctrl
@@ -120,7 +116,6 @@ type dec =
   | Dfloat of dfloat
   | Dbig of dbig
   | Dreact of dreact
-  | Dsreact of dsreact
 
 type init_exp =
   | Init of Id.t * Loc.t
@@ -158,31 +153,11 @@ type dbrs =
     dbrs_params: param_exp list;
     dbrs_preds: pred_id list;
     dbrs_loc: Loc.t;
-  }
-
-type srul_id =
-  | Srul_id of Id.t * Loc.t
-  | Srul_id_fun of Id.t * num_exp list * Loc.t
-
-type spr_exp =
-  | Spr_red of srul_id list * Loc.t 
-  | Spr of srul_id list * Loc.t
-
-type dsbrs =
-  { dsbrs_pri : spr_exp list;
-    dsbrs_init: init_exp;
-    dsbrs_params: param_exp list;
-    dsbrs_preds: pred_id list;
-    dsbrs_loc: Loc.t;
-  }
-
-type ts =
-  | Dbrs of dbrs
-  | Dsbrs of dsbrs
+    dbrs_type: Rs.t }
 
 type model =
   { model_decs : dec list;
-    model_rs : ts;
+    model_rs : dbrs;
     model_loc : Loc.t;
   }
 
@@ -205,19 +180,13 @@ let id_of_dbig = function
   | Big_exp (d, _, _) | Big_fun_exp (d, _, _, _) -> d
 
 let id_of_dreact = function
-  | React_exp (d, _, _, _, _) | React_fun_exp (d, _, _, _, _, _) -> d
-
-let id_of_dsreact = function
-  | Sreact_exp (d, _, _, _, _, _) | Sreact_fun_exp (d, _, _, _, _, _, _) -> d
+  | React_exp (d, _, _, _, _, _) | React_fun_exp (d, _, _, _, _, _, _) -> d
 
 let loc_of_dbig = function
   | Big_exp (_, _, l) | Big_fun_exp (_, _, _, l) -> l
 
 let loc_of_dreact = function
-  | React_exp (_, _, _, _, l) | React_fun_exp (_, _, _, _, _, l) -> l
-
-let loc_of_dsreact = function
-  | Sreact_exp (_, _, _, _, _, l) | Sreact_fun_exp (_, _, _, _, _, _, l) -> l
+  | React_exp (_, _, _, _, _, l) | React_fun_exp (_, _, _, _, _, _, l) -> l
 
 let id_of_ion_exp = function
   | Big_ion_exp (id, _, _) | Big_ion_fun_exp (id, _, _, _) -> id
@@ -244,9 +213,9 @@ let names_of_closures =
   List.fold_left (fun acc c ->
       c.cl_name :: acc) []
   
-let init_of_ts = function
-  | Dbrs dbrs -> dbrs.dbrs_init 
-  | Dsbrs dsbrs -> dsbrs.dsbrs_init
+(* let init_of_ts = function *)
+(*   | Dbrs dbrs -> dbrs.dbrs_init  *)
+(*   | Dsbrs dsbrs -> dsbrs.dsbrs_init *)
 
 type rul_call = RulCall of Id.t * int * Loc.t
 
@@ -256,29 +225,19 @@ let ids_of_pr_exps =
       | Pr (rules, _) -> rules @ acc
     ) []
 
-let ids_of_spr_exps =
-  List.fold_left (fun acc -> function
-      | Spr_red (rules, _) 
-      | Spr (rules, _) -> rules @ acc
-    ) []
-
 let rul_id_to_rul_call = function
   | Rul_id (id, loc) -> RulCall (id, 0, loc)
   | Rul_id_fun (id, acts, loc) -> RulCall (id, List.length acts, loc)
 
-let srul_id_to_rul_call = function
-  | Srul_id (id, loc) -> RulCall (id, 0, loc)
-  | Srul_id_fun (id, acts, loc) -> RulCall (id, List.length acts, loc)
+(* let rules_of_ts = function *)
+(*   | Dbrs dbrs ->  *)
+(*     List.map rul_id_to_rul_call (ids_of_pr_exps (dbrs.dbrs_pri)) *)
+(*   | Dsbrs dsbrs ->  *)
+(*     List.map srul_id_to_rul_call (ids_of_spr_exps (dsbrs.dsbrs_pri)) *)
 
-let rules_of_ts = function
-  | Dbrs dbrs -> 
-    List.map rul_id_to_rul_call (ids_of_pr_exps (dbrs.dbrs_pri))
-  | Dsbrs dsbrs -> 
-    List.map srul_id_to_rul_call (ids_of_spr_exps (dsbrs.dsbrs_pri))
-
-let params_of_ts = function
-  | Dbrs ts -> ts.dbrs_params
-  | Dsbrs ts -> ts.dsbrs_params
+(* let params_of_ts = function *)
+(*   | Dbrs ts -> ts.dbrs_params *)
+(*   | Dsbrs ts -> ts.dsbrs_params *)
 
 let string_of_consts l =
   List.map (function

@@ -35,8 +35,6 @@ type store_val =
   | A_ctrl_fun of int * Id.t list
   | React of Brs.react
   | React_fun of big_exp * big_exp * int Fun.t option * Id.t list
-  | Sreact of Sbrs.react
-  | Sreact_fun of big_exp * big_exp * int Fun.t option * float_exp * Id.t list
   | Int_param of int list
   | Float_param of float list
 
@@ -49,8 +47,6 @@ let string_of_store_val = function
   | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
   | React r -> Brs.string_of_react r
   | React_fun _ -> "<fun react>"
-  | Sreact r -> Sbrs.string_of_react r
-  | Sreact_fun _ -> "<fun sreact>"
   | Int_param p ->
     "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
   | Float_param p ->
@@ -79,8 +75,6 @@ let assign_type (v : store_val) env_t =
   | A_ctrl_fun (arity, forms) -> update forms (`ctrl arity)
   | React _ -> (`big_val `react, env_t)
   | React_fun (_, _, _, forms) -> update forms `react
-  | Sreact _ -> (`big_val `sreact, env_t)
-  | Sreact_fun (_, _, _, _, forms) -> update forms `sreact
   | Int_param _ -> (`param `int, env_t)
   | Float_param _ -> (`param `float, env_t)
 
@@ -181,8 +175,6 @@ let get_int id p scope env =
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `num_val (`b `int)), p)) in
@@ -200,8 +192,6 @@ let get_float id p scope env =
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `num_val (`b `float)), p)) in
@@ -219,8 +209,6 @@ let get_num id p scope env =
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `num_val (`g int_or_float)), p)) in
@@ -242,8 +230,6 @@ let get_ctrl id arity p env =
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p)) 
   with
@@ -263,8 +249,6 @@ let get_ctrl_fun id arity act_types p env =
     | (A_ctrl _,t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p)) 
   with
@@ -282,8 +266,6 @@ let is_atomic id p env =
     | Ctrl_fun (_,_)
     | React _
     | React_fun (_,_,_,_)
-    | Sreact _
-    | Sreact_fun (_,_,_,_,_)
     | Int_param _
     | Float_param _ -> false
   with
@@ -302,8 +284,6 @@ let get_big id p env =
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val `big), p))
   with
@@ -322,8 +302,6 @@ let get_big_fun id arg_types p env =
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p)) 
   with
@@ -342,8 +320,6 @@ let get_react id p (env : store) =
     | (A_ctrl _,t,_)
     | (A_ctrl_fun (_,_),t,_)
     | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val `react), p))
   with
@@ -362,50 +338,8 @@ let get_react_fun id arg_types p env =
     | (A_ctrl _,t,_)
     | (A_ctrl_fun (_,_),t,_)
     | (React _,t,_)
-    | (Sreact _,t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
     | (Int_param _,t,_)
     | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (arg_types, `react)), p)) 
-  with
-  | Not_found -> raise (ERROR (Unbound_variable id, p))		       
-
-let get_sreact id p (env : store) =
-  try
-    match Base.H_string.find env id with
-    | (Sreact r, _, _) -> r
-    | (Int _,t,_)
-    | (Float _,t,_)
-    | (Big _,t,_)
-    | (Big_fun (_,_),t,_)
-    | (Ctrl _,t,_)
-    | (Ctrl_fun (_,_),t,_)
-    | (A_ctrl _,t,_)
-    | (A_ctrl_fun (_,_),t,_)
-    | (React _,t,_)
-    | (React_fun (_,_,_,_),t,_)
-    | (Sreact_fun (_,_,_,_,_),t,_)
-    | (Int_param _,t,_)
-    | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val `sreact), p))
-  with
-  | Not_found -> raise (ERROR (Unbound_variable id, p))
-
-let get_sreact_fun id arg_types p env =
-  try
-    match Base.H_string.find env id with
-    | (Sreact_fun (l, r, eta, rate, forms), t, _) -> (l, r, eta, rate, forms, t)
-    | (Int _,t,_)
-    | (Float _,t,_)
-    | (Big _,t,_)
-    | (Big_fun (_,_),t,_)
-    | (Ctrl _,t,_)
-    | (Ctrl_fun (_,_),t,_)
-    | (A_ctrl _,t,_)
-    | (A_ctrl_fun (_,_),t,_)
-    | (React _,t,_)
-    | (React_fun (_,_,_,_),t,_)
-    | (Sreact _,t,_)
-    | (Int_param _,t,_)
-    | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (arg_types, `sreact)), p)) 
   with
   | Not_found -> raise (ERROR (Unbound_variable id, p))		       
 
@@ -465,8 +399,6 @@ let rec eval_num (exp : num_exp) (scope : scope) (env : store) =
     | (A_ctrl_fun (_,_),_)
     | (React _,_)
     | (React_fun (_,_,_,_),_)
-    | (Sreact _,_)
-    | (Sreact_fun (_,_,_,_,_),_)
     | (Int_param _,_)
     | (Float_param _,_) -> assert false in (*BISECT-IGNORE*)
   match exp with
@@ -499,8 +431,6 @@ let eval_nums exps (scope : scope) (env : store) =
       | A_ctrl_fun (_,_)
       | React _
       | React_fun (_,_,_,_)
-      | Sreact _
-      | Sreact_fun (_,_,_,_,_)
       | Int_param _ 
       | Float_param _ -> assert false (*BISECT-IGNORE*)
     ) exps
@@ -699,9 +629,7 @@ let param_to_vals = function
   | (A_ctrl _,_,_)
   | (A_ctrl_fun (_,_),_,_)
   | (React _,_,_)
-  | (React_fun (_,_,_,_),_,_)
-  | (Sreact _,_,_)
-  | (Sreact_fun (_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
+  | (React_fun (_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
 
 let is_param id env p =
   try
@@ -717,9 +645,7 @@ let is_param id env p =
     | A_ctrl _
     | A_ctrl_fun (_,_)
     | React _
-    | React_fun (_,_,_,_)
-    | Sreact _
-    | Sreact_fun (_,_,_,_,_) -> false
+    | React_fun (_,_,_,_) -> false
   with
   | Not_found -> raise (ERROR (Unbound_variable id, p))
 
@@ -771,22 +697,6 @@ let eval_react_fun_app id args env env_t p =
         raise (ERROR (Wrong_type (`lambda (args_t, `react), resolve_t env_t t), p))
     ) ([], env_t)
 
-let eval_sreact_fun_app id args env env_t p =
-  scan_for_params env args
-  |> param_scopes env
-  |> List.fold_left (fun (acc, env_t) scope ->
-      let (nums, args_t) = eval_nums args scope env in
-      let (l, r, eta, rate, forms, t) = get_sreact_fun id args_t p env in
-      try
-        let env_t' = app_exn env_t (dom_of_lambda t) args_t in
-        let scope' = extend_scope scope forms nums args_t p in
-        let (r, env_t'') = eval_sreact l r eta rate scope' env env_t' p in
-        (r :: acc, env_t'')
-      with
-      | UNIFICATION ->
-        raise (ERROR (Wrong_type (`lambda (args_t, `react), resolve_t env_t t), p))
-    ) ([], env_t)
-
 let eval_pr env env_t pr =
   let aux env_t = function
     | Rul_id (id, p) -> ([get_react id p env], env_t)
@@ -818,29 +728,6 @@ let eval_p_list eval_f chk_f env env_t l p =
 
 let eval_prs =
   eval_p_list eval_pr (fun x -> Brs.is_valid_priority_list (fst x))
-
-let eval_spr env env_t pr =
-  let aux env_t = function
-    | Srul_id (id, p) -> ([get_sreact id p env], env_t)
-    | Srul_id_fun (id, args, p) -> eval_sreact_fun_app id args env env_t p in
-  let aux' (acc, env_t) id =
-    let (rs, env_t') = aux env_t id in
-    (acc @ rs, env_t') in
-  let (pr_class, p) =
-    match pr with
-    | Spr (ids, p) ->
-      let (rs, env_t') =
-        List.fold_left aux' ([], env_t) ids in
-      ((Sbrs.P_class rs, env_t'), p)
-    | Spr_red (ids, p) ->
-      let (rs, env_t') =
-        List.fold_left aux' ([], env_t) ids in
-      ((Sbrs.P_rclass rs, env_t'), p) in
-  if Sbrs.is_valid_priority (fst pr_class) then pr_class
-  else raise (ERROR (Invalid_class, p))
-
-let eval_sprs =
-  eval_p_list eval_spr (fun x -> Sbrs.is_valid_priority_list (fst x))
 
 let eval_pred_fun_app id args env env_t p =
   let print_id id nums =
@@ -926,18 +813,12 @@ let store_decs fmt decs env env_t =
        update fmt id (Big b_v) p env env_t')
     | Dbig (Big_fun_exp (id, forms, exp, p)) ->
       upd id (Big_fun (exp, forms)) p
-    | Dreact (React_exp (id, lhs, rhs, eta, p)) ->
+    | Dreact (React_exp (id, lhs, rhs, label, eta, p)) ->
       (let (r_v, env_t') =
          eval_react lhs rhs (eval_eta eta) ScopeMap.empty env env_t p in
        update fmt id (React r_v) p env env_t')
-    | Dreact (React_fun_exp (id, forms, lhs, rhs, eta, p)) ->
-      upd id (React_fun (lhs, rhs, eval_eta eta, forms)) p
-    | Dsreact (Sreact_exp (id, lhs, rhs, eta, rate, p)) ->
-      (let (r_v, env_t') =
-         eval_sreact lhs rhs (eval_eta eta) rate ScopeMap.empty env env_t p in
-       update fmt id (Sreact r_v) p env env_t')
-    | Dsreact (Sreact_fun_exp (id, forms, lhs, rhs, eta, rate, p)) ->
-      upd id (Sreact_fun (lhs, rhs, eval_eta eta, rate, forms)) p in
+    | Dreact (React_fun_exp (id, forms, lhs, rhs, label, eta, p)) ->
+      upd id (React_fun (lhs, rhs, eval_eta eta, forms)) p in
   List.fold_left aux env_t decs
 
 let store_consts fmt consts (env : store) =
@@ -1018,19 +899,12 @@ let init_env fmt consts =
 
 let eval_model fmt m env =
   let env_t = store_decs fmt m.model_decs env [] in  
-  store_params fmt (params_of_ts m.model_rs) env;
-  let (b, env_t') = eval_init (init_of_ts m.model_rs) env env_t in
-  match m.model_rs with
-  | Dbrs brs ->
-    let (p, env_t'') =
-      eval_prs env env_t' brs.dbrs_pri brs.dbrs_loc in
-    let (preds, env_t''') = eval_preds env env_t'' brs.dbrs_preds in
-    (b, P p, preds, env_t''')
-  | Dsbrs sbrs ->
-    let (p, env_t'') =
-      eval_sprs env env_t' sbrs.dsbrs_pri sbrs.dsbrs_loc in
-    let (preds, env_t''') = eval_preds env env_t'' sbrs.dsbrs_preds in
-    (b, S p, preds, env_t''')  
+  store_params fmt m.model_rs.dbrs_params env;
+  let (b, env_t') = eval_init m.model_rs.dbrs_init env env_t in
+  let (p, env_t'') =
+    eval_prs env env_t' m.model_rs.dbrs_pri m.model_rs.dbrs_loc in
+  let (preds, env_t''') = eval_preds env env_t'' m.model_rs.dbrs_preds in
+  (b, P p, preds, env_t''')
 
 (******** EXPORT STORE *********)
 
@@ -1066,20 +940,13 @@ let export decs (env : store) (env_t : store_t) path
                       ScopeMap.empty env env_t) in
        f_write b ~name:(id ^ ext) ~path
        |> print_fun (concat (id ^ ext)))
-    | Dreact (React_exp (id, _, _, _, p)) ->
+    | Dreact (React_exp (id, _, _, _, _, p)) ->
       (let r = get_react id p env in
        write_pair id r.Brs.rdx r.Brs.rct (f_write, ext))
-    | Dreact (React_fun_exp (id, _, _, _, _, p)) ->
+    | Dreact (React_fun_exp (id, _, _, _, _, _, p)) ->
       (let args = aux id in
        let r = aux' eval_react_fun_app id args p in
-       write_pair id r.Brs.rdx r.Brs.rct (f_write, ext))
-    | Dsreact (Sreact_exp (id, _, _, _, _, p)) ->
-      (let r = get_sreact id p env in
-       write_pair id r.Sbrs.rdx r.Sbrs.rct (f_write, ext))
-    | Dsreact (Sreact_fun_exp (id, _, _, _, _, _, p)) ->
-      (let args = aux id in
-       let r = aux' eval_sreact_fun_app id args p in
-       write_pair id r.Sbrs.rdx r.Sbrs.rct (f_write, ext)) in		     
+       write_pair id r.Brs.rdx r.Brs.rct (f_write, ext)) in		     
   List.iter (fun (f_write, ext) ->
       List.iter (fun d ->
           try write f_write ext d with
@@ -1209,7 +1076,7 @@ let ml_of_eta = function
   | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
   | None -> "None"
 
-let ml_of_react lhs rhs eta =
+let ml_of_react lhs rhs eta = (* label *)
   "{rdx = " ^ (ml_of_big lhs) ^ ";\n"
   ^ " rct = " ^ (ml_of_big rhs) ^ ";\n"
   ^ " eta = " ^ (ml_of_eta eta) ^ ";\n"
@@ -1221,16 +1088,10 @@ let ml_of_dec = function
     ml_of_dec id [] (ml_of_big exp)     
   | Dbig (Big_fun_exp (id, params, exp, _)) ->
     ml_of_dec id params (ml_of_big exp)
-  | Dreact (React_exp (id, lhs, rhs, eta, _)) ->
+  | Dreact (React_exp (id, lhs, rhs, _, eta, _)) ->
     ml_of_dec id [] ("Brs." ^ (ml_of_react lhs rhs eta) ^ " }") 
-  | Dreact (React_fun_exp (id, params, lhs, rhs, eta, _)) ->
+  | Dreact (React_fun_exp (id, params, lhs, rhs, _, eta, _)) ->
     ml_of_dec id params ("Brs." ^ (ml_of_react lhs rhs eta) ^ " }") 
-  | Dsreact (Sreact_exp (id, lhs, rhs, eta, r, _)) ->
-    ml_of_dec id [] ("Sbrs." ^ (ml_of_react lhs rhs eta)
-                     ^ " rate = " ^ (ml_of_float r) ^ ";\n }") 
-  | Dsreact (Sreact_fun_exp (id, params, lhs, rhs, eta, r, _)) ->
-    ml_of_dec id params ("Sbrs." ^ (ml_of_react lhs rhs eta)
-                         ^ " rate = " ^ (ml_of_float r) ^ ";\n }") 
   | Dint exp ->
     ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
   | Dfloat exp  -> 
