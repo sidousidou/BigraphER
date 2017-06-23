@@ -2,8 +2,8 @@
 
 Version 1.2.0
 
-[![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/projects/540f670b21c97efdb898a046)
-[![Coverage Badge](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)](https://app.shippable.com/projects/540f670b21c97efdb898a046)
+[![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
+[![Coverage Badge](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
 
 ----------------------------------------------------------------------------
 
