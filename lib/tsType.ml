@@ -148,15 +148,21 @@ end
 module type RS =
 sig
   type react
-  type p_class
+  type p_class =
+     | P_class of react list
+     | P_rclass of react list
   type stats = stats_t
   type graph
   type react_error
   type occ
   type limit
+  type label
   val typ : Rs.t
   val string_of_stats : stats -> (string * string * bool) list
   val string_of_react : react -> string
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> react
+  val lhs_of_react : react -> Big.bg
+  val rhs_of_react : react -> Big.bg
   val string_of_limit : limit -> string
   val is_valid_react : react -> bool
   exception NOT_VALID of react_error
@@ -169,7 +175,7 @@ sig
   val step : Big.bg -> react list -> occ list * int
   val random_step : Big.bg -> react list -> occ option * int
   val fix : Big.bg -> react list -> Big.bg * int
-  val rewrite : Big.bg -> p_class list -> Big.bg * int  
+  val rewrite : Big.bg -> p_class list -> Big.bg * int
   exception MAX of graph * stats
   val bfs :
     s0:Big.bg ->
@@ -234,6 +240,8 @@ module Make (R : RrType.T)
   
   type limit = L.t
 
+  type label = R.label
+                 
   exception MAX of t * stats
 
   exception LIMIT of t * stats
@@ -249,6 +257,8 @@ module Make (R : RrType.T)
 
   let string_of_react = R.to_string
 
+  let parse_react = R.parse
+  
   let string_of_limit = L.to_string
                           
   let is_valid_react = R.is_valid
@@ -258,6 +268,10 @@ module Make (R : RrType.T)
     | R.NOT_VALID e -> raise (NOT_VALID e)
 
   let string_of_react_err = R.string_of_react_err 
+
+  let lhs_of_react r = R.lhs r
+                         
+  let rhs_of_react r = R.rhs r
 
   let fix = R.fix
 

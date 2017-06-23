@@ -12,16 +12,37 @@ module RT = struct
   type edge = int * float
 
   let lhs r = r.rdx
+
   let rhs r = r.rct
-  let l r = r.p
+
+  let l r = Some r.p
+
   let map r = r.eta
-  let string_of_label = Printf.sprintf "%-3g"
+
   let val_chk r = r.p > 0.0 && r.p <= 1.0
+
   let val_chk_error_msg = "Not a probability"
+
+  let string_of_label = function
+    | Some p -> Printf.sprintf "%-3g" p
+    | None -> assert false (*BISECT-IGNORE*)
+
+  let parse ~lhs ~rhs p eta =
+    match p with
+    | None -> assert false (*BISECT-IGNORE*)
+    | Some p -> { rdx = lhs;
+                  rct = rhs;
+                  eta = eta;
+                  p = p; }
+  
   let to_occ b r = (b, r.p)
+
   let big_of_occ (b, _) = b
+
   let merge_occ (b, p) (_, p') = (b, p +. p')
+
   let update_occ (_, p) b' = (b', p)
+
   let edge_of_occ (_, p) i = (i, p)
 
   (* Normalise a list of occurrences *)
@@ -58,13 +79,15 @@ module RT = struct
         |> pick
         |> (fun x -> (Some x, m))
            
-      end
-  
+      end 
 end
 
 module R = RrType.Make (RT)
 
-let is_determ r = R.l r = 1.0
+let is_determ r =
+  match  R.l r with
+  | Some r -> r = 1.0
+  | None -> assert false (*BISECT-IGNORE*)
 
 module PT = struct
   type t = R.t list

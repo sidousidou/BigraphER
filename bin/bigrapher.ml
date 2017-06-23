@@ -147,36 +147,6 @@ let format_map = function
   | Cmd.Dot -> (Big.write_dot, ".dot")
   | Cmd.Txt -> (Big.write_txt, ".txt")
 
-let export_decs fmt path m env env_t =
-  print_msg fmt `yellow ("Exporting declarations to "
-                         ^ path ^ " ...");
-  Store.export m.model_decs
-    env
-    env_t
-    path
-    (List.map format_map Cmd.(defaults.out_format))
-    fmt
-    (print_fun fmt `white Cmd.(defaults.verb))
-
-
-let export_ml fmt path m =
-  print_msg fmt `yellow ("Exporting OCaml declarations to "
-                         ^ path ^ " ...");
-  try
-    Export.write_string (Store.ml_of_model m Cmd.(defaults.model))
-      ~name:(Filename.basename path)
-      ~path:(Filename.dirname path)
-    |> print_fun fmt
-      `white
-      Cmd.(defaults.verb)
-      path
-  with
-  | Export.ERROR e ->
-    (pp_print_flush fmt ();
-     fprintf err_formatter "@[<v>";
-     Export.report_error e
-     |> fprintf err_formatter "@[%s: %s@]@." Utils.err)
-
 let export_prism fmt msg f =
   match Cmd.(defaults.export_prism) with
   | None -> ()
@@ -259,24 +229,55 @@ let export_ts fmt msg formats =
             |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
        formats)
 
-let export_model fmt m env env_t =
-  (* DECLARATIONS *)
-  (match Cmd.(defaults.export_decs) with
-   | None -> ()
-   | Some path -> export_decs fmt path m env env_t);
-  (* Export model to OCaml *)
-  (match Cmd.(defaults.export_ml) with 
-   | None -> ()
-   | Some path -> export_ml fmt path m)
-
 let check fmt =
   print_msg fmt `yellow "Model file parsed correctly";
   pp_print_flush err_formatter ();
   exit 0
 
 module Run
-    (T: TsType.RS)
+    (T: TsType.RS with type label = float)
     (L: TsType.TT with type t = T.limit) = struct
+
+  module S = Store.Make (T)
+      
+  let export_decs fmt path m env env_t =
+    print_msg fmt `yellow ("Exporting declarations to "
+                           ^ path ^ " ...");
+    S.export m.model_decs
+      env
+      env_t
+      path
+      (List.map format_map Cmd.(defaults.out_format))
+      fmt
+      (print_fun fmt `white Cmd.(defaults.verb))
+
+  let export_ml fmt path m =
+    print_msg fmt `yellow ("Exporting OCaml declarations to "
+                           ^ path ^ " ...");
+    try
+      Export.write_string (S.ml_of_model m Cmd.(defaults.model))
+        ~name:(Filename.basename path)
+        ~path:(Filename.dirname path)
+      |> print_fun fmt
+        `white
+        Cmd.(defaults.verb)
+        path
+    with
+    | Export.ERROR e ->
+      (pp_print_flush fmt ();
+       fprintf err_formatter "@[<v>";
+       Export.report_error e
+       |> fprintf err_formatter "@[%s: %s@]@." Utils.err)
+
+  let export_model fmt m env env_t =
+    (* DECLARATIONS *)
+    (match Cmd.(defaults.export_decs) with
+     | None -> ()
+     | Some path -> export_decs fmt path m env env_t);
+    (* Export model to OCaml *)
+    (match Cmd.(defaults.export_ml) with 
+     | None -> ()
+     | Some path -> export_ml fmt path m)
 
   let print_stats_store fmt env priorities =
     [{ descr = ("Type:", `cyan);
@@ -351,7 +352,7 @@ module Run
            pp_print_flush err_formatter ();
            exit 0))
   
-  let run fmt s0 priorities preds = function
+  let run_aux fmt s0 priorities preds = function
     | `sim ->
       begin
         set_trap fmt;
@@ -382,7 +383,24 @@ module Run
             (graph, stats)
       end
     | `check -> check fmt
-  
+
+  let run fmt m exec_type =
+    try
+      let env = S.init_env fmt Cmd.(defaults.consts) in
+      let (s0, pri, preds, env_t) =
+        S.eval_model fmt m env in
+      print_stats_store fmt env pri;
+      export_model fmt m env env_t;
+      run_aux fmt s0 pri preds exec_type
+    with
+    | S.ERROR (e, p) ->
+      (pp_print_flush fmt ();
+       fprintf err_formatter "@[<v>";
+       Loc.print_loc err_formatter p;
+       S.report_error err_formatter e;
+       pp_print_flush err_formatter ();
+       exit 1)
+
 end
 
 (******** BIGRAPHER *********)
@@ -441,43 +459,42 @@ let () =
     try
       let m = Parser.model Lexer.token lexbuf in 
       close_in file; 
-      let env = Store.init_env fmt Cmd.(defaults.consts) in
-      let (s0, prs, preds, env_t) = Store.eval_model fmt m env in
-      (match prs with (* Use Rs.t instead *)
-       | Store.P priorities ->
+      (match m.model_rs.dbrs_type with
+       | Rs.BRS ->
          begin
            Cmd.check_brs_opt ();
-           let module R = Run (Brs) (struct
-               type t = int
-               let stop = Cmd.(defaults.steps)
-             end) in
-           R.print_stats_store fmt env priorities;
-           export_model fmt m env env_t;
-           R.run fmt s0 priorities preds exec_type;
+           let module R = Run (Brs)
+               (struct
+                 type t = int
+                 let stop = Cmd.(defaults.steps)
+               end) in
+           R.run fmt m exec_type
          end
-       | Store.S priorities ->
+       | Rs.PBRS ->
+         begin
+           Cmd.check_pbrs_opt ();
+           let module R = Run (Pbrs)
+               (struct
+                 type t = int
+                 let stop = Cmd.(defaults.steps)
+               end) in
+           R.run fmt m exec_type
+         end
+       | Rs.SBRS ->
          begin
            Cmd.check_sbrs_opt ();
-           let module R = Run (Sbrs) (struct
-               type t = float
-               let stop = Cmd.(defaults.time)
-             end) in
-           R.print_stats_store fmt env priorities;
-           export_model fmt m env env_t;
-           R.run fmt s0 priorities preds exec_type;
+           let module R = Run (Sbrs)
+               (struct
+                 type t = float
+                 let stop = Cmd.(defaults.time)
+               end) in
+           R.run fmt m exec_type
          end);
     with
     | Place.NOT_PRIME ->
       (close_progress_bar ();
        fprintf err_formatter "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
          Utils.err;
-       exit 1)
-    | Store.ERROR (e, p) ->
-      (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>";
-       Loc.print_loc err_formatter p;
-       Store.report_error err_formatter e;
-       pp_print_flush err_formatter ();
        exit 1)
     | Parser.Error ->
       (pp_print_flush fmt ();

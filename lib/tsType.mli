@@ -24,10 +24,10 @@ module type T = sig
 end
 
 type stats_t = { time : float; 
-               states : int;  
-               trans : int;  
-               occs : int; }
-
+                 states : int;  
+                 trans : int;  
+                 occs : int }
+               
 module type S = sig
   type t = stats_t
   type g
@@ -38,15 +38,21 @@ end
 (* The interface of a Reactive System *)
 module type RS = sig
   type react
-  type p_class
+  type p_class =
+    | P_class of react list
+    | P_rclass of react list
   type stats = stats_t
   type graph
   type react_error
   type occ
   type limit
+  type label
   val typ : Rs.t
   val string_of_stats : stats -> (string * string * bool) list
   val string_of_react : react -> string
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> react
+  val lhs_of_react : react -> Big.bg
+  val rhs_of_react : react -> Big.bg
   val string_of_limit : limit -> string
   val is_valid_react : react -> bool
   exception NOT_VALID of react_error
@@ -123,6 +129,8 @@ module Make (R : RrType.T)
   
   type limit = L.t
 
+  type label = R.label
+                 
   type react_error = R.react_error
 
   exception MAX of t * stats
@@ -138,7 +146,13 @@ module Make (R : RrType.T)
   val string_of_stats : stats -> (string * string * bool) list
 
   val string_of_react : R.t -> string
+    
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> R.t
 
+  val lhs_of_react : R.t -> Big.bg
+
+  val rhs_of_react : R.t -> Big.bg
+  
   val string_of_limit : limit -> string
   
   val is_valid_react : R.t -> bool
@@ -152,7 +166,7 @@ module Make (R : RrType.T)
   val step : Big.bg -> R.t list -> R.occ list * int
 
   val random_step : Big.bg -> R.t list -> R.occ option * int
-
+                                                                   
   val is_valid_priority : p_class -> bool
 
   val is_valid_priority_list : p_class list -> bool

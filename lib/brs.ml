@@ -7,24 +7,46 @@ type react =
 
 module RT = struct
   type t = react	
-  type label = Epsilon  (* Empty label *)  
+  type label = float
   type occ = Big.bg
   type edge = int
-
+  
   let lhs r = r.rdx
+
   let rhs r = r.rct
-  let l _ = Epsilon
+
+  let l _ = None
+
   let map r = r.eta
-  let string_of_label _ = ""
+
   let val_chk _ = true
+
   let val_chk_error_msg = ""
+
+  let string_of_label = function
+    | None -> ""
+    | Some _ -> assert false (*BISECT-IGNORE*)
+
+  let parse ~lhs ~rhs p eta =
+    match p with
+    | None -> { rdx = lhs;
+                rct = rhs;
+                eta = eta; }
+    | Some _ -> assert false (*BISECT-IGNORE*)
+  
   let to_occ b _ = b
+
   let big_of_occ b = b
+
   let merge_occ b _ = b
+
   let update_occ _ b = b
+
   let edge_of_occ _ i = i
+
   let step b rules = RrType.gen_step b rules
       ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
+
   let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function
@@ -42,6 +64,7 @@ module RT = struct
            (Some (Big.rewrite o b (lhs r) (rhs r) (map r)), m + 1)
          | None -> _random_step b (m + 1) rs') in
     _random_step b 0 rules
+      
 end
 
 module R = RrType.Make (RT)

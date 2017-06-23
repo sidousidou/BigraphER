@@ -31,6 +31,8 @@ type occ = Big.bg
 (** Type of simulation limit *)
 type limit = int
 
+type label = float
+
 (** Type of transition system: {{!Rs.t}[BRS]}. *)
 val typ : Rs.t
 
@@ -41,6 +43,15 @@ val string_of_stats : stats -> (string * string * bool) list
 
 (** String representation of reaction rules. *)
 val string_of_react : react -> string
+
+(** Create a new reaction rule. *)
+val parse_react : lhs:Big.bg -> rhs:Big.bg -> float option -> int Fun.t option -> react
+
+(** The left-hand side (redex) of a reaction rule. **)
+val lhs_of_react : react -> Big.bg
+
+(** The right-hand side (reactum) of a reaction rule. *)
+val rhs_of_react : react -> Big.bg
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string

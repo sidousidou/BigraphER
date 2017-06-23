@@ -2,7 +2,7 @@ type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
     eta : int Fun.t option;        (* Instantiation map *)
-    rate : float
+    rate : float                   (* Reaction rate *)
   }
 
 module RT = struct
@@ -12,19 +12,42 @@ module RT = struct
   type edge = int * float
 
   let lhs r = r.rdx
+
   let rhs r = r.rct
-  let l r = r.rate
+
+  let l r = Some r.rate
+
   let map r = r.eta
-  let string_of_label = Printf.sprintf "%-3g"
+
   let val_chk r = r.rate > 0.0
+
   let val_chk_error_msg = "Not a stochastic rate"
+    
+  let string_of_label = function
+    | Some r -> Printf.sprintf "%-3g" r
+    | None -> assert false (*BISECT-IGNORE*)
+      
+  let parse ~lhs ~rhs r eta =
+    match r with
+    | None -> assert false (*BISECT-IGNORE*)
+    | Some r -> { rdx = lhs;
+                  rct = rhs;
+                  eta = eta;
+                  rate = r; }
+                
   let to_occ b r = (b, r.rate)
+
   let big_of_occ (b, _) = b
+
   let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
+
   let update_occ (_, rho) b' = (b', rho)
+
   let edge_of_occ (_, rho) i = (i, rho)
- let step b rules = RrType.gen_step b rules
+
+  let step b rules = RrType.gen_step b rules
       ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
+
   let random_step b rules =
     (* Sort transitions by rate *)
     let (ss, m) = step b rules in
@@ -46,11 +69,15 @@ module RT = struct
         else aux acc' ss
       | [] -> (None, m) in
     aux 0.0 ss_sorted
+  
 end
 
 module R = RrType.Make (RT)
 
-let is_inst r = R.l r = infinity
+let is_inst r =
+  match  R.l r with
+  | Some r -> r = infinity
+  | None -> assert false (*BISECT-IGNORE*)
 
 module PT = struct
   type t = R.t list

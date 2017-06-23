@@ -1,12 +1,14 @@
 (** This module provides operations on probabilistic BRS.
     @author Michele Sevegnani *)
 
+type label = float
+
 (** The type of probabilistic bigraphical reaction rules. *)
 type react =
   { rdx : Big.bg;                  (** Redex (left-hand side) *)
     rct : Big.bg;                  (** Reactum (right-hand side) *)
     eta : int Fun.t option;        (** Instantiation map: a total function from the sites on the rhs to the sites on the lhs  *)
-    p : float                        (** Probability [0 < p <= 1] *)
+    p : label                        (** Probability [0 < p <= 1] *)
   }
 
 (** The type of priority classes, {e i.e.} lists of stochastic reaction
@@ -43,6 +45,15 @@ val string_of_stats : stats -> (string * string * bool) list
 (** String representation of a probabilistic reaction rule. *)
 val string_of_react : react -> string
 
+(** Create a new reaction rule. *)
+val parse_react : lhs:Big.bg -> rhs:Big.bg -> float option -> int Fun.t option -> react
+
+(** The left-hand side (redex) of a reaction rule. **)
+val lhs_of_react : react -> Big.bg
+
+(** The right-hand side (reactum) of a reaction rule. *)
+val rhs_of_react : react -> Big.bg
+ 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string
   

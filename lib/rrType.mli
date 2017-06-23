@@ -7,11 +7,12 @@ sig
   type edge
   val lhs : t -> Big.bg
   val rhs : t -> Big.bg
-  val l : t -> label
-  val string_of_label : label -> string
+  val l : t -> label option
   val map : t -> int Fun.t option
   val val_chk : t -> bool
   val val_chk_error_msg : string
+  val string_of_label : label option -> string
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
   val to_occ : Big.bg -> t -> occ
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
@@ -31,10 +32,10 @@ sig
   exception NOT_VALID of react_error
   val lhs : t -> Big.bg
   val rhs : t -> Big.bg
-  val l : t -> label
-  val string_of_label : label -> string
+  val l : t -> label option
   val map : t -> int Fun.t option
   val to_occ : Big.bg -> t -> occ
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
   val update_occ : occ -> Big.bg -> occ
@@ -72,14 +73,14 @@ sig
   (** Return the right-hand side of a rewrite rule. *)
   val rhs : t -> Big.bg
 
-  (** Return the label of a rewrite rule. *)
-  val l : t -> label
-
-  (** Return the string representation of a label. *)
-  val string_of_label : label -> string
+  (** Return the label of a rewrite rule if any. *)
+  val l : t -> label option
 
   (** Return the instantition map of a rewrite rule. *)		   
   val map : t -> int Fun.t option
+
+  (** Creare a new reaction rule. *)
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
 
   (** Return an occurrence from a bigraph and a rewrite rule. *)		 
   val to_occ : Big.bg -> t -> occ
@@ -125,8 +126,9 @@ sig
       returned. *)
   val step : Big.bg -> t list -> occ list * int
 
+  (** Random step. *)
   val random_step : Big.bg -> t list -> occ option * int
-
+  
 end
 
 (** Generic step function *)

@@ -6,7 +6,7 @@ type t =
   | BRS  (** Bigraphical Reactive Systems *)
   | PBRS (** Probabilistic Bigraphical Reactive Systems *)
   | SBRS (** Stochasrtic Bigraphical Reactive Systems *)
-         
+
 val to_string : t -> string
 
 val to_string_ext : t -> string

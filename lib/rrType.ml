@@ -6,11 +6,12 @@ sig
   type edge
   val lhs : t -> Big.bg
   val rhs : t -> Big.bg
-  val l : t -> label
-  val string_of_label : label -> string
+  val l : t -> label option
   val map : t -> int Fun.t option
   val val_chk : t -> bool
   val val_chk_error_msg : string
+  val string_of_label : label option -> string
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
   val to_occ : Big.bg -> t -> occ
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
@@ -31,10 +32,10 @@ sig
   exception NOT_VALID of react_error
   val lhs : t -> Big.bg
   val rhs : t -> Big.bg
-  val l : t -> label
-  val string_of_label : label -> string
+  val l : t -> label option
   val map : t -> int Fun.t option
   val to_occ : Big.bg -> t -> occ
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
   val update_occ : occ -> Big.bg -> occ
@@ -102,9 +103,9 @@ module Make (R : R) = struct
 
   let to_string r =
     (Big.to_string (lhs r))
-    ^ "\n--"
+    ^ "\n-"
     ^ (string_of_label (l r))
-    ^ "-->\n"
+    ^ "->\n"
     ^	(Big.to_string (rhs r))
     ^ (match map r with
         | None -> ""
@@ -170,5 +171,5 @@ module Make (R : R) = struct
       | Some b ->  _fix b rules (i + 1)
       | None -> (s, i) in
     _fix b rules 0
-
+        
 end
