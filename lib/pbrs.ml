@@ -127,7 +127,7 @@ module L = struct
 end
 
 module T = struct
-  let typ = Rs.SBRS
+  let typ = Rs.PBRS
 end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
