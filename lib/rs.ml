@@ -27,3 +27,8 @@ let limit_type = function
 let limit_msg = function
   | BRS | PBRS -> "number of simulation steps"
   | SBRS -> "simulation time" 
+
+let module_id = function
+  | BRS -> "Brs"
+  | PBRS -> "Pbrs"
+  | SBRS -> "Sbrs"

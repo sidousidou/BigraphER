@@ -1065,22 +1065,29 @@ module Make (T: TsType.RS with type label = float) = struct
     | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
     | None -> "None"
 
-  let ml_of_react lhs rhs eta = (* label *)
+  let ml_of_react lhs rhs l eta =
     "{rdx = " ^ (ml_of_big lhs) ^ ";\n"
     ^ " rct = " ^ (ml_of_big rhs) ^ ";\n"
     ^ " eta = " ^ (ml_of_eta eta) ^ ";\n"
+    ^ (match (l, T.typ) with
+        | (None, Rs.BRS) -> ""
+        | (Some f, Rs.PBRS) -> "p = " ^ (ml_of_float f) ^ ";\n"
+        | (Some f, Rs.SBRS) -> "rate = " ^ (ml_of_float f) ^ ";\n"
+        | (None, Rs.PBRS)
+        | (None, Rs.SBRS)
+        | (Some _, Rs.BRS) -> assert false (*BISECT-IGNORE*))
 
-  let ml_of_dec = function
+  let ml_of_dec mod_id = function
     | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) ->
       ml_of_ctrl exp
     | Dbig (Big_exp (id, exp, _)) ->
       ml_of_dec id [] (ml_of_big exp)     
     | Dbig (Big_fun_exp (id, params, exp, _)) ->
       ml_of_dec id params (ml_of_big exp)
-    | Dreact (React_exp (id, lhs, rhs, _, eta, _)) ->
-      ml_of_dec id [] ("Brs." ^ (ml_of_react lhs rhs eta) ^ " }") 
-    | Dreact (React_fun_exp (id, params, lhs, rhs, _, eta, _)) ->
-      ml_of_dec id params ("Brs." ^ (ml_of_react lhs rhs eta) ^ " }") 
+    | Dreact (React_exp (id, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id [] (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
+    | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id params (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
     | Dint exp ->
       ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
     | Dfloat exp  -> 
@@ -1088,7 +1095,7 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let ml_of_model m file =
     "(* " ^ file ^ " *)\n"
-    ^ (List.map ml_of_dec m.model_decs
+    ^ (List.map (ml_of_dec (Rs.module_id T.typ)) m.model_decs
        |> String.concat " in\n")
     ^ " in\n()"
 

@@ -18,3 +18,5 @@ val ts_type : t -> string
 val limit_type : t -> string
 
 val limit_msg : t -> string
+
+val module_id : t -> string
