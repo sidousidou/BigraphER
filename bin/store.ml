@@ -1011,7 +1011,7 @@ module Make (T: TsType.RS with type label = float) = struct
     | Big_var_fun  (id, params, _) ->
       (id : string) ^ " " ^ (ml_of_params params) 
     | Big_new_name (n, _) ->
-      "Big.intro (Link.Face.singleton (Link.Nam " ^ n ^ "))"
+      "Big.intro (Link.Face.singleton (Link.Nam \"" ^ n ^ "\"))"
     | Big_num (v, _) ->
       (match v with
        | 0 -> "Big.zero"
@@ -1031,15 +1031,15 @@ module Make (T: TsType.RS with type label = float) = struct
       "Big.sub (Link.parse_face " ^ (ml_of_ids exp.in_names)
       ^ ") (Link.parse_face " ^ (ml_of_ids [exp.out_name]) ^ ")"
     | Big_comp (a, b, _) ->
-      "Big.comp (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+      "Big.comp\n(" ^  (ml_of_big a) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_tens (a, b, _) ->
-      "Big.tens (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+      "Big.tens\n(" ^  (ml_of_big a) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_par (a, b, _) ->
-      "Big.par (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+      "Big.par\n(" ^  (ml_of_big a) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_ppar (a, b, _) ->
-      "Big.ppar (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big b) ^ ")"
+      "Big.ppar\n(" ^  (ml_of_big a) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_share (a, psi, b, _) ->
-      "Big.share (" ^  (ml_of_big a) ^ ") (" ^ (ml_of_big psi) ^ ") ("
+      "Big.share\n(" ^  (ml_of_big a) ^ ")\n(" ^ (ml_of_big psi) ^ ")\n("
       ^ (ml_of_big b) ^ ")"
     | Big_plc exp ->
       "Big.placing " ^ (ml_of_list ml_of_ints exp.plc_parents) ^ " "
@@ -1050,7 +1050,7 @@ module Make (T: TsType.RS with type label = float) = struct
       "Big.ion (Link.parse_face " ^ (ml_of_ids names)
       ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"   
     | Big_nest (i, b, _) ->
-      "Big.nest (" ^  (ml_of_big (Big_ion i)) ^ ") (" ^ (ml_of_big b) ^ ")"
+      "Big.nest\n(" ^  (ml_of_big (Big_ion i)) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_wire (c, b, _) ->
       match c with
       | Close_exp cs ->
@@ -1066,7 +1066,7 @@ module Make (T: TsType.RS with type label = float) = struct
     | None -> "None"
 
   let ml_of_react lhs rhs l eta =
-    "{rdx = " ^ (ml_of_big lhs) ^ ";\n"
+    "{ rdx = " ^ (ml_of_big lhs) ^ ";\n"
     ^ " rct = " ^ (ml_of_big rhs) ^ ";\n"
     ^ " eta = " ^ (ml_of_eta eta) ^ ";\n"
     ^ (match (l, T.typ) with
@@ -1093,10 +1093,39 @@ module Make (T: TsType.RS with type label = float) = struct
     | Dfloat exp  -> 
       ml_of_dec exp.dfloat_id [] (ml_of_float exp.dfloat_exp)
 
-  let ml_of_model m file =
-    "(* " ^ file ^ " *)\n"
-    ^ (List.map (ml_of_dec (Rs.module_id T.typ)) m.model_decs
-       |> String.concat " in\n")
-    ^ " in\n()"
+  let ml_of_pred = function
+    | Pred_id (id, _) -> (id : string)
+    | Pred_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
+      
+  let ml_of_init = function
+    | Init (id, _) -> (id : string)
+    | Init_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
 
+  let ml_of_rul = function
+    | Rul_id (id, _) -> (id : string)
+    | Rul_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
+
+  let ml_of_rules ids =
+    List.map (ml_of_rul) ids
+    |> String.concat "; "
+    
+  let ml_of_pri mod_id = function
+    | Pr_red (ids, _) -> mod_id ^ ".P_rclass [" ^ (ml_of_rules ids) ^ "]"
+    | Pr (ids, _) -> mod_id ^ ".P_class [" ^ (ml_of_rules ids) ^ "]"
+
+  let ml_of_model m file =
+    let mod_id = Rs.module_id T.typ
+    and file_id = Filename.basename file
+                  |> Filename.chop_extension in
+    "(* " ^ file ^ " *)\n"
+    ^ (List.map (ml_of_dec mod_id) m.model_decs
+       |> String.concat " in\n")
+      (* Params *)
+    ^ " in\nlet preds_" ^ file_id ^ "_big =\n"
+    ^ "[ " ^ ((List.map ml_of_pred m.model_rs.dbrs_preds)
+             |> String.concat "; ") ^ " ]\n"
+    ^ "and init_" ^ file_id ^ "_big = " ^ (ml_of_init m.model_rs.dbrs_init) ^ "\n"
+    ^ "and pri_" ^ file_id ^ "_big =\n"
+    ^ "[ " ^ ((List.map (ml_of_pri mod_id) m.model_rs.dbrs_pri)
+             |> String.concat ";\n") ^ "\n] in\n()"
 end
