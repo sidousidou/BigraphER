@@ -8,3 +8,4 @@
 ./examples/closures.big
 ./examples/merge.big
 ./examples/spec.big
+./examples/prob.big
