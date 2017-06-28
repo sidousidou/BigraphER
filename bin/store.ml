@@ -1077,22 +1077,6 @@ module Make (T: TsType.RS with type label = float) = struct
         | (None, Rs.SBRS)
         | (Some _, Rs.BRS) -> assert false (*BISECT-IGNORE*))
 
-  let ml_of_dec mod_id = function
-    | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) ->
-      ml_of_ctrl exp
-    | Dbig (Big_exp (id, exp, _)) ->
-      ml_of_dec id [] (ml_of_big exp)     
-    | Dbig (Big_fun_exp (id, params, exp, _)) ->
-      ml_of_dec id params (ml_of_big exp)
-    | Dreact (React_exp (id, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id [] (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
-    | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id params (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
-    | Dint exp ->
-      ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
-    | Dfloat exp  -> 
-      ml_of_dec exp.dfloat_id [] (ml_of_float exp.dfloat_exp)
-
   let ml_of_pred = function
     | Pred_id (id, _) -> (id : string)
     | Pred_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
@@ -1113,14 +1097,44 @@ module Make (T: TsType.RS with type label = float) = struct
     | Pr_red (ids, _) -> mod_id ^ ".P_rclass [" ^ (ml_of_rules ids) ^ "]"
     | Pr (ids, _) -> mod_id ^ ".P_class [" ^ (ml_of_rules ids) ^ "]"
 
+  (* TO BE FIXED *)
+  let ml_of_param = function
+    | Param_int (ids, (Param_int_val (exp, _)), _) ->
+      (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_int exp)) ids
+      |> String.concat " in\n")
+    | Param_int (ids, (Param_int_range (start, step, stop, _)), _) -> ""
+    | Param_int (ids, (Param_int_set (exps, _)), _) -> ""
+    | Param_float (ids, (Param_float_val (exp, _)), _) -> ""
+    | Param_float (ids, (Param_float_range (start, step, stop, _)), _) -> ""
+    | Param_float (ids, (Param_float_set (exps, _)), _) ->
+      (List.map (fun (id : string) ->
+           ml_of_dec id [] (ml_of_list ml_of_float exps)) ids
+       |> String.concat " in\n")
+
+  let ml_of_dec mod_id = function
+    | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) ->
+      ml_of_ctrl exp
+    | Dbig (Big_exp (id, exp, _)) ->
+      ml_of_dec id [] (ml_of_big exp)     
+    | Dbig (Big_fun_exp (id, params, exp, _)) ->
+      ml_of_dec id params (ml_of_big exp)
+    | Dreact (React_exp (id, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id [] (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
+    | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id params (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
+    | Dint exp ->
+      ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
+    | Dfloat exp  -> 
+      ml_of_dec exp.dfloat_id [] (ml_of_float exp.dfloat_exp)
+  
   let ml_of_model m file =
     let mod_id = Rs.module_id T.typ
     and file_id = Filename.basename file
                   |> Filename.chop_extension in
     "(* " ^ file ^ " *)\n"
-    ^ (List.map (ml_of_dec mod_id) m.model_decs
+    ^ (((List.map (ml_of_dec mod_id) m.model_decs)
+        @ (List.map ml_of_param m.model_rs.dbrs_params))
        |> String.concat " in\n")
-      (* Params *)
     ^ " in\nlet preds_" ^ file_id ^ "_big =\n"
     ^ "[ " ^ ((List.map ml_of_pred m.model_rs.dbrs_preds)
              |> String.concat "; ") ^ " ]\n"
