@@ -4,10 +4,11 @@ open Utils
 
 let bin = "./bigrapher.native full"
 let out_dir name = "./shippable/parser/" ^ name
-let dec_out path = "-f svg,dot -d " ^ path
+let dec_out path = "-f svg,dot,txt -d " ^ path
 let l_out name = "-l " ^ name ^ ".csl"
 let prism_out name = "-p " ^ name ^ ".tra"
 let ts_out name = "-s -t " ^ name
+let ml_out name = "-m " ^ name ^ ".ml"
 let extra_flags = "--no-colors --debug -M 140"	     
 let path = "./tests/files"	     
 let ext = ".reference"
@@ -20,6 +21,7 @@ let set_args name =
     l_out n; 
     prism_out n;
     ts_out n;
+    ml_out n;
     extra_flags ]
   |> String.concat " "
 
