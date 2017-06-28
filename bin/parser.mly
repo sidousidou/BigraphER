@@ -19,17 +19,17 @@ open Cmd
 %token            ATOMIC
 %token            BIG
 %token            REACT
-%token            SREACT
 %token            INIT
 %token            RULES
 %token		  PREDS
 %token            INT
 %token            FLOAT
 %token            FUN
+%token            BEGIN
 %token            BRS
-%token            ENDBRS
+%token            PBRS
 %token            SBRS
-%token            ENDSBRS
+%token            END
 %token		  MERGE
 %token		  SPLIT
 (* %token            SORT TRUE FALSE NOT *)
@@ -111,12 +111,7 @@ dec:
   | dec_float SEMICOLON                     { Dfloat $1  }
   | dec_ctrl SEMICOLON                      { Dctrl $1   }
   | dec_big SEMICOLON                       { Dbig $1    }
-  | dec_react SEMICOLON                     { Dreact $1  }
-  | dec_sreact SEMICOLON                    { Dsreact $1 };
-
-rs:
-  | brs                                     { Dbrs $1  }
-  | sbrs                                    { Dsbrs $1 };
+  | dec_react SEMICOLON                     { Dreact $1  };
 
 dec_int:
   INT IDE EQUAL int_exp                     { { dint_id = $2;
@@ -165,10 +160,14 @@ dec_big:
                                             { Big_fun_exp ($3, $5, $8, loc $startpos $endpos) };
 
 dec_react:
-  | REACT IDE EQUAL bexp ARR bexp eta_exp_opt 
-                                            { React_exp ($2, $4, $6, $7, loc $startpos $endpos)           }
-  | FUN REACT IDE LPAR ide_list RPAR EQUAL bexp ARR bexp eta_exp_opt
-                                            { React_fun_exp ($3, $5, $8, $10, $11, loc $startpos $endpos) };
+  | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
+      { React_exp ($2, $4, $6, $5, $7, loc $startpos $endpos)           }
+  | FUN REACT IDE LPAR ide_list RPAR EQUAL bexp arrow bexp eta_exp_opt
+      { React_fun_exp ($3, $5, $8, $10, $9, $11, loc $startpos $endpos) };
+
+arrow:
+  | ARR                   { None }
+  | LARR float_exp RARR   { Some $2 }
 
 eta_exp_opt:
   eta = option(eta_exp)                     { eta };
@@ -179,25 +178,20 @@ eta_exp:
 int_list:
   ints = separated_list(COMMA, CINT)        { ints };
 
-dec_sreact:  
-  | SREACT IDE EQUAL bexp LARR float_exp RARR bexp eta_exp_opt 
-                                            { Sreact_exp ($2, $4, $8, $9, $6, loc $startpos $endpos)            }
-  | FUN SREACT IDE LPAR ide_list RPAR EQUAL bexp LARR float_exp RARR bexp eta_exp_opt
-                                            { Sreact_fun_exp ($3, $5, $8, $12, $13, $10, loc $startpos $endpos) };
+rs:
+  | BEGIN rs_type params init rules preds END
+      { { dbrs_type = $2; 
+          dbrs_pri = $5;
+	  dbrs_init = $4;
+	  dbrs_params = $3;
+	  dbrs_preds = $6;
+	  dbrs_loc = loc $startpos $endpos; } };
 
-brs:
-  | BRS params init rules preds ENDBRS      { { dbrs_pri = $4;
-						dbrs_init = $3;
-						dbrs_params = $2;
-						dbrs_preds = $5;
-						dbrs_loc = loc $startpos $endpos; } };
+rs_type:
+  | BRS   { Rs.BRS }
+  | PBRS  { Rs.PBRS }
+  | SBRS  { Rs.SBRS };
 
-sbrs: 
-  | SBRS params init srules preds ENDSBRS   { { dsbrs_pri = $4;
-					        dsbrs_init = $3;
-						dsbrs_params = $2;
-						dsbrs_preds = $5;
-						dsbrs_loc = loc $startpos $endpos; } };
 preds:
   |					    { [ ] }
   | PREDS EQUAL LCBR pred_list RCBR SEMICOLON
@@ -259,8 +253,6 @@ param_int_exp:
 
 priority_list:
   l = separated_nonempty_list(COMMA, priority_class)        { l };
-spriority_list:
-  l = separated_nonempty_list(COMMA, spriority_class)       { l };
 
 priority_class:
   | LCBR rule_ide_list RCBR                { Pr ($2, loc $startpos $endpos)     }
@@ -269,26 +261,12 @@ priority_class:
 rules:
   | RULES EQUAL LSBR priority_list RSBR SEMICOLON           { $4 };
 
-srules:
-  | RULES EQUAL LSBR spriority_list RSBR SEMICOLON          { $4 };
-
 rule_ide_list:
   l = separated_nonempty_list(COMMA, rule_ide)              { l };
 
 rule_ide:
   | IDE                                     { Rul_id ($1, loc $startpos $endpos)         }
   | IDE LPAR num_list RPAR                  { Rul_id_fun ($1, $3, loc $startpos $endpos) };
-
-spriority_class:
-  | LCBR srule_ide_list RCBR                { Spr ($2, loc $startpos $endpos)     }
-  | LPAR srule_ide_list RPAR                { Spr_red ($2, loc $startpos $endpos) };
-
-srule_ide_list:
-  l = separated_nonempty_list(COMMA, srule_ide)             { l };
-
-srule_ide:
-  | IDE                                     { Srul_id ($1, loc $startpos $endpos)         }
-  | IDE LPAR num_list RPAR                  { Srul_id_fun ($1, $3, loc $startpos $endpos) };
 
 bexp:
   | wire_exp LPAR bexp RPAR                 { Big_wire ($1, $3, loc $startpos $endpos)                   }

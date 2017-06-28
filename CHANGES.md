@@ -1,3 +1,10 @@
+###1.2.0 (2017-06-28): ###
+
+* Add support for `false` predicates in `.lab` output
+* Add support for Probabilistic BRS
+* New syntax for BRS declarations: `begin [brs|pbrs|sbrs] ... end`
+* Add `Ctrl + C` trap
+
 ###1.1.0 (2017-03-10): ###
 
 * Improve error messages in reaction rules interface checks

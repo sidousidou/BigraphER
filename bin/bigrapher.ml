@@ -90,22 +90,6 @@ let print_header fmt () =
      |> print_table fmt)
   else ()
 
-let print_stats_store fmt env n stoch =
-  let ty = if stoch then "Stochastic BRS" else "BRS" in
-  [{ descr = ("Type:", `cyan);
-     value = `s ty;
-     pp_val = print_string;
-     display = true; };
-   { descr = ("Bindings:", `cyan);
-     value = `i (Store.Hashtbl.length env);
-     pp_val = print_int;
-     display = true; };
-   { descr = ("# of rules:", `cyan);
-     value = `i n;
-     pp_val = print_int;
-     display = true; }]
-  |> print_table fmt
-
 let print_max fmt =
   [{ descr = ("Max # states:", `cyan);
      value = `i Cmd.(defaults.max_states);
@@ -113,24 +97,18 @@ let print_max fmt =
      display = true; }]
   |> print_table fmt
 
-let print_stats fmt t s r o =
-  [{ descr = ("Build time:", `green);
-     value = `f t;
-     pp_val = print_float "s";
-     display =  not Cmd.(defaults.debug); };
-   { descr = ("States:", `green);
-     value = `i s;
-     pp_val = print_int;
-     display = true; };
-   { descr = ("Transitions:", `green);
-     value = `i r;
-     pp_val = print_int;
-     display = true; };
-   { descr = ("Occurrences:", `green);
-     value = `i o;
-     pp_val = print_int;
-     display = true; }]
-  |> print_table fmt
+let print_max_sim fmt = function
+  | Rs.BRS | Rs. PBRS ->
+    [{ descr = ("Max sim steps:", `cyan);
+       value = `i Cmd.(defaults.steps);
+       pp_val = print_int;
+       display = true; }]
+    |> print_table fmt
+  | Rs.SBRS -> [{ descr = ("Max sim time:", `cyan);
+                  value = `f Cmd.(defaults.time);
+                  pp_val = print_float "";
+                  display = true; }]
+               |> print_table fmt
 
 let open_progress_bar () =
   if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then () 
@@ -164,6 +142,11 @@ let print_fun fmt c verb fname i =
     print_msg fmt c ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'")
   else ()
 
+let format_map = function
+  | Cmd.Svg -> (Big.write_svg, ".svg")
+  | Cmd.Dot -> (Big.write_dot, ".dot")
+  | Cmd.Txt -> (Big.write_txt, ".txt")
+
 let export_prism fmt msg f =
   match Cmd.(defaults.export_prism) with
   | None -> ()
@@ -180,16 +163,6 @@ let export_prism fmt msg f =
         Export.report_error e
         |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
 
-let export_ctmc_prism fmt ctmc =
-  export_prism fmt
-    "Exporting CTMC in PRISM format to "
-    (Sbrs.write_prism ctmc)
-
-let export_ts_prism fmt ts =
-  export_prism fmt
-    "Exporting transition system in PRISM format to "
-    (Brs.write_prism ts)
-
 let export_csl fmt f =
   match Cmd.(defaults.export_lab) with
   | None -> ()
@@ -204,13 +177,7 @@ let export_csl fmt f =
         fprintf err_formatter "@[<v>";
         Export.report_error e
         |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
-
-let export_ctmc_csl fmt ctmc =
-  export_csl fmt (Sbrs.write_lab ctmc)
-
-let export_ts_csl fmt ts =
-  export_csl fmt (Brs.write_lab ts)
-
+               
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
     (match Cmd.(defaults.export_states) with
@@ -232,19 +199,11 @@ let export_states fmt f g =
                  fprintf err_formatter "@[<v>";
                  Export.report_error e
                  |> fprintf err_formatter "@[%s: %s@]@." Utils.err) in
-            List.iter (function 
-                | Cmd.Svg -> aux i s Big.write_svg ".svg"
-                | Cmd.Dot -> aux i s Big.write_dot ".dot"
-                | Cmd.Txt -> aux i s Big.write_txt ".txt")
-              Cmd.(defaults.out_format))
+            Cmd.(defaults.out_format)
+            |> List.map format_map
+            |> List.iter (fun (f, ext) ->  aux i s f ext))
           g))
   else ()
-
-let export_ctmc_states fmt =
-  export_states fmt Sbrs.iter_states
-
-let export_ts_states fmt =
-  export_states fmt Brs.iter_states
 
 let export_ts fmt msg formats =
   match Cmd.(defaults.export_graph) with
@@ -270,56 +229,179 @@ let export_ts fmt msg formats =
             |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
        formats)
 
-let after_brs_aux fmt stats ts =
-  let format_map = function
-    | Cmd.Svg -> (Brs.write_svg ts, ".svg")
-    | Cmd.Dot -> (Brs.write_dot ts, ".dot")
-    | Cmd.Txt -> (Brs.write_prism ts, ".txt") in
-  print_stats fmt
-    stats.Brs.time
-    stats.Brs.states
-    stats.Brs.trans
-    stats.Brs.occs;
-  export_ts fmt
-    "Exporting transition system to "
-    (List.map format_map Cmd.(defaults.out_format));
-  export_ts_states fmt ts;
-  export_ts_prism fmt ts;
-  export_ts_csl fmt ts;
-  pp_print_flush err_formatter ();
-  exit 0
-
-let after_brs fmt (ts,stats) =
-  close_progress_bar ();
-  after_brs_aux fmt stats ts
-
-let after_sbrs_aux fmt stats ctmc =
-  let format_map = function
-    | Cmd.Svg -> (Sbrs.write_svg ctmc, ".svg")
-    | Cmd.Dot -> (Sbrs.write_dot ctmc, ".dot")
-    | Cmd.Txt -> (Sbrs.write_prism ctmc, ".txt") in
-  print_stats fmt
-    stats.Sbrs.time
-    stats.Sbrs.states
-    stats.Sbrs.trans
-    stats.Sbrs.occs;
-  export_ts fmt
-    "Exporting CTMC to "
-    (List.map format_map Cmd.(defaults.out_format));
-  export_ctmc_states fmt ctmc;
-  export_ctmc_prism fmt ctmc;
-  export_ctmc_csl fmt ctmc;
-  pp_print_flush err_formatter ();
-  exit 0
-
-let after_sbrs fmt (ctmc, stats) =
-  close_progress_bar ();
-  after_sbrs_aux fmt stats ctmc
-
 let check fmt =
   print_msg fmt `yellow "Model file parsed correctly";
   pp_print_flush err_formatter ();
   exit 0
+
+module Run
+    (T: TsType.RS with type label = float)
+    (L: TsType.TT with type t = T.limit) = struct
+
+  module S = Store.Make (T)
+      
+  let export_decs fmt path m env env_t =
+    print_msg fmt `yellow ("Exporting declarations to "
+                           ^ path ^ " ...");
+    S.export m.model_decs
+      env
+      env_t
+      path
+      (List.map format_map Cmd.(defaults.out_format))
+      fmt
+      (print_fun fmt `white Cmd.(defaults.verb))
+
+  let export_ml fmt path m =
+    print_msg fmt `yellow ("Exporting OCaml declarations to "
+                           ^ path ^ " ...");
+    try
+      Export.write_string (S.ml_of_model m Cmd.(defaults.model))
+        ~name:(Filename.basename path)
+        ~path:(Filename.dirname path)
+      |> print_fun fmt
+        `white
+        Cmd.(defaults.verb)
+        path
+    with
+    | Export.ERROR e ->
+      (pp_print_flush fmt ();
+       fprintf err_formatter "@[<v>";
+       Export.report_error e
+       |> fprintf err_formatter "@[%s: %s@]@." Utils.err)
+
+  let export_model fmt m env env_t =
+    (* DECLARATIONS *)
+    (match Cmd.(defaults.export_decs) with
+     | None -> ()
+     | Some path -> export_decs fmt path m env env_t);
+    (* Export model to OCaml *)
+    (match Cmd.(defaults.export_ml) with 
+     | None -> ()
+     | Some path -> export_ml fmt path m)
+
+  let print_stats_store fmt env priorities =
+    [{ descr = ("Type:", `cyan);
+       value = `s (Rs.to_string T.typ);
+       pp_val = print_string;
+       display = true; };
+     { descr = ("Bindings:", `cyan);
+       value = `i (Base.H_string.length env);
+       pp_val = print_int;
+       display = true; };
+     { descr = ("# of rules:", `cyan);
+       value = `i (T.cardinal priorities);
+       pp_val = print_int;
+       display = true; }]
+    |> print_table fmt
+
+  let print_stats fmt stats =
+    T.string_of_stats stats
+    |> List.map (fun (descr, value, flag) ->
+        { descr = (descr, `green);
+          value = `s value;
+          pp_val = print_string;
+          display =  (not Cmd.(defaults.debug) || not flag); }) 
+    |> print_table fmt
+
+  let after fmt f (graph, stats) =
+    f ();
+    let format_map = function
+      | Cmd.Svg -> (T.write_svg graph, ".svg")
+      | Cmd.Dot -> (T.write_dot graph, ".dot")
+      | Cmd.Txt -> (T.write_prism graph, ".txt") in
+    print_stats fmt stats;
+    export_ts fmt
+      ("Exporting " ^ (Rs.to_string T.typ) ^ " to ")
+      (List.map format_map Cmd.(defaults.out_format));
+    export_states fmt T.iter_states graph;
+    export_prism fmt
+      ("Exporting " ^ (Rs.to_string T.typ) ^ " in PRISM format to ")
+      (T.write_prism graph);
+    export_csl fmt (T.write_lab graph);
+    pp_print_flush err_formatter ();
+    exit 0
+  
+  let sim fmt s0 priorities preds =
+    print_msg fmt `yellow ("Starting " ^ (Rs.sim_type T.typ) ^ " ...");
+    print_max_sim fmt T.typ;
+    open_progress_bar ();
+    T.sim ~s0
+      ~priorities
+      ~predicates:preds
+      ~init_size:Cmd.(defaults.max_states)
+      ~stop:L.stop
+      ~iter_f:print_loop
+    |> after fmt close_progress_bar
+
+  let full fmt s0 priorities preds = 
+    print_msg fmt `yellow ("Computing " ^ (Rs.ts_type T.typ) ^ " ...");
+    print_max fmt;
+    open_progress_bar ();
+    T.bfs ~s0
+      ~priorities
+      ~predicates:preds
+      ~max:Cmd.(defaults.max_states)
+      ~iter_f:print_loop
+    |> after fmt close_progress_bar
+
+  let set_trap fmt  =
+    Sys.set_signal Sys.sigint
+      (Sys.Signal_handle (fun _ ->
+           close_progress_bar ();
+           print_msg fmt `yellow ("Execution interrupted by the user.");
+           pp_print_flush err_formatter ();
+           exit 0))
+  
+  let run_aux fmt s0 priorities preds = function
+    | `sim ->
+      begin
+        set_trap fmt;
+        try sim fmt s0 priorities preds with
+        | T.LIMIT (graph, stats) ->
+          after fmt
+            (fun () -> (close_progress_bar ();
+                        print_msg fmt `yellow ("Maximum "
+                                               ^ (Rs.limit_msg T.typ)
+                                               ^ " reached.")))
+            (graph, stats)
+        | T.DEADLOCK (graph, stats, limit) ->
+          after fmt
+            (fun () -> (close_progress_bar ();
+                        print_msg fmt `yellow ("Deadlock state reached at "
+                                               ^ (Rs.limit_type T.typ) ^ " "
+                                               ^ (T.string_of_limit limit) ^ ".")))
+            (graph, stats) 
+      end
+    | `full ->
+      begin
+        set_trap fmt;
+        try full fmt s0 priorities preds with
+        | T.MAX (graph, stats) ->
+          after fmt
+            (fun () -> (close_progress_bar ();
+                        print_msg fmt `yellow "Maximum number of states reached."))
+            (graph, stats)
+      end
+    | `check -> check fmt
+
+  let run fmt m exec_type =
+    try
+      let env = S.init_env fmt Cmd.(defaults.consts) in
+      let (s0, pri, preds, env_t) =
+        S.eval_model fmt m env in
+      print_stats_store fmt env pri;
+      export_model fmt m env env_t;
+      run_aux fmt s0 pri preds exec_type
+    with
+    | S.ERROR (e, p) ->
+      (pp_print_flush fmt ();
+       fprintf err_formatter "@[<v>";
+       Loc.print_loc err_formatter p;
+       S.report_error err_formatter e;
+       pp_print_flush err_formatter ();
+       exit 1)
+
+end
 
 (******** BIGRAPHER *********)
 
@@ -363,11 +445,10 @@ let set_output_ch () =
      str_formatter)
   else
     std_formatter
-
+      
 let () =
-  Printexc.record_backtrace true; (* Disable for releases *)
+  (* Printexc.record_backtrace true; *) (* Disabled for releases *)
   try
-    let iter_f = print_loop in
     let exec_type = parse_cmd Sys.argv in
     let fmt = set_output_ch () in
     print_header fmt ();
@@ -378,137 +459,42 @@ let () =
     try
       let m = Parser.model Lexer.token lexbuf in 
       close_in file; 
-      let env = Store.init_env fmt Cmd.(defaults.consts) in
-      let (s0, prs, preds, env_t) = Store.eval_model fmt m env in
-      (* STATS *)
-      (match prs with
-       | Store.P priorities ->
-         (Cmd.check_brs_opt ();
-          print_stats_store fmt env (Brs.cardinal priorities) false;)
-       | Store.S priorities ->
-         (Cmd.check_sbrs_opt ();
-          print_stats_store fmt env (Sbrs.cardinal priorities) true;));
-      (* DECLARATIONS *)
-      (match Cmd.(defaults.export_decs) with
-       | None -> ()
-       | Some path ->
-         (let format_map = function
-             | Cmd.Svg -> (Big.write_svg, ".svg")
-             | Cmd.Dot -> (Big.write_dot, ".dot")
-             | Cmd.Txt -> (Big.write_txt, ".txt") in
-          print_msg fmt `yellow ("Exporting declarations to "
-                                 ^ path ^ " ...");
-          Store.export m.model_decs
-            env
-            env_t
-            path
-            (List.map format_map Cmd.(defaults.out_format))
-            fmt
-            (print_fun fmt `white Cmd.(defaults.verb))));
-      (match Cmd.(defaults.export_ml) with
-       | None -> ()
-       | Some path ->
-         (print_msg fmt `yellow ("Exporting OCaml declarations to "
-                                 ^ path ^ " ...");
-          try
-            Export.write_string (Store.ml_of_model m Cmd.(defaults.model))
-              ~name:(Filename.basename path)
-              ~path:(Filename.dirname path)
-            |> print_fun fmt
-              `white
-              Cmd.(defaults.verb)
-              path
-          with
-          | Export.ERROR e ->
-            (pp_print_flush fmt ();
-             fprintf err_formatter "@[<v>";
-             Export.report_error e
-             |> fprintf err_formatter "@[%s: %s@]@." Utils.err)));
-      match prs with
-      | Store.P priorities ->
-        (******** BRS *********)
-        (match exec_type with
-         | `sim ->
-           (print_msg fmt `yellow "Starting simulation ...";
-            print_max fmt;
-            open_progress_bar ();
-            Brs.sim ~s0
-              ~priorities
-              ~predicates:preds
-              ~init_size:Cmd.(defaults.max_states)
-              ~stop:Cmd.(defaults.steps)
-              ~iter_f
-            |> after_brs fmt)
-         | `full ->
-           (print_msg fmt `yellow "Computing transition system ...";
-            print_max fmt;
-            open_progress_bar ();
-            Brs.bfs ~s0
-              ~priorities
-              ~predicates:preds
-              ~max:Cmd.(defaults.max_states)
-              ~iter_f
-            |> after_brs fmt)
-         | `check -> check fmt)
-      | Store.S priorities ->
-        (******** SBRS *********)
-        (match exec_type with
-         | `sim ->
-           (print_msg fmt `yellow "Starting stochastic simulation ...";
-            [{ descr = ("Max sim time:", `cyan);
-               value = `f Cmd.(defaults.time);
-               pp_val = print_float "";
-               display = true; }]
-            |> print_table fmt;
-            open_progress_bar ();
-            Sbrs.sim ~s0
-              ~priorities
-              ~predicates:preds
-              ~init_size:Cmd.(defaults.max_states)
-              ~stop:Cmd.(defaults.time)
-              ~iter_f
-            |> after_sbrs fmt)
-         | `full ->
-           (print_msg fmt `yellow "Computing CTMC ...";
-            print_max fmt;
-            open_progress_bar ();
-            Sbrs.bfs ~s0
-              ~priorities
-              ~predicates:preds
-              ~max:Cmd.(defaults.max_states)
-              ~iter_f
-            |>  after_sbrs fmt)
-         | `check -> check fmt)
+      (match m.model_rs.dbrs_type with
+       | Rs.BRS ->
+         begin
+           Cmd.check_brs_opt ();
+           let module R = Run (Brs)
+               (struct
+                 type t = int
+                 let stop = Cmd.(defaults.steps)
+               end) in
+           R.run fmt m exec_type
+         end
+       | Rs.PBRS ->
+         begin
+           Cmd.check_pbrs_opt ();
+           let module R = Run (Pbrs)
+               (struct
+                 type t = int
+                 let stop = Cmd.(defaults.steps)
+               end) in
+           R.run fmt m exec_type
+         end
+       | Rs.SBRS ->
+         begin
+           Cmd.check_sbrs_opt ();
+           let module R = Run (Sbrs)
+               (struct
+                 type t = float
+                 let stop = Cmd.(defaults.time)
+               end) in
+           R.run fmt m exec_type
+         end);
     with
     | Place.NOT_PRIME ->
       (close_progress_bar ();
        fprintf err_formatter "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
          Utils.err;
-       exit 1)
-    | Sbrs.MAX (ctmc, stats)
-    | Sbrs.LIMIT (ctmc, stats) ->
-      (close_progress_bar ();
-       print_msg fmt `yellow "Maximum number of states reached.";
-       after_sbrs_aux fmt stats ctmc)
-    | Sbrs.DEADLOCK (ctmc, stats, t) ->
-      (close_progress_bar ();
-       print_msg fmt `yellow ("Deadlock state reached at time " ^ (string_of_float t) ^ ".");
-       after_sbrs_aux fmt stats ctmc)
-    | Brs.MAX (ts, stats)
-    | Brs.LIMIT (ts, stats) ->
-      (close_progress_bar ();
-       print_msg fmt `yellow "Maximum number of states reached.";
-       after_brs_aux fmt stats ts)
-    | Brs.DEADLOCK (ts, stats, t) ->
-      (close_progress_bar ();
-       print_msg fmt `yellow ("Deadlock state reached at step " ^ (string_of_int t) ^ ".");
-       after_brs_aux fmt stats ts)
-    | Store.ERROR (e, p) ->
-      (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>";
-       Loc.print_loc err_formatter p;
-       Store.report_error err_formatter e;
-       pp_print_flush err_formatter ();
        exit 1)
     | Parser.Error ->
       (pp_print_flush fmt ();

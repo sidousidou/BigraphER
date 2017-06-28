@@ -107,7 +107,7 @@ big field =
 
 ###### Bigraphical reactive system
      
-brs
+begin brs
   init field;
   # GPS events only for the example trace     
   rules = [
@@ -115,5 +115,5 @@ brs
       mov2(1, 0, 2, 5), mov2(1, 0, 3, 6),  mov2(0, 1, 5, 7),
       mov2(2, 0, 4, 8),  mov2(0, 2, 8, 9) }
   ];
-endbrs
+end
 

@@ -1,5 +1,4 @@
 open Big
-open Printf
 open Junit
 
 let r_p = 
@@ -64,13 +63,15 @@ let () =
   and states_reference = 30
   and reacts_reference = 29
   and occurs_reference = 4495
-  and print_res s r o =
+  and print_res l =
     xml_block "system-out" []
-      [sprintf "States: %-8d     Reactions: %-8d     Occurrences: %-8d" s r o] in
+      [List.filter (fun (_, _, flag) -> not flag) l
+       |> List.map (fun (desc, value, _) -> desc ^ ": " ^ value)
+       |> String.concat "     "] in
   let failures l = List.map (fun (id, reference, out) ->
       assert_eq_int id reference out) l
   and ass_list s r o = [("States", states_reference, s);
-                        ("Reactions", reacts_reference, r);
+                        ("Transitions", reacts_reference, r);
                         ("Occurrences", occurs_reference, o)] in
   let testcases =
     [  begin
@@ -85,8 +86,8 @@ let () =
         | Brs.MAX (_, stats) -> stats in
       ("brs",
        __MODULE__,
-       print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
-       failures (ass_list stats.Brs.states stats.Brs.trans stats.Brs.occs))
+       print_res (Brs.string_of_stats stats),
+       failures TsType.(ass_list stats.states stats.trans stats.occs))
     end;
        begin
          let stats = 
@@ -102,9 +103,9 @@ let () =
            | Brs.DEADLOCK (_, stats, _) -> stats in
          ("sim_brs",
           __MODULE__,
-          print_res stats.Brs.states stats.Brs.trans stats.Brs.occs,
-          failures [("States", states_reference, stats.Brs.states);
-                    ("Reactions", reacts_reference, stats.Brs.trans);
+          print_res (Brs.string_of_stats stats),
+          failures [("States", states_reference, TsType.(stats.states));
+                    ("Reactions", reacts_reference, TsType.(stats.trans));
                     (* ("Occurrences", 31, stats.Brs.occs) *) (* RANDOM *)
                    ])     
        end;
@@ -120,8 +121,8 @@ let () =
            | Sbrs.MAX (_, stats) -> stats in
          ("sbrs",
           __MODULE__,
-          print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
-          failures (ass_list stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs))
+          print_res (Sbrs.string_of_stats stats),
+          failures TsType.((ass_list stats.states stats.trans stats.occs)))
        end;
        begin
          let stats = 
@@ -137,8 +138,8 @@ let () =
            | Sbrs.DEADLOCK (_, stats, _) -> stats in 
          ("sim_sbrs",
           __MODULE__,
-          print_res stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs,
-          failures (ass_list stats.Sbrs.states stats.Sbrs.trans stats.Sbrs.occs))
+          print_res (Sbrs.string_of_stats stats),
+          failures TsType.((ass_list stats.states stats.trans stats.occs)))
        end; ] in
   write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2)
 

@@ -5,7 +5,7 @@
 type +'a t
 
 (** Isomorphisms are bijective functions. For example, pairs ["\{(1, 2), (3,
-    2)\}"] are not allowed because value [2] in the codomain is the mapping of
+    2)\}"] are not allowed because value [2] in the co-domain is the mapping of
     both [1] and [3]. This exception is raised when an invalid isomorphism is
     generated. *)
 exception NOT_BIJECTIVE
@@ -27,7 +27,7 @@ val cardinal : int t -> int
 (** Return the domain of an isomorphism. *)
 val dom : int t -> int list
 
-(** Return the codomain of an isomorphism. *)
+(** Return the co-domain of an isomorphism. *)
 val codom : int t -> int list
 
 (** Return the inverse of an isomorphism. *)
@@ -48,7 +48,7 @@ val to_string : int t -> string
 (** [add_exn i j iso] adds a new pair [(i, j)] to isomorphism [iso]. If [i] was
     already bound in [iso], its previous binding disappears.
 
-    @raise NOT_BIJECTIVE when [j] is already in the codomain of [iso]. *)
+    @raise NOT_BIJECTIVE when [j] is already in the co-domain of [iso]. *)
 val add_exn : int -> int -> int t -> int t
 
 (** Equality between isomorphisms. *)		       
@@ -65,7 +65,7 @@ val apply_exn : int t -> int -> int
 val apply : int t -> int -> int option
 
 (** [transform_exn i iso_d iso_c] returns the isomorphism obtained by
-    applying [iso_d] and [iso_c] to the domain and codomain of [i],
+    applying [iso_d] and [iso_c] to the domain and co-domain of [i],
     respectively.  
     @raise Not_found if the isomorphisms are undefined. *)
 val transform_exn : int t -> int t -> int t -> int t
@@ -73,7 +73,7 @@ val transform_exn : int t -> int t -> int t -> int t
 (** [gen_isos_exn iso autos] generates the symmetric isomorphisms of [iso] by
     using [autos], a list of automorphisms over the domain of [iso]. This is the
     same as iterating {!Iso.transform_exn} over [auto], use each automorphism as
-    domain isomorphism and the identity as codomain isomorphism.    
+    domain isomorphism and the identity as co-domain isomorphism.    
     @raise Not_found if some automorphism is undefined. *)
 val gen_isos_exn : int t -> int t list -> int t list
 

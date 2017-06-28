@@ -63,15 +63,15 @@ rule token =  parse
   | "atomic"                { ATOMIC }     
   | "big"                   { BIG } 
   | "react"                 { REACT }
-  | "sreact"                { SREACT }
   | "init"                  { INIT }
   | "int"                   { INT }
   | "float"                 { FLOAT }       
   | "fun"                   { FUN }  
+  | "begin"                 { BEGIN }
   | "brs"		    { BRS }
-  | "endbrs"		    { ENDBRS }
   | "sbrs"		    { SBRS }
-  | "endsbrs"		    { ENDSBRS }
+  | "pbrs"                  { PBRS }
+  | "end"		    { END }
   | "rules"		    { RULES }
   | "preds"                 { PREDS }
   | "share"                 { SHARE }

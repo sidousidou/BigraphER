@@ -253,7 +253,7 @@ val equal_opt : bg -> bg -> bool
 (** {3 Matching} *)
 
 (** The type of occurrences: an isomorphism over nodes, an isomorphism
-    over edges and a function over hyperedges. *)
+    over edges and a function over hyper-edges. *)
 type occ = int Iso.t * int Iso.t * int Fun.t
 
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]

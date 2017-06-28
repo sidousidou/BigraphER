@@ -476,3 +476,6 @@ let check_sbrs_opt () =
     report_warning err_formatter
       ""
       (string_of_opt "|" (Steps 0))
+
+let check_pbrs_opt  = check_brs_opt
+  

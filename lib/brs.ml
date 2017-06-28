@@ -7,23 +7,47 @@ type react =
 
 module RT = struct
   type t = react	
-  type label = Epsilon  (* Empty label *)  
+  type label = float
   type occ = Big.bg
   type edge = int
-
+  
   let lhs r = r.rdx
+
   let rhs r = r.rct
-  let l _ = Epsilon
+
+  let l _ = None
+
   let map r = r.eta
-  let string_of_label _ = ""
+
   let val_chk _ = true
+
   let val_chk_error_msg = ""
+
+  let string_of_label = function
+    | None -> ""
+    | Some _ -> assert false (*BISECT-IGNORE*)
+
+  let parse ~lhs ~rhs p eta =
+    match p with
+    | None -> { rdx = lhs;
+                rct = rhs;
+                eta = eta; }
+    | Some _ -> assert false (*BISECT-IGNORE*)
+  
   let to_occ b _ = b
+
   let big_of_occ b = b
+
   let merge_occ b _ = b
+
   let update_occ _ b = b
+
   let edge_of_occ _ i = i
-  let random_step _ b rules =
+
+  let step b rules = RrType.gen_step b rules
+      ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
+
+  let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function
       | [] -> assert false (*BISECT-IGNORE*)
@@ -40,6 +64,7 @@ module RT = struct
            (Some (Big.rewrite o b (lhs r) (rhs r) (map r)), m + 1)
          | None -> _random_step b (m + 1) rs') in
     _random_step b 0 rules
+      
 end
 
 module R = RrType.Make (RT)
@@ -62,11 +87,6 @@ type graph = { v : (int * Big.bg) H_int.t;
                l : int H_string.t;
                preds : S_string.t; }
 
-type stats =  { time : float; 
-                states : int;  
-                trans : int;  
-                occs : int; }
-
 module G = struct
   type t = graph
   type edge_type = R.edge	       
@@ -82,22 +102,17 @@ module G = struct
   let string_of_arrow _ = ""
 end
 
-module S = struct
-  type t = stats
-  type g = graph
-  let make t0 g m =
-    { time = (Unix.gettimeofday () -. t0);
-      states = H_int.length g.v; 
-      trans = H_int.length g.e;
-      occs = m; }
-end	       
-
 module L = struct
   type t = int
   type occ = R.occ
   let init = 0
   let increment t _ = t + 1
   let is_greater = ( > )
+  let to_string = string_of_int
 end
 
-include TsType.Make (R)	(PriType.Make (R) (PT)) (L) (G) (S)
+module T = struct
+  let typ = Rs.BRS
+end
+
+include TsType.Make (R)	(PriType.Make (R) (PT)) (L) (G) (T)

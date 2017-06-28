@@ -109,7 +109,7 @@ big hospital =
     | n | n | n
     | d);
    
-brs
+begin brs
   init hospital;
   rules = [
            { send_doc, send_nurse,
@@ -117,4 +117,4 @@ brs
              read, edit, write,
              discard }
           ];
-endbrs
+end

@@ -1,0 +1,165 @@
+# Signature
+atomic ctrl Start = 1;
+atomic ctrl Start' = 1;
+ctrl C = 1;
+ctrl C' = 1;
+atomic ctrl W = 0;
+atomic ctrl B = 0;
+atomic ctrl W' = 0;
+atomic ctrl B' = 0;
+atomic ctrl Next = 1;
+
+# Initial state: 0000000001
+big t0 =
+/x0 /x1 /x2 /x3 /x4 /x5 /x6 /x7 /x8 /x9
+  (Start{x0}
+   || (C{x0}.(W | Next{x1}) | C{x1}.(W | Next{x2})
+       | C{x2}.(W | Next{x3}) | C{x3}.(W | Next{x4})
+       | C{x4}.(W | Next{x5}) | C{x5}.(W | Next{x6})
+       | C{x6}.(W | Next{x7}) | C{x7}.(W | Next{x8})
+       | C{x8}.(W | Next{x9}) | C{x9}.(B | Next{x0})));
+
+# Initial state: 001
+big s0 =
+/x0 /x1 /x2
+  (Start{x0}
+   || (C{x0}.(W | Next{x1})
+       | C{x1}.(W | Next{x2})
+       | C{x2}.(B | Next{x0})));
+
+# Initial state: 0010
+big s1 =
+/x0 /x1 /x2 /x3
+  (Start{x0}
+   || (C{x0}.(W | Next{x1})
+       | C{x1}.(W | Next{x2})
+       | C{x2}.(B | Next{x3})
+       | C{x3}.(W | Next{x0})));
+    
+# Reaction rules
+# Start a new step
+big init_s = Start{x} || C{x};     
+
+react start =
+  init_s --> Start{x} || C'{x};
+
+# End step    
+react reset =
+  Start'{x} || C'{x} --> init_s;
+
+# Update state
+react update0 =
+  Start{x} || C{y}.(Next{z} | id | W')
+  -->
+  Start{x} || C{y}.(Next{z} | W)
+  @ [];
+
+react update1 =
+  Start{x} || C{y}.(Next{z} | id | B')
+  -->
+  Start{x} || C{y}.(Next{z} | B)
+  @ [];
+
+big b0 =
+  C{x0}.(id | Next{x1}) | C'{x1}.(id | Next{x2}) | C{x2}.(id | Next{x3});
+
+big join = id | id;
+    
+big b1 =
+  C{x0}.(id | Next{x1}) | C{x1}.(join | Next{x2}) | C'{x2}.(id | Next{x3});
+
+# Update the first cell    
+big lhs' =
+  /x1 /x2 (Start{x1} || b0);
+
+big rhs' =
+  /x1 /x2 (Start'{x1} || b1);
+
+# BBB/W    
+react r0 =
+  lhs' * (B || B || B) --> rhs' * (B || B || W' || B);
+
+# BBW/B    
+react r1 =
+  lhs' * (B || B || W) --> rhs' * (B || B || B' || W);
+
+# BWB/B    
+react r2 =
+  lhs' * (B || W || B) --> rhs' * (B || W || B' || B);
+
+# BWW/W    
+react r3 =
+  lhs' * (B || W || W) --> rhs' * (B || W || W' || W);
+
+# WBB/B    
+react r4 =
+  lhs' * (W || B || B) --> rhs' * (W || B || B' || B);
+
+# WBW/B    
+react r5 =
+  lhs' * (W || B || W) --> rhs' * (W || B || B' || W);
+
+# WWB/B    
+react r6 =
+  lhs' * (W || W || B) --> rhs' * (W || W || B' || B);
+
+# WWW/W    
+react r7 =
+  lhs' * (W || W || W) --> rhs' * (W || W || W' || W);
+    
+# Update other cells    
+big lhs =
+  Start'{x} || (b0 * (join || id || join));
+
+big rhs =
+  Start'{x} || (b1 * (join || id(2) || join));
+    
+# BBB/W    
+react r0' =
+  lhs * (id || B || B || B || id) --> rhs * (id || B || B || W' || B || id);
+
+# BBW/B    
+react r1' =
+  lhs * (id || B || B || W || id) --> rhs * (id || B || B || B' || W || id);
+
+# BWB/B    
+react r2' =
+  lhs * (id || B || W || B || id) --> rhs * (id || B || W || B' || B || id);
+
+# BWW/W    
+react r3' =
+  lhs * (id || B || W || W || id) --> rhs * (id || B || W || W' || W || id);
+
+# WBB/B    
+react r4' =
+  lhs * (id || W || B || B || id) --> rhs * (id || W || B || B' || B || id);
+
+# WBW/B    
+react r5' =
+  lhs * (id || W || B || W || id) --> rhs * (id || W || B || B' || W || id);
+
+# WWB/B    
+react r6' =
+  lhs * (id || W || W || B || id) --> rhs * (id || W || W || B' || B || id);
+
+# WWW/W    
+react r7' =
+  lhs * (id || W || W || W || id) --> rhs * (id || W || W || W' || W || id);
+
+# Debug
+big to_keep = init_s;
+big error_1 =  Start{y} || W';
+big error_2 =  Start{y} || B';
+    
+# Reactive system
+begin brs
+  init s1;
+  rules = [
+            {update0, update1},
+    	    {reset},  
+            {r0, r1, r2, r3, r4, r5, r6, r7,
+             r0', r1', r2', r3', r4', r5', r6', r7'},
+            {start}
+           ];
+   preds = {to_keep, error_1, error_2};
+end

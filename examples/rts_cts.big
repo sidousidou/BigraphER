@@ -67,7 +67,7 @@ fun big m_w(l) =
 fun big m_l(l) =
   /x /r (M_L{r,x}.(id | RTS(l){x,d}.Q{q} | A{a})); 
 
-fun sreact r_RTS(t,l) =
+fun react r_RTS(t,l) =
   share (id || m_w(l)) by psi_1 in (id(1, {a, d, q}) || S(t){a})
   -[ 1.0/(difs + tau*t/2.0 + rts) ]->
   share (id || m_l(l)) by psi_1 in (id(1, {a, d, q}) || S_L(t){a});
@@ -81,7 +81,7 @@ fun big s(l) =
 big r = 
   M_L{r,x}.(id | A{d});
   
-fun sreact r_CTS(t, u, l) =
+fun react r_CTS(t, u, l) =
   share (m_l(l) || M_D{r,x}.(id | A{d})|| id(2))
   by psi_2
   in (id(2, {x,a,d,q}) || (S_L(t){a} | S(u){d}) || /r)
@@ -94,7 +94,7 @@ fun sreact r_CTS(t, u, l) =
 fun big s1(l) =
   /x (M_L{r,x}.(id | P(l){x,d}.Q{q} | A{a}));
 
-fun sreact r_DATA(l) = 
+fun react r_DATA(l) = 
   /r (s(l) || r)
   -[ 1.0 / (sifs + l) ]->
   /r (s1(l) || r);   
@@ -106,7 +106,7 @@ fun big s2(l) =
 big r1 = 
   /r (M{r,x}.(id | A{d}));  
 
-fun sreact r_ACK(t,u,l) = 
+fun react r_ACK(t,u,l) = 
   share (s1(l) || r || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(t){a} | S_L(u){d}) || /r)
@@ -124,7 +124,7 @@ fun big f(t,u,l) =
 fun big m_b(l) =
   /x /r (M_B{r,x}.(id | RTS(l){x,d}.Q{q} | A{a})); 
 
-fun sreact r_BACK1(t,u,l) =
+fun react r_BACK1(t,u,l) =
   share (m_b(l) || M_P{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(t){a} | S(u){d}) || /r)
@@ -137,7 +137,7 @@ fun big f_E(u,l) =
   by psi_2
   in (id(2,{x,a,q,d}) || (S_E{a} | S(u){d}) || /r);
 
-fun sreact r_BACK1E(u,l) =
+fun react r_BACK1E(u,l) =
   share (m_b(l) || M_P{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(1023.0){a} | S(u){d}) || /r)
@@ -145,7 +145,7 @@ fun sreact r_BACK1E(u,l) =
   f_E(u,l);
 
 # Reaction rule 6
-fun sreact r_BACK2(t,u,l) =
+fun react r_BACK2(t,u,l) =
   share (m_b(l) || M_D{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(t){a} | S(u){d}) || /r)
@@ -153,7 +153,7 @@ fun sreact r_BACK2(t,u,l) =
   f(t,u,l);
 
 # After last transmission attempt
-fun sreact r_BACK2E(u,l) =
+fun react r_BACK2E(u,l) =
   share (m_b(l) || M_D{r,x}.(id | A{d}) || id(2))
   by psi_2
   in (id(2,{x,a,q,d}) || (S_L(1023.0){a} | S(u){d}) || /r)
@@ -161,7 +161,7 @@ fun sreact r_BACK2E(u,l) =
   f_E(u,l);
 
 # Reaction rule 7
-fun sreact r_D(t) =
+fun react r_D(t) =
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_L(t){b} || /r)
@@ -173,7 +173,7 @@ fun sreact r_D(t) =
 # Reaction rule 8
 big psi_3 = ([{1}, {2}, {0,1,2}], 3);
 
-fun sreact r_P(t,u) = 
+fun react r_P(t,u) = 
   share (id(2) || M_D{r,x}.(id | A{a}))
   by psi_3
   in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r)
@@ -183,7 +183,7 @@ fun sreact r_P(t,u) =
   in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r);  
 
 # Reaction rule 9
-fun sreact r_B(l) = 
+fun react r_B(l) = 
   m_l(l) || /r M_P{r,x}.(id | A{d})
   -[ inf ]->
   m_b(l) || /r M_P{r,x}.(id | A{d});
@@ -194,7 +194,7 @@ fun big clr(t) =
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r);
 
-fun sreact r_UD(t) = 
+fun react r_UD(t) = 
   share (id || M_D{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r)
@@ -202,7 +202,7 @@ fun sreact r_UD(t) =
   clr(t);  
 
 # Reaction rule 11
-fun sreact r_UP(t) = 
+fun react r_UP(t) = 
   share (id || M_P{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){b} || /r)
@@ -210,7 +210,7 @@ fun sreact r_UP(t) =
   clr(t);    
 
 # Reaction rule 12
-fun sreact r_UC(t) = 
+fun react r_UC(t) = 
   share (id || M{r,x}.(id | A{a}))
   by psi_1
   in (id(1,{a,x}) || S_C(t){a} || /r)
@@ -232,7 +232,7 @@ fun big transmission(t) =
   by ([{0}, {0,1}], 2)
   in (S_L(t){a} || id(1,{d,r,a}));
     
-sbrs
+begin sbrs
   # Parameters
   float t, t' = { 15., 31., 63., 127., 255., 511., 1023. };
   float z = { 15., 31., 63., 127., 255., 511. };
@@ -252,4 +252,4 @@ sbrs
           ];
 
    preds = { error, collision, transmission(t) };
-endsbrs
+end

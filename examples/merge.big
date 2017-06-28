@@ -38,8 +38,8 @@ big s0 = V2;
 big phi = V3;
 
 # Reactive system
-brs
+begin brs
   init s0;
   rules = [ {snd} ];
   preds = { phi };
-endbrs
+end

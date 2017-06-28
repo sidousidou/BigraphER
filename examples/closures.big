@@ -8,9 +8,9 @@ big test2 = /x test1;
 
 react r = test1 -> test2 | {x};
 
-brs
+begin brs
   init test1;
   rules = [ { r } ];
-endbrs
+end
 
 
