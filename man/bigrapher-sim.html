@@ -1,203 +1,134 @@
-<!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Thu May  4 11:42:15 2017 -->
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-"http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-<meta name="generator" content="groff -Thtml, see www.gnu.org">
-<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
-<meta name="Content-Style" content="text/css">
-<style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
-</style>
-<title>BIGRAPHER&minus;SIM</title>
-
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="mandoc.css" type="text/css" media="all"/>
+  <title>BIGRAPHER-SIM(1)</title>
 </head>
 <body>
-
-<h1 align=center>BIGRAPHER&minus;SIM</h1>
-
-<a href="#NAME">NAME</a><br>
-<a href="#SYNOPSIS">SYNOPSIS</a><br>
-<a href="#OPTIONS">OPTIONS</a><br>
-<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
-<a href="#AUTHORS">AUTHORS</a><br>
-<a href="#FURTHER DOCUMENTATION">FURTHER DOCUMENTATION</a><br>
-<a href="#SEE ALSO">SEE ALSO</a><br>
-
-<hr>
-
-
-<a name="NAME"></a>
-<h2>NAME</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em">bigrapher&minus;sim
-- Simulate a model</p>
-
-<a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>bigrapher
-sim</b> [OPTIONS] &lt;MODEL.big&gt;</p>
-
-<a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em">&minus;c|&minus;&minus;const
-&lt;ASSIGNMENT ...&gt;</p>
-
-<p style="margin-left:22%;">Specify a comma&minus;separated
-list of variable assignments. Example:
-&lsquo;x=4,t=.56&rsquo;.</p>
-
-
-<p style="margin-left:11%;">&minus;d|&minus;&minus;export&minus;decs
-&lt;DIR&gt;</p>
-
-<p style="margin-left:22%;">Export each declaration in the
-model (bigraphs and reaction rules) to a distinct file in
-<i>DIR</i>. Dummy values are used to instantiate functional
-values.</p>
-
-<p style="margin-left:11%;">&minus;f|&minus;&minus;format
-&lt;FORMAT&gt;</p>
-
-<p style="margin-left:22%;">Specify a comma&minus;separated
-list of output formats for options
-<b>&minus;d|&minus;&minus;export&minus;decs</b>,
-<b>&minus;t|&minus;&minus;export&minus;ts</b> and
-<b>&minus;s|&minus;&minus;export&minus;states</b>. Supported
-formats are &lsquo;dot&rsquo;, &lsquo;svg&rsquo; and
-&lsquo;txt&rsquo;. This is equivalent to setting
-<b>BIGFORMAT</b> to <i>FORMAT</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;h|&minus;&minus;help</p>
-
-<p style="margin-left:22%;">Display the list of
-options.</p>
-
-
-<p style="margin-left:11%;">&minus;l|&minus;&minus;export&minus;labels
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the labelling function
-in PRISM <i>csl</i> format to <i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;m|&minus;&minus;export&minus;ml
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the model in OCaml
-format to <i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;n|&minus;&minus;no&minus;colors</p>
-
-<p style="margin-left:22%;">Disable colored output. This is
-equivalent to setting <b>BIGNOCOLORS</b> to a
-non&minus;empty value.</p>
-
-
-<p style="margin-left:11%;">&minus;p|&minus;&minus;export&minus;prism
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the transition system in
-PRISM tra format to <i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;q|&minus;&minus;quiet</p>
-
-<p style="margin-left:22%;">Disable all output. This is
-equivalent to setting <b>BIGQUIET</b> to a non&minus;empty
-value.</p>
-
-
-<p style="margin-left:11%;">&minus;s|&minus;&minus;export&minus;states
-[DIR]</p>
-
-<p style="margin-left:22%;">Export each state to a file in
-<i>DIR</i>. State indices are used as file names. When
-<i>DIR</i> is omitted, it is inferred from option
-<b>&minus;t|&minus;&minus;export&minus;ts</b>.</p>
-
-
-<p style="margin-left:11%;">&minus;S|&minus;&minus;simulation&minus;steps
-[INT]</p>
-
-<p style="margin-left:22%;">Set the maximum number of
-simulation steps. This option is valid only for
-deterministic models.</p>
-
-
-<p style="margin-left:11%;">&minus;t|&minus;&minus;export&minus;ts
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the transition system to
-<i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;T|&minus;&minus;simulation&minus;time
-[FLOAT]</p>
-
-<p style="margin-left:22%;">Set the maximum simulation
-time. This option is valid only for stochastic models.</p>
-
-
-<p style="margin-left:11%;">&minus;v|&minus;&minus;verbose</p>
-
-<p style="margin-left:22%;">Be more verbose. This is
-equivalent to setting <b>BIGVERBOSE</b> to a non&minus;empty
-value.</p>
-
-<a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">BIGFORMAT</p>
-
-<p style="margin-left:22%;">See option
-&lsquo;&minus;f|&minus;&minus;format&rsquo;.</p>
-
-<p style="margin-left:11%;">BIGQUIET</p>
-
-<p style="margin-left:22%;">See option
-&lsquo;&minus;q|&minus;&minus;quiet&rsquo;.</p>
-
-<p style="margin-left:11%;">BIGVERBOSE</p>
-
-<p style="margin-left:22%;">See option
-&lsquo;&minus;v|&minus;&minus;verbose&rsquo;.</p>
-
-<a name="AUTHORS"></a>
-<h2>AUTHORS</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">Michele
-Sevegnani: <i>Michele.Sevegnani@glasgow.ac.uk</i></p>
-
-<a name="FURTHER DOCUMENTATION"></a>
-<h2>FURTHER DOCUMENTATION</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">See
-<i>http://www.dcs.gla.ac.uk/~michele/bigrapher.html</i>.</p>
-
-<a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>bigrapher</b>(1),
-<b>bigrapher&minus;full</b>(1),
-<b>bigrapher&minus;validate</b>(1)</p>
-<hr>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">BIGRAPHER-SIM(1)</td>
+    <td class="head-vol">BigraphER Manual</td>
+    <td class="head-rtitle">BIGRAPHER-SIM(1)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh">NAME</h1>
+bigrapher-sim - Simulate a model
+<div style="height: 1.00em;">&#160;</div>
+<h1 class="Sh">SYNOPSIS</h1>
+<b>bigrapher sim</b> [OPTIONS] &lt;MODEL.big&gt;
+<div style="height: 1.00em;">&#160;</div>
+<h1 class="Sh">OPTIONS</h1>
+<dl class="Bl-tag">
+  <dt class="It-tag">-c|--const &lt;ASSIGNMENT ...&gt;</dt>
+  <dd class="It-tag">Specify a comma-separated list of variable assignments.
+      Example: `x=4,t=.56'.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-d|--export-decs &lt;DIR&gt;</dt>
+  <dd class="It-tag">Export each declaration in the model (bigraphs and reaction
+      rules) to a distinct file in <i>DIR</i>. Dummy values are used to
+      instantiate functional values.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-f|--format &lt;FORMAT&gt;</dt>
+  <dd class="It-tag">Specify a comma-separated list of output formats for
+      options <b>-d|--export-decs</b>, <b>-t|--export-ts</b> and
+      <b>-s|--export-states</b>. Supported formats are `dot', `svg' and `txt'.
+      This is equivalent to setting <b>BIGFORMAT</b> to <i>FORMAT</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-h|--help</dt>
+  <dd class="It-tag">Display the list of options.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-l|--export-labels &lt;FILE&gt;</dt>
+  <dd class="It-tag">Export the labelling function in PRISM <i>csl</i> format to
+      <i>FILE</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-m|--export-ml &lt;FILE&gt;</dt>
+  <dd class="It-tag">Export the model in OCaml format to <i>FILE</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-n|--no-colors</dt>
+  <dd class="It-tag">Disable colored output. This is equivalent to setting
+      <b>BIGNOCOLORS</b> to a non-empty value.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-p|--export-prism &lt;FILE&gt;</dt>
+  <dd class="It-tag">Export the transition system in PRISM tra format to
+      <i>FILE</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-q|--quiet</dt>
+  <dd class="It-tag">Disable all output. This is equivalent to setting
+      <b>BIGQUIET</b> to a non-empty value.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-s|--export-states [DIR]</dt>
+  <dd class="It-tag">Export each state to a file in <i>DIR</i>. State indices
+      are used as file names. When <i>DIR</i> is omitted, it is inferred from
+      option <b>-t|--export-ts</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-S|--simulation-steps [INT]</dt>
+  <dd class="It-tag">Set the maximum number of simulation steps. This option is
+      valid only for deterministic and probabilistic models.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-t|--export-ts &lt;FILE&gt;</dt>
+  <dd class="It-tag">Export the transition system to <i>FILE</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-T|--simulation-time [FLOAT]</dt>
+  <dd class="It-tag">Set the maximum simulation time. This option is valid only
+      for stochastic models.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">-v|--verbose</dt>
+  <dd class="It-tag">Be more verbose. This is equivalent to setting
+      <b>BIGVERBOSE</b> to a non-empty value.
+    <div style="height: 1.00em;">&#160;</div>
+  </dd>
+</dl>
+<h1 class="Sh">ENVIRONMENT</h1>
+<dl class="Bl-tag">
+  <dt class="It-tag">BIGFORMAT</dt>
+  <dd class="It-tag">See option `-f|--format'.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">BIGQUIET</dt>
+  <dd class="It-tag">See option `-q|--quiet'.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt class="It-tag">BIGVERBOSE</dt>
+  <dd class="It-tag">See option `-v|--verbose'.
+    <div style="height: 1.00em;">&#160;</div>
+  </dd>
+</dl>
+<h1 class="Sh">AUTHORS</h1>
+Michele Sevegnani: <i>Michele.Sevegnani@glasgow.ac.uk</i>
+<div style="height: 1.00em;">&#160;</div>
+<h1 class="Sh">FURTHER DOCUMENTATION</h1>
+See <i>http://www.dcs.gla.ac.uk/~michele/bigrapher.html</i>.
+<div style="height: 1.00em;">&#160;</div>
+<h1 class="Sh">SEE ALSO</h1>
+<b>bigrapher</b>(1), <b>bigrapher-full</b>(1),
+  <b>bigrapher-validate</b>(1)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os">BigraphER 1.2.0</td>
+  </tr>
+</table>
 </body>
 </html>

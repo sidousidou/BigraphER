@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    table.head, table.foot { width: 100%; }
+    td.head-rtitle, td.foot-os { text-align: right; }
+    td.head-vol { text-align: center; }
+    div.Pp { margin: 1ex 0ex; }
+  </style>
+  <link rel="stylesheet" href="mandoc.css" type="text/css" media="all"/>
+  <title>HELLO(1)</title>
+</head>
+<body>
+<table class="head">
+  <tr>
+    <td class="head-ltitle">HELLO(1)</td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle">HELLO(1)</td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" id="NAME">NAME</h1>
+<b class="Nm">hello</b> &#8212; <span class="Nd">print &quot;hello,
+  world&quot;</span>
+<h1 class="Sh" id="SYNOPSIS">SYNOPSIS</h1>
+<table class="Nm">
+  <colgroup>
+    <col style="width: 5.00ex;"/>
+    <col/>
+  </colgroup>
+  <tr>
+    <td><b class="Nm">hello</b></td>
+    <td>[<span class="Op"><b class="Fl">-C</b></span>]
+      [<span class="Op"><b class="Fl">-o</b>
+      <var class="Ar">output</var></span>]
+      [<span class="Op"><var class="Ar">prefix</var></span>]</td>
+  </tr>
+</table>
+<h1 class="Sh" id="DESCRIPTION">DESCRIPTION</h1>
+The <b class="Nm">hello</b> function prints &#8220;hello, world&#8221; and
+  returns.
+<div class="Pp"></div>
+Its arguments are as follows:
+<dl class="Bl-tag" style="margin-left: 6.00ex;">
+  <dt class="It-tag" style="margin-left: -6.00ex;">&#160;</dt>
+  <dd class="It-tag">&#160;</dd>
+  <dt class="It-tag" style="margin-left: -6.00ex;"><b class="Fl">-C</b></dt>
+  <dd class="It-tag">Print only uppercase letters.</dd>
+  <dt class="It-tag" style="margin-left: -6.00ex;">&#160;</dt>
+  <dd class="It-tag">&#160;</dd>
+  <dt class="It-tag" style="margin-left: -6.00ex;"><b class="Fl">-o</b>
+    <var class="Ar">output</var></dt>
+  <dd class="It-tag">Write to file <var class="Ar">output</var>.</dd>
+  <dt class="It-tag" style="margin-left: -6.00ex;">&#160;</dt>
+  <dd class="It-tag">&#160;</dd>
+  <dt class="It-tag" style="margin-left: -6.00ex;"><var class="Ar">prefix</var></dt>
+  <dd class="It-tag">Prefix the output with <var class="Ar">prefix</var>.</dd>
+</dl>
+<h1 class="Sh" id="EXIT_STATUS">EXIT STATUS</h1>
+The <b class="Nm">hello</b> utility exits&#160;0 on success, and&#160;&gt;0 if
+  an error occurs.
+<h1 class="Sh" id="AUTHORS">AUTHORS</h1>
+Written by <span class="An">Michele Sevegnani</span>,
+  <a class="Mt" href="mailto:michele.sevegnani@glasgow.ac.uk">michele.sevegnani@glasgow.ac.uk</a>.
+<h1 class="Sh" id="SEE_ALSO">SEE ALSO</h1>
+<a class="Xr" href="bigrapher-full.html">bigrapher-full(1)</a>,
+  <a class="Xr" href="bigrapher-sim.html">bigrapher-sim(1)</a>,
+  <a class="Xr" href="bigrapher-validate.html">bigrapher-validate(1)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date">May 30, 2011</td>
+    <td class="foot-os">Darwin 16.6.0</td>
+  </tr>
+</table>
+</body>
+</html>

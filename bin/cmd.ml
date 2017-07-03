@@ -260,7 +260,7 @@ let msg_opt fmt = function
                   (colorise `underline "DIR")
                   (string_of_opt "|" (Graph ""))
   | Steps _ -> fprintf fmt "@[<hov>Set the maximum number of simulation steps.@ This option@ is@ \
-                            valid@ only@ for@ deterministic models.@]"
+                            valid@ only@ for@ deterministic@ and@ probabilistic@ models.@]"
   | Time _ -> fprintf fmt "@[<hov>Set the maximum simulation time.@ This option@ is@ valid@ \
                            			   only@ for@ stochastic@ models.@]"
   | Verb -> fprintf fmt "@[<hov>Be more verbose.@ This is@ equivalent to@ setting@ \

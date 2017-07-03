@@ -1,0 +1,39 @@
+.Dd May 30, 2011
+.Dt HELLO 1
+.Os
+.Sh NAME
+.Nm hello
+.Nd print \(dqhello, world\(dq
+.Sh SYNOPSIS
+.Nm
+.Op Fl C
+.Op Fl o Ar output
+.Op Ar prefix
+.Sh DESCRIPTION
+The
+.Nm
+function prints
+.Qq hello, world
+and returns.
+.Pp
+Its arguments are as follows:
+.Bl -tag -width Ds
+.It Fl C
+Print only uppercase letters.
+.It Fl o Ar output
+Write to file
+.Ar output .
+.It Ar prefix
+Prefix the output with
+.Ar prefix .
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh AUTHORS
+Written by
+.An Michele Sevegnani ,
+.Mt michele.sevegnani@glasgow.ac.uk .
+.Sh SEE ALSO
+.Xr bigrapher-full 1 ,
+.Xr bigrapher-sim 1 ,
+.Xr bigrapher-validate 1

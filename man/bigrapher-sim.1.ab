@@ -56,7 +56,7 @@ State indices are used as file names. When
 is omitted, it is inferred from option
 .BR \-t|\-\-export\-ts .
 .IP "\-S|\-\-simulation\-steps [INT]"
-Set the maximum number of simulation steps. This option is valid only for deterministic models.
+Set the maximum number of simulation steps. This option is valid only for deterministic and probabilistic models.
 .IP "\-t|\-\-export\-ts <FILE>"
 Export the transition system to
 .IR FILE .

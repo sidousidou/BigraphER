@@ -9,7 +9,6 @@ bigrapher-full - Compute the transition system of a model
 [OPTIONS] <MODEL.big>
 
 .SH OPTIONS
-.PP
 .IP "\-c|\-\-const <ASSIGNMENT ...>"
 Specify a comma-separated list of variable assignments. Example: `x=4,t=.56'.
 .IP "\-d|\-\-export\-decs <DIR>"
@@ -26,7 +25,7 @@ Supported formats are `dot', `svg' and `txt'.
 This is equivalent to setting
 .B BIGFORMAT
 to
-.IR FORMAT .   
+.IR FORMAT .
 .IP "\-h|\-\-help"
 Display the list of options.
 .IP "\-l|\-\-export\-labels <FILE>"
@@ -75,15 +74,17 @@ See option `\-q|\-\-quiet'.
 See option `\-v|\-\-verbose'.
 
 .SH AUTHORS
-.PP
-Michele Sevegnani: \fIMichele\.Sevegnani@glasgow\.ac\.uk\fR
+writen by
+.AN Michele Sevegnani ,
+.Mt michele.sevegnani@glasgow.ac.uk .
 
 .SH FURTHER DOCUMENTATION
 .PP
-See \fIhttp://www\.dcs\.gla\.ac\.uk/~michele/bigrapher\.html\fR.
+See
+.Lk http://www.dcs.gla.ac.uk/~michele/bigrapher.html
 
 .SH SEE ALSO
 .PP
-.BR bigrapher (1), 
-.BR bigrapher\-full (1),
-.BR bigrapher\-validate (1)
+.Xr bigrapher (1), 
+.Xr bigrapher\-full (1),
+.Xr bigrapher\-validate (1)

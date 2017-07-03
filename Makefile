@@ -58,5 +58,6 @@ man: man/bigrapher.1 man/bigrapher-full.1 man/bigrapher-sim.1 man/bigrapher-vali
 	groff -mandoc -Thtml man/bigrapher-full.1 > man/bigrapher-full.html
 	groff -mandoc -Thtml man/bigrapher-sim.1 > man/bigrapher-sim.html
 	groff -mandoc -Thtml man/bigrapher-validate.1 > man/bigrapher-validate.html
+	mandoc -mandoc -T html -O style=mandoc.css,man=%N.html -W all  man/test.1 > man/test.html
 
 .PHONY: emacs-mode dist man
