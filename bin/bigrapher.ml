@@ -21,7 +21,6 @@ type row =
 let print_msg fmt c msg =
   if not Cmd.(defaults.debug) then
     fprintf fmt "@?@[%s@]@." (colorise c msg)
-  else ()
 
 let print_descr fmt (d, c) =
   fprintf fmt "%s" (colorise c d)
@@ -56,7 +55,7 @@ let print_table fmt (rows : row list) =
      pp_print_break fmt (15 - (String.length (fst r.descr))) 0;
      fprintf fmt "@]";
      pp_set_tab fmt ();
-     fprintf fmt "%a" r.pp_val r.value; 
+     fprintf fmt "%a" r.pp_val r.value;
      List.iter (pp_row fmt) rows;
      pp_close_tbox fmt ();
      Format.pp_print_newline fmt ())
@@ -64,83 +63,86 @@ let print_table fmt (rows : row list) =
 
 let print_header fmt () =
   if not Cmd.(defaults.debug) then
-    (fprintf fmt "@[<v>@,%s@,%s@,"
-       (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
-       "========================================";
-     [{ descr = ("Version:", `blue);
-        value = `s (String.trim Version.version);
-        pp_val = print_string;
-        display = true; };
-      { descr = ("Date:", `blue);
-        value = `s (Utils.format_time ());
-        pp_val = print_string;
-        display = true; };
-      { descr = ("Hostname:", `blue);
-        value = `s (Unix.gethostname ());
-        pp_val = print_string;
-        display = true; };
-      { descr = ("OS type:", `blue);
-        value = `s Sys.os_type;
-        pp_val = print_string;
-        display = true; };
-      { descr = ("Command line:", `blue);
-        value = `s (String.concat " " (Array.to_list Sys.argv));
-        pp_val = print_string;
-        display = true; }]
-     |> print_table fmt)
-  else ()
+    begin
+      fprintf fmt "@[<v>@,%s@,%s@,"
+        (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
+        "========================================";
+      [{ descr = ("Version:", `blue);
+         value = `s (String.trim Version.version);
+         pp_val = print_string;
+         display = true; };
+       { descr = ("Date:", `blue);
+         value = `s (Utils.format_time ());
+         pp_val = print_string;
+         display = true; };
+       { descr = ("Hostname:", `blue);
+         value = `s (Unix.gethostname ());
+         pp_val = print_string;
+         display = true; };
+       { descr = ("OS type:", `blue);
+         value = `s Sys.os_type;
+         pp_val = print_string;
+         display = true; };
+       { descr = ("Command line:", `blue);
+         value = `s (String.concat " " (Array.to_list Sys.argv));
+         pp_val = print_string;
+         display = true; }]
+      |> print_table fmt
+    end
 
 let print_max fmt =
-  [{ descr = ("Max # states:", `cyan);
-     value = `i Cmd.(defaults.max_states);
-     pp_val = print_int;
-     display = true; }]
-  |> print_table fmt
+  print_table fmt
+    [{ descr = ("Max # states:", `cyan);
+       value = `i Cmd.(defaults.max_states);
+       pp_val = print_int;
+       display = true; }]
 
 let print_max_sim fmt = function
   | Rs.BRS | Rs. PBRS ->
-    [{ descr = ("Max sim steps:", `cyan);
-       value = `i Cmd.(defaults.steps);
-       pp_val = print_int;
-       display = true; }]
-    |> print_table fmt
-  | Rs.SBRS -> [{ descr = ("Max sim time:", `cyan);
-                  value = `f Cmd.(defaults.time);
-                  pp_val = print_float "";
-                  display = true; }]
-               |> print_table fmt
+    print_table fmt
+      [{ descr = ("Max sim steps:", `cyan);
+         value = `i Cmd.(defaults.steps);
+         pp_val = print_int;
+         display = true; }]
+  | Rs.SBRS ->
+    print_table fmt
+      [{ descr = ("Max sim time:", `cyan);
+         value = `f Cmd.(defaults.time);
+         pp_val = print_float "";
+         display = true; }]
 
 let open_progress_bar () =
-  if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then () 
-  else Pervasives.print_string "\n["
+  if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
+    Pervasives.print_string "\n["
 
-let print_loop i _ = 
-  if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then () 
-  else (let m =
-          if Cmd.(defaults.max_states) >= 1000 then
-            Cmd.(defaults.max_states) / 1000
-          else 1 in
-        match (i + 1) mod (max_width * m) with
-        | 0 -> (Pervasives.print_char '.';
-                Pervasives.print_string "  ";
-                Pervasives.print_int (i + 1);
-                Pervasives.print_newline ();
-                Pervasives.print_char ' ';
-                Pervasives.flush stdout)
-        | i when i mod m = 0 -> (Pervasives.print_char '.';
-                                 Pervasives.flush stdout)
-        | _ -> ())
+let print_loop i _ =
+  if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
+    begin
+      let m =
+        if Cmd.(defaults.max_states) >= 1000 then
+          Cmd.(defaults.max_states) / 1000
+        else 1 in
+      match (i + 1) mod (max_width * m) with
+      | 0 -> (Pervasives.print_char '.';
+              Pervasives.print_string "  ";
+              Pervasives.print_int (i + 1);
+              Pervasives.print_newline ();
+              Pervasives.print_char ' ';
+              Pervasives.flush stdout)
+      | i when i mod m = 0 -> (Pervasives.print_char '.';
+                               Pervasives.flush stdout)
+      | _ -> ()
+    end
 
 let close_progress_bar () =
-  if Cmd.(defaults.debug) || Cmd.(defaults.quiet) then ()
-  else Pervasives.print_string "]\n\n"
+  if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
+    Pervasives.print_string "]\n\n"
 
 (******** EXPORT FUNCTIONS *********)
 
 let print_fun fmt c verb fname i =
   if verb then
     print_msg fmt c ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'")
-  else ()
 
 let format_map = function
   | Cmd.Svg -> (Big.write_svg, ".svg")
@@ -177,33 +179,34 @@ let export_csl fmt f =
         fprintf err_formatter "@[<v>";
         Export.report_error e
         |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
-               
+
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
-    (match Cmd.(defaults.export_states) with
-     | None -> assert false (*BISECT-IGNORE*)
-     | Some path ->
-       (print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
-        f ~f:(fun i s ->
-            let aux i s f ext =
-              let fname = (string_of_int i) ^ ext in
-              try
-                f s ~name:fname ~path
-                |> print_fun fmt
-                  `white
-                  Cmd.(defaults.verb)
-                  (Filename.concat path fname)
-              with
-              | Export.ERROR e ->
-                (pp_print_flush fmt ();
-                 fprintf err_formatter "@[<v>";
-                 Export.report_error e
-                 |> fprintf err_formatter "@[%s: %s@]@." Utils.err) in
-            Cmd.(defaults.out_format)
-            |> List.map format_map
-            |> List.iter (fun (f, ext) ->  aux i s f ext))
-          g))
-  else ()
+    begin
+      match Cmd.(defaults.export_states) with
+      | None -> assert false (*BISECT-IGNORE*)
+      | Some path ->
+        (print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
+         f ~f:(fun i s ->
+             let aux i s f ext =
+               let fname = (string_of_int i) ^ ext in
+               try
+                 f s ~name:fname ~path
+                 |> print_fun fmt
+                   `white
+                   Cmd.(defaults.verb)
+                   (Filename.concat path fname)
+               with
+               | Export.ERROR e ->
+                 (pp_print_flush fmt ();
+                  fprintf err_formatter "@[<v>";
+                  Export.report_error e
+                  |> fprintf err_formatter "@[%s: %s@]@." Utils.err) in
+             Cmd.(defaults.out_format)
+             |> List.map format_map
+             |> List.iter (fun (f, ext) ->  aux i s f ext))
+           g)
+    end
 
 let export_ts fmt msg formats =
   match Cmd.(defaults.export_graph) with
@@ -239,7 +242,7 @@ module Run
     (L: TsType.TT with type t = T.limit) = struct
 
   module S = Store.Make (T)
-      
+
   let export_decs fmt path m env env_t =
     print_msg fmt `yellow ("Exporting declarations to "
                            ^ path ^ " ...");
@@ -275,7 +278,7 @@ module Run
      | None -> ()
      | Some path -> export_decs fmt path m env env_t);
     (* Export model to OCaml *)
-    (match Cmd.(defaults.export_ml) with 
+    (match Cmd.(defaults.export_ml) with
      | None -> ()
      | Some path -> export_ml fmt path m)
 
@@ -300,7 +303,7 @@ module Run
         { descr = (descr, `green);
           value = `s value;
           pp_val = print_string;
-          display =  (not Cmd.(defaults.debug) || not flag); }) 
+          display =  (not Cmd.(defaults.debug) || not flag); })
     |> print_table fmt
 
   let after fmt f (graph, stats) =
@@ -320,7 +323,7 @@ module Run
     export_csl fmt (T.write_lab graph);
     pp_print_flush err_formatter ();
     exit 0
-  
+
   let sim fmt s0 priorities preds =
     print_msg fmt `yellow ("Starting " ^ (Rs.sim_type T.typ) ^ " ...");
     print_max_sim fmt T.typ;
@@ -333,7 +336,7 @@ module Run
       ~iter_f:print_loop
     |> after fmt close_progress_bar
 
-  let full fmt s0 priorities preds = 
+  let full fmt s0 priorities preds =
     print_msg fmt `yellow ("Computing " ^ (Rs.ts_type T.typ) ^ " ...");
     print_max fmt;
     open_progress_bar ();
@@ -348,10 +351,10 @@ module Run
     Sys.set_signal Sys.sigint
       (Sys.Signal_handle (fun _ ->
            close_progress_bar ();
-           print_msg fmt `yellow ("Execution interrupted by the user.");
+           print_msg fmt `yellow "Execution interrupted by the user.";
            pp_print_flush err_formatter ();
            exit 0))
-  
+
   let run_aux fmt s0 priorities preds = function
     | `sim ->
       begin
@@ -359,18 +362,20 @@ module Run
         try sim fmt s0 priorities preds with
         | T.LIMIT (graph, stats) ->
           after fmt
-            (fun () -> (close_progress_bar ();
-                        print_msg fmt `yellow ("Maximum "
-                                               ^ (Rs.limit_msg T.typ)
-                                               ^ " reached.")))
+            (fun () ->
+               close_progress_bar ();
+               print_msg fmt `yellow
+                 ("Maximum " ^ (Rs.limit_msg T.typ) ^ " reached."))
             (graph, stats)
         | T.DEADLOCK (graph, stats, limit) ->
           after fmt
-            (fun () -> (close_progress_bar ();
-                        print_msg fmt `yellow ("Deadlock state reached at "
-                                               ^ (Rs.limit_type T.typ) ^ " "
-                                               ^ (T.string_of_limit limit) ^ ".")))
-            (graph, stats) 
+            (fun () ->
+               close_progress_bar ();
+               print_msg fmt `yellow
+                 ("Deadlock state reached at "
+                  ^ (Rs.limit_type T.typ) ^ " "
+                  ^ (T.string_of_limit limit) ^ "."))
+            (graph, stats)
       end
     | `full ->
       begin
@@ -378,8 +383,10 @@ module Run
         try full fmt s0 priorities preds with
         | T.MAX (graph, stats) ->
           after fmt
-            (fun () -> (close_progress_bar ();
-                        print_msg fmt `yellow "Maximum number of states reached."))
+            (fun () ->
+               close_progress_bar ();
+               print_msg fmt `yellow
+                 "Maximum number of states reached.")
             (graph, stats)
       end
     | `check -> check fmt
@@ -405,7 +412,7 @@ end
 
 (******** BIGRAPHER *********)
 
-let open_lex path = 
+let open_lex path =
   let file = open_in path in
   let lexbuf = Lexing.from_channel file in
   lexbuf.Lexing.lex_curr_p <-
@@ -418,7 +425,7 @@ let open_lex path =
 let parse_cmd argv =
   let lexbuf = Array.to_list argv
                |> List.tl
-               |> String.concat "\n" 
+               |> String.concat "\n"
                |> Lexing.from_string in
   (* Check environment variables *)
   Cmd.eval_env ();
@@ -435,17 +442,17 @@ let parse_cmd argv =
      exit 1)
   | Lexer.ERROR (e, _) ->
     (Lexer.report_error err_formatter e;
-     pp_print_newline err_formatter ();    
+     pp_print_newline err_formatter ();
      Cmd.eval_help_top err_formatter ();
      exit 1)
 
 let set_output_ch () =
-  if Cmd.(defaults.quiet) then
-    (Cmd.(defaults.verb <- false); (* Ignore verbose flag *)
-     str_formatter)
-  else
+  if Cmd.(defaults.quiet) then begin
+    Cmd.(defaults.verb <- false); (* Ignore verbose flag *)
+    str_formatter
+  end else
     std_formatter
-      
+
 let () =
   (* Printexc.record_backtrace true; *) (* Disabled for releases *)
   try
@@ -454,11 +461,11 @@ let () =
     print_header fmt ();
     print_msg fmt `yellow ("Parsing model file "
                            ^ Cmd.(defaults.model)
-                           ^ " ..."); 
+                           ^ " ...");
     let (lexbuf, file) = open_lex Cmd.(defaults.model) in
     try
-      let m = Parser.model Lexer.token lexbuf in 
-      close_in file; 
+      let m = Parser.model Lexer.token lexbuf in
+      close_in file;
       (match m.model_rs.dbrs_type with
        | Rs.BRS ->
          begin
@@ -493,7 +500,9 @@ let () =
     with
     | Place.NOT_PRIME ->
       (close_progress_bar ();
-       fprintf err_formatter "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
+       fprintf
+         err_formatter
+         "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
          Utils.err;
        exit 1)
     | Parser.Error ->
@@ -502,8 +511,11 @@ let () =
        Loc.print_loc err_formatter
          Loc.{lstart = Lexing.(lexbuf.lex_start_p);
               lend = Lexing.(lexbuf.lex_curr_p)};
-       fprintf err_formatter "@[%s: Syntax error near token `%s'@]@."
-         Utils.err (Lexing.lexeme lexbuf);
+       fprintf
+         err_formatter
+         "@[%s: Syntax error near token `%s'@]@."
+         Utils.err
+         (Lexing.lexeme lexbuf);
        exit 1)
   with
   | Lexer.ERROR (e, p) ->
@@ -515,7 +527,7 @@ let () =
   | Sys_error s ->
     (fprintf err_formatter "@[%s: %s@]@." Utils.err s;
      exit 1)
-  | e -> 
+  | e ->
     (fprintf err_formatter "@[%s@,%s@]@."
        (Printexc.to_string e) (Printexc.get_backtrace ());
      exit 1)

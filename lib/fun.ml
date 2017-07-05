@@ -5,7 +5,7 @@ let dom f =
       IntSet.add i acc)
     f IntSet.empty
 
-let codom f = 
+let codom f =
   fold (fun _ j acc ->
       IntSet.add j acc)
     f IntSet.empty

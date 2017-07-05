@@ -3,7 +3,7 @@ type text_style =
   | `yellow | `blue | `magenta | `cyan | `white ]
 
 let colorise (c: text_style) s =
-  let code = 
+  let code =
     match c with
     | `bold      -> "01"
     | `underline -> "04"
@@ -51,10 +51,9 @@ let safe_mkdir dir =
 
 let mkdir dir =
   let rec aux dir =
-    if not (Sys.file_exists dir) then (
+    if not (Sys.file_exists dir) then begin
       aux (Filename.dirname dir);
-      safe_mkdir dir;
-    ) in
+      safe_mkdir dir; end in
   aux dir
 
 let dot_installed () =

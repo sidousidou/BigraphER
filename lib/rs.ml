@@ -1,11 +1,11 @@
 (* Types of rective systems *)
-type t = BRS | PBRS | SBRS 
-         
+type t = BRS | PBRS | SBRS
+
 let to_string = function
   | BRS -> "BRS"
   | PBRS -> "Probabilistic BRS"
   | SBRS -> "Stochastic BRS"
-    
+
 let to_string_ext = function
   | BRS -> "Bigraphical Reactive System"
   | PBRS -> "Probabilistic Bigraphical Reactive System"
@@ -22,11 +22,11 @@ let ts_type = function
 
 let limit_type = function
   | BRS | PBRS -> "step"
-  | SBRS -> "time" 
+  | SBRS -> "time"
 
 let limit_msg = function
   | BRS | PBRS -> "number of simulation steps"
-  | SBRS -> "simulation time" 
+  | SBRS -> "simulation time"
 
 let module_id = function
   | BRS -> "Brs"

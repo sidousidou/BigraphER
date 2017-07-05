@@ -42,7 +42,7 @@ sig
   val edge_of_occ : occ -> int -> edge
   val to_string : t -> string
   val is_valid : t -> bool
-  val is_valid_exn : t -> bool			  
+  val is_valid_exn : t -> bool
   val string_of_react_err : react_error -> string
   val is_enabled : Big.bg -> t -> bool
   val fix : Big.bg -> t list -> Big.bg * int
@@ -53,7 +53,7 @@ end
 (* Generic step function *)
 let gen_step b rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
   (* Input list is assumed without duplicates. Example: extract 4
-     [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)	   
+     [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)
   let rec extract (pred :'a -> bool) acc = function
     | [] -> (None, acc)
     | x :: l -> if pred x then (Some x, l @ acc)
@@ -70,7 +70,7 @@ let gen_step b rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
     (List.fold_left aux1 [] l, List.length l) in
   let aux2 acc r =
     (Big.occurrences b (lhs r)
-     (* Parmap.parmap *)			 
+     (* Parmap.parmap *)
      |> List.map (fun o ->
          to_occ
            (Big.rewrite o b (lhs r) (rhs r) (map r)) r))
@@ -106,7 +106,7 @@ module Make (R : R) = struct
     ^ "\n-"
     ^ (string_of_label (l r))
     ^ "->\n"
-    ^	(Big.to_string (rhs r))
+    ^ (Big.to_string (rhs r))
     ^ (match map r with
         | None -> ""
         | Some eta -> "\n@ " ^ (Fun.to_string eta))
@@ -133,17 +133,17 @@ module Make (R : R) = struct
     if Big.inter_equal i i'
     then if lhs.Big.p.Place.n > 0
       then if Big.is_solid lhs
-        then if (match map r with
-            | None ->
-              (let (i, i') = (Big.inner lhs, Big.inner rhs) in
-               if Big.inter_equal i i'
-               then true
-               else raise (NOT_VALID (Inter_eq_i (i, i'))))
-            | Some eta ->
-              (let s_lhs = lhs.Big.p.Place.s
-               and s_rhs = rhs.Big.p.Place.s in
-               (Fun.is_total s_rhs eta)
-               && (Fun.check_codom 0 (s_lhs - 1) eta)))
+        then if match map r with
+          | None ->
+            (let (i, i') = (Big.inner lhs, Big.inner rhs) in
+             if Big.inter_equal i i'
+             then true
+             else raise (NOT_VALID (Inter_eq_i (i, i'))))
+          | Some eta ->
+            (let s_lhs = lhs.Big.p.Place.s
+             and s_rhs = rhs.Big.p.Place.s in
+             (Fun.is_total s_rhs eta)
+             && (Fun.check_codom 0 (s_lhs - 1) eta))
           then if val_chk r
             then true
             else raise (NOT_VALID Val_chk)
@@ -171,5 +171,5 @@ module Make (R : R) = struct
       | Some b ->  _fix b rules (i + 1)
       | None -> (s, i) in
     _fix b rules 0
-        
+
 end

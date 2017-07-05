@@ -36,7 +36,8 @@ module Make (T: TsType.RS with type label = float) = struct
     | A_ctrl of Ctrl.t
     | A_ctrl_fun of int * Id.t list
     | React of T.react
-    | React_fun of big_exp * big_exp * int Fun.t option * float_exp option * Id.t list
+    | React_fun of big_exp * big_exp *
+                   int Fun.t option * float_exp option * Id.t list
     | Int_param of int list
     | Float_param of float list
 
@@ -44,9 +45,9 @@ module Make (T: TsType.RS with type label = float) = struct
     | Int x -> string_of_int x
     | Float x -> string_of_float x
     | Big x -> Big.to_string x
-    | Big_fun _ -> "<fun big>" 
+    | Big_fun _ -> "<fun big>"
     | A_ctrl c | Ctrl c -> Ctrl.to_string c
-    | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"   
+    | A_ctrl_fun _ | Ctrl_fun _ -> "<fun ctrl>"
     | React r -> T.string_of_react r
     | React_fun _ -> "<fun react>"
     | Int_param p ->
@@ -65,7 +66,7 @@ module Make (T: TsType.RS with type label = float) = struct
     let assign_type_forms =
       List.map (fun _ -> next_gen ()) in
     let update forms t =
-      let fresh_t = assign_type_forms forms in 
+      let fresh_t = assign_type_forms forms in
       (`lambda (box_gen_types fresh_t, t), add_types fresh_t env_t) in
     match v with
     | Int _ -> (`num_val (`b `int), env_t)
@@ -104,7 +105,7 @@ module Make (T: TsType.RS with type label = float) = struct
     | Tens of Link.Face.t * Link.Face.t        (* (in , out) *)
     | Share
     | Unknown_big of int
-    | Reaction of string		             (* error message *) 
+    | Reaction of string                       (* error message *)
     | Init_not_ground
     | Not_face of Id.t list
 
@@ -115,29 +116,35 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let report_error_aux fmt = function
     | Wrong_type (curr, exp) ->
-      fprintf fmt "This expression has type %s but an expression was expected of type %s"
+      fprintf fmt "This expression has type %s but an expression was expected \
+                   of type %s"
         (string_of_store_t curr) (string_of_store_t exp)
     | Atomic_ctrl id ->
-      fprintf fmt "Control %s is atomic but it is here used in a nesting expression" id
+      fprintf fmt "Control %s is atomic but it is here used in a nesting \
+                   expression" id
     | Arity (id, ar, ar_dec) ->
-      fprintf fmt "Control %s has arity %d but a control of arity %d was expected" id ar ar_dec
+      fprintf fmt "Control %s has arity %d but a control of arity %d was \
+                   expected" id ar ar_dec
     | Unbound_variable s -> fprintf fmt "Unbound variable %s" s
     | Div_by_zero -> fprintf fmt "Division by zero"
     | Comp (i, j) ->
       fprintf fmt "Interfaces %s and %s do not match in the composition"
         (Big.string_of_inter i) (Big.string_of_inter j)
     | Tens (inner, outer) ->
-      fprintf fmt "Tensor product has common inner names %s and common outer names %s"
+      fprintf fmt "Tensor product has common inner names %s and common outer \
+                   names %s"
         (Link.string_of_face inner) (Link.string_of_face outer)
     | Share -> fprintf fmt "Invalid sharing expression"
     | Unknown_big v ->
       fprintf fmt "Expression %d is not a valid bigraph" v
     | Reaction msg -> fprintf fmt "%s" msg
     | Invalid_class -> fprintf fmt "Invalid epression for a priority class"
-    | Invalid_priorities -> fprintf fmt "Invalid expression for a priority structure"
+    | Invalid_priorities -> fprintf fmt "Invalid expression for a priority \
+                                         structure"
     | Init_not_ground -> fprintf fmt "init bigraph is not ground"
     | Not_face ns ->
-      fprintf fmt "Expression {%s} is not a valid interface as it contains duplicate names"
+      fprintf fmt "Expression {%s} is not a valid interface as it contains \
+                   duplicate names"
         (String.concat "," ns)
 
   let report_error fmt err =
@@ -162,8 +169,8 @@ module Make (T: TsType.RS with type label = float) = struct
   let fetch id p (aux : typed_store_val -> 'a) (scope : scope) (env : store) =
     try aux (ScopeMap.find id scope) with
     | Not_found ->
-      try aux (Base.H_string.find env id) with
-      | Not_found -> raise (ERROR (Unbound_variable id, p))
+      (try (aux (Base.H_string.find env id)) with
+       | Not_found -> raise (ERROR (Unbound_variable id, p)))
 
   let get_int id p scope env =
     let aux = function
@@ -200,9 +207,9 @@ module Make (T: TsType.RS with type label = float) = struct
     fetch id p aux scope env
 
   let get_num id p scope env =
-    let aux = function 
-      | (Float _ as v, _, _) 
-      | (Int _ as v, _, _) -> v			       
+    let aux = function
+      | (Float _ as v, _, _)
+      | (Int _ as v, _, _) -> v
       | (Big _,t,_)
       | (Big_fun (_,_),t,_)
       | (Ctrl _,t,_)
@@ -233,7 +240,8 @@ module Make (T: TsType.RS with type label = float) = struct
       | (React _,t,_)
       | (React_fun (_,_,_,_,_),t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p)) 
+      | (Float_param _,t,_) ->
+        raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p))
     with
     | Not_found -> raise (ERROR (Unbound_variable id, p))
 
@@ -242,7 +250,8 @@ module Make (T: TsType.RS with type label = float) = struct
       match Base.H_string.find env id with
       | (A_ctrl_fun (a, forms), t, _)
       | (Ctrl_fun (a, forms), t, _) ->
-        (if a = arity then (a, forms, t) else raise (ERROR (Arity (id, a, arity), p))) 
+        (if a = arity then (a, forms, t)
+         else raise (ERROR (Arity (id, a, arity), p)))
       | (Int _,t,_)
       | (Float _,t,_)
       | (Big _,t,_)
@@ -252,12 +261,13 @@ module Make (T: TsType.RS with type label = float) = struct
       | (React _,t,_)
       | (React_fun (_,_,_,_,_),t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p)) 
+      | (Float_param _,t,_) ->
+        raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p))
     with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))		       
+    | Not_found -> raise (ERROR (Unbound_variable id, p))
 
   let is_atomic id p env =
-    try 
+    try
       match get_val (Base.H_string.find env id) with
       | A_ctrl _ |  A_ctrl_fun _ -> true
       | Int _
@@ -287,7 +297,8 @@ module Make (T: TsType.RS with type label = float) = struct
       | (React _,t,_)
       | (React_fun (_,_,_,_,_),t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val `big), p))
+      | (Float_param _,t,_) ->
+        raise (ERROR (Wrong_type (t, `big_val `big), p))
     with
     | Not_found -> raise (ERROR (Unbound_variable id, p))
 
@@ -305,9 +316,10 @@ module Make (T: TsType.RS with type label = float) = struct
       | (React _,t,_)
       | (React_fun (_,_,_,_,_),t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p)) 
+      | (Float_param _,t,_) ->
+        raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p))
     with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))		       
+    | Not_found -> raise (ERROR (Unbound_variable id, p))
 
   let get_react id p (env : store) =
     try
@@ -323,14 +335,16 @@ module Make (T: TsType.RS with type label = float) = struct
       | (A_ctrl_fun (_,_),t,_)
       | (React_fun (_,_,_,_,_),t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `big_val `react), p))
+      | (Float_param _,t,_) ->
+        raise (ERROR (Wrong_type (t, `big_val `react), p))
     with
     | Not_found -> raise (ERROR (Unbound_variable id, p))
 
   let get_react_fun id arg_types p env =
     try
       match Base.H_string.find env id with
-      | (React_fun (l, r, eta, label, forms), t, _) -> (l, r, label, eta, forms, t)
+      | (React_fun (l, r, eta, label, forms), t, _) ->
+        (l, r, label, eta, forms, t)
       | (Int _,t,_)
       | (Float _,t,_)
       | (Big _,t,_)
@@ -341,9 +355,10 @@ module Make (T: TsType.RS with type label = float) = struct
       | (A_ctrl_fun (_,_),t,_)
       | (React _,t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) -> raise (ERROR (Wrong_type (t, `lambda (arg_types, `react)), p)) 
+      | (Float_param _,t,_) ->
+        raise (ERROR (Wrong_type (t, `lambda (arg_types, `react)), p))
     with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))		       
+    | Not_found -> raise (ERROR (Unbound_variable id, p))
 
   (******** EVAL FUNCTIONS *********)
 
@@ -355,7 +370,7 @@ module Make (T: TsType.RS with type label = float) = struct
   let rec pow_int_aux base exp acc =
     match exp with
     | 0 -> 1
-    | _ -> pow_int_aux base (exp - 1) (acc * base) 
+    | _ -> pow_int_aux base (exp - 1) (acc * base)
 
   let pow_int b e p =
     if e < 0 then
@@ -365,22 +380,34 @@ module Make (T: TsType.RS with type label = float) = struct
   let rec eval_int (exp : int_exp) (scope : scope) (env : store) =
     match exp with
     | Int_val (v, _) -> v
-    | Int_var (ide, p) -> get_int ide p scope env
-    | Int_plus (l, r, _) -> (eval_int l scope env) + (eval_int r scope env)
-    | Int_minus (l, r, _) -> (eval_int l scope env) - (eval_int r scope env)
-    | Int_prod (l, r, _) -> (eval_int l scope env) * (eval_int r scope env)
-    | Int_div (l, r, p) -> div_int (eval_int r scope env) (eval_int l scope env) p
-    | Int_pow (l, r, p) -> pow_int (eval_int l scope env) (eval_int r scope env) p
+    | Int_var (ide, p) ->
+      get_int ide p scope env
+    | Int_plus (l, r, _) ->
+      (eval_int l scope env) + (eval_int r scope env)
+    | Int_minus (l, r, _) ->
+      (eval_int l scope env) - (eval_int r scope env)
+    | Int_prod (l, r, _) ->
+      (eval_int l scope env) * (eval_int r scope env)
+    | Int_div (l, r, p) ->
+      div_int (eval_int r scope env) (eval_int l scope env) p
+    | Int_pow (l, r, p) ->
+      pow_int (eval_int l scope env) (eval_int r scope env) p
 
   let rec eval_float (exp : float_exp) (scope : scope) env =
     match exp with
     | Float_val (v, _) -> v
-    | Float_var (ide, p) -> get_float ide p scope env
-    | Float_plus (l, r, _) -> (eval_float l scope env) +. (eval_float r scope env)
-    | Float_minus (l, r, _) -> (eval_float l scope env) -. (eval_float r scope env)
-    | Float_prod (l, r, _) -> (eval_float l scope env) *. (eval_float r scope env)
-    | Float_div (l, r, _) -> (eval_float l scope env) /. (eval_float r scope env)
-    | Float_pow (l, r, _) -> (eval_float l scope env) ** (eval_float r scope env)
+    | Float_var (ide, p) ->
+      get_float ide p scope env
+    | Float_plus (l, r, _) ->
+      (eval_float l scope env) +. (eval_float r scope env)
+    | Float_minus (l, r, _) ->
+      (eval_float l scope env) -. (eval_float r scope env)
+    | Float_prod (l, r, _) ->
+      (eval_float l scope env) *. (eval_float r scope env)
+    | Float_div (l, r, _) ->
+      (eval_float l scope env) /. (eval_float r scope env)
+    | Float_pow (l, r, _) ->
+      (eval_float l scope env) ** (eval_float r scope env)
 
   let rec eval_num (exp : num_exp) (scope : scope) (env : store) =
     let aux val0 val1 fun_int fun_float p =
@@ -408,7 +435,7 @@ module Make (T: TsType.RS with type label = float) = struct
     | Num_float_val (v, _) -> Float v
     | Num_var (id, p) -> get_num id p scope env
     | Num_plus (l, r, p) ->
-      aux (eval_num l scope env) (eval_num r scope env) (+) (+.) p     
+      aux (eval_num l scope env) (eval_num r scope env) (+) (+.) p
     | Num_minus (l, r, p) ->
       aux (eval_num l scope env) (eval_num r scope env) (-) (-.) p
     | Num_prod (l, r, p) ->
@@ -425,7 +452,7 @@ module Make (T: TsType.RS with type label = float) = struct
         match eval_num e scope env with
         | Int _ as v -> (v, `b `int)
         | Float _ as v -> (v, `b `float)
-        | Big _ 
+        | Big _
         | Big_fun (_,_)
         | Ctrl _
         | Ctrl_fun (_,_)
@@ -433,7 +460,7 @@ module Make (T: TsType.RS with type label = float) = struct
         | A_ctrl_fun (_,_)
         | React _
         | React_fun (_,_,_,_,_)
-        | Int_param _ 
+        | Int_param _
         | Float_param _ -> assert false (*BISECT-IGNORE*)
       ) exps
     |> List.split
@@ -449,7 +476,7 @@ module Make (T: TsType.RS with type label = float) = struct
     let id' =
       id ^ "("
       ^ (String.concat "," (List.map string_of_store_val nums))
-      ^ ")" in 
+      ^ ")" in
     Ctrl.C (id', arity)
 
   let check_atomic id p env face c = function
@@ -473,17 +500,21 @@ module Make (T: TsType.RS with type label = float) = struct
        and face = parse_face names p in
        (check_atomic id p env face c flag, env_t))
     | Big_ion_fun_exp (id, args, names, p) ->
-      (let (nums, args_t) = eval_nums args scope env
-       and face = parse_face names p in
-       let (a, _, t) =
-         get_ctrl_fun id (List.length names) args_t p env in
-       try
-         let env_t' = app_exn env_t (dom_of_lambda t) args_t in
-         let c = eval_ctrl_fun id nums a in
-         (check_atomic id p env face c flag, env_t')
-       with
-       | UNIFICATION ->
-         raise (ERROR (Wrong_type (`lambda (args_t, `ctrl a), resolve_t env_t t), p)))
+      begin
+        let (nums, args_t) = eval_nums args scope env
+        and face = parse_face names p in
+        let (a, _, t) =
+          get_ctrl_fun id (List.length names) args_t p env in
+        try
+          let env_t' = app_exn env_t (dom_of_lambda t) args_t in
+          let c = eval_ctrl_fun id nums a in
+          (check_atomic id p env face c flag, env_t')
+        with
+        | UNIFICATION ->
+          raise (ERROR (Wrong_type (`lambda (args_t, `ctrl a),
+                                    resolve_t env_t t),
+                        p))
+      end
 
   let rec eval_big (exp : big_exp) (scope : scope)
       (env : store) (env_t : store_t) =
@@ -494,35 +525,39 @@ module Make (T: TsType.RS with type label = float) = struct
     match exp with
     | Big_var (id, p) -> (get_big id p env, env_t)
     | Big_var_fun (id, args, p) ->
-      (* fun b(x,y) = 1; fun big a(x,y) = b(x + y, 5); a(3, 2 + 3.4); *) 
-      (let (nums, args_t) =
-         (* id = a --> ([Int 3; Float 5], [`b `int; `b `float]) *)
-         eval_nums args scope env in
-       (* (exp, [x; y], [`g 0; `g 1]) *)
-       let (exp, forms, t) =
-         get_big_fun id args_t p env in
-       try
-         (* Unification: `g 0 -> `b `int ; `g 1 -> `b `float *)
-         let env_t' = app_exn env_t (dom_of_lambda t) args_t in
-         (* Extend scope:  x -> Int 3 y -> Float 5 *)
-         let scope' = extend_scope scope forms nums args_t p in
-         eval_big exp scope' env env_t' 
-       with
-       | UNIFICATION ->
-         raise (ERROR (Wrong_type (`lambda (args_t, `big), resolve_t env_t t), p)))
-    | Big_new_name (n, _) -> 
+      (* fun b(x,y) = 1; fun big a(x,y) = b(x + y, 5); a(3, 2 + 3.4); *)
+      begin
+        let (nums, args_t) =
+          (* id = a --> ([Int 3; Float 5], [`b `int; `b `float]) *)
+          eval_nums args scope env in
+        (* (exp, [x; y], [`g 0; `g 1]) *)
+        let (exp, forms, t) =
+          get_big_fun id args_t p env in
+        try
+          (* Unification: `g 0 -> `b `int ; `g 1 -> `b `float *)
+          let env_t' = app_exn env_t (dom_of_lambda t) args_t in
+          (* Extend scope:  x -> Int 3 y -> Float 5 *)
+          let scope' = extend_scope scope forms nums args_t p in
+          eval_big exp scope' env env_t'
+        with
+        | UNIFICATION ->
+          raise (ERROR (Wrong_type (`lambda (args_t, `big),
+                                    resolve_t env_t t),
+                        p))
+      end
+    | Big_new_name (n, _) ->
       (Big.intro (Link.Face.singleton (Link.Nam n)), env_t)
-    | Big_comp (l, r, p) -> 
+    | Big_comp (l, r, p) ->
       (try binary_eval l r scope env env_t Big.comp with
        | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
-    | Big_tens (l, r, p) -> 
+    | Big_tens (l, r, p) ->
       (try (binary_eval l r scope env env_t Big.tens) with
        | Link.NAMES_ALREADY_DEFINED (i, o) -> raise (ERROR (Tens (i, o), p)))
-    | Big_par (l, r, _) -> 
+    | Big_par (l, r, _) ->
       binary_eval l r scope env env_t Big.par
-    | Big_ppar (l, r, _) -> 
+    | Big_ppar (l, r, _) ->
       binary_eval l r scope env env_t Big.ppar
-    | Big_share (a, psi, b, p) -> 
+    | Big_share (a, psi, b, p) ->
       (try
          let (a_v, env_t') = eval_big a scope env env_t in
          let (psi_v, env_t'') = eval_big psi scope env env_t' in
@@ -531,7 +566,7 @@ module Make (T: TsType.RS with type label = float) = struct
        with
        | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p))
        | Big.SHARING_ERROR -> raise (ERROR (Share, loc_of_big_exp psi)))
-    | Big_num (v, p) -> 
+    | Big_num (v, p) ->
       (match v with
        | 0 -> (Big.zero, env_t)
        | 1 -> (Big.one, env_t)
@@ -555,20 +590,28 @@ module Make (T: TsType.RS with type label = float) = struct
     | Big_close exp ->
       (Big.closure (Link.parse_face [exp.cl_name]), env_t)
     | Big_sub exp ->
-      (Big.sub (parse_face exp.in_names exp.sub_loc) (Link.parse_face [exp.out_name]), env_t)
+      (Big.sub
+         (parse_face exp.in_names exp.sub_loc)
+         (Link.parse_face [exp.out_name]),
+       env_t)
     | Big_wire (c, b, _) ->
-      (let (b_v, env_t') = eval_big b scope env env_t in
-       match c with
-       | Close_exp cs ->
-         (Big.close (Link.parse_face (names_of_closures cs)) b_v, env_t')
-       | Sub_exp s ->
-         (Big.rename (parse_face s.in_names s.sub_loc) (Link.parse_face [s.out_name]) b_v, env_t'))
+      begin
+        let (b_v, env_t') = eval_big b scope env env_t in
+        match c with
+        | Close_exp cs ->
+          (Big.close (Link.parse_face (names_of_closures cs)) b_v, env_t')
+        | Sub_exp s ->
+          (Big.rename
+             (parse_face s.in_names s.sub_loc)
+             (Link.parse_face [s.out_name]) b_v,
+           env_t')
+      end
 
   let eval_eta = function
     | Some (l, _) -> Some (Fun.parse l)
     | None -> None
 
-  (* Similar to binary eval *)	      
+  (* Similar to binary eval *)
   let eval_react_aux lhs rhs scope env env_t =
     let (lhs_v, env_t') = eval_big lhs scope env env_t in
     let (rhs_v, env_t'') = eval_big rhs scope env env_t' in
@@ -576,7 +619,7 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let eval_react lhs rhs eta l scope env env_t p =
     let (lhs_v, rhs_v, env_t') =
-      eval_react_aux lhs rhs scope env env_t in    
+      eval_react_aux lhs rhs scope env env_t in
     let r =
       T.parse_react ~lhs:lhs_v ~rhs:rhs_v
         (match l with
@@ -590,14 +633,14 @@ module Make (T: TsType.RS with type label = float) = struct
                 ^ (T.string_of_react_err err) in
       raise (ERROR (Reaction msg, p))
 
-  (* Compute all the combinations of input values *)	  
-  let rec param_comb (pars : typed_store_val list list) = 
+  (* Compute all the combinations of input values *)
+  let rec param_comb (pars : typed_store_val list list) =
     match pars with
     | [x] -> List.map (fun v -> [v]) x
     | x :: xs ->
       (let aux1 v ls =
          List.map (fun l -> v :: l) ls
-       in let rec aux2 l ls = 
+       in let rec aux2 l ls =
             match l with
             | [] -> []
             | x :: xs -> (aux1 x ls) @ (aux2 xs ls)
@@ -623,7 +666,7 @@ module Make (T: TsType.RS with type label = float) = struct
   let is_param id env p =
     try
       match get_val (Base.H_string.find env id) with
-      | Int_param _ 
+      | Int_param _
       | Float_param _ -> true
       | Int _
       | Float _
@@ -643,10 +686,10 @@ module Make (T: TsType.RS with type label = float) = struct
       let compare = Id.compare
     end)
 
-  (* [a + 3.0; c] -> [a , c] *)		 
+  (* [a + 3.0; c] -> [a , c] *)
   let scan_for_params env args =
     let rec aux acc = function
-      | Num_int_val _ 
+      | Num_int_val _
       | Num_float_val _ -> acc
       | Num_var (id, p) ->
         if is_param id env p then IdSet.add id acc else acc
@@ -658,8 +701,8 @@ module Make (T: TsType.RS with type label = float) = struct
     List.fold_left aux IdSet.empty args
     |> IdSet.elements
 
-  (* a = [1.0; 2.0] c = [4; 8] 
-     [(a = 1.0; c = 4); (a = 1.0; c = 8); (a = 2.0; c = 4); (a = 2.0; c = 8)] *)		 
+  (* a = [1.0; 2.0] c = [4; 8]
+     [(a = 1.0; c = 4); (a = 1.0; c = 8); (a = 2.0; c = 4); (a = 2.0; c = 8)] *)
   let param_scopes env = function
     | [] -> [ScopeMap.empty]
     | ids ->
@@ -683,8 +726,10 @@ module Make (T: TsType.RS with type label = float) = struct
           (r :: acc, env_t'')
         with
         | UNIFICATION ->
-          raise (ERROR (Wrong_type (`lambda (args_t, `react), resolve_t env_t t), p))
-      ) ([], env_t)
+          raise (ERROR (Wrong_type (`lambda (args_t, `react),
+                                    resolve_t env_t t),
+                        p)))
+      ([], env_t)
 
   let eval_pr env env_t pr =
     let aux env_t = function
@@ -692,13 +737,13 @@ module Make (T: TsType.RS with type label = float) = struct
       | Rul_id_fun (id, args, p) -> eval_react_fun_app id args env env_t p in
     let aux' (acc, env_t) id =
       let (rs, env_t') = aux env_t id in
-      (acc @ rs, env_t') in 
+      (acc @ rs, env_t') in
     let (pr_class, p) =
       match pr with
       | Pr (ids, p) ->
         let (rs, env_t') =
           List.fold_left aux' ([], env_t) ids in
-        ((T.P_class rs, env_t'), p) 
+        ((T.P_class rs, env_t'), p)
       | Pr_red (ids, p) ->
         let (rs, env_t') =
           List.fold_left aux' ([], env_t) ids in
@@ -725,7 +770,7 @@ module Make (T: TsType.RS with type label = float) = struct
             | Int _ | Float _ as v -> string_of_store_val v
             | _ -> assert false) (*BISECT-IGNORE*)
           nums in
-      id ^ "(" ^ (String.concat "," nums_s) ^ ")" in 
+      id ^ "(" ^ (String.concat "," nums_s) ^ ")" in
     scan_for_params env args
     |> param_scopes env
     |> List.fold_left (fun (acc, env_t) scope ->
@@ -738,13 +783,15 @@ module Make (T: TsType.RS with type label = float) = struct
           ((print_id id nums, b) :: acc, env_t'')
         with
         | UNIFICATION ->
-          raise (ERROR (Wrong_type (`lambda (args_t, `big), resolve_t env_t t), p)))
+          raise (ERROR (Wrong_type (`lambda (args_t, `big),
+                                    resolve_t env_t t),
+                        p)))
       ([], env_t)
 
   let eval_preds env env_t preds =
     let aux env_t = function
       | Pred_id (id, p) -> ([id, get_big id p env], env_t)
-      | Pred_id_fun (id, args, p) -> eval_pred_fun_app id args env env_t p in  
+      | Pred_id_fun (id, args, p) -> eval_pred_fun_app id args env env_t p in
     let aux' (acc, env_t) id =
       let (ps, env_t') = aux env_t id in
       (acc @ ps, env_t') in
@@ -783,7 +830,7 @@ module Make (T: TsType.RS with type label = float) = struct
       | Dctrl (Atomic (Ctrl_exp (id, ar, _), p)) ->
         upd id (A_ctrl (Ctrl.C (id, ar))) p
       | Dctrl (Atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
-        (upd id (A_ctrl_fun (ar, forms)) p)       
+        (upd id (A_ctrl_fun (ar, forms)) p)
       | Dctrl (Non_atomic (Ctrl_exp (id, ar, _), p)) ->
         upd id (Ctrl (Ctrl.C (id, ar))) p
       | Dctrl (Non_atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
@@ -798,7 +845,7 @@ module Make (T: TsType.RS with type label = float) = struct
           d.dfloat_loc
       | Dbig (Big_exp (id, exp, p)) ->
         (let (b_v, env_t') =
-           eval_big exp ScopeMap.empty env env_t in 
+           eval_big exp ScopeMap.empty env env_t in
          update fmt id (Big b_v) p env env_t')
       | Dbig (Big_fun_exp (id, forms, exp, p)) ->
         upd id (Big_fun (exp, forms)) p
@@ -820,7 +867,7 @@ module Make (T: TsType.RS with type label = float) = struct
         ignore (update fmt d.dfloat_id v d.dfloat_loc env []) in
     List.iter aux consts
 
-  (* Store simple Ints or Floats when the list of values has only one element *)	    
+  (* Store simple Ints or Floats when the list of values has only one element *)
   let store_params fmt (params : param_exp list) env =
     let rec eval_int_range start incr stop acc =
       let start' = start + incr in
@@ -841,7 +888,7 @@ module Make (T: TsType.RS with type label = float) = struct
     (*   | ERROR (Wrong_type _, _) -> get_int_param  *)
     let aux  = function
       | Param_int (ids, Param_int_val (exp, _), p) ->
-        let v = Int (eval_int exp ScopeMap.empty env) in 
+        let v = Int (eval_int exp ScopeMap.empty env) in
         List.iter (fun id ->
             add_to_store fmt env id (v, fst (assign_type v []), p)) ids
       | Param_int (ids, Param_int_range (start, incr, stop, _), p) ->
@@ -887,7 +934,7 @@ module Make (T: TsType.RS with type label = float) = struct
     store
 
   let eval_model fmt m env =
-    let env_t = store_decs fmt m.model_decs env [] in  
+    let env_t = store_decs fmt m.model_decs env [] in
     store_params fmt m.model_rs.dbrs_params env;
     let (b, env_t') = eval_init m.model_rs.dbrs_init env env_t in
     let (p, env_t'') =
@@ -899,7 +946,7 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let export decs (env : store) (env_t : store_t) path
       formats fmt
-      (print_fun : string -> int -> unit) = 
+      (print_fun : string -> int -> unit) =
     let concat = Filename.concat path in
     let write_pair id lhs rhs (f, ext) =
       let (lhs_n, rhs_n) =
@@ -911,7 +958,7 @@ module Make (T: TsType.RS with type label = float) = struct
     let dummy_args (args_t : num_type list) =
       resolve_types env_t args_t
       |> List.map def_val in
-    let aux id = 
+    let aux id =
       let args_t = dom_of_lambda (get_type (Base.H_string.find env id)) in
       dummy_args args_t in
     let aux' eval_f id args p =
@@ -935,7 +982,7 @@ module Make (T: TsType.RS with type label = float) = struct
       | Dreact (React_fun_exp (id, _, _, _, _, _, p)) ->
         (let args = aux id in
          let r = aux' eval_react_fun_app id args p in
-         write_pair id (T.lhs_of_react r) (T.rhs_of_react r) (f_write, ext)) in		     
+         write_pair id (T.lhs_of_react r) (T.rhs_of_react r) (f_write, ext)) in
     List.iter (fun (f_write, ext) ->
         List.iter (fun d ->
             try write f_write ext d with
@@ -951,18 +998,31 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let ml_of_dec id params exp =
     match params with
-    | [] -> "let " ^ id  ^ " =\n" ^ exp (* "let id =" *)
-    | params -> "let " ^ id  ^ " " ^ (String.concat " " params) ^ " =\n" ^ exp (* "let id a b c =" *)
+    (* "let id =" *)
+    | [] -> "let " ^ id  ^ " =\n" ^ exp
+    (* "let id a b c =" *)
+    | params -> "let " ^ id  ^ " " ^
+                (String.concat " " params) ^ " =\n" ^
+                exp
 
-  (* TO BE FIXED *)                                                                           
+  (* TO BE FIXED *)
   let ml_of_ctrl exp =
     let aux id params c ar =
-      ml_of_dec ("ctrl_" ^ id) params "Ctrl.C (" ^ c ^ ", " ^ (string_of_int ar) ^ ")" in
+      ml_of_dec
+        ("ctrl_" ^ id)
+        params
+        "Ctrl.C (" ^ c ^ ", " ^ (string_of_int ar) ^ ")" in
     match exp with
     | Ctrl_exp (id, ar, _) ->
       aux id [] ("\"" ^ id ^ "\"") ar
     | Ctrl_fun_exp (id, params, ar, _) ->
-      aux id params ("\"" ^ id ^ "(\" ^ " ^ (String.concat " ^ \",\" ^ " params) ^ " ^ \")\"") ar
+      aux
+        id
+        params
+        ("\"" ^ id ^ "(\" ^ " ^
+         (String.concat " ^ \",\" ^ " params) ^
+         " ^ \")\"")
+        ar
 
   let ml_of_list f l =
     "[" ^ (String.concat "; " (List.map f l)) ^ "]"
@@ -976,40 +1036,55 @@ module Make (T: TsType.RS with type label = float) = struct
   let rec ml_of_int = function
     | Int_val (v, _) -> string_of_int v
     | Int_var (id, _) -> (id : string)
-    | Int_plus (l, r, _) -> "(" ^ (ml_of_int l) ^ " + " ^ (ml_of_int r) ^ ")"
-    | Int_minus (l, r, _) -> "(" ^ (ml_of_int l) ^ " - " ^ (ml_of_int r) ^ ")"
-    | Int_prod (l, r, _) -> "(" ^ (ml_of_int l) ^ " * " ^ (ml_of_int r) ^ ")"
-    | Int_div (l, r, _) -> "(" ^ (ml_of_int l) ^ " / " ^ (ml_of_int r) ^ ")"
-    | Int_pow (l, r, _) -> "(pow_int " ^ (ml_of_int l) ^ " " ^ (ml_of_int r) ^ ")"
+    | Int_plus (l, r, _) ->
+      "(" ^ (ml_of_int l) ^ " + " ^ (ml_of_int r) ^ ")"
+    | Int_minus (l, r, _) ->
+      "(" ^ (ml_of_int l) ^ " - " ^ (ml_of_int r) ^ ")"
+    | Int_prod (l, r, _) ->
+      "(" ^ (ml_of_int l) ^ " * " ^ (ml_of_int r) ^ ")"
+    | Int_div (l, r, _) ->
+      "(" ^ (ml_of_int l) ^ " / " ^ (ml_of_int r) ^ ")"
+    | Int_pow (l, r, _) ->
+      "(pow_int " ^ (ml_of_int l) ^ " " ^ (ml_of_int r) ^ ")"
 
   let rec ml_of_float =  function
     | Float_val (v, _) -> string_of_float v
     | Float_var (id, _) -> (id : string)
-    | Float_plus (l, r, _) -> "(" ^ (ml_of_float l) ^ " +. " ^ (ml_of_float r) ^ ")"
-    | Float_minus (l, r, _) -> "(" ^ (ml_of_float l) ^ " -. " ^ (ml_of_float r) ^ ")"
-    | Float_prod (l, r, _) -> "(" ^ (ml_of_float l) ^ " *. " ^ (ml_of_float r) ^ ")"
-    | Float_div (l, r, _) -> "(" ^ (ml_of_float l) ^ " /. " ^ (ml_of_float r) ^ ")"
-    | Float_pow (l, r, _) ->  "(pow_float " ^ (ml_of_float l) ^ " " ^ (ml_of_float r) ^ ")"
+    | Float_plus (l, r, _) ->
+      "(" ^ (ml_of_float l) ^ " +. " ^ (ml_of_float r) ^ ")"
+    | Float_minus (l, r, _) ->
+      "(" ^ (ml_of_float l) ^ " -. " ^ (ml_of_float r) ^ ")"
+    | Float_prod (l, r, _) ->
+      "(" ^ (ml_of_float l) ^ " *. " ^ (ml_of_float r) ^ ")"
+    | Float_div (l, r, _) ->
+      "(" ^ (ml_of_float l) ^ " /. " ^ (ml_of_float r) ^ ")"
+    | Float_pow (l, r, _) ->
+      "(pow_float " ^ (ml_of_float l) ^ " " ^ (ml_of_float r) ^ ")"
 
   (* TO BE FIXED *)
   let rec ml_of_num = function
     | Num_int_val (v, _) -> string_of_int v
     | Num_float_val (v, _) -> string_of_float v
     | Num_var (id, _) -> (id : string)
-    | Num_plus (a, b, _) -> "(" ^ (ml_of_num a) ^ " + " ^ (ml_of_num b) ^ ")"
-    | Num_minus (a, b, _) -> "(" ^ (ml_of_num a) ^ " - " ^ (ml_of_num b) ^ ")"
-    | Num_prod (a, b, _) -> "(" ^ (ml_of_num a) ^ " * " ^ (ml_of_num b) ^ ")"
-    | Num_div (a, b, _) -> "(" ^ (ml_of_num a) ^ " / " ^ (ml_of_num b) ^ ")"
-    | Num_pow (a, b, _) -> "(" ^ (ml_of_num a) ^ " ^^ " ^ (ml_of_num b) ^ ")"
+    | Num_plus (a, b, _) ->
+      "(" ^ (ml_of_num a) ^ " + " ^ (ml_of_num b) ^ ")"
+    | Num_minus (a, b, _) ->
+      "(" ^ (ml_of_num a) ^ " - " ^ (ml_of_num b) ^ ")"
+    | Num_prod (a, b, _) ->
+      "(" ^ (ml_of_num a) ^ " * " ^ (ml_of_num b) ^ ")"
+    | Num_div (a, b, _) ->
+      "(" ^ (ml_of_num a) ^ " / " ^ (ml_of_num b) ^ ")"
+    | Num_pow (a, b, _) ->
+      "(" ^ (ml_of_num a) ^ " ^^ " ^ (ml_of_num b) ^ ")"
 
   let ml_of_params p =
-    List.map ml_of_num p 
-    |> String.concat " " 
+    List.map ml_of_num p
+    |> String.concat " "
 
   let rec ml_of_big = function
     | Big_var (id, _) -> (id : string)
     | Big_var_fun  (id, params, _) ->
-      (id : string) ^ " " ^ (ml_of_params params) 
+      (id : string) ^ " " ^ (ml_of_params params)
     | Big_new_name (n, _) ->
       "Big.intro (Link.Face.singleton (Link.Nam \"" ^ n ^ "\"))"
     | Big_num (v, _) ->
@@ -1022,7 +1097,7 @@ module Make (T: TsType.RS with type label = float) = struct
       ^ (string_of_int exp.id_place)
       ^ ", Link.parse_face "
       ^ (ml_of_ids exp.id_link)
-      ^ "))"                                                                                    
+      ^ "))"
     | Big_merge (n, _) -> "Big.merge " ^ (string_of_int n)
     | Big_split (n, _) -> "Big.split " ^ (string_of_int n)
     | Big_close exp ->
@@ -1048,18 +1123,20 @@ module Make (T: TsType.RS with type label = float) = struct
       "Big.ion (Link.parse_face " ^ (ml_of_ids names) ^ ") ctrl_" ^ id
     | Big_ion (Big_ion_fun_exp (id, params, names, _)) ->
       "Big.ion (Link.parse_face " ^ (ml_of_ids names)
-      ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"   
+      ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"
     | Big_nest (i, b, _) ->
       "Big.nest\n(" ^  (ml_of_big (Big_ion i)) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_wire (c, b, _) ->
-      match c with
-      | Close_exp cs ->
-        "Big.close (Link.parse_face " ^ (ml_of_ids (names_of_closures cs))
-        ^ ") (" ^ (ml_of_big b) ^ ")"
-      | Sub_exp s ->
-        "Big.rename (Link.parse_face " ^ (ml_of_ids s.in_names)
-        ^ ") (Link.parse_face " ^ (ml_of_ids [s.out_name])
-        ^ ") (" ^ (ml_of_big b) ^ ")"     
+      begin
+        match c with
+        | Close_exp cs ->
+          "Big.close (Link.parse_face " ^ (ml_of_ids (names_of_closures cs))
+          ^ ") (" ^ (ml_of_big b) ^ ")"
+        | Sub_exp s ->
+          "Big.rename (Link.parse_face " ^ (ml_of_ids s.in_names)
+          ^ ") (Link.parse_face " ^ (ml_of_ids [s.out_name])
+          ^ ") (" ^ (ml_of_big b) ^ ")"
+      end
 
   let ml_of_eta = function
     | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
@@ -1079,20 +1156,20 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let ml_of_pred = function
     | Pred_id (id, _) -> (id : string)
-    | Pred_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
-      
+    | Pred_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params)
+
   let ml_of_init = function
     | Init (id, _) -> (id : string)
-    | Init_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
+    | Init_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params)
 
   let ml_of_rul = function
     | Rul_id (id, _) -> (id : string)
-    | Rul_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params) 
+    | Rul_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params)
 
   let ml_of_rules ids =
-    List.map (ml_of_rul) ids
+    List.map ml_of_rul ids
     |> String.concat "; "
-    
+
   let ml_of_pri mod_id = function
     | Pr_red (ids, _) -> mod_id ^ ".P_rclass [" ^ (ml_of_rules ids) ^ "]"
     | Pr (ids, _) -> mod_id ^ ".P_class [" ^ (ml_of_rules ids) ^ "]"
@@ -1101,7 +1178,7 @@ module Make (T: TsType.RS with type label = float) = struct
   let ml_of_param = function
     | Param_int (ids, (Param_int_val (exp, _)), _) ->
       (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_int exp)) ids
-      |> String.concat " in\n")
+       |> String.concat " in\n")
     | Param_int (ids, (Param_int_range (start, step, stop, _)), _) -> ""
     | Param_int (ids, (Param_int_set (exps, _)), _) -> ""
     | Param_float (ids, (Param_float_val (exp, _)), _) -> ""
@@ -1115,18 +1192,18 @@ module Make (T: TsType.RS with type label = float) = struct
     | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) ->
       ml_of_ctrl exp
     | Dbig (Big_exp (id, exp, _)) ->
-      ml_of_dec id [] (ml_of_big exp)     
+      ml_of_dec id [] (ml_of_big exp)
     | Dbig (Big_fun_exp (id, params, exp, _)) ->
       ml_of_dec id params (ml_of_big exp)
     | Dreact (React_exp (id, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id [] (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
+      ml_of_dec id [] (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }")
     | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id params (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }") 
+      ml_of_dec id params (mod_id ^ "." ^ (ml_of_react lhs rhs l eta) ^ " }")
     | Dint exp ->
       ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
-    | Dfloat exp  -> 
+    | Dfloat exp  ->
       ml_of_dec exp.dfloat_id [] (ml_of_float exp.dfloat_exp)
-  
+
   let ml_of_model m file =
     let mod_id = Rs.module_id T.typ
     and file_id = Filename.basename file
@@ -1137,9 +1214,10 @@ module Make (T: TsType.RS with type label = float) = struct
        |> String.concat " in\n")
     ^ " in\nlet preds_" ^ file_id ^ "_big =\n"
     ^ "[ " ^ ((List.map ml_of_pred m.model_rs.dbrs_preds)
-             |> String.concat "; ") ^ " ]\n"
-    ^ "and init_" ^ file_id ^ "_big = " ^ (ml_of_init m.model_rs.dbrs_init) ^ "\n"
+              |> String.concat "; ") ^ " ]\n"
+    ^ "and init_" ^ file_id ^ "_big = "
+    ^ (ml_of_init m.model_rs.dbrs_init) ^ "\n"
     ^ "and pri_" ^ file_id ^ "_big =\n"
     ^ "[ " ^ ((List.map (ml_of_pri mod_id) m.model_rs.dbrs_pri)
-             |> String.concat ";\n") ^ "\n] in\n()"
+              |> String.concat ";\n") ^ "\n] in\n()"
 end

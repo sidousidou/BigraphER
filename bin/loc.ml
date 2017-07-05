@@ -7,7 +7,7 @@ type t = {
 }
 
 let print_loc fmt loc =
-  let p0 = loc.lstart 
+  let p0 = loc.lstart
   and p1 = loc.lend in
   let off0 = p0.pos_cnum - p0.pos_bol
   and off1 = p1.pos_cnum - p0.pos_bol in (* same line *)
@@ -15,7 +15,7 @@ let print_loc fmt loc =
     p0.pos_fname p0.pos_lnum off0 off1
 
 let string_of_pos loc =
-  let p0 = loc.lstart 
+  let p0 = loc.lstart
   and p1 = loc.lend in
   let off0 = p0.pos_cnum - p0.pos_bol
   and off1 = p1.pos_cnum - p0.pos_bol in (* same line *)

@@ -16,8 +16,8 @@ let sort_res =
   List.fast_sort
     (fun (iv0, ie0) (iv1, ie1) ->
        let x = Iso.compare iv0 iv1
-       in match x with 
-       | 0 -> Iso.compare ie0 ie1 
+       in match x with
+       | 0 -> Iso.compare ie0 ie1
        | _ -> x)
 
 let print_res res =
@@ -38,7 +38,7 @@ let check_res res exp_res =
 
 let test_decomposition t p (i_n, i_e, f_e) =
   let (c, d, id_big) = Big.decomp t p i_n i_e f_e in
-  Big.(equal (comp c (comp (tens p id_big) d)) t)   
+  Big.(equal (comp c (comp (tens p id_big) d)) t)
 
 let attr_match = [("type", "ASSERT_MATCH");
                   ("message", "No occurrence of pattern")]
@@ -100,11 +100,11 @@ let do_tests =
         else failure_occ t default_fail_msg
       with
       | Big.NODE_FREE -> (* tests 23 and 16 are special cases *)
-        (match (t.t_name, t.p_name) with 
+        (match (t.t_name, t.p_name) with
          | ("T13", "P23") | ("T10", "P16") -> success t
          | _ -> failure_occ t default_fail_msg)
       | Big.COMP_ERROR (x, y) -> (* pattern in test 25 is not epi *)
-        (match (t.t_name, t.p_name) with 
+        (match (t.t_name, t.p_name) with
          | ("T14", "P25") -> success t
          | _ -> failure_occ t (sprintf "Interfaces %s != %s"
                                  (Big.string_of_inter x) (Big.string_of_inter y)))
@@ -166,7 +166,7 @@ let do_equality_tests l ts =
            |  _ -> failure s "Bigraphs are equal" s)
         else success s "Bigraphs are not equal"
       with
-      | _ -> 
+      | _ ->
         (s,
          module_name,
          xml_block "system-out" [] [error_msg],
@@ -526,7 +526,7 @@ let tests bgs = (* TEST 1 *)
       res = [];
     } ]
 
-(* Args: PATH PATH-out*)  
+(* Args: PATH PATH-out*)
 let () =
   print_endline "test_match";
   Printexc.record_backtrace true;
@@ -545,5 +545,3 @@ let () =
       try ignore (Big.write_svg b ~name ~path:Sys.argv.(3)) with
       | Export.ERROR _ -> ())
     bgs
-
-

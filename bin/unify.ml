@@ -3,12 +3,12 @@
 exception UNIFICATION
 
 type gen_type = string
-type base_type = [ `int | `float ] 			  
+type base_type = [ `int | `float ]
 type num_type = [ `g of gen_type | `b of base_type ]
 
 let current_alpha = ref (97, 0)
 
-let next_gen () =		
+let next_gen () =
   let next_alpha = function
     | (122, i) -> current_alpha := (97, i + 1); (122, i)
     | (n, i) -> current_alpha := (n + 1, i); (n, i) in
@@ -19,7 +19,7 @@ let next_gen () =
 let string_of_num_t = function
   | `b `int -> "int"
   | `b `float -> "float"
-  | `g  s -> s 
+  | `g  s -> s
 
 let int_or_float = "[ int | float ]"
 
@@ -34,12 +34,10 @@ let string_of_fun_t = function
   | `react -> "react"
   | `sreact -> "sreact"
 
-type lambda = num_type list * fun_type            (* [`int; `float] -> `ctrl *) 
+type lambda = num_type list * fun_type            (* [`int; `float] -> `ctrl *)
 
 let string_of_lambda (l, r) =
   (string_of_num_t_list l) ^ " -> " ^ (string_of_fun_t r)
-
-(* type app = lambda * num_type list                 (\* CTRL (`int; `float) *\) *)
 
 let string_of_app l r =
   "(" ^ (string_of_lambda l) ^ ") " ^ (string_of_num_t_list r)
@@ -80,11 +78,11 @@ let post_exn env (constr, t) =
   new_class :: disjoint_sets
 
 (* Example:
-   N(type0, type1) = [ type0; type1] -> `ctrl 0                dom, codom 
+   N(type0, type1) = [ type0; type1] -> `ctrl 0                dom, codom
    N(3, 4.8) = ([ type0; type1] -> `ctrl 0) [`int; `float]     args
    type0 = `int type1 = `float *)
 let app_exn env (dom : num_type list) (args : num_type list) =
-  try 
+  try
     List.fold_left2 (fun env d a ->
         match (d, a) with
         | (`g t0, `g t1) ->
@@ -125,4 +123,3 @@ let string_of_env env =
   List.map (fun (set, t) ->
       (string_of_gamma set) ^ " -> " ^ (string_of_base_opt t)) env
   |> String.concat "\n"
-

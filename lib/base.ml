@@ -1,6 +1,6 @@
 let int_equal (a : int) (b : int) = a = b
 
-let int_compare a b = a - b					  
+let int_compare a b = a - b
 
 module M_int =
   Map.Make (struct
@@ -36,9 +36,9 @@ let safe_exn f =
 
 let ints_compare (i0, p0) (i1, p1) =
   match i0 - i1 with
-  | 0 -> p0 - p1 
+  | 0 -> p0 - p1
   | x -> x
 
 let flip f x y = f y x
 
-let flip2 f a b c = f a c b		   
+let flip2 f a b c = f a c b

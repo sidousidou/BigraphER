@@ -1,4 +1,4 @@
-include Set.Make (struct 
+include Set.Make (struct
     type t = int
     let compare = Base.int_compare
   end)
@@ -11,7 +11,7 @@ let to_string s =
 
 (* Transform an int list to an Int_set *)
 let of_list =
-  List.fold_left (fun acc e -> 
+  List.fold_left (fun acc e ->
       add e acc)
     empty
 
@@ -27,7 +27,7 @@ let of_int i =
 
 (* add offset i to every element in set s *)
 let off i s =
-  fold (fun x acc -> 
+  fold (fun x acc ->
       add (x + i) acc)
     s empty
 
@@ -43,7 +43,7 @@ let filter_apply s iso =
   else try apply_exn s' iso with
     | Not_found -> assert false (*BISECT-IGNORE*)
 
-(* Generates an isomorphism to fix the numbering of a set of int. 
+(* Generates an isomorphism to fix the numbering of a set of int.
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                       *)
 let fix s =
   try
@@ -53,14 +53,14 @@ let fix s =
   with
   | Iso.NOT_BIJECTIVE -> assert false (*BISECT-IGNORE*)
 
-let union_list = 
+let union_list =
   List.fold_left (fun acc s ->
       union s acc)
     empty
 
 let rec augment s l =
-  let (l1, l2) = 
-    List.partition (fun s' -> 
+  let (l1, l2) =
+    List.partition (fun s' ->
         is_empty (inter s s'))
       l in
   match l2 with
@@ -70,9 +70,9 @@ let rec augment s l =
 (* Merge sets with common elements *)
 let rec merge = function
   | [] -> []
-  | s :: l' -> 
+  | s :: l' ->
     let (s', l'') = augment s l' in
-    s' :: (merge l'') 
+    s' :: (merge l'')
 
 (* Check if the intersection of two sets is empty *)
 let disjoint a b =

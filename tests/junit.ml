@@ -3,14 +3,18 @@ open Printf
 let header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
 
 let string_of_attributes tag attr =
-  String.concat " " (tag :: (List.map (fun (a, v) -> a ^ "=\"" ^ v ^ "\"") attr))
+  String.concat
+    " "
+    (tag :: (List.map (fun (a, v) -> a ^ "=\"" ^ v ^ "\"") attr))
 
 let xml_block tag attr chl_blocks =
   sprintf "<%s>\n\
            %s\
            </%s>"
     (string_of_attributes tag attr)
-    (String.concat "\n" (List.filter (fun s -> String.length s > 0) chl_blocks))
+    (String.concat
+       "\n"
+       (List.filter (fun s -> String.length s > 0) chl_blocks))
     tag
 
 let attr_eq_int = [("type", "ASSERT_EQ_INT");
@@ -23,7 +27,10 @@ let error_msg = "INTERNAL_ERROR"
 
 let assert_eq_int id reference out =
   if out = reference then ""
-  else xml_block "failure" attr_eq_int [sprintf "%s: %-8d != %-8d" id out reference]
+  else xml_block
+      "failure"
+      attr_eq_int
+      [sprintf "%s: %-8d != %-8d" id out reference]
 
 let testsuite name cases =
   header ^ "\n<testsuites name=\"BigraphER\">\n" ^
