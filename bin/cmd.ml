@@ -60,7 +60,7 @@ type settings = {
   mutable export_states_flag : bool;
   mutable help : bool;
   mutable max_states : int;
-  mutable model : string;
+  mutable model : string option;
   mutable out_format : format_op list;
   mutable quiet : bool;
   mutable steps : int;
@@ -86,7 +86,7 @@ let defaults = {
   export_states_flag = false;
   help = false;
   max_states = 1000;
-  model = "";
+  model = None;
   out_format = default_formats;
   quiet = false;
   steps = 1000;

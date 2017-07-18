@@ -467,24 +467,28 @@ sub_cmd:
       { eval_help_full Format.std_formatter () }
   | C_SIM O_HELP
       { eval_help_sim Format.std_formatter () }
-  | C_CHECK list(opt_chk) BIG_FILE
+  | C_CHECK list(opt_chk) input_file
       { List.iter (fun x-> x) $2;
         check_dot ();
 	check_states ();
 	defaults.model <- $3;
         `check }
-  | C_FULL list(opt_full) BIG_FILE
+  | C_FULL list(opt_full) input_file
       { List.iter (fun x-> x) $2;
         check_dot ();
 	check_states ();      
 	defaults.model <- $3;
         `full }
-  | C_SIM list(opt_sim) BIG_FILE
+  | C_SIM list(opt_sim) input_file
       { List.iter (fun x-> x) $2;
         check_dot ();
 	check_states ();      
 	defaults.model <- $3;
         `sim };
 
+input_file:
+  | { None }
+(*  | MINUS { None } *)
+  | BIG_FILE { Some $1 };
 %%
 

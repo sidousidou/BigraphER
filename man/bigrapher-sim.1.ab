@@ -6,7 +6,7 @@ bigrapher\-sim - Simulate a model
 .SH SYNOPSIS
 .P
 .B bigrapher sim
-[OPTIONS] <MODEL.big>
+[OPTIONS] [MODEL.big]
 
 .SH OPTIONS
 .PP

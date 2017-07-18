@@ -258,7 +258,11 @@ module Run
     print_msg fmt `yellow ("Exporting OCaml declarations to "
                            ^ path ^ " ...");
     try
-      Export.write_string (S.ml_of_model m Cmd.(defaults.model))
+      Export.write_string
+        (match Cmd.(defaults.model) with
+         | None -> "stdin.big"
+         | Some s -> s
+        |> S.ml_of_model m)
         ~name:(Filename.basename path)
         ~path:(Filename.dirname path)
       |> print_fun fmt
@@ -412,16 +416,19 @@ end
 
 (******** BIGRAPHER *********)
 
-let open_lex path =
-  let file = open_in path in
+let open_lex model =
+  let (fname, file) =
+    match model with
+    | None -> ("stdin", stdin)
+    | Some path -> (Filename.basename path, open_in path) in
   let lexbuf = Lexing.from_channel file in
   lexbuf.Lexing.lex_curr_p <-
-    { Lexing.pos_fname = Filename.basename path;
+    { Lexing.pos_fname = fname;
       Lexing.pos_lnum = 1;
       Lexing.pos_bol = 0;
       Lexing.pos_cnum = 0; };
   (lexbuf, file)
-
+  
 let parse_cmd argv =
   let lexbuf = Array.to_list argv
                |> List.tl
@@ -460,7 +467,9 @@ let () =
     let fmt = set_output_ch () in
     print_header fmt ();
     print_msg fmt `yellow ("Parsing model file "
-                           ^ Cmd.(defaults.model)
+                           ^ (match Cmd.(defaults.model) with
+                               | None -> "stdin"
+                               | Some name -> name)
                            ^ " ...");
     let (lexbuf, file) = open_lex Cmd.(defaults.model) in
     try
