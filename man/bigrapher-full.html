@@ -1,194 +1,156 @@
-<!-- Creator     : groff version 1.19.2 -->
-<!-- CreationDate: Tue Jul 18 11:38:12 2017 -->
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-"http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-<meta name="generator" content="groff -Thtml, see www.gnu.org">
-<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
-<meta name="Content-Style" content="text/css">
-<style type="text/css">
-       p     { margin-top: 0; margin-bottom: 0; }
-       pre   { margin-top: 0; margin-bottom: 0; }
-       table { margin-top: 0; margin-bottom: 0; }
+<meta charset="utf-8"/>
+<style>
+table.head, table.foot { width: 100%; }
+td.head-rtitle, td.foot-os { text-align: right; }
+td.head-vol { text-align: center; }
+table.foot td { width: 50%; }
+table.head td { width: 33%; }
+div.spacer { margin: 1em 0; }
 </style>
-<title>BIGRAPHER-FULL</title>
-
+<link rel="stylesheet" href="mandoc.css" type="text/css" media="all"/>
+<title>
+BIGRAPHER-FULL(1)</title>
 </head>
 <body>
-
-<h1 align=center>BIGRAPHER-FULL</h1>
-
-<a href="#NAME">NAME</a><br>
-<a href="#SYNOPSIS">SYNOPSIS</a><br>
-<a href="#OPTIONS">OPTIONS</a><br>
-<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
-<a href="#AUTHORS">AUTHORS</a><br>
-<a href="#FURTHER DOCUMENTATION">FURTHER DOCUMENTATION</a><br>
-<a href="#SEE ALSO">SEE ALSO</a><br>
-
-<hr>
-
-
-<a name="NAME"></a>
-<h2>NAME</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">bigrapher-full
-- Compute the transition system of a model</p>
-
-<a name="SYNOPSIS"></a>
-<h2>SYNOPSIS</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>bigrapher
-full</b> [OPTIONS] &lt;MODEL.big&gt;</p>
-
-<a name="OPTIONS"></a>
-<h2>OPTIONS</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em">&minus;c|&minus;&minus;const
-&lt;ASSIGNMENT ...&gt;</p>
-
-<p style="margin-left:22%;">Specify a comma-separated list
-of variable assignments. Example:
-&lsquo;x=4,t=.56&rsquo;.</p>
-
-
-<p style="margin-left:11%;">&minus;d|&minus;&minus;export&minus;decs
-&lt;DIR&gt;</p>
-
-<p style="margin-left:22%;">Export each declaration in the
-model (bigraphs and reaction rules) to a distinct file in
-<i>DIR</i>. Dummy values are used to instantiate functional
-values.</p>
-
-<p style="margin-left:11%;">&minus;f|&minus;&minus;format
-&lt;FORMAT&gt;</p>
-
-<p style="margin-left:22%;">Specify a comma-separated list
-of output formats for options
-<b>&minus;d|&minus;&minus;export&minus;decs</b>,
-<b>&minus;t|&minus;&minus;export&minus;ts</b> and
-<b>&minus;s|&minus;&minus;export&minus;states</b>. Supported
-formats are &lsquo;dot&rsquo;, &lsquo;svg&rsquo; and
-&lsquo;txt&rsquo;. This is equivalent to setting
-<b>BIGFORMAT</b> to <i>FORMAT</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;h|&minus;&minus;help</p>
-
-<p style="margin-left:22%;">Display the list of
-options.</p>
-
-
-<p style="margin-left:11%;">&minus;l|&minus;&minus;export&minus;labels
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the labelling function
-in PRISM <i>csl</i> format to <i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;m|&minus;&minus;export&minus;ml
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the model in OCaml
-format to <i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;M|&minus;&minus;max&minus;states
-&lt;INT&gt;</p>
-
-<p style="margin-left:22%;">Set the maximum number of
-states.</p>
-
-
-<p style="margin-left:11%;">&minus;n|&minus;&minus;no&minus;colors</p>
-
-<p style="margin-left:22%;">Disable colored output. This is
-equivalent to setting <b>BIGNOCOLORS</b> to a
-non&minus;empty value.</p>
-
-
-<p style="margin-left:11%;">&minus;p|&minus;&minus;export&minus;prism
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the transition system in
-PRISM tra format to <i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;q|&minus;&minus;quiet</p>
-
-<p style="margin-left:22%;">Disable all output. This is
-equivalent to setting <b>BIGQUIET</b> to a non&minus;empty
-value.</p>
-
-
-<p style="margin-left:11%;">&minus;s|&minus;&minus;export-states
-[DIR]</p>
-
-<p style="margin-left:22%;">Export each state to a file in
-<i>DIR</i>. State indices are used as file names. When
-<i>DIR</i> is omitted, it is inferred from option
-<b>&minus;t|&minus;&minus;export&minus;ts</b>.</p>
-
-
-<p style="margin-left:11%;">&minus;t|&minus;&minus;export&minus;ts
-&lt;FILE&gt;</p>
-
-<p style="margin-left:22%;">Export the transition system to
-<i>FILE</i>.</p>
-
-
-<p style="margin-left:11%;">&minus;v|&minus;&minus;verbose</p>
-
-<p style="margin-left:22%;">Be more verbose. This is
-equivalent to setting <b>BIGVERBOSE</b> to a non-empty
-value.</p>
-
-<a name="ENVIRONMENT"></a>
-<h2>ENVIRONMENT</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">BIGFORMAT</p>
-
-<p style="margin-left:22%;">See option
-&lsquo;&minus;f|&minus;&minus;format&rsquo;.</p>
-
-<p style="margin-left:11%;">BIGQUIET</p>
-
-<p style="margin-left:22%;">See option
-&lsquo;&minus;q|&minus;&minus;quiet&rsquo;.</p>
-
-<p style="margin-left:11%;">BIGVERBOSE</p>
-
-<p style="margin-left:22%;">See option
-&lsquo;&minus;v|&minus;&minus;verbose&rsquo;.</p>
-
-<a name="AUTHORS"></a>
-<h2>AUTHORS</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">Michele
-Sevegnani: <i>Michele.Sevegnani@glasgow.ac.uk</i></p>
-
-<a name="FURTHER DOCUMENTATION"></a>
-<h2>FURTHER DOCUMENTATION</h2>
-
-
-<p style="margin-left:11%; margin-top: 1em">See
-<i>http://www.dcs.gla.ac.uk/~michele/bigrapher.html</i>.</p>
-
-<a name="SEE ALSO"></a>
-<h2>SEE ALSO</h2>
-
-
-
-<p style="margin-left:11%; margin-top: 1em"><b>bigrapher</b>(1),
-<b>bigrapher&minus;full</b>(1),
-<b>bigrapher&minus;validate</b>(1)</p>
-<hr>
+<div class="mandoc">
+<table class="head">
+<tbody>
+<tr>
+<td class="head-ltitle">
+BIGRAPHER-FULL(1)</td>
+<td class="head-vol">
+FreeBSD General Commands Manual</td>
+<td class="head-rtitle">
+BIGRAPHER-FULL(1)</td>
+</tr>
+</tbody>
+</table>
+<div class="section">
+<h1 id="NAME">NAME</h1> <b class="name">bigrapher full</b> &#8212; <span class="desc">Compute the transition system of a model</span></div>
+<div class="section">
+<h1 id="SYNOPSIS">SYNOPSIS</h1><table class="synopsis">
+<col style="width: 14.00ex;"/>
+<col/>
+<tbody>
+<tr>
+<td>
+<b class="name">bigrapher full</b></td>
+<td>
+[<span class="opt"><b class="flag">-c</b> <i class="arg">assignment</i></span>] [<span class="opt"><b class="flag">-d</b> <i class="arg">dir</i></span>] [<span class="opt"><b class="flag">-f</b> <i class="arg">format</i></span>] [<span class="opt"><b class="flag">-h</b></span>] [<span class="opt"><b class="flag">-l</b> <i class="arg">file</i></span>] [<span class="opt"><b class="flag">-m</b> <i class="arg">file</i></span>] [<span class="opt"><b class="flag">-M</b> <i class="arg">int</i></span>] [<span class="opt"><b class="flag">-n</b></span>] [<span class="opt"><b class="flag">-p</b> <i class="arg">file</i></span>] [<span class="opt"><b class="flag">-q</b></span>] [<span class="opt"><b class="flag">-s</b> [<span class="opt"><i class="arg">dir</i></span>]</span>] [<span class="opt"><b class="flag">-t</b> <i class="arg">file</i></span>] [<span class="opt"><b class="flag">-v</b></span>] [<span class="opt"><i class="arg">model</i></span>]</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section">
+<h1 id="DESCRIPTION">DESCRIPTION</h1> <b class="name">bigrapher full</b> computes the transition system of the Bigraphical Reactive System defined in <i class="arg">model</i>, a file with extension <span class="emph">big</span>. If <i class="arg">model</i> is absent, a bigraphical model is read from the standard input.<div class="spacer">
+</div>
+The options are as follows:<dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-c</b> <i class="arg">assignment</i>, <b class="flag">-</b><b class="flag">-const</b> <i class="arg">assignment</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Specify a comma-separated list of variable assignments. Example format for <i class="arg">assignment</i>: &#8220;x=4,t=.56&#8221;.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-d</b> <i class="arg">dir</i>, <b class="flag">-</b><b class="flag">-export-decs</b> <i class="arg">dir</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Export each declaration in the model (bigraphs and reaction rules) to a distinct file in <i class="arg">dir</i>. Dummy values are used to instantiate functional values.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-f</b> <i class="arg">format</i>, <b class="flag">-</b><b class="flag">-format</b> <i class="arg">format</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Specify a comma-separated list of output formats for options <b class="flag">-d</b>, <b class="flag">-</b><b class="flag">-export-decs</b>, <b class="flag">-t</b>, <b class="flag">-</b><b class="flag">-export-ts</b>, <b class="flag">-s</b>, and <b class="flag">-</b><b class="flag">-export-states</b>. Supported formats are &#8220;dot&#8221;, &#8220;svg&#8221; and &#8220;txt&#8221;. This is equivalent to setting <span class="env">BIGFORMAT</span> to <i class="arg">format</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-h</b>, <b class="flag">-</b><b class="flag">-help</b></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Display the list of options.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-l</b> <i class="arg">file</i>, <b class="flag">-</b><b class="flag">-export-labels</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Export the labelling function in PRISM <span class="emph">csl</span> format to <i class="arg">file</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-m</b> <i class="arg">file</i>, <b class="flag">-</b><b class="flag">-export-ml</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Export the model in OCaml format to <i class="arg">file</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-M</b> <i class="arg">int</i>, <b class="flag">-</b><b class="flag">-max-states</b> <i class="arg">int</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Set the maximum number of states.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-n</b>, <b class="flag">-</b><b class="flag">-no-colors</b></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Disable colored output. This is equivalent to setting <span class="env">BIGNOCOLORS</span> to a non-empty value.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-p</b> <i class="arg">file</i>, <b class="flag">-</b><b class="flag">-export-prism</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Export the transition system in PRISM <span class="emph">tra</span> format to <i class="arg">file</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-q</b>, <b class="flag">-</b><b class="flag">-quiet</b></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Disable all output. This is equivalent to setting <span class="env">BIGQUIET</span> to a non-empty value.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-s</b> <i class="arg">dir</i>, <b class="flag">-</b><b class="flag">-export-states</b> <i class="arg">dir</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Export each state to a file in <i class="arg">dir</i>. State indices are used as file names. When <i class="arg">dir</i> is omitted, it is inferred from option <b class="flag">-t</b>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-t</b> <i class="arg">file</i>, <b class="flag">-</b><b class="flag">-export-ts</b> <i class="arg">file</i></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Export the transition system to <i class="arg">file</i>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<b class="flag">-v</b>, <b class="flag">-</b><b class="flag">-verbose</b></dt>
+<dd class="list-tag" style="margin-left: 6.00ex;">
+Be more verbose. This is equivalent to setting <span class="env">BIGVERBOSE</span> to a non-empty value.</dd>
+</dl>
+</div>
+<div class="section">
+<h1 id="ENVIRONMENT">ENVIRONMENT</h1><dl style="margin-top: 0.00em;margin-bottom: 0.00em;" class="list list-tag">
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="env">BIGFORMAT</span></dt>
+<dd class="list-tag" style="margin-left: 10.00ex;">
+See option <b class="flag">-f</b>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="env">BIGQUIET</span></dt>
+<dd class="list-tag" style="margin-left: 10.00ex;">
+See option <b class="flag">-q</b>.</dd>
+<dt class="list-tag" style="margin-top: 1.00em;">
+<span class="env">BIGVERBOSE</span></dt>
+<dd class="list-tag" style="margin-left: 10.00ex;">
+See option <b class="flag">-v</b>.</dd>
+</dl>
+</div>
+<div class="section">
+<h1 id="EXAMPLES">EXAMPLES</h1> The following computes the transition system of the Bigraphical Reactive System sepcified in &#8220;model.big&#8221; and export it to file &#8220;ts.tra&#8221; in PRISM <span class="emph">.tra</span> format:<div class="spacer">
+</div>
+<blockquote style="margin-top: 0.00em;margin-bottom: 0.00em;">
+<div class="display">
+<code class="lit">$ bigrapher full -p ts.tra model.big</code></div>
+</blockquote>
+</div>
+<div class="section">
+<h1 id="SEE_ALSO">SEE ALSO</h1> <a class="link-man" href="bigrapher.html">bigrapher(1)</a>, <a class="link-man" href="bigrapher-sim.html">bigrapher-sim(1)</a>, <a class="link-man" href="bigrapher-validate.html">bigrapher-validate(1)</a><div class="spacer">
+</div>
+The following references provide more in-depth details on bigraphs and the implementation of the BigraphER tool:<div class="spacer">
+</div>
+<span class="ref"><span class="ref-auth">R. Milner</span>, <i class="ref-book">The Space and Motion of Communicating Agents</i>, <i class="ref-issue">Cambridge University Press</i>, <span class="ref-date">2009</span>.</span><div class="spacer">
+</div>
+<span class="ref"><span class="ref-auth">M. Sevegnani</span> and <span class="ref-auth">M. Calder</span>, <span class="ref-title">BigraphER: Rewriting and Analysis Engine for Bigraphs</span>, <i class="ref-book">Computer Aided Verification: 28th International Conference, CAV 2016, Toronto, ON, Canada, July 17-23, 2016, Proceedings, Part II</i>, <i class="ref-issue">Springer International Publishing</i>, <a class="link-ref" href="http://doi.org/10.1007/978-3-319-41540-6_27">http://doi.org/10.1007/978-3-319-41540-6_27</a>, <span class="ref-page">494 - 501</span>, <span class="ref-date">2016</span>.</span><div class="spacer">
+</div>
+<span class="ref"><span class="ref-auth">M. Sevegnani</span> and <span class="ref-auth">M. Calder</span>, <span class="ref-title">Bigraphs with Sharing</span>, <i class="ref-issue">Elsevier</i>, <i class="ref-jrnl">Theoretical Computer Science</i>, <span class="ref-num">0</span>, <span class="ref-vol">577</span>, <a class="link-ref" href="http://doi.org/10.1016/j.tcs.2015.02.011">http://doi.org/10.1016/j.tcs.2015.02.011</a>, <span class="ref-page">43 - 73</span>, <span class="ref-date">2015</span>.</span><div class="spacer">
+</div>
+Refer to <a class="link-ext" href="http://www.dcs.gla.ac.uk/~michele/bigrapher.html">http://www.dcs.gla.ac.uk/~michele/bigrapher.html</a> for more examples and a complete reference of the <span class="emph">big</span> format for bigraphical models.</div>
+<div class="section">
+<h1 id="AUTHORS">AUTHORS</h1> <span class="author">Michele Sevegnani</span> &lt;<a class="link-mail" href="mailto:michele.sevegnani@glasgow.ac.uk">michele.sevegnani@glasgow.ac.uk</a>&gt;</div>
+<table class="foot">
+<tbody>
+<tr>
+<td class="foot-date">
+July 19, 2017</td>
+<td class="foot-os">
+FreeBSD 11.0-RELEASE-p9</td>
+</tr>
+</tbody>
+</table>
+</div>
 </body>
 </html>
+
