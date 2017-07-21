@@ -8,7 +8,7 @@ type t =
 let empty =
   { ctrl = M_int.empty;
     sort = M_string.empty;
-    size = 0; } 
+    size = 0; }
 
 let is_empty s = s.size = 0
 
@@ -26,7 +26,7 @@ let add i c ns =
     sort = add_s (Ctrl.name c) i ns.sort;
     size = ns.size + 1; }
 
-let fold f s = 
+let fold f s =
   M_int.fold f s.ctrl
 
 let to_string s =
@@ -36,10 +36,10 @@ let to_string s =
              ^ (string_of_int i)
              ^ ", "
              ^ (Ctrl.to_string c)
-             ^ ")"]) 
+             ^ ")"])
       s []
      |> String.concat ",")
-  ^ "}" 
+  ^ "}"
 
 let string_of_sorts s =
   "{"
@@ -67,15 +67,15 @@ let find_all (Ctrl.C (n, _)) s =
 let to_dot s =
   fold (fun i (Ctrl.C (n, _)) acc ->
       acc @ [Printf.sprintf "v%d [ label=\"%s\", shape=ellipse, id=\"v%d_%s\" \
-                             			       fontname=\"sans-serif\", fontsize=9.0,\
-                             			       fixedsize=true, width=%f, height=.30 ];" 
+                             fontname=\"sans-serif\", fontsize=9.0,\
+                             fixedsize=true, width=%f, height=.30 ];"
                i n i n (0.1 *. (float (String.length n)) +. 0.2)])
     s []
-  |>  String.concat "\n" 
+  |>  String.concat "\n"
 
 let tens a b =
   { ctrl = M_int.fold (fun v c acc ->
-        M_int.add (v + a.size) c acc)		  
+        M_int.add (v + a.size) c acc)
         b.ctrl a.ctrl;
     sort = M_string.merge (fun _ l r ->
         match (l, r) with
@@ -84,7 +84,7 @@ let tens a b =
         | (Some l, None) -> Some l
         | (None, Some r) -> Some (IntSet.off a.size r)
         | (None, None) -> None)
-        a.sort b.sort;    
+        a.sort b.sort;
     size = a.size + b.size; }
 
 let apply_exn s iso =
@@ -94,7 +94,7 @@ let apply_exn s iso =
 
 (* Only nodes in the domain of the isomorphism are transformed. Other nodes are
    discarded. *)
-let filter_apply_iso s iso =    
+let filter_apply_iso s iso =
   fold (fun v c acc ->
       match Iso.apply iso v with
       | Some v' -> add v' c acc
@@ -104,7 +104,7 @@ let filter_apply_iso s iso =
 let parse s m =
   Str.split (Str.regexp_string " ") s
   |> List.fold_left (fun (acc, i) token ->
-      let ar = 
+      let ar =
         try M_int.find i m with
         | Not_found -> 0 in
       (add i (Ctrl.C (token, ar)) acc, i + 1))
@@ -121,7 +121,7 @@ let not_sub a b =
         else raise Exit)
       a.sort false
   with
-  | Exit -> true 
+  | Exit -> true
 
 let norm s =
   M_int.bindings s.ctrl

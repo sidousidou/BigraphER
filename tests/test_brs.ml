@@ -1,7 +1,7 @@
 open Big
 open Junit
 
-let r_p = 
+let r_p =
   comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("B", 1))) one
 
 let r =
@@ -90,7 +90,7 @@ let () =
        failures TsType.(ass_list stats.states stats.trans stats.occs))
     end;
        begin
-         let stats = 
+         let stats =
            try
              snd (Brs.sim ~s0:s
                     ~priorities:reacts
@@ -107,10 +107,10 @@ let () =
           failures [("States", states_reference, TsType.(stats.states));
                     ("Reactions", reacts_reference, TsType.(stats.trans));
                     (* ("Occurrences", 31, stats.Brs.occs) *) (* RANDOM *)
-                   ])     
+                   ])
        end;
        begin
-         let stats = 
+         let stats =
            try
              snd (Sbrs.bfs ~s0:s
                     ~priorities:sreacts
@@ -125,7 +125,7 @@ let () =
           failures TsType.((ass_list stats.states stats.trans stats.occs)))
        end;
        begin
-         let stats = 
+         let stats =
            try
              snd (Sbrs.sim ~s0:s
                     ~priorities:sreacts
@@ -135,12 +135,10 @@ let () =
                     ~iter_f)
            with
            | Sbrs.LIMIT (_, stats)
-           | Sbrs.DEADLOCK (_, stats, _) -> stats in 
+           | Sbrs.DEADLOCK (_, stats, _) -> stats in
          ("sim_sbrs",
           __MODULE__,
           print_res (Sbrs.string_of_stats stats),
           failures TsType.((ass_list stats.states stats.trans stats.occs)))
        end; ] in
   write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2)
-
-

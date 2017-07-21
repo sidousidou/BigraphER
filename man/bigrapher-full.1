@@ -1,89 +1,169 @@
-.TH "BIGRAPHER-FULL" 1 "" "BigraphER 1.2.0" "BigraphER Manual"
-
-.SH NAME
-bigrapher-full - Compute the transition system of a model
-
-.SH SYNOPSIS
-.P
-.B bigrapher full
-[OPTIONS] <MODEL.big>
-
-.SH OPTIONS
-.PP
-.IP "\-c|\-\-const <ASSIGNMENT ...>"
-Specify a comma-separated list of variable assignments. Example: `x=4,t=.56'.
-.IP "\-d|\-\-export\-decs <DIR>"
+.Dd
+.Dt BIGRAPHER-FULL 1
+.Os
+.Sh NAME
+.Nm bigrapher full
+.Nd Compute the transition system of a model
+.Sh SYNOPSIS
+.Nm
+.Op Fl c Ar assignment
+.Op Fl d Ar dir
+.Op Fl f Ar format
+.Op Fl h
+.Op Fl l Ar file
+.Op Fl m Ar file
+.Op Fl M Ar int
+.Op Fl n
+.Op Fl p Ar file
+.Op Fl q
+.Op Fl s Op Ar dir
+.Op Fl t Ar file
+.Op Fl v
+.Op Ar model
+.Sh DESCRIPTION
+.Nm
+computes the transition system of the Bigraphical Reactive System defined in
+.Ar model ,
+a file with extension
+.Em big .
+If
+.Ar model
+is absent, a bigraphical model is read from the standard input.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl c Ar assignment , Fl Fl const Ar assignment
+Specify a comma-separated list of variable assignments.
+Example format for
+.Ar assignment :
+.Qq x=4,t=.56 .
+.It Fl d Ar dir , Fl Fl export\-decs Ar dir
 Export each declaration in the model (bigraphs and reaction rules) to a distinct file in
-.IR DIR .
+.Ar dir .
 Dummy values are used to instantiate functional values.
-.IP "\-f|\-\-format <FORMAT>"
+.It Fl f Ar format , Fl Fl format Ar format
 Specify a comma-separated list of output formats for options
-.BR \-d|\-\-export\-decs ,
-.BR \-t|\-\-export\-ts
+.Fl d ,
+.Fl Fl export\-decs ,
+.Fl t ,
+.Fl Fl export\-ts ,
+.Fl s ,
 and
-.BR \-s|\-\-export\-states .
-Supported formats are `dot', `svg' and `txt'.
+.Fl Fl export\-states .
+Supported formats are
+.Qq dot ,
+.Qq svg
+and
+.Qq txt .
 This is equivalent to setting
-.B BIGFORMAT
+.Ev BIGFORMAT
 to
-.IR FORMAT .   
-.IP "\-h|\-\-help"
+.Ar format .
+.It Fl h , Fl Fl help
 Display the list of options.
-.IP "\-l|\-\-export\-labels <FILE>"
+.It Fl l Ar file , Fl Fl export\-labels Ar file
 Export the labelling function in PRISM
-.I csl
+.Em csl
 format to
-.IR FILE .
-.IP "\-m|\-\-export\-ml <FILE>"
+.Ar file .
+.It Fl m Ar file , Fl Fl export\-ml Ar file
 Export the model in OCaml format to
-.IR FILE .
-.IP "\-M|\-\-max\-states <INT>"
+.Ar file .
+.It Fl M Ar int , Fl Fl max\-states Ar int
 Set the maximum number of states.
-.IP "\-n|\-\-no\-colors"
-Disable colored output. This is equivalent to setting
-.B BIGNOCOLORS
+.It Fl n , Fl Fl no\-colors
+Disable colored output.
+This is equivalent to setting
+.Ev BIGNOCOLORS
 to a non\-empty value.
-.IP "\-p|\-\-export\-prism <FILE>"
-Export the transition system in PRISM tra format to
-.IR FILE .
-.IP "\-q|\-\-quiet"
-Disable all output. This is equivalent to setting
-.B BIGQUIET
+.It Fl p Ar file , Fl Fl export\-prism Ar file
+Export the transition system in PRISM
+.Em tra
+format to
+.Ar file .
+.It Fl q , Fl Fl quiet
+Disable all output.
+This is equivalent to setting
+.Ev BIGQUIET
 to a non\-empty value.
-.IP "\-s|\-\-export-states [DIR]"
+.It Fl s Ar dir , Fl Fl export-states Ar dir
 Export each state to a file in
-.IR DIR .
-State indices are used as file names. When
-.I DIR
+.Ar dir .
+State indices are used as file names.
+When
+.Ar dir
 is omitted, it is inferred from option
-.BR \-t|\-\-export\-ts .
-.IP "\-t|\-\-export\-ts <FILE>"
+.Fl t .
+.It Fl t Ar file , Fl Fl export\-ts Ar file
 Export the transition system to
-.IR FILE .
-.IP "\-v|\-\-verbose"
-Be more verbose. This is equivalent to setting
-.B BIGVERBOSE
+.Ar file .
+.It Fl v , Fl Fl verbose
+Be more verbose.
+This is equivalent to setting
+.Ev BIGVERBOSE
 to a non-empty value.
-
-.SH ENVIRONMENT
-.PP
-.IP BIGFORMAT
-See option `\-f|\-\-format'.
-.IP BIGQUIET
-See option `\-q|\-\-quiet'.
-.IP BIGVERBOSE
-See option `\-v|\-\-verbose'.
-
-.SH AUTHORS
-.PP
-Michele Sevegnani: \fIMichele\.Sevegnani@glasgow\.ac\.uk\fR
-
-.SH FURTHER DOCUMENTATION
-.PP
-See \fIhttp://www\.dcs\.gla\.ac\.uk/~michele/bigrapher\.html\fR.
-
-.SH SEE ALSO
-.PP
-.BR bigrapher (1), 
-.BR bigrapher\-full (1),
-.BR bigrapher\-validate (1)
+.El
+.Sh ENVIRONMENT
+.Bl -tag -width BIGVERBOSE
+.It Ev BIGFORMAT
+See option
+.Fl f .
+.It Ev BIGQUIET
+See option
+.Fl q .
+.It Ev BIGVERBOSE
+See option
+.Fl v .
+.El
+.Sh EXAMPLES
+The following computes the transition system of the Bigraphical Reactive System sepcified in
+.Qq model.big
+and export it to file
+.Qq ts.tra
+in PRISM
+.Em .tra
+format:
+.Pp
+.Dl $ bigrapher full -p ts.tra model.big
+.Sh SEE ALSO
+.Xr bigrapher 1 ,
+.Xr bigrapher\-sim 1 ,
+.Xr bigrapher\-validate 1
+.Pp
+The following references provide more in-depth details on bigraphs and the implementation of the BigraphER tool:
+.Rs
+.%A R. Milner
+.%B The Space and Motion of Communicating Agents
+.%I Cambridge University Press
+.%D 2009
+.Re
+.Rs
+.%A M. Sevegnani
+.%A M. Calder
+.%T BigraphER: Rewriting and Analysis Engine for Bigraphs
+.%B Computer Aided Verification: 28th International Conference, CAV 2016, Toronto, ON, Canada, July 17-23, 2016, Proceedings, Part II
+.%I Springer International Publishing
+.%P 494 \- 501
+.%D 2016
+.%U http://doi.org/10.1007/978-3-319-41540-6_27
+.Re
+.Rs
+.%A M. Sevegnani
+.%A M. Calder
+.%T Bigraphs with Sharing
+.%J Theoretical Computer Science
+.%V 577
+.%I Elsevier
+.%P 43 \- 73
+.%D 2015
+.%N 0
+.%U http://doi.org/10.1016/j.tcs.2015.02.011
+.Re
+.Pp
+Refer to
+.Lk http://www.dcs.gla.ac.uk/~michele/bigrapher.html
+for more examples and a complete reference of the
+.Em big
+format for bigraphical models.
+.Sh AUTHORS
+.An Michele Sevegnani Aq Mt michele.sevegnani@glasgow.ac.uk

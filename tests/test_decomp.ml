@@ -37,20 +37,18 @@ let do_tests =
          [xml_block "error" attr_err [Printexc.get_backtrace ()]]))
 
 
-(* Args: PATH OUT-PATH FNAME *)  
+(* Args: PATH OUT-PATH FNAME *)
 let () =
   print_endline "test_decomp";
   Printexc.record_backtrace true;
   let bg_strings = Io.parse_all
       Sys.argv.(1)
-      (fun x -> 
-         (Filename.check_suffix x ".big") && 
+      (fun x ->
+         (Filename.check_suffix x ".big") &&
          ((Filename.chop_extension x).[0] = 'T')) in
-  let bgs = 
-    List.filter (fun (_, b) -> 
+  let bgs =
+    List.filter (fun (_, b) ->
         b.Big.p.Place.s = 0
       ) (List.map (fun (n, s) -> (n, Big.parse s)) bg_strings) in
   let testcases = do_tests bgs in
   write_xml (testsuite "test_decomp" testcases) Sys.argv.(2) Sys.argv.(3)
-
-

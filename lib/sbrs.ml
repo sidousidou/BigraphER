@@ -7,7 +7,7 @@ type react =
 
 module RT = struct
   type t = react
-  type label = float 
+  type label = float
   type occ = Big.bg * float
   type edge = int * float
 
@@ -22,11 +22,11 @@ module RT = struct
   let val_chk r = r.rate > 0.0
 
   let val_chk_error_msg = "Not a stochastic rate"
-    
+
   let string_of_label = function
     | Some r -> Printf.sprintf "%-3g" r
     | None -> assert false (*BISECT-IGNORE*)
-      
+
   let parse ~lhs ~rhs r eta =
     match r with
     | None -> assert false (*BISECT-IGNORE*)
@@ -34,7 +34,7 @@ module RT = struct
                   rct = rhs;
                   eta = eta;
                   rate = r; }
-                
+
   let to_occ b r = (b, r.rate)
 
   let big_of_occ (b, _) = b
@@ -62,14 +62,14 @@ module RT = struct
     let rec aux acc = function
       | (s, rho) :: ss ->
         let acc' = acc +. rho in
-        if acc' > r then
-          (let tau =
-             (1. /. a0) *. (log (1. /. (Random.float 1.0))) in
-           (Some (s, tau), m))
+        if acc' > r then begin
+          let tau =
+            (1. /. a0) *. (log (1. /. (Random.float 1.0))) in
+          (Some (s, tau), m) end
         else aux acc' ss
       | [] -> (None, m) in
     aux 0.0 ss_sorted
-  
+
 end
 
 module R = RrType.Make (RT)
@@ -82,28 +82,28 @@ let is_inst r =
 module PT = struct
   type t = R.t list
   let f_val rr = not (List.exists is_inst rr)
-  let f_r_val = List.for_all is_inst				   
+  let f_r_val = List.for_all is_inst
 end
 
 module H_int = Base.H_int
 
 module H_string = Base.H_string
-                
+
 module S_string = Base.S_string
 
 type graph = { v : (int * Big.bg) H_int.t;
                e : R.edge H_int.t;
-               l : int H_string.t;  
+               l : int H_string.t;
                preds : S_string.t; }
 
 module G = struct
   type t = graph
-  type edge_type = RT.edge	       
+  type edge_type = RT.edge
   let init n preds =
     { v = H_int.create n;
       e = H_int.create n;
       l = H_string.create n;
-      preds = S_string.of_list preds; }		      
+      preds = S_string.of_list preds; }
   let states g = g.v
   let label g = (g.preds, g.l)
   let edges g = g.e
@@ -117,7 +117,7 @@ module L = struct
   let init = 0.0
   let increment t o = t +. (snd (R.edge_of_occ o 0))
   let is_greater = ( > )
-  let to_string = Printf.sprintf "%.4g" 
+  let to_string = Printf.sprintf "%.4g"
 end
 
 module T = struct

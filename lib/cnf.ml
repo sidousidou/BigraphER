@@ -2,7 +2,7 @@ type lit =
   | M_lit of int * int    (* literal stored in a matrix *)
   | V_lit of int          (* literal stored in a vector *)
 
-type var = 
+type var =
   | P_var of lit (* Positive literal *)
   | N_var of lit (* Negative literal *)
 
@@ -12,7 +12,7 @@ type b_clause = var * var
 
 (* Only positive variables *)
 let to_ij = function
-  | P_var (M_lit (i, j)) -> (i, j) 
+  | P_var (M_lit (i, j)) -> (i, j)
   | P_var (V_lit _)
   | N_var _ -> assert false (*BISECT-IGNORE*)
 
@@ -47,44 +47,44 @@ let rec _at_most acc = function
 
 (* Disjunctions (all possible pairs) of negative literals *)
 let at_most l =
-  List.map (fun (a, b) -> (N_var a, N_var b)) (_at_most [] l) 
+  List.map (fun (a, b) -> (N_var a, N_var b)) (_at_most [] l)
 
 (* Disjunction (clause) of positive literals *)
 let at_least = List.map (fun x -> P_var x)
 
 type tseitin_clause =
   | Conj of clause list (* Conjunction of clauses *)
-  | Enc of clause * b_clause list		   
+  | Enc of clause * b_clause list
 
-(* Apply tseitin transformation to a boolean formula. Input is a list of pairs.
-   The encoding is not applied if the input list has length less than three.
-   Cases with length three and four are hard-coded.
-   Each pair encodes a conjunction. The first element of the output is a 
-   disjunction of auxiliary variables. The second is a conjunctions of 
-   (not z or a) (not z or b) ... *)
+(* Apply tseitin transformation to a boolean formula. Input is a list
+   of pairs. The encoding is not applied if the input list has length
+   less than three. Cases with length three and four are hard-coded.
+   Each pair encodes a conjunction. The first element of the output is
+   a disjunction of auxiliary variables. The second is a conjunctions
+   of (not z or a) (not z or b) ... *)
 let tseitin = function
   | [] -> Conj []
   | [(x, y)] -> Conj [ [P_var x]; [P_var y] ]
   | [(x, y); (w, z)] ->
     Conj [ [P_var x; P_var w]; [P_var x; P_var z];
            [P_var y; P_var w]; [P_var y; P_var z] ]
-  | [(x, y); (w, z); (h, k)] -> 
+  | [(x, y); (w, z); (h, k)] ->
     (let (a0, a1, a2) = (V_lit 0, V_lit 1, V_lit 2) in
      Enc ([ P_var a0; P_var a1; P_var a2 ],
-          [ (N_var a0, P_var x); (N_var a0, P_var y); 
-            (N_var a1, P_var w); (N_var a1, P_var z); 
+          [ (N_var a0, P_var x); (N_var a0, P_var y);
+            (N_var a1, P_var w); (N_var a1, P_var z);
             (N_var a2, P_var h); (N_var a2, P_var k) ]))
-  | [(x, y); (w, z); (h, k); (u, v)] -> 
+  | [(x, y); (w, z); (h, k); (u, v)] ->
     (let (a0, a1, a2, a3) = (V_lit 0, V_lit 1, V_lit 2, V_lit 3) in
      Enc ([ P_var a0; P_var a1; P_var a2; P_var a3 ],
-          [ (N_var a0, P_var x); (N_var a0, P_var y); 
-            (N_var a1, P_var w); (N_var a1, P_var z); 
+          [ (N_var a0, P_var x); (N_var a0, P_var y);
+            (N_var a1, P_var w); (N_var a1, P_var z);
             (N_var a2, P_var h); (N_var a2, P_var k);
             (N_var a3, P_var u); (N_var a3, P_var v)]))
   | l ->
     (let ((z, cs), _) =
        List.fold_left (fun ((acc_z, acc), i) (a, b) ->
-           let z = V_lit i in  
+           let z = V_lit i in
            (((P_var z) :: acc_z,
              (N_var z, P_var a) :: (N_var z, P_var b) :: acc),
             i + 1))
@@ -97,17 +97,17 @@ let equiv (m : lit) (clauses : lit list list) =
     List.map (fun a -> (P_var m, N_var a)) (List.flatten clauses)
   (* m negated *)
   and l =
-    List.map (fun c -> 
+    List.map (fun c ->
         (N_var m) :: (List.map (fun v -> P_var v) c))
       clauses in
   (pairs, l)
 
 (* input: X [ [Y0, Y1]; [Y2]; [Y3, Y4, Y5] ]
    output: X => (Y0 or Y1)
-           X => Y2 
+           X => Y2
            X => (Y3 or Y4 or Y5) *)
 let impl (m : lit) =
-  List.map (fun c -> 
+  List.map (fun c ->
       (N_var m) :: (List.map (fun v -> P_var v) c))
 
 let block_rows rows c =
@@ -120,7 +120,7 @@ let block_rows rows c =
       block_row i (c - 1) acc)
     [] rows
 
-let blocking_pairs = 
+let blocking_pairs =
   List.map (fun (i, j) -> [N_var (M_lit (i, j))])
 
 (* Input is a list of root commander variables *)
@@ -131,9 +131,9 @@ let block_cmd : int list -> clause list =
 
 type group = lit list
 
-type cmd_tree = 
+type cmd_tree =
   | Leaf of group
-  | Node of (lit * cmd_tree) list 
+  | Node of (lit * cmd_tree) list
 
 (* Return a list of groups of size at most g + 1.
    If [0;1;2] [3] then [0;1] [2;3] to avoid singletons. Also
@@ -142,7 +142,7 @@ let group l n g =
   assert (g > 1);
   assert (n >= g);
   if List.length l <= n then None
-  else let (x, i, res) = 
+  else let (x, i, res) =
          List.fold_left (fun (group, i, res)  x ->
              if i >= g
              then ([x], 1, group :: res)
@@ -151,34 +151,34 @@ let group l n g =
     if i = 1 then
       if g > 2
       then match res with
-        | (v :: vs) :: res -> Some ((x @ [v]) :: vs :: res)  
+        | (v :: vs) :: res -> Some ((x @ [v]) :: vs :: res)
         | _ -> assert false (*BISECT-IGNORE*)
       else match res with
-        | v :: res -> Some ((x @ v) :: res)  
+        | v :: res -> Some ((x @ v) :: res)
         | _ -> assert false (*BISECT-IGNORE*)
-    else Some (x :: res) 
+    else Some (x :: res)
 
-(* Build a tree of commander variables. Input is a tree, output split the root 
-   and add a level of variables. *)
+(* Build a tree of commander variables. Input is a tree, output split
+   the root and add a level of variables. *)
 let rec _cmd_init t n g j =
   match t with
-  | Node cmd_l -> 
+  | Node cmd_l ->
     (match group cmd_l n g with
      | Some cmd_l' ->
-       let (j', t') = 
-         List.fold_left (fun (j, acc) g -> 
+       let (j', t') =
+         List.fold_left (fun (j, acc) g ->
              (j + 1, (V_lit j, Node g) :: acc))
            (j, []) cmd_l' in
        _cmd_init (Node t') n g j'
      (* Do not add an additional level of commander variables *)
      | None -> t)
-  | Leaf vars -> 
+  | Leaf vars ->
     (match group vars n g with
      | Some cmd_l ->
-       let (j', t') = 
-         List.fold_left (fun (j, acc) g -> 
+       let (j', t') =
+         List.fold_left (fun (j, acc) g ->
              (j + 1, (V_lit j, Leaf g) :: acc))
-           (j, []) cmd_l in 
+           (j, []) cmd_l in
        _cmd_init (Node t') n g j'
      (* Do not add an additional level of commander variables *)
      | None -> t)
@@ -189,7 +189,7 @@ let cmd_init l n g =
 (* Number of auxiliary variables *)
 let cmd_size = function
   | Leaf _ -> 0
-  | Node cmd_g -> 
+  | Node cmd_g ->
     (match fst (List.hd cmd_g) with
      | V_lit n -> n + 1
      | M_lit _ -> assert false) (*BISECT-IGNORE*)
@@ -206,20 +206,20 @@ let cmd_roots = function
 (* Scan the tree and produce constraints:
    1. at most one TRUE in every group
    2. if commander variable is TRUE then at least one TRUE in its group
-   3. if commander variable is FALSE then no TRUE in its group 
+   3. if commander variable is FALSE then no TRUE in its group
    4. exactly one commander variable is true. *)
 
 (* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
 let rec _scan1 acc = function
   | Leaf g -> acc @ (at_most g)
-  | Node cmd_g -> 
+  | Node cmd_g ->
     let (cmd_vars, sub) = List.split cmd_g in
     acc @ (at_most cmd_vars) @
     (List.fold_left (fun acc t ->
          acc @ (_scan1 [] t))
-        [] sub) 
+        [] sub)
 
-(* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)		  
+(* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)
 let rec _scan2 (acc : var list list) = function
   | Leaf g -> (g, acc)
   | Node cmd_g ->
@@ -229,12 +229,12 @@ let rec _scan2 (acc : var list list) = function
         let clause =
           (N_var cmd_v) :: (List.map (fun l ->
               P_var l)
-              g) in	
+              g) in
         res @ (clause :: acc))
         [] cmd_g in
     (cmd_vars, acc @ acc')
 
-(* (C, [X0, X1, X2]) -> [(C or !X0), (C or !X1), (C or !X2)] *)		  
+(* (C, [X0, X1, X2]) -> [(C or !X0), (C or !X1), (C or !X2)] *)
 let rec _scan3 acc = function
   | Leaf g -> (g, acc)
   | Node cmd_g ->
@@ -244,7 +244,7 @@ let rec _scan3 acc = function
         let clause =
           List.map (fun l ->
               (P_var cmd_v, N_var l))
-            g in	
+            g in
         res @ clause @ acc)
         [] cmd_g in
     (cmd_vars, acc @ acc')
@@ -266,26 +266,12 @@ let exactly_one_cmd t =
     Cmd_exactly (cl1, cl2, cl3, at_least_cmd t)
   | Cmd_exactly _ -> assert false (*BISECT-IGNORE*)
 
-(* let t_debug = *)
-(*   Node *)
-(*     [(V_lit 7, *)
-(*       Node *)
-(* 	[(V_lit 3, Leaf [M_lit (0, 8); M_lit (0, 7); M_lit (0, 6)]); *)
-(* 	 (V_lit 4, Leaf [M_lit (0, 5); M_lit (0, 4); M_lit (0, 3)]); *)
-(* 	 (V_lit 5, Leaf [M_lit (0, 2); M_lit (0, 1); M_lit (0, 0)])]); *)
-(*      (V_lit 6, *)
-(*       Node *)
-(* 	[(V_lit 0, Leaf [M_lit (0, 15); M_lit (0, 14)]); *)
-(*      (V_lit 1, Leaf [M_lit (0, 13); M_lit (0, 12)]); *)
-(*      (V_lit 2, Leaf [M_lit (0, 11); M_lit (0, 10); M_lit (0, 9)])])] *)
-
-
 (* ++++++++++++++++++++++++ Higher level functions ++++++++++++++++++++++++ *)
 
 let rec _downto f acc i =
-  if i >= 0  then
-    (let acc' = f i acc in
-     _downto f acc' (i - 1))
+  if i >= 0  then begin
+    let acc' = f i acc in
+    _downto f acc' (i - 1) end
   else acc
 
 let iter f acc n =
@@ -294,7 +280,7 @@ let iter f acc n =
 type cmd = {
   length : int;                 (** Number of auxiliary commander variables *)
   roots : int list;             (** Root commander variables *)
-  cmd : cmd_constraint array;   (** Constraints *) 
+  cmd : cmd_constraint array;   (** Constraints *)
 }
 
 let _exactly_rows n m t g =
@@ -307,15 +293,15 @@ let _exactly_rows n m t g =
                (M_lit (i, j)) :: acc)
                [] (m - 1) in
            let t = cmd_init row_i t g in
-           if i = 0 then
-             (l := cmd_size t;
-              r := cmd_roots t);
+           if i = 0 then begin
+             l := cmd_size t;
+             r := cmd_roots t end;
            (exactly_one_cmd t) :: acc)
           [] (n - 1)) in
   {length = !l; roots = !r; cmd = c}
 
 (* Generate constraints for a bijection from n to m. Parameters t and g
-   are used for configure the commander-variable encoding. The function can 
+   are used for configure the commander-variable encoding. The function can
    be split into two parts:
     1. exactly one TRUE in every row of the assignments matrix
     2. at most one TRUE in every column of the assignments matrix.
@@ -328,14 +314,14 @@ let bijection n m t g =
   let res_cols =
     Array.of_list
       (iter (fun j acc ->
-           let col_j = 
+           let col_j =
              iter (fun i acc ->
                  (M_lit (i, j)) :: acc)
                [] (n - 1) in
            let t = cmd_init col_j t g in
-           if j = 0 then
-             (l := cmd_size t;
-              r := cmd_roots t);
+           if j = 0 then begin
+             l := cmd_size t;
+             r := cmd_roots t end;
            (at_most_cmd t) :: acc)
           [] (m - 1)) in
   (_exactly_rows n m t g,
@@ -343,9 +329,9 @@ let bijection n m t g =
     roots = !r;
     cmd = res_cols})
 
-(* Generate constraints for a total, non-surjective function n to m. Parameters
-   t and g  are used for configure the commander-variable encoding. The 
-   function constructs the following constraint:
+(* Generate constraints for a total, non-surjective function n to
+   m. Parameters t and g are used for configure the commander-variable
+   encoding. The function constructs the following constraint:
     -  exactly one TRUE in every row of the assignments matrix
    Auxiliary variables are returned. *)
 let tot_fun n m t g =
@@ -361,7 +347,7 @@ let _exactly_rows_eq n t g =
             [] (n - 1) in
         (cmd_init row_i t g) :: acc)
       [] (n - 1) in
-  (List.map exactly_one_cmd ts, 
+  (List.map exactly_one_cmd ts,
    try cmd_size (List.hd ts) with _ -> 0)
 
 let _exactly_cols_eq n t g =
@@ -372,7 +358,7 @@ let _exactly_cols_eq n t g =
             [] (n - 1) in
         (cmd_init col_j t g) :: acc)
       [] (n - 1) in
-  (List.map exactly_one_cmd ts, 
+  (List.map exactly_one_cmd ts,
    try cmd_size (List.hd ts) with _ -> 0)
 
 let one_to_one n t g =
@@ -388,8 +374,8 @@ let convert_m (m : Minisat.var array array) = function
   | P_var (V_lit _)
   | N_var (V_lit _) -> assert false (*BISECT-IGNORE*)
 
-let convert_v (vec : Minisat.var array) = function   
-  | P_var (V_lit i) -> Minisat.pos_lit vec.(i) 
+let convert_v (vec : Minisat.var array) = function
+  | P_var (V_lit i) -> Minisat.pos_lit vec.(i)
   | N_var (V_lit i) -> Minisat.neg_lit vec.(i)
   | P_var (M_lit _)
   | N_var (M_lit _) -> assert false (*BISECT-IGNORE*)
@@ -436,7 +422,7 @@ let post_conj_m l s m =
           convert_m m x) clause))
     l
 
-(* Post Tseitin constraints to solver and return array of auxiliary 
+(* Post Tseitin constraints to solver and return array of auxiliary
    variables. *)
 let post_tseitin (z_clause, pairs) s m =
   let z = init_aux_v (List.length z_clause) s in
@@ -451,20 +437,20 @@ let post_impl clauses s w v =
   List.iter (fun clause ->
       match clause with
       | z :: rhs ->
-        let rhs' = 
+        let rhs' =
           List.map (fun x -> convert_m v x) rhs in
         s#add_clause ((convert_m w z) :: rhs')
       | _ -> assert false)   (*BISECT-IGNORE*)
-    clauses 
+    clauses
 
-(* Post implication to solver. Clauses are pairs in which the first element 
-   refers to matrix w and the second to matrix w'. *)
+(* Post implication to solver. Clauses are pairs in which the first
+   element refers to matrix w and the second to matrix w'. *)
 let post_impl2 vars_w vars_w' s w w' =
   (* cartesian product *)
-  let pairs = 
+  let pairs =
     List.fold_left (fun acc j ->
         List.fold_left (fun acc j' ->
-            (j, j') :: acc) acc vars_w')     
+            (j, j') :: acc) acc vars_w')
       [] vars_w in
   List.iter (fun (j, j') ->
       s#add_clause [convert_m w j; convert_m w' j'])
@@ -477,9 +463,9 @@ let post_equiv (pairs, clauses) s w v =
     pairs;
   post_impl clauses s w v
 
-(* V_lit are for auxiliary variables whereas M_lit are for encoding 
+(* V_lit are for auxiliary variables whereas M_lit are for encoding
    variables. *)
-let _post_pairs l s a v = 
+let _post_pairs l s a v =
   List.iter (fun (x, y) ->
       s#add_clause [ (convert a v x); (convert a v y) ])
     l
@@ -509,7 +495,7 @@ let post_bij (r_cmd, c_cmd) s m =
     (Array.map (fun c ->
          _post_exactly c r_cmd.length s m)
         r_cmd.cmd,
-     r_cmd.roots) 
+     r_cmd.roots)
   and aux_c =
     (Array.map (fun c ->
          match c with
@@ -524,13 +510,13 @@ let post_bij (r_cmd, c_cmd) s m =
      c_cmd.roots) in
   (aux_r, aux_c)
 
-(* Post total non-surjective function to solver and return auxiliary 
+(* Post total non-surjective function to solver and return auxiliary
    variables. *)
 let post_tot r_cmd s m =
   (Array.map (fun c ->
        _post_exactly c r_cmd.length s m)
       r_cmd.cmd,
-   r_cmd.roots) 
+   r_cmd.roots)
 
 let post_one_to_one ((cmd_r, l_r), (cmd_c, l_c)) s m =
   List.iter (fun c ->
@@ -543,7 +529,7 @@ let post_one_to_one ((cmd_r, l_r), (cmd_c, l_c)) s m =
 (* Block a commander variable row *)
 let post_block_cmd i s m =
   List.iter (fun r ->
-      s#add_clause [Minisat.neg_lit m.(i).(r)]) 
+      s#add_clause [Minisat.neg_lit m.(i).(r)])
 
 let post_block j s m =
   Array.iteri (fun i _ ->

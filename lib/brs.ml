@@ -6,11 +6,11 @@ type react =
   }
 
 module RT = struct
-  type t = react	
+  type t = react
   type label = float
   type occ = Big.bg
   type edge = int
-  
+
   let lhs r = r.rdx
 
   let rhs r = r.rct
@@ -33,7 +33,7 @@ module RT = struct
                 rct = rhs;
                 eta = eta; }
     | Some _ -> assert false (*BISECT-IGNORE*)
-  
+
   let to_occ b _ = b
 
   let big_of_occ b = b
@@ -64,12 +64,12 @@ module RT = struct
            (Some (Big.rewrite o b (lhs r) (rhs r) (map r)), m + 1)
          | None -> _random_step b (m + 1) rs') in
     _random_step b 0 rules
-      
+
 end
 
 module R = RrType.Make (RT)
 
-(* Priorities *)	     
+(* Priorities *)
 module PT = struct
   type t = RT.t list
   let f_val _ = true
@@ -79,7 +79,7 @@ end
 module H_int = Base.H_int
 
 module H_string = Base.H_string
-                
+
 module S_string = Base.S_string
 
 type graph = { v : (int * Big.bg) H_int.t;
@@ -89,12 +89,12 @@ type graph = { v : (int * Big.bg) H_int.t;
 
 module G = struct
   type t = graph
-  type edge_type = R.edge	       
+  type edge_type = R.edge
   let init n preds =
     { v = H_int.create n;
       e = H_int.create n;
       l = H_string.create n;
-      preds =  S_string.of_list preds; }		      
+      preds =  S_string.of_list preds; }
   let states g = g.v
   let label g = (g.preds, g.l)
   let edges g = g.e
@@ -115,4 +115,4 @@ module T = struct
   let typ = Rs.BRS
 end
 
-include TsType.Make (R)	(PriType.Make (R) (PT)) (L) (G) (T)
+include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)

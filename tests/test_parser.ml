@@ -9,16 +9,16 @@ let l_out name = "-l " ^ name ^ ".csl"
 let prism_out name = "-p " ^ name ^ ".tra"
 let ts_out name = "-s -t " ^ name
 let ml_out name = "-m " ^ name ^ ".ml"
-let extra_flags = "--no-colors --debug -M 140"	     
-let path = "./tests/files"	     
+let extra_flags = "--no-colors --debug -M 140"
+let path = "./tests/files"
 let ext = ".reference"
 
 let set_args name =
   let path = out_dir name in
   mkdir path;
-  let n = path / name in 
-  [ dec_out path; 
-    l_out n; 
+  let n = path / name in
+  [ dec_out path;
+    l_out n;
     prism_out n;
     ts_out n;
     ml_out n;
@@ -39,7 +39,7 @@ let rec diff (out : string list) (reference : string list) =
   | (l :: _ , []) ->
     [xml_block "failure" attr_string [sprintf "%s != nil" l]]
 
-(* Args: PATH OUT-PATH FNAME *)  
+(* Args: PATH OUT-PATH FNAME *)
 let () =
   printf "test_parser:\n";
   let (testcases : (string * string * string * string list) list) =
@@ -49,7 +49,7 @@ let () =
         let name = Filename.chop_extension (Filename.basename f) in
         let flags = set_args name in
         let chan_in = Unix.open_process_in (bin ^ " " ^ flags ^ " " ^ f) in
-        let std_out = Io.read_lines [] chan_in in	      
+        let std_out = Io.read_lines [] chan_in in
         (name,
          __MODULE__,
          xml_block "system-out" [] [String.concat "\n" std_out],

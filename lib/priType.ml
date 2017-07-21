@@ -9,12 +9,12 @@ module Make (R :RrType.T)
 struct
 
   type p_class =
-    | P_class of R.t list 
+    | P_class of R.t list
     | P_rclass of R.t list
 
   let is_valid = function
     | P_class []
-    | P_rclass [] -> false	
+    | P_rclass [] -> false
     | P_class rr -> (List.for_all R.is_valid rr)
                     && P.f_val rr
     | P_rclass rr -> (List.for_all R.is_valid rr)
@@ -32,9 +32,10 @@ struct
     | P_class _ -> false
     | P_rclass _ -> true
 
-  (* Stop when there are no more classes or when a non reducible class is enabled *)
+  (* Stop when there are no more classes or when a non reducible class
+     is enabled *)
   let rewrite b const_pri =
-    let rec _rewrite b m = function 
+    let rec _rewrite b m = function
       | [] -> (b, m)
       | (P_class rr) :: classes ->
         (if is_enabled b rr then (b, m)
@@ -52,17 +53,18 @@ struct
       | [] -> (([], [], i), matches)
       | (P_class rr) :: cs ->
         (let (ss, l) = R.step b rr in
-         if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs 
-         else 
+         if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs
+         else
            (* Apply rewriting - instantaneous *)
            let (ss', l') =
              (* Parmap.parfold *)
-             List.fold_left (fun (ss,  l) o -> 
+             List.fold_left (fun (ss,  l) o ->
                  let (s', l') =
                    rewrite (R.big_of_occ o) const_pri in
                  ((R.update_occ o s') :: ss, l + l'))
                ([], l) ss in
-           ((part_f ss' : (int * R.occ) list * R.edge list * int), matches + l'))
+           ((part_f ss' :
+               (int * R.occ) list * R.edge list * int), matches + l'))
       | (P_rclass _) :: cs -> (* Skip *)
         _scan (b, i) ~matches ~part_f ~const_pri cs in
     _scan (b, i) ~matches:0 ~part_f ~const_pri

@@ -3,7 +3,7 @@ include Base.M_int
 let dom iso =
   fst (List.split (bindings iso))
 
-let codom iso = 
+let codom iso =
   snd (List.split (bindings iso))
 
 let inverse iso =
@@ -13,7 +13,7 @@ let inverse iso =
 
 exception NOT_BIJECTIVE
 
-let add_exn i j iso = 
+let add_exn i j iso =
   if List.mem j (codom iso) then raise NOT_BIJECTIVE
   else add i j iso
 
@@ -50,7 +50,7 @@ let transform_exn iso i_dom i_codom =
 (* input:  i : P -> T  autos : P -> P *)
 let gen_isos_exn i autos =
   List.map (fun a ->
-      fold (fun i j iso' -> 
+      fold (fun i j iso' ->
           add_exn (find i a) j iso')
         i empty)
     autos
@@ -60,4 +60,3 @@ let apply_exn iso i = find i iso
 let apply iso i =
   try Some (apply_exn iso i) with
   | Not_found -> None
-

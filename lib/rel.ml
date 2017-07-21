@@ -6,7 +6,7 @@ let apply r i =
   try apply_exn r i with
   | Not_found -> IntSet.empty
 
-let add i js r = 
+let add i js r =
   add i (IntSet.union (apply r i) js) r
 
 let dom r =

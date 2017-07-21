@@ -7,7 +7,7 @@ type react =
 
 module RT = struct
   type t = react
-  type label = float 
+  type label = float
   type occ = Big.bg * float
   type edge = int * float
 
@@ -34,7 +34,7 @@ module RT = struct
                   rct = rhs;
                   eta = eta;
                   p = p; }
-  
+
   let to_occ b r = (b, r.p)
 
   let big_of_occ (b, _) = b
@@ -49,12 +49,12 @@ module RT = struct
   let norm (l, n) =
     let sum = List.fold_left (fun acc (_, p) -> acc +. p) 0.0 l in
     (List.map (fun (b, p) -> (b, p /. sum)) l, n)
-  
+
   let step b rules =
     RrType.gen_step b rules
       ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
     |> norm
-      
+
   let random_step b rules =
     let (ss, m) = step b rules in
     match ss with
@@ -78,8 +78,8 @@ module RT = struct
         |> List.rev
         |> pick
         |> (fun x -> (Some x, m))
-           
-      end 
+
+      end
 end
 
 module R = RrType.Make (RT)
@@ -92,7 +92,7 @@ let is_determ r =
 module PT = struct
   type t = R.t list
   let f_val _ = true
-  let f_r_val = List.for_all is_determ				   
+  let f_r_val = List.for_all is_determ
 end
 
 module H_int = Base.H_int
@@ -108,12 +108,12 @@ type graph = { v : (int * Big.bg) H_int.t;
 
 module G = struct
   type t = graph
-  type edge_type = RT.edge	       
+  type edge_type = RT.edge
   let init n preds =
     { v = H_int.create n;
       e = H_int.create n;
       l = H_string.create n;
-      preds = S_string.of_list preds; }		      
+      preds = S_string.of_list preds; }
   let states g = g.v
   let label g = (g.preds, g.l)
   let edges g = g.e

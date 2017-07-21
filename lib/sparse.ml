@@ -40,7 +40,7 @@ let to_string m =
   buff
   |> Array.map (fun r ->
       String.concat "" (Array.to_list r))
-  |> Array.to_list 
+  |> Array.to_list
   |> String.concat "\n"
 
 let add_m i j m =
@@ -93,7 +93,7 @@ let diag n =
   IntSet.of_int n
   |> flip2 IntSet.fold (fun i acc -> add i i acc) (make n n)
 
-let tens a b =  
+let tens a b =
   { r = a.r + b.r;
     c = a.c + b.c;
     r_major = M_int.merge merge_f a.r_major (off a.r a.c b.r_major);
@@ -170,7 +170,7 @@ let prn m j =
 
 let mul a b =
   assert (a.c = b.r);
-  let m = make a.r b.c in 
+  let m = make a.r b.c in
   M_int.fold (fun i js acc ->
       M_int.fold (fun j is acc ->
           if IntSet.is_empty (IntSet.inter js is) then acc
@@ -182,25 +182,25 @@ let sum a b =
   assert (a.r = b.r);
   assert (a.c = b.c);
   M_int.fold (fun i js acc ->
-      IntSet.fold (fun j acc ->	add i j acc) js acc)
+      IntSet.fold (fun j acc -> add i j acc) js acc)
     b.r_major a
 
 let trans m0 =
   let rec fix m acc =
     let m' = mul m0 m in
-    if equal m m' then acc 
+    if equal m m' then acc
     else fix m' (sum m' acc) in
   fix m0 m0
 
 let dom m =
   M_int.bindings m.r_major
-  |> List.split 
+  |> List.split
   |> fst
   |> IntSet.of_list
 
 let codom m =
   M_int.bindings m.c_major
-  |> List.split 
+  |> List.split
   |> fst
   |> IntSet.of_list
 
@@ -210,9 +210,9 @@ let leaves m =
 let orphans m =
   IntSet.diff (IntSet.of_int m.c) (codom m)
 
-let siblings m j = 
+let siblings m j =
   IntSet.fold (fun i acc ->
-      IntSet.union acc (chl m i)) 
+      IntSet.union acc (chl m i))
     (prn m j) IntSet.empty
   |> IntSet.remove j
 
@@ -220,14 +220,14 @@ let partners m i =
   IntSet.fold (fun j acc ->
       IntSet.union acc (prn m j))
     (chl m i) IntSet.empty
-  |> IntSet.remove i 
+  |> IntSet.remove i
 
-let iter f m = 
+let iter f m =
   M_int.iter (fun i js ->
       IntSet.iter (fun j -> f i j) js)
     m.r_major
 
-let fold f m acc = 
+let fold f m acc =
   M_int.fold (fun i js acc ->
       IntSet.fold (fun j acc -> f i j acc) js acc)
     m.r_major acc
@@ -235,7 +235,7 @@ let fold f m acc =
 let fold_r f m =
   M_int.fold f m.r_major
 
-let fold_c f m = 
+let fold_c f m =
   M_int.fold f m.c_major
 
 let add_list m =
@@ -246,28 +246,28 @@ let entries m =
       acc + (IntSet.cardinal js))
     m.r_major 0
 
-let levels m = 
+let levels m =
   (* m is a graph *)
   assert (m.r = m.c);
   let rec fix acc nodes res =
     (* find nodes with all children in acc *)
-    let leaves = 
+    let leaves =
       IntSet.filter (fun i ->
           IntSet.subset (chl m i) acc)
         nodes in
     if IntSet.is_empty leaves then res
     else
-      fix (IntSet.union acc leaves) (IntSet.diff nodes leaves) 
+      fix (IntSet.union acc leaves) (IntSet.diff nodes leaves)
         (leaves :: res) in
   fix IntSet.empty (IntSet.of_int m.r) []
 
-let aux_split r m =     
+let aux_split r m =
   let (t, mi, b) = M_int.split r m in
   match mi with
   | Some js -> (t, M_int.add r js b)
   | None -> (t, b)
 
-(* Dual of stack *)		 
+(* Dual of stack *)
 let split_rows r m =
   assert (r > 0);
   assert (r <= m.r);
@@ -276,7 +276,7 @@ let split_rows r m =
   ({ r;
      c = m.c;
      r_major = top;
-     c_major = flip_major top; 
+     c_major = flip_major top;
    },
    { r = m.r - r;
      c = m.c;
@@ -284,7 +284,7 @@ let split_rows r m =
      c_major = flip_major bottom;
    })
 
-(* Dual of append *)    
+(* Dual of append *)
 let split_columns c m =
   assert (c > 0);
   assert (c <= m.c);
@@ -293,7 +293,7 @@ let split_columns c m =
   ({ r = m.r;
      c;
      r_major = flip_major left;
-     c_major = left; 
+     c_major = left;
    },
    { r = m.r;
      c = m.c - c;
@@ -305,7 +305,7 @@ let split r c m =
   let (t, b) = split_rows r m in
   (split_columns c t, split_columns c b)
 
-(* Dual of split *)    
+(* Dual of split *)
 let glue rn rs nn ns =
   stack (append rn rs) (append nn ns)
 
@@ -358,6 +358,3 @@ let aux_eq m js =
 
 let row_eq m = aux_eq m.r_major
 let col_eq m = aux_eq m.c_major
-
-
-
