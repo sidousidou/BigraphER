@@ -1,3 +1,8 @@
+###1.2.1 (2017-07-24): ###
+
+* Use mandoc for man pages
+* Add support to parse a model from stdin
+
 ###1.2.0 (2017-06-28): ###
 
 * Add support for `false` predicates in `.lab` output
