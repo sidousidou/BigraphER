@@ -40,7 +40,7 @@ build-doc: [
 depends: [
   "base-unix"
   "ocamlfind" {build}
-  "minisat"
+  "minisat" {>= "0.5.3"}
   "menhir" {build}
   "ocamlbuild" {build}
   "conf-graphviz"
