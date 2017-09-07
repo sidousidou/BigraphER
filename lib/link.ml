@@ -234,7 +234,7 @@ let parse lines =
 let elementary_sub f_i f_o =
   Lg.singleton { i = f_i; o = f_o; p = Ports.empty }
 
-(* Node index is 0. PortSet are from 0 to |f| - 1 *)
+(* Node index is 0. Ports are from 0 to |f| - 1 *)
 let elementary_ion f =
   Face.fold (fun n acc ->
       Lg.add { i = Face.empty;
@@ -451,6 +451,31 @@ let is_idle e =
 let is_closed e =
   (Face.is_empty e.i) && (Face.is_empty e.o)
 
+(* Normalise link graph l as follows: l = omega o l' where omega is a linking
+   and l' is the same as l but with all the links open. *)
+let norm l =
+  (* Normalise an edge. Outer names are numbered starting from i. *)
+  let norm_edge e i =
+    Face.fold (fun y (l, f, i) ->
+        let x = Face.singleton (Nam (sprintf "~%i" i)) in
+        (tens (elementary_sub (Face.singleton y) x) l 0,
+         Face.union x f,
+         i + 1))
+      e.i (Lg.empty, Face.empty, i)
+    |> (Ports.fold (fun v _ (l, f, i) ->
+        let x = Face.singleton (Nam (sprintf "~%i" i)) in
+        (Lg.add { i = Face.empty;
+                  o = x;
+                  p = Ports.add v Ports.empty } l,
+         Face.union x f,
+         i + 1)) e.p) in
+  Lg.fold (fun e (omega, l, i) ->
+      let (l_e, xs, i') = norm_edge e i in
+      (Lg.union (elementary_sub xs e.o) omega,
+      Lg.union l l_e,
+       i')) l (Lg.empty, Lg.empty, 0)
+  |> (fun (omega, l, _) -> (omega, l)) 
+      
 let get_dot l =
   match
     Lg.fold (fun e (i, buff_i, buff_o, buff_h, buff_adj) ->

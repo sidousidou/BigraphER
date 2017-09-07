@@ -266,6 +266,10 @@ val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
 
 (** {3 Decompositions} *)
 
+(** Normalise link graph [l] as follows: [l = omega o l'] where [omega] is a
+    linking and [l'] is the same as [l] but with all links open. *)
+val norm : Lg.t -> Lg.t * Lg.t
+
 (** [decomp t p i_e i_c i_d f_e] computes the decomposition of target
     [t] given pattern [p], iso [i_e], and isos from nodes in [t] to
     nodes of [c] and [d], respectively. Argument [f_e] is a total

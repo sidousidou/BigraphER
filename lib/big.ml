@@ -876,8 +876,16 @@ let rewrite (i_n, i_e, f_e) b r0 r1 eta =
   let (c, d, id) = decomp b r0 i_n i_e f_e in
   match eta with
   | Some eta' ->
-    let (d', d_id) = decomp_d d (ord_of_inter (inner id)) in
-    ppar (instantiate eta' d') d_id
+    (* Normalise link graph *)
+    let (omega_l, d_norm_l) = Link.norm d.l in
+    let d_norm =
+      { d with l = d_norm_l; } in
+    let (d', d_id) = decomp_d d_norm (ord_of_inter (inner id)) in
+    let d'' = ppar (instantiate eta' d') d_id in
+    let omega = { p = Place.elementary_id (d''.p.Place.r);
+                  l = omega_l;
+                  n = Nodes.empty; } in
+    comp omega d'' 
     |> comp (tens r1 id)
     |> comp c
   | None -> comp c (comp (tens r1 id) d)
