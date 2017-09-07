@@ -9,3 +9,4 @@
 ./examples/merge.big
 ./examples/spec.big
 ./examples/prob.big
+./examples/link_inst_map.big
