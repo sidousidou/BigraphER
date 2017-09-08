@@ -1,8 +1,8 @@
 open Printf
 open Base
 
-(* Type for concrete place graphs. The elements are roots, nodes, sites and
-   for adjacency matrices: roots to nodes, roots to sites, nodes to nodes and
+(* Type for concrete place graphs. The elements are regions, nodes, sites and
+   for adjacency matrices: regions to nodes, regions to sites, nodes to nodes and
    nodes to sites. *)
 type pg = { r: int;
             n: int;
@@ -13,7 +13,7 @@ type pg = { r: int;
             ns: Sparse.bmatrix;
           }
 
-(* Raised by comp. The elements are (sites, roots) *)
+(* Raised by comp. The elements are (sites, regions) *)
 exception COMP_ERROR of (int * int)
 
 (* String representation *)
@@ -23,7 +23,7 @@ let to_string p =
   |> sprintf "%d %d %d\n%s\n" p.r p.n p.s
 
 (* Parse a place graph from a list of strings *)
-let parse r n s lines =
+let parse ~regions:r ~nodes:n ~sites:s lines =
   assert (r >= 0);
   assert (n >= 0);
   assert (s >= 0);
@@ -179,7 +179,7 @@ let is_ground p =
 (* Nodes with no children (both nodes and sites children). *)
 let leaves p =
   Sparse.glue p.rn p.rs p.nn p.ns
-  |> Sparse.leaves  (* roots and nodes *)
+  |> Sparse.leaves  (* regions and nodes *)
   |> IntSet.off (-p.r)
   |> IntSet.filter (fun x -> x >= 0) (* only nodes *)
 
@@ -203,20 +203,20 @@ let is_mono p =
            |> IntSet.is_empty)
   else false
 
-(* Is p epimorphic: no root is idle and no two roots are partners *)
+(* Is p epimorphic: no region is idle and no two regions are partners *)
 let is_epi p =
   let m = Sparse.glue p.rn p.rs p.nn p.ns in
   if Sparse.leaves m
-     |> IntSet.filter (fun x -> x < p.r) (* only roots *)
+     |> IntSet.filter (fun x -> x < p.r) (* only regions *)
      |> IntSet.is_empty
   then IntSet.of_int p.r
        |> IntSet.for_all (fun i ->
            Sparse.partners m i
-           |> IntSet.filter (fun x -> x < p.r) (* only roots *)
+           |> IntSet.filter (fun x -> x < p.r) (* only regions *)
            |> IntSet.is_empty)
   else false
 
-(* Is p guarded: no root has sites as children *)
+(* Is p guarded: no region has sites as children *)
 let is_guard p =
   (Sparse.entries p.rs) = 0
 
@@ -224,7 +224,7 @@ let is_guard p =
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d
    expressed as rows of t. Pattern p is mono and epi.
    See page 76, proposition 4.2.4. *)
-let decomp t p iso =
+let decomp ~target:t ~pattern:p iso =
   let trans_t_nn = Sparse.trans t.nn (* memoisation *)
   and iso' = Iso.inverse iso
   and v_p' = IntSet.of_list (Iso.codom iso) in
@@ -243,10 +243,10 @@ let decomp t p iso =
   (* fix numbering of nodes in c and d : t -> c and t -> d *)
   let iso_v_c = IntSet.fix v_c
   and iso_v_d = IntSet.fix v_d
-  (* IntSet of target's roots *)
+  (* IntSet of target's regions *)
   and tr_set = IntSet.of_int t.r in
   (************************** Identity **************************)
-  (* c roots to d nodes *)
+  (* c regions to d nodes *)
   let (edg_c_rs0, edg_d_rn0, s0) =
     IntSet.fold (fun r acc ->
         IntSet.fold
@@ -258,7 +258,7 @@ let decomp t p iso =
              else (acc_c, acc_d, j))
           (Sparse.chl t.rn r) acc)
       tr_set ([], [], 0) in
-  (* c roots to d sites *)
+  (* c regions to d sites *)
   let (edg_c_rs1, edg_d_rs0, s1) =
     IntSet.fold (fun r acc ->
         IntSet.fold (fun c (acc_c, acc_d, s) ->
@@ -288,7 +288,7 @@ let decomp t p iso =
           (Sparse.chl t.ns i) acc)
       v_c ([], [], 0)
   (************************** Context **************************)
-  (* c roots to p nodes *)
+  (* c regions to p nodes *)
   and edg_c_rp =
     Sparse.fold_r (fun r js acc ->
         let sites = IntSet.filter_apply js iso'
@@ -381,15 +381,15 @@ let decomp t p iso =
 
 (* Compute three strings to build a dot representation.*)
 let get_dot p =
-  (* Attributes for roots and sits *)
+  (* Attributes for regions and sits *)
   let attr =
     "shape=box, width=.28, height=.18, fontname=\"serif\", fontsize=9.0"
   (* Graph edges *)
   and arr s d i j buff =
     sprintf "%s%c%d -> %c%d [ arrowhead=\"vee\", arrowsize=0.5 ];\n"
       buff s i d j in
-  (* Root shapes *)
-  let root_shapes =
+  (* Region shapes *)
+  let region_shapes =
     IntSet.fold (fun i buff ->
         sprintf "%sr%d [ label=\"%d\", style=\"dashed\", %s ];\n"
           buff i i attr)
@@ -420,7 +420,7 @@ let get_dot p =
     Sparse.fold (arr 'v' 'v') p.nn ""
   and m_ns =
     Sparse.fold (arr 'v' 's') p.ns "" in
-  (root_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
+  (region_shapes, site_shapes, ranks, String.concat "" [m_rn; m_rs; m_nn; m_ns])
 
 (* Number of edges in the DAG *)
 let edges p =
@@ -447,7 +447,7 @@ let partition_edges p n =
 
 type deg =
   | V of int (* only vertices *)
-  | S of int (* with sites or roots *)
+  | S of int (* with sites or regions *)
 
 let indeg p i =
   assert (i >= 0);
@@ -484,7 +484,7 @@ let eq t p t_i p_i =
 exception NOT_TOTAL
 
 (* Match nodes in compatible DAG edges *)
-let match_list t p n_t n_p =
+let match_list ~target:t ~pattern:p ~n_t ~n_p =
   let h = partition_edges t n_t in
   let (clauses, clauses_exc, cols) =
     Sparse.fold (fun i j (acc, exc, acc_c) ->
@@ -525,7 +525,7 @@ let match_list t p n_t n_p =
 
 (* leaves (orphans) in p are matched to leaves (orphans) in t.
    C5: ij0 or ij1 or ..... *)
-let match_leaves t p n_t n_p =
+let match_leaves ~target:t ~pattern:p ~n_t ~n_p =
   let l_p = leaves p
   and l_t = leaves t in
   let (clauses, c) =
@@ -545,7 +545,7 @@ let match_leaves t p n_t n_p =
   (clauses, c)
 
 (* Dual *)
-let match_orphans t p n_t n_p =
+let match_orphans ~target:t ~pattern:p ~n_t ~n_p =
   let o_p = orphans p
   and o_t = orphans t in
   let (clauses, c) =
@@ -579,14 +579,14 @@ let match_ctrl_deg_aux t p n_t n_p m =
         (clause :: acc, IntSet.union js acc_c))
     m ([], IntSet.empty)
 
-let match_sites t p n_t n_p =
-  match_ctrl_deg_aux t p n_t n_p p.ns
+let match_sites ~target ~pattern ~n_t ~n_p =
+  match_ctrl_deg_aux target pattern n_t n_p pattern.ns
 
-let match_roots t p n_t n_p =
-  match_ctrl_deg_aux t p n_t n_p p.rn
+let match_regions ~target ~pattern ~n_t ~n_p =
+  match_ctrl_deg_aux target pattern n_t n_p pattern.rn
 
-(* Block unconnected pairs of nodes with sites and nodes with roots. *)
-let match_trans t p : Cnf.clause list =
+(* Block unconnected pairs of nodes with sites and nodes with regions. *)
+let match_trans ~target:t ~pattern:p : Cnf.clause list =
   let n_s = Sparse.dom p.ns (* index i *)
   and n_r = Sparse.codom p.rn in (* index j *)
   let (n_s', n_r') =
@@ -594,18 +594,18 @@ let match_trans t p : Cnf.clause list =
         let x =
           IntSet.inter (Sparse.chl p.nn i) n_r in
         if IntSet.cardinal x = 0 then (acc_s, acc_r)
-        else (IntSet.remove i acc_s, IntSet.diff acc_r x)
-      ) n_s (n_s, n_r) in
+        else (IntSet.remove i acc_s, IntSet.diff acc_r x))
+      n_s (n_s, n_r) in
   (* For every edge (i', j') in t, block any ii' and jj' *)
   Sparse.fold (fun i' j' acc ->
       let blocks = IntSet.fold (fun i acc ->
           IntSet.fold (fun j acc ->
               [ Cnf.N_var (Cnf.M_lit (i, i'));
-                Cnf.N_var (Cnf.M_lit (j, j')) ] :: acc
-            ) n_r' acc
-        ) n_s' [] in
-      blocks @ acc
-    ) t.nn []
+                Cnf.N_var (Cnf.M_lit (j, j')) ] :: acc)
+            n_r' acc)
+          n_s' [] in
+      blocks @ acc)
+    t.nn []
 
 let check_sites t p v_p' c_set iso =
   let s_set =
@@ -645,7 +645,7 @@ let check_sites t p v_p' c_set iso =
       s_set)
 
 (* Dual *)
-let check_roots t p v_p' iso =
+let check_regions t p v_p' iso =
   let p_set =
     IntSet.fold (fun j acc ->
         let parents =
@@ -655,12 +655,12 @@ let check_roots t p v_p' iso =
     IntSet.fold (fun j acc ->
         let parents = Sparse.prn t.rn j in
         IntSet.union acc parents) v_p' IntSet.empty in
-  (* Is there a set of roots with the same children set? *)
+  (* Is there a set of regions with the same children set? *)
   (* Nodes *)
   (IntSet.for_all (fun x ->
        let chl_p =
          IntSet.inter v_p' (Sparse.chl t.nn x) in
-       (* Construct a candidate set of roots *)
+       (* Construct a candidate set of regions *)
        let candidate =
          IntSet.fold (fun r acc ->
              let chl_r =
@@ -671,11 +671,11 @@ let check_roots t p v_p' iso =
        (* Equality test *)
        IntSet.equal candidate chl_p
      ) p_set) &&
-  (* Roots *)
+  (* Regions *)
   (IntSet.for_all (fun x ->
        let chl_r =
          IntSet.inter v_p' (Sparse.chl t.rn x) in
-       (* Construct a candidate set of roots *)
+       (* Construct a candidate set of regions *)
        let candidate =
          IntSet.fold (fun r acc ->
              let chl_r' =
@@ -698,7 +698,7 @@ let check_trans t_trans v_p' c_set =
       c_set)
 
 (* Check if iso i : p -> t is valid *)
-let check_match t p t_trans iso =
+let check_match ~target:t ~pattern:p t_trans iso =
   let v_p' =
     IntSet.of_list (Iso.codom iso) in
   let c_set =
@@ -707,12 +707,12 @@ let check_match t p t_trans iso =
         |> IntSet.union acc)
       v_p' IntSet.empty in
   (check_sites t p v_p' c_set iso)
-  && (check_roots t p v_p' iso)
+  && (check_regions t p v_p' iso)
   && (check_trans t_trans v_p' c_set)
 
 (* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)
 
-let deg_roots p =
+let deg_regions p =
   IntSet.fold (fun r acc ->
       (IntSet.cardinal (Sparse.chl p.rn r)) :: acc)
     (IntSet.of_int p.r) []
@@ -758,7 +758,7 @@ let match_list_eq p t n_p n_t =
   (clauses, clauses_exc, IntSet.of_list cols) (* matched columns *)
 
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
-let match_root_nodes a b n_a n_b =
+let match_region_nodes a b n_a n_b =
   Sparse.fold (fun r i (acc, acc_c) ->
       let c = Nodes.get_ctrl_exn i n_a in
       let children =
@@ -833,36 +833,36 @@ let build_comp_aux p p' nodes iso =
         nodes p'.nn;
   }
 
-let rec chl_of_roots d acc stop i =
+let rec chl_of_regions d acc stop i =
   if i < stop then acc
   else let acc' =
          Sparse.chl d.rn i
          |> IntSet.union acc in
-    chl_of_roots d acc' stop (i - 1)
+    chl_of_regions d acc' stop (i - 1)
 
 let build_d p first last nodes =
   let n = IntSet.cardinal nodes
   and r = last - first + 1
   and iso = IntSet.fix nodes in
-  let root_set = IntSet.of_int r
+  let region_set = IntSet.of_int r
                  |> IntSet.off first in
-  let iso_roots = IntSet.fix root_set in
+  let iso_regions = IntSet.fix region_set in
   let p' = { r = r;
              n = n;
              s = 0;
              rn = IntSet.fold (fun r acc ->
-                 let r' = safe (Iso.apply iso_roots r) in
+                 let r' = safe (Iso.apply iso_regions r) in
                  IntSet.fold (fun j acc ->
                      Sparse.add r' (safe (Iso.apply iso j)) acc)
                    (Sparse.chl p.rn r) acc)
-                 root_set (Sparse.make r n);
+                 region_set (Sparse.make r n);
              rs = Sparse.make r 0;
              nn = Sparse.make n n;
              ns = Sparse.make n 0;
            } in
   (build_comp_aux p p' nodes iso, iso)
 
-(* Build a prime component P' starting from P, a root and a set of nodes. An
+(* Build a prime component P' starting from P, a region and a set of nodes. An
    isomorphism P -> P' is also generated. *)
 let build_component p r nodes =
   build_d p r r nodes
@@ -870,7 +870,7 @@ let build_component p r nodes =
 let build_o_component p nodes =
   build_d p 0 (-1) nodes
 
-(* Sub-graph rooted in the orphan nodes of p. *)
+(* Sub-graph regioned in the orphan nodes of p. *)
 let orphan_component p marked_n =
   (* let o_set = IntSet.diff (Sparse.orphans p.nn) (Sparse.codom p.rn) in *)
   let o_set = orphans p in
@@ -884,10 +884,10 @@ let prime_components p =
   [build_o_component p o_nodes]
 
 let decomp_d d id_n =
-  let js_set = chl_of_roots d IntSet.empty 0 (d.r - id_n - 1) in
+  let js_set = chl_of_regions d IntSet.empty 0 (d.r - id_n - 1) in
   let js = IntSet.elements js_set in
   let d'_nodes = dfs_ns d js js_set IntSet.empty in
-  let id_set = chl_of_roots d IntSet.empty (d.r - id_n) (d.r - 1) in
+  let id_set = chl_of_regions d IntSet.empty (d.r - id_n) (d.r - 1) in
   let ids = IntSet.elements id_set in
   let id_nodes = IntSet.union
       (dfs_ns d ids id_set d'_nodes)

@@ -3,11 +3,11 @@
 
 (** The type of place graphs.*)
 type pg = {
-  r : int; (** Number of roots (also called regions) *)
+  r : int; (** Number of regions *)
   n : int; (** Number of nodes *)
   s : int; (** Number of sites *)
-  rn : Sparse.bmatrix; (** Boolean adjacency matrix roots X nodes *)
-  rs : Sparse.bmatrix; (** Boolean adjacency matrix roots X sites *)
+  rn : Sparse.bmatrix; (** Boolean adjacency matrix regions X nodes *)
+  rs : Sparse.bmatrix; (** Boolean adjacency matrix regions X sites *)
   nn : Sparse.bmatrix; (** Boolean adjacency matrix nodes X nodes *)
   ns : Sparse.bmatrix; (** Boolean adjacency matrix nodes X sites *)
 }
@@ -18,23 +18,19 @@ val to_string : pg -> string
 (** Compute the number of edges in the DAG. *)
 val edges : pg -> int
 
-(** [parse r n s lines] computes a place graph with [r] roots, [n] nodes and [s]
+(** [parse r n s lines] computes a place graph with [r] regions, [n] nodes and [s]
     sites. Each element in [lines] is a string in the same format of the output
     of {!Place.to_string}. *)
-val parse : int -> int -> int -> string list -> pg
+val parse : regions:int -> nodes:int -> sites:int -> string list -> pg
 
 (** [get_dot p] returns three strings expressing place graph [p] in dot format.
-    The first two elements encode roots and sites shapes, the third encodes the
+    The first two elements encode regions and sites shapes, the third encodes the
     node ranks and the fourth represents the adjacency matrix. *)
 val get_dot : pg -> string * string * string * string
 
-(** [apply_iso i p] returns a fresh place graph obtained by applying isomorphism
-    [i] to [p]. 
-
-    @raise Not_found when isomorphism [i] is not valid. *)
 val apply_exn : int Iso.t -> pg -> pg
 
-(** [parse_placing l r] returns the placing with [r] roots defined by list [l]
+(** [parse_placing l r] returns the placing with [r] regions defined by list [l]
     in which each element is a site's parent set. *)
 val parse_placing : int list list -> int -> pg
 
@@ -53,18 +49,18 @@ val elementary_id : int -> pg
 (** [id0] is the empty place graph. *)
 val id0 : pg
 
-(** [elementary_merge m] computes an elementary place graph formed by one root
+(** [elementary_merge m] computes an elementary place graph formed by one region
     containing [m] sites. *)
 val elementary_merge : int -> pg
 
 (** [elementary_split m] computes an elementary place graph formed by one site
-    shared by [m] roots. *)
+    shared by [m] regions. *)
 val elementary_split : int -> pg
 
 (** [zero] is the place graph formed by an orphaned site. *)
 val zero : pg
 
-(** [one] is the place graph formed by an idle root. *)
+(** [one] is the place graph formed by an idle region. *)
 val one : pg
 
 (** [elementary_sym m n] computes an place graph consisting of a symmetry
@@ -86,7 +82,7 @@ val compare_placing : pg -> pg -> int
 (** {3 Operations} *)
 
 (** Raised when a composition between two incompatible place graphs is
-    attempted. The two integers are the number of sites and roots involved in
+    attempted. The two integers are the number of sites and regions involved in
     the composition, respectively. *)
 exception COMP_ERROR of (int * int)
 
@@ -132,23 +128,23 @@ val is_guard : pg -> bool
     mono. The result tuple [(c, id, d, iso_c, iso_d)] is formed by context [c],
     identity [id], parameter [d], and nodes in [c] and [d] expressed as rows of
     [t]. *)
-val decomp : pg -> pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
+val decomp : target:pg -> pattern:pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
 
 (** Raised when a place graph cannot be decomposed into prime components. The
     first element is a set of shared nodes and the second a set of shared
     sites. *)
 exception NOT_PRIME
 
-(** Compute the prime components ({e i.e.} place graphs with one root) of a
+(** Compute the prime components ({e i.e.} place graphs with one region) of a
     place graph. The original node numbering is returned in the form of an
     isomorphism. 
 
-    @raise NOT_PRIME when some root is shared *)
+    @raise NOT_PRIME when some region is shared *)
 val prime_components : pg -> (pg * int Iso.t) list
 
 (** Compute the decomposition [D = D' X D_id].
 
-     @raise NOT_PRIME when some root is shared *)					      
+     @raise NOT_PRIME when some region is shared *)					      
 val decomp_d : pg -> int -> pg * pg * int Iso.t * int Iso.t
 
 (** {3 Matching constraints} *)
@@ -163,7 +159,7 @@ exception NOT_TOTAL
 
     @raise NOT_TOTAL when there are nodes in the pattern that cannot be
     matched. *)
-val match_list : pg -> pg -> Nodes.t -> Nodes.t ->
+val match_list : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
 (** [match_leaves t p n_t n_p] computes constraints to match the leaves 
@@ -172,37 +168,37 @@ val match_list : pg -> pg -> Nodes.t -> Nodes.t ->
 
     @raise NOT_TOTAL when there are leaves in the pattern that cannot be
     matched. *)
-val match_leaves : pg -> pg -> Nodes.t -> Nodes.t -> 
+val match_leaves : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Dual of {!Place.match_leaves}.
 
     @raise NOT_TOTAL when there are orphans in the pattern that cannot be matched. *)
-val match_orphans : pg -> pg -> Nodes.t -> Nodes.t -> 
+val match_orphans : target:pg -> pattern:pg -> n_t:Nodes.t ->n_p: Nodes.t -> 
   Cnf.clause list * IntSet.t
 
-(** Compute constraints to match roots. Arguments are as in
+(** Compute constraints to match regions. Arguments are as in
     {!Place.match_list}. Only controls and degrees are checked. *)
-val match_roots : pg -> pg -> Nodes.t -> Nodes.t ->
+val match_regions : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
   Cnf.clause list * IntSet.t
 
-(** Dual of {!Place.match_roots}. *)		      
-val match_sites : pg -> pg -> Nodes.t -> Nodes.t ->
+(** Dual of {!Place.match_regions}. *)		      
+val match_sites : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
   Cnf.clause list * IntSet.t
 
 (** Compute constraints to block matches between unconnected pairs of nodes with
-    sites and nodes with roots. *)
-val match_trans : pg -> pg -> Cnf.clause list
+    sites and nodes with regions. *)
+val match_trans : target:pg -> pattern:pg -> Cnf.clause list
 
 (** [check_match t p trans iso] checks if [iso] from [p] to [t] is a valid match. *)
-val check_match : pg -> pg -> Sparse.bmatrix -> int Iso.t -> bool
+val check_match : target:pg -> pattern:pg -> Sparse.bmatrix -> int Iso.t -> bool
 
-(** Compute constraints for equality: roots must have children with the same
+(** Compute constraints for equality: regions must have children with the same
     controls. *)
-val match_root_nodes : pg -> pg -> Nodes.t -> Nodes.t -> 
+val match_region_nodes : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
-(** Dual of {!Place.match_root_nodes}. *)		      
+(** Dual of {!Place.match_region_nodes}. *)		      
 val match_nodes_sites : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
@@ -210,8 +206,8 @@ val match_nodes_sites : pg -> pg -> Nodes.t -> Nodes.t ->
 val match_list_eq : pg -> pg -> Nodes.t -> Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
-(** Compute the outer degree of the roots of a place graph. *)
-val deg_roots : pg -> int list
+(** Compute the outer degree of the regions of a place graph. *)
+val deg_regions : pg -> int list
 
 (** Compute the inner degree of the sites of a place graph. *)			  
 val deg_sites : pg -> int list

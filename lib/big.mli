@@ -135,9 +135,9 @@ val atom : Link.Face.t -> Ctrl.t -> bg
     of [c]. *)
 val atom_chk : Link.Face.t -> Ctrl.t -> bg
 
-(** [sub n m] computes a substitution where [n] and [m] are the inner and outer 
-    faces, respectively. *)
-val sub : Link.Face.t -> Link.Face.t -> bg
+(** [sub inner outer] computes a substitution where [inner] and [outer] are the
+    inner and outer faces, respectively. *)
+val sub : inner:Link.Face.t -> outer:Link.Face.t -> bg
 
 (** [closure f] computes the closure of interface [f].*)
 val closure : Link.Face.t -> bg
@@ -188,8 +188,8 @@ val share : bg -> bg -> bg -> bg
 (** [close f b] closes names in [f]. *)
 val close : Link.Face.t -> bg -> bg
 
-(** [rename in out b] renames the names in [in] to the names in [out]. *)  
-val rename : Link.Face.t -> Link.Face.t -> bg -> bg
+(** [rename inner outer b] renames the names in [in] to the names in [out]. *)
+val rename : inner:Link.Face.t -> outer:Link.Face.t -> bg -> bg
   
 (** {3 Predicates} *)
 
@@ -222,16 +222,13 @@ val is_ground : bg -> bool
 
 (** {3 Decompositions} *)
 
-(** [decomp t p i_v i_e f_e] computes the decomposition of target [t] given
-    pattern [p], node isomorphism [i_v] and edge isomorphism [i_e]. The
+(** [decomp t p i_n i_e f_e] computes the decomposition of target [t] given
+    pattern [p], node isomorphism [i_n] and edge isomorphism [i_e]. The
     isomorphism are from [p] to [t]. The elements in the result are the context,
     the parameter and the identity of the decomposition. Argument [f_e] is a
     total function from links in the pattern to links in the target. *)
-val decomp :  bg -> bg -> int Iso.t -> int Iso.t -> int Fun.t -> 
-  bg * bg * bg
-
-(*(** [levels b] computes the decomposition in levels of [b]. *)
-  val levels : bg -> bg list*)
+val decomp : target:bg -> pattern:bg -> i_n:int Iso.t -> i_e:int Iso.t ->
+  int Fun.t -> bg * bg * bg
 
 (** {3 Comparison} *)
 
@@ -258,7 +255,7 @@ type occ = int Iso.t * int Iso.t * int Fun.t
 
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]
     otherwise. *)
-val occurs : bg -> bg ->  bool
+val occurs : target:bg -> pattern:bg ->  bool
 
 (** [occurrence t p trans] returns a pair of isomorphisms [(i,j)] if pattern [p]
     occurs in target [t]. Isos [i] and [j] are defined over nodes and edges,
@@ -266,7 +263,7 @@ val occurs : bg -> bg ->  bool
     graph of [t].
 
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrence : bg -> bg -> Sparse.bmatrix -> occ option
+val occurrence : target:bg -> pattern:bg -> Sparse.bmatrix -> occ option
 
 (*(** Same as {!Big.occurrence}.
 
@@ -277,18 +274,18 @@ val occurrence : bg -> bg -> Sparse.bmatrix -> occ option
 (** [occurrences t p] returns a list of occurrences.
 
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrences : bg -> bg -> occ list
+val occurrences : target:bg -> pattern:bg -> occ list
 
 (** [auto b] computes the non-trivial automorphisms of bigraph [b]. 
 
     @raise NODE_FREE when [p] has an empty node set. *)
 val auto : bg -> (int Iso.t * int Iso.t) list
 
-(** [rewrite o b r0 r1 eta] computes a bigraph obtained by replacing the
-    occurrence of [r0] (specified by occurrence [o]) in [b] with [eta r1], where
+(** [rewrite o s r0 r1 eta] computes a bigraph obtained by replacing the
+    occurrence of [r0] (specified by occurrence [o]) in [s] with [eta r1], where
     [eta] is a valid (no check performed) instantiation map.
 
     @raise Place.NOT_PRIME when [b] is not prime decomposable. *)
-val rewrite : occ -> bg -> bg -> bg -> int Fun.t option -> bg
+val rewrite : occ -> s:bg -> r0:bg -> r1:bg -> int Fun.t option -> bg
 
 (**/**)

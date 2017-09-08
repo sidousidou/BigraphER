@@ -591,8 +591,8 @@ module Make (T: TsType.RS with type label = float) = struct
       (Big.closure (Link.parse_face [exp.cl_name]), env_t)
     | Big_sub exp ->
       (Big.sub
-         (parse_face exp.in_names exp.sub_loc)
-         (Link.parse_face [exp.out_name]),
+         ~inner:(parse_face exp.in_names exp.sub_loc)
+         ~outer:(Link.parse_face [exp.out_name]),
        env_t)
     | Big_wire (c, b, _) ->
       begin
@@ -602,8 +602,8 @@ module Make (T: TsType.RS with type label = float) = struct
           (Big.close (Link.parse_face (names_of_closures cs)) b_v, env_t')
         | Sub_exp s ->
           (Big.rename
-             (parse_face s.in_names s.sub_loc)
-             (Link.parse_face [s.out_name]) b_v,
+             ~inner:(parse_face s.in_names s.sub_loc)
+             ~outer:(Link.parse_face [s.out_name]) b_v,
            env_t')
       end
 

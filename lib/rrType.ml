@@ -51,7 +51,7 @@ sig
 end
 
 (* Generic step function *)
-let gen_step b rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
+let gen_step s rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
   (* Input list is assumed without duplicates. Example: extract 4
      [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)
   let rec extract (pred :'a -> bool) acc = function
@@ -69,11 +69,11 @@ let gen_step b rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
       | Some iso_o -> (merge_occ o iso_o) :: non_iso in
     (List.fold_left aux1 [] l, List.length l) in
   let aux2 acc r =
-    (Big.occurrences b (lhs r)
+    (Big.occurrences ~target:s ~pattern:(lhs r)
      (* Parmap.parmap *)
      |> List.map (fun o ->
          to_occ
-           (Big.rewrite o b (lhs r) (rhs r) (map r)) r))
+           (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)) r))
     @ acc in
   List.fold_left aux2 [] rules
   |> filter_iso
@@ -153,7 +153,7 @@ module Make (R : R) = struct
     else raise (NOT_VALID (Inter_eq_o (i, i')))
 
   let is_enabled b r =
-    Big.occurs b (lhs r)
+    Big.occurs ~target:b ~pattern:(lhs r)
 
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)
@@ -162,9 +162,9 @@ module Make (R : R) = struct
     let rec _step s = function
       | [] -> None
       | r :: rs ->
-        (match Big.occurrence s (lhs r) t_trans with
+        (match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
          | Some o ->
-           Some (Big.rewrite o s (lhs r) (rhs r) (map r))
+           Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r))
          | None -> _step s rs) in
     let rec _fix s rules i =
       match _step s rules with

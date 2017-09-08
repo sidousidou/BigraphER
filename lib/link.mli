@@ -182,10 +182,10 @@ val apply_exn : int Iso.t -> Lg.t -> Lg.t
 
 (** {3 Elementary link graphs} *)
 
-(** [elementary_sub in out] computes a substitution consisting of a
-    single edge in which [in] and [out] are the inner and outer face,
+(** [elementary_sub inner outer] computes a substitution consisting of a single
+    edge in which [inner] and [outer] are the inner and outer face,
     respectively. *)
-val elementary_sub : Face.t -> Face.t -> Lg.t
+val elementary_sub : inner:Face.t -> outer:Face.t -> Lg.t
 
 (** [elementary_ion f] computes an elementary ion with outer face
     [f]. *)
@@ -270,15 +270,15 @@ val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
     linking and [l'] is the same as [l] but with all links open. *)
 val norm : Lg.t -> Lg.t * Lg.t
 
-(** [decomp t p i_e i_c i_d f_e] computes the decomposition of target
-    [t] given pattern [p], iso [i_e], and isos from nodes in [t] to
-    nodes of [c] and [d], respectively. Argument [f_e] is a total
-    function from links in the pattern to links in the target. Pattern
-    [p] is assumed epi and mono and [i_e] is from edges in [p] to
-    edges in [t]. Isos [i_c] and [i_d] are obtained by
-    {!val:Place.decomp}. The results are link graph [c], [d] and [id]. *)
-val decomp : Lg.t -> Lg.t -> int Iso.t -> int Iso.t -> 
-  int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
+(** [decomp target pattern i_e i_c i_d f_e] computes the decomposition of
+     [target] given [pattern], iso [i_e], and isos from nodes in [t] to nodes of
+     [c] and [d], respectively. Argument [f_e] is a total function from links in
+     the pattern to links in the target. Pattern [p] is assumed epi and mono and
+     [i_e] is from edges in [p] to edges in [t]. Isos [i_c] and [i_d] are
+     obtained by {!val:Place.decomp}. The results are link graph [c], [d] and
+     [id]. *)
+val decomp : target:Lg.t -> pattern:Lg.t -> i_e:int Iso.t -> i_c:int Iso.t -> 
+  i_d:int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
 
 (** Compute the prime components of a link graph. See {!val:Place.decomp}. *)					    
 val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
@@ -293,12 +293,12 @@ exception NOT_TOTAL
     blocked columns and a set of blocking pairs.
 
     @raise NOT_TOTAL when no matches are found. *)
-val match_edges : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
+val match_edges : target:Lg.t -> pattern:Lg.t -> n_t:Nodes.t -> n_p:Nodes.t ->
   Cnf.clause list * IntSet.t * Cnf.clause list
 
 (** Compute constraints to match isomorphic port sets in closed
     edges. *)
-val match_ports : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
+val match_ports : target:Lg.t -> pattern:Lg.t -> n_t:Nodes.t -> n_p:Nodes.t ->
   Cnf.clause list -> Cnf.clause list list
 
 (** Compute constraints to match peers in the pattern with peers in
@@ -306,7 +306,7 @@ val match_ports : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
     with open edges.
 
     @raise NOT_TOTAL when no matches are found. *)
-val match_peers : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
+val match_peers : target:Lg.t -> pattern:Lg.t -> n_t:Nodes.t -> n_p:Nodes.t ->
   int * int * Cnf.clause list list * (int * int) list * 
   Cnf.clause list * int Iso.t * int Iso.t
 

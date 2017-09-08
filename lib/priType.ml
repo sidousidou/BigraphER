@@ -26,7 +26,7 @@ struct
         | P_rclass _ -> false)
 
   let is_enabled b =
-    List.exists (fun r -> Big.occurs b (R.lhs r))
+    List.exists (fun r -> Big.occurs ~target:b ~pattern:(R.lhs r))
 
   let is_reducible = function
     | P_class _ -> false

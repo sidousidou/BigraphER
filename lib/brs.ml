@@ -54,15 +54,15 @@ module RT = struct
       | x :: l -> if i = i' then (x, l @ acc)
         else aux i (i' + 1) (x :: acc) l in
     let t = Sparse.trans b.Big.p.Place.nn in
-    let rec _random_step b m = function
+    let rec _random_step s m = function
       | [] -> (None, m)
       | rs ->
         (let (r, rs') =
            aux (Random.int (List.length rs)) 0 [] rs in
-         match Big.occurrence b (lhs r) t with
+         match Big.occurrence ~target:s ~pattern:(lhs r) t with
          | Some o ->
-           (Some (Big.rewrite o b (lhs r) (rhs r) (map r)), m + 1)
-         | None -> _random_step b (m + 1) rs') in
+           (Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)), m + 1)
+         | None -> _random_step s (m + 1) rs') in
     _random_step b 0 rules
 
 end

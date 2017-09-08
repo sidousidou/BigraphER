@@ -231,8 +231,8 @@ let parse lines =
   |> fst
 
 (* Elementary substitution: one edge without ports *)
-let elementary_sub f_i f_o =
-  Lg.singleton { i = f_i; o = f_o; p = Ports.empty }
+let elementary_sub ~inner ~outer =
+  Lg.singleton { i = inner; o = outer; p = Ports.empty }
 
 (* Node index is 0. Ports are from 0 to |f| - 1 *)
 let elementary_ion f =
@@ -396,19 +396,23 @@ let dup_out f =
   Face.fold (fun n acc ->
       tens
         (elementary_sub
-           (Face.add (Nam (sprintf "0%s" (string_of_name n)))
-              (Face.singleton (Nam (sprintf "1%s" (string_of_name n)))))
-           (Face.singleton n))
-        acc 0) f Lg.empty
+           ~inner:(Face.add
+                     (Nam (sprintf "0%s" (string_of_name n)))
+                     (Face.singleton (Nam (sprintf "1%s" (string_of_name n)))))
+           ~outer:(Face.singleton n))
+        acc 0)
+    f Lg.empty
 
 let dup_in f =
   Face.fold (fun n acc ->
       tens
         (elementary_sub
-           (Face.singleton n)
-           (Face.add (Nam (sprintf "0%s" (string_of_name n)))
-              (Face.singleton (Nam (sprintf "1%s" (string_of_name n))))))
-        acc 0) f Lg.empty
+           ~inner:(Face.singleton n)
+           ~outer:(Face.add
+                     (Nam (sprintf "0%s" (string_of_name n)))
+                     (Face.singleton (Nam (sprintf "1%s" (string_of_name n))))))
+        acc 0)
+    f Lg.empty
 
 (* Parallel product *)
 let ppar a b n =
@@ -458,7 +462,7 @@ let norm l =
   let norm_edge e i =
     Face.fold (fun y (l, f, i) ->
         let x = Face.singleton (Nam (sprintf "~%i" i)) in
-        (tens (elementary_sub (Face.singleton y) x) l 0,
+        (tens (elementary_sub ~inner:(Face.singleton y) ~outer:x) l 0,
          Face.union x f,
          i + 1))
       e.i (Lg.empty, Face.empty, i)
@@ -471,7 +475,7 @@ let norm l =
          i + 1)) e.p) in
   Lg.fold (fun e (omega, l, i) ->
       let (l_e, xs, i') = norm_edge e i in
-      (Lg.union (elementary_sub xs e.o) omega,
+      (Lg.union (elementary_sub ~inner:xs ~outer:e.o) omega,
       Lg.union l l_e,
        i')) l (Lg.empty, Lg.empty, 0)
   |> (fun (omega, l, _) -> (omega, l)) 
@@ -573,13 +577,13 @@ let get_dot l =
 
 (* decompose t. p is assumed epi and mono. PortSet are normalised.
    i_c and i_d are isos from t to c and d.*)
-let decomp t p i_e i_c i_d f_e =
+let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
   (* compute sets of nodes in c and d *)
   let (v_c, v_d) =
     (IntSet.of_list (Iso.dom i_c), IntSet.of_list (Iso.dom i_d))
   (* Introduce indices *)
-  and t_a = Array.of_list (Lg.elements t)
-  and p_a = Array.of_list (Lg.elements p)
+  and t_a = Array.of_list (Lg.elements target)
+  and p_a = Array.of_list (Lg.elements pattern)
   (* Inverse isos: T -> P *)
   and i_e' = Iso.inverse i_e
   and f_e' = Fun.inverse f_e in (* Not a function *)
@@ -680,15 +684,14 @@ let closed_edges l =
 let filter_iso f l =
   let (l', _, _, iso) =
     Lg.fold (fun e (acc, i, i', iso) ->
-        if f e then
-          ( Lg.add e acc,
-            i + 1,
-            i' + 1,
-            try Iso.add_exn i' i iso with
-            | Iso.NOT_BIJECTIVE -> assert false (*BISECT-IGNORE*)
-          )
-        else (acc, i + 1, i', iso)
-      ) l (Lg.empty, 0, 0, Iso.empty) in
+        if f e
+        then (Lg.add e acc,
+              i + 1,
+              i' + 1,
+              try Iso.add_exn i' i iso with
+              | Iso.NOT_BIJECTIVE -> assert false) (*BISECT-IGNORE*)
+        else (acc, i + 1, i', iso))
+      l (Lg.empty, 0, 0, Iso.empty) in
   (l', iso)
 
 let closed_edges_iso l =
@@ -704,29 +707,29 @@ exception NOT_TOTAL
 
 (* Closed edges in p are matched to closed edges in t. Controls are checked to
    exclude incompatible pairs. Return blocking pairs and blocking columns. *)
-let match_edges t p n_t n_p =
+let match_edges ~target ~pattern ~n_t ~n_p =
   let (clauses, _, acc_c, acc_b) =
     Lg.fold (fun e_p (acc, i, acc_c, acc_b) ->
         let (clause, js, b, _) =
           Lg.fold (fun e_t (acc, js, b, j) ->
               if compat_edges e_p e_t n_t n_p then
                 (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j :: js, b, j + 1)
-              else (acc, js, (i, j) :: b, j + 1)
-            ) t ([], [], [], 0) in
+              else (acc, js, (i, j) :: b, j + 1))
+            target ([], [], [], 0) in
         match js with
         | [] -> raise_notrace NOT_TOTAL (* No compatible edges found *)
-        | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b)
-      ) p ([], 0, [], []) in
+        | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b))
+      pattern ([], 0, [], []) in
   (clauses,
-   IntSet.diff (IntSet.of_int (Lg.cardinal t)) (IntSet.of_list acc_c),
+   IntSet.diff (IntSet.of_int (Lg.cardinal target)) (IntSet.of_list acc_c),
    Cnf.blocking_pairs acc_b)
 
-let _match_ports t p n_t n_p clauses : Cnf.clause list list =
+let _match_ports target pattern n_t n_p clauses : Cnf.clause list list =
   (* printf "-------------------- _match_ports -------------------\n"; *)
   List.fold_left (fun acc e_match ->
       let (e_i, e_j) = Cnf.to_ij e_match in
       let formulas =
-        Ports.compat_list p.(e_i) t.(e_j) n_p n_t in
+        Ports.compat_list pattern.(e_i) target.(e_j) n_p n_t in
       let res = Cnf.impl (Cnf.M_lit (e_i, e_j)) formulas in
       (* printf "%s\n" (String.concat "\n" (List.map (fun f -> *)
       (*      sprintf "(%d, %d) -> (%s)" e_i e_j  *)
@@ -737,24 +740,20 @@ let _match_ports t p n_t n_p clauses : Cnf.clause list list =
       (*           ) f) *)
       (*        ) *)
       (*   ) formulas)); *)
-      res :: acc
-    ) [] (List.flatten clauses)
+      res :: acc)
+    [] (List.flatten clauses)
 
 (* Nodes of matched edges are isomorphic. Indexes in clauses are for closed
    edges. *)
-let match_ports t p n_t n_p clauses : Cnf.clause list list =
+let match_ports ~target ~pattern ~n_t ~n_p clauses : Cnf.clause list list =
   let a_t =
-    Array.of_list (
-      List.map (fun e ->
-          e.p
-        ) (Lg.elements t)
-    )
+    Lg.elements target
+    |> List.map (fun e -> e.p)
+    |> Array.of_list
   and a_p =
-    Array.of_list (
-      List.map (fun e ->
-          e.p
-        ) (Lg.elements p)
-    ) in
+    Lg.elements pattern
+    |> List.map (fun e -> e.p)
+    |> Array.of_list in
   _match_ports a_t a_p n_t n_p clauses
 
 (* Is p sub-hyperedge of t? *)
@@ -839,15 +838,15 @@ let compat_sub p t f_e n_t n_p =
 
 (* Peers in the pattern are peers in the target. Auxiliary variables are
    introduced to model open edges matchings. They are stored in matrix t *)
-let match_peers t p n_t n_p =
+let match_peers ~target ~pattern ~n_t ~n_p =
   let (open_p, iso_p) =
     filter_iso (fun e ->
         not (Ports.is_empty e.p) && (not (is_closed e)))
-      p
+      pattern
   and (non_empty_t, iso_open) =
     filter_iso (fun e ->
         not (Ports.is_empty e.p))
-      t in
+      target in
   let h = H_int.create (Lg.cardinal non_empty_t) in
   ignore (Lg.fold (fun e i ->
       H_int.add h i e;

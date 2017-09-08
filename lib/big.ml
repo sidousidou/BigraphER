@@ -67,7 +67,7 @@ let parse lines =
   let l = Link.parse lines_l in
   { n = Link.arities l
         |> Nodes.parse s_n;
-    p = Place.parse r n s lines_p;
+    p = Place.parse ~regions:r ~nodes:n ~sites:s lines_p;
     l = l;
   }
 
@@ -125,15 +125,15 @@ let ion_chk f c =
   else
     ion f c
 
-let sub i o =
+let sub ~inner ~outer =
   { n = Nodes.empty;
     p = Place.id0;
-    l = Link.elementary_sub i o;
+    l = Link.elementary_sub ~inner ~outer;
   }
 
-let closure i = sub i Link.Face.empty
+let closure inner = sub ~inner ~outer:Link.Face.empty
 
-let intro o = sub Link.Face.empty o
+let intro outer = sub ~inner:Link.Face.empty ~outer
 
 (* (l list of parents for each site) r roots *)
 let placing l r f =
@@ -212,10 +212,10 @@ let close f b =
   comp (tens cs (id (Inter (n, g)))) b
 
 (* renaming through subsitution (o/i * b) *)
-let rename i o b =
+let rename ~inner:i ~outer:o b =
   let g = Link.Face.diff (face_of_inter (outer b)) i
   and n = ord_of_inter (outer b)
-  and s = sub i o in
+  and s = sub ~inner:i ~outer:o in
   comp (tens s (id (Inter (n, g)))) b
 
 let atom f c =
@@ -283,13 +283,13 @@ let to_dot b ide =
     ide roots_shp outer_shp rank_out hyp_shp nodes_shp sites_shp
     node_ranks inner_shp rank_in place_adj link_adj
 
-let decomp t p i_v i_e f_e =
+let decomp ~target ~pattern ~i_n ~i_e f_e =
   let (p_c, p_d, p_id, i_c, i_d) =
-    Place.decomp t.p p.p i_v in
+    Place.decomp ~target:target.p ~pattern:pattern.p i_n in
   let (l_c, l_d, l_id) =
-    Link.decomp t.l p.l i_e i_c i_d f_e
+    Link.decomp ~target:target.l ~pattern:pattern.l ~i_e ~i_c ~i_d f_e
   and (n_c, n_d) =
-    (Nodes.filter_apply_iso t.n i_c, Nodes.filter_apply_iso t.n i_d) in
+    (Nodes.filter_apply_iso target.n i_c, Nodes.filter_apply_iso target.n i_d) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty })
@@ -402,7 +402,7 @@ let rec filter_loop solver t p vars t_trans =
     begin
       let iso_v = get_iso solver vars.iso_nodes
       (* and iso_e = get_iso solver w e f *) in
-      if (Place.check_match t.p p.p t_trans iso_v) then
+      if (Place.check_match ~target:t.p ~pattern:p.p t_trans iso_v) then
         (solver, vars)
       else begin
         (* eprintf "Warning: invalid match not discarded by SAT. \ *)
@@ -412,29 +412,29 @@ let rec filter_loop solver t p vars t_trans =
       end
     end
 
-let add_c4 t p t_n p_n solver v =
+let add_c4 t p n_t n_p solver v =
   let (t_constraints, exc_clauses, js) =
-    Place.match_list t p t_n p_n in
+    Place.match_list ~target:t ~pattern:p ~n_t ~n_p in
   Cnf.post_conj_m exc_clauses solver v;
   (Array.of_list
      (List.fold_left (fun acc x ->
-          (Cnf.post_tseitin x solver v) :: acc
-        ) [] t_constraints),
+          (Cnf.post_tseitin x solver v) :: acc)
+         [] t_constraints),
    js)
 
-let add_c5 t p t_n p_n solver v =
+let add_c5 target pattern n_t n_p solver v =
   let (clauses_l, js_l) =
-    Place.match_leaves t p t_n p_n
+    Place.match_leaves ~target ~pattern ~n_t ~n_p
   and (clauses_o, js_o) =
-    Place.match_orphans t p t_n p_n in
+    Place.match_orphans ~target ~pattern ~n_t ~n_p in
   Cnf.post_conj_m (clauses_l @ clauses_o) solver v;
   IntSet.union js_l js_o
 
-let add_c6 t p t_n p_n solver v =
+let add_c6 target pattern n_t n_p solver v =
   let (clauses_s, js_s) =
-    Place.match_sites t p t_n p_n
+    Place.match_sites ~target ~pattern ~n_t ~n_p
   and (clauses_r, js_r) =
-    Place.match_roots t p t_n p_n in
+    Place.match_regions ~target ~pattern ~n_t ~n_p in
   Cnf.post_conj_m (clauses_s @ clauses_r) solver v;
   IntSet.union js_s js_r
 
@@ -460,28 +460,28 @@ let add_c11 unmatch_v solver m (aux : Minisat.var array array) rc_v =
 (*   |> (fun x -> *)
 (*       print_endline ("[" ^ x ^ "]")) *)
 
-let add_c7 t p t_n p_n aux rc_w solver w =
+let add_c7 target pattern n_t n_p aux rc_w solver w =
   let (clauses, b_cols, b_pairs) =
-    Link.match_edges t p t_n p_n in
+    Link.match_edges ~target ~pattern ~n_t ~n_p in
   Cnf.post_conj_m (clauses @ b_pairs) solver w;
   add_c11 b_cols solver w aux rc_w;
   clauses
 
-let add_c8 t p t_n p_n clauses solver v w =
+let add_c8 target pattern n_t n_p clauses solver v w =
   let constraints =
-    Link.match_ports t p t_n p_n clauses in
+    Link.match_ports ~target ~pattern ~n_t ~n_p clauses in
   List.iter (fun x ->
       Cnf.post_impl x solver w v)
     constraints
 
-let add_c10 t p solver v =
-  Cnf.post_conj_m (Place.match_trans t p) solver v
+let add_c10 target pattern solver v =
+  Cnf.post_conj_m (Place.match_trans ~target ~pattern) solver v
 
 (* Cnf.tot does not introduce commander-variables on columns. Using
    post_block. *)
-let add_c9 t p t_n p_n solver v =
+let add_c9 target pattern n_t n_p solver v =
   let (r, c, constraints, blocks, blocks_f, iso_p, iso_open) =
-    Link.match_peers t p t_n p_n in
+    Link.match_peers ~target ~pattern ~n_t ~n_p in
   let w = Cnf.init_aux_m r c solver in
   List.iter (fun x ->
       Cnf.post_impl x solver w v)
@@ -548,7 +548,7 @@ let aux_match t p t_trans =
     and (zs4, js0) = add_c4 t.p p.p t.n p.n solver v
     (* Add C5: orphans and leaves matching in the place graphs. *)
     and js1 = add_c5 t.p p.p t.n p.n solver v
-    (* Add C6: sites and roots in the place graphs. *)
+    (* Add C6: sites and regions in the place graphs. *)
     and js2 = add_c6 t.p p.p t.n p.n solver v in
     (* Add C7: edges in the pattern are matched to edges in the target. *)
     let clauses =
@@ -561,7 +561,7 @@ let aux_match t p t_trans =
     let (w', aux_bij_w'_rows, iso_w'_r, iso_w'_c) =
       add_c9 t.l p.l t.n p.n solver v in
     (* Add C10: block edges between unconnected nodes with sites and nodes with
-       roots. *)
+       regions. *)
     add_c10 t.p p.p solver v;
     (* If an edge is in a match in w then forbid matches in w' *)
     add_c12 solver w iso_w_c w' iso_w'_c aux_bij_w_cols rc_w;
@@ -601,7 +601,7 @@ let quick_unsat t p =
   || (Link.closed_edges p.l > Link.closed_edges t.l)
   || (Link.max_ports p.l > Link.max_ports t.l)
 
-let occurs t p =
+let occurs ~target:t ~pattern:p =
   try
     if p.n.Nodes.size = 0 then true
     else begin
@@ -615,7 +615,7 @@ let occurs t p =
   with
   | NO_MATCH -> false
 
-let occurrence t p t_trans =
+let occurrence ~target:t ~pattern:p t_trans =
   (* replace with an assertion *)
   if p.n.Nodes.size = 0 then raise NODE_FREE
   else if quick_unsat t p then None
@@ -680,7 +680,7 @@ let clause_of_iso iso m =
       ) (0, []) m
   )
 
-let occurrences t p =
+let occurrences ~target:t ~pattern:p =
   if p.n.Nodes.size = 0 then raise NODE_FREE
   else if quick_unsat t p then []
   else begin
@@ -760,13 +760,13 @@ let equal_SAT a b =
     let (t_constraints, exc_clauses, _) =
       Place.match_list_eq a.p b.p a.n b.n
     and (c_rn, _) =
-      Place.match_root_nodes a.p b.p a.n b.n
+      Place.match_region_nodes a.p b.p a.n b.n
     and (c_ns, _) =
       Place.match_nodes_sites a.p b.p a.n b.n
     and (clauses_l, _) =
-      Place.match_leaves b.p a.p b.n a.n
+      Place.match_leaves ~target:b.p ~pattern:a.p ~n_t:b.n ~n_p:a.n
     and (clauses_o, _) =
-      Place.match_orphans b.p a.p b.n a.n in
+      Place.match_orphans ~target:b.p ~pattern:a.p ~n_t:b.n ~n_p:a.n in
     (* let cols = *)
     (*   IntSet.union *)
     (*     (IntSet.union js_o js_l) *)
@@ -813,7 +813,7 @@ let key b =
 
 (* Comparison over keys already performed and failed *)
 let equal_opt a b =
-  (Place.deg_roots a.p = Place.deg_roots b.p)
+  (Place.deg_regions a.p = Place.deg_regions b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
   && (Sparse.equal a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
@@ -827,7 +827,7 @@ let equal a b =
   && (inter_equal (inner a) (inner b))
   && (inter_equal (outer a) (outer b))
   && (Place.edges a.p = Place.edges b.p)
-  && (Place.deg_roots a.p = Place.deg_roots b.p)
+  && (Place.deg_regions a.p = Place.deg_regions b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
   && (Nodes.equal a.n b.n)
   && (Sparse.equal a.p.Place.rs b.p.Place.rs)
@@ -872,8 +872,8 @@ let decomp_d d id =
      })
   | _ -> assert false (*BISECT-IGNORE*)
 
-let rewrite (i_n, i_e, f_e) b r0 r1 eta =
-  let (c, d, id) = decomp b r0 i_n i_e f_e in
+let rewrite (i_n, i_e, f_e) ~s ~r0 ~r1 eta =
+  let (c, d, id) = decomp ~target:s ~pattern:r0 ~i_n ~i_e f_e in
   match eta with
   | Some eta' ->
     (* Normalise link graph *)

@@ -307,7 +307,7 @@ module Make (R : RrType.T)
   (* Add labels for predicates *)
   let check (i, s) (_, h) =
     List.iter (fun (id, p) ->
-        if Big.occurs s p then
+        if Big.occurs ~target:s ~pattern:p then
           Base.H_string.add h id i)
 
   let rec _bfs g q i m t0 priorities predicates max iter_f =
