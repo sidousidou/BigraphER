@@ -75,6 +75,11 @@ type closure_exp =
   { cl_name : Id.t;
     cl_loc : Loc.t; }
 
+(* /{x0, x1} *)
+type merge_closure_exp =
+  { m_cl_names : Id.t list;
+    m_cl_loc : Loc.t; }
+
 (* x/{x0, x1} *)
 type sub_exp =
   { out_name : Id.t;
@@ -83,6 +88,7 @@ type sub_exp =
 
 type wire_exp =
   | Close_exp of closure_exp list
+  | Merge_close_exp of merge_closure_exp
   | Sub_exp of sub_exp
 
 type big_exp =

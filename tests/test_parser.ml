@@ -16,7 +16,7 @@ let ext = ".reference"
 let set_args name =
   let path = out_dir name in
   mkdir path;
-  let n = path / name in
+  let n = Filename.concat path name in
   [ dec_out path;
     l_out n;
     prism_out n;

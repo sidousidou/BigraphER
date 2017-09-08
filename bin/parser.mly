@@ -129,11 +129,8 @@ dec_ctrl:
 
 ctrl_exp:
   | CTRL CIDE EQUAL CINT                    { Ctrl_exp ($2, $4, loc $startpos $endpos)         }
-  | FUN CTRL CIDE LPAR ide_list RPAR EQUAL CINT
+  | FUN CTRL CIDE LPAR ide_list_nonempty RPAR EQUAL CINT
                                             { Ctrl_fun_exp ($3, $5, $8, loc $startpos $endpos) };
-
-ide_list:
-  ides = separated_list(COMMA, IDE)         { ides };
 
 int_exp:
   | CINT                                    { Int_val ($1, loc $startpos $endpos)       }
@@ -156,13 +153,13 @@ float_exp:
 
 dec_big:
   | BIG IDE EQUAL bexp                      { Big_exp ($2, $4, loc $startpos $endpos)         }
-  | FUN BIG IDE LPAR ide_list RPAR EQUAL bexp  
+  | FUN BIG IDE LPAR ide_list_nonempty RPAR EQUAL bexp  
                                             { Big_fun_exp ($3, $5, $8, loc $startpos $endpos) };
 
 dec_react:
   | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
       { React_exp ($2, $4, $6, $5, $7, loc $startpos $endpos)           }
-  | FUN REACT IDE LPAR ide_list RPAR EQUAL bexp arrow bexp eta_exp_opt
+  | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
       { React_fun_exp ($3, $5, $8, $10, $9, $11, loc $startpos $endpos) };
 
 arrow:
@@ -294,7 +291,7 @@ simple_bexp:
   | split_exp                               { $1                                          }
   | SLASH IDE                               { Big_close { cl_name = $2; 
 					                  cl_loc = loc $startpos $endpos;}}
-  | IDE SLASH LCBR ide_list RCBR            { Big_sub { out_name = $1;
+  | IDE SLASH LCBR ide_list_nonempty RCBR   { Big_sub { out_name = $1;
                                                         in_names = $4;
                                                         sub_loc = loc $startpos $endpos; }}
   | LCBR IDE RCBR                           { Big_new_name ($2, loc $startpos $endpos)    }
@@ -309,10 +306,10 @@ id_exp:
   | ID o_delim_int_1                        { { id_place = $2;
 						id_link = [];
 						id_loc = loc $startpos $endpos; } } 
-  | ID LCBR ide_list RCBR                   { { id_place = 0;
+  | ID LCBR ide_list_nonempty RCBR          { { id_place = 0;
 						id_link = $3;
 						id_loc = loc $startpos $endpos; } }
-  | ID LPAR CINT COMMA LCBR ide_list RCBR RPAR  
+  | ID LPAR CINT COMMA LCBR ide_list_nonempty RCBR RPAR  
                                             { { id_place = $3;
 						id_link = $6;
 						id_loc = loc $startpos $endpos; } };
@@ -334,9 +331,9 @@ o_delim_int_2:
 					       | Some n -> n };
 ion_exp:
   | CIDE                                    { Big_ion_exp ($1, [], loc $startpos $endpos)         }
-  | CIDE LCBR ide_list RCBR                 { Big_ion_exp ($1, $3, loc $startpos $endpos)         }	
+  | CIDE LCBR ide_list_nonempty RCBR        { Big_ion_exp ($1, $3, loc $startpos $endpos)         }
   | CIDE LPAR num_list RPAR                 { Big_ion_fun_exp ($1, $3, [], loc $startpos $endpos) }
-  | CIDE LPAR num_list RPAR LCBR ide_list RCBR  
+  | CIDE LPAR num_list RPAR LCBR ide_list_nonempty RCBR  
                                             { Big_ion_fun_exp ($1, $3, $6, loc $startpos $endpos) };
 
 place_exp:
@@ -353,9 +350,12 @@ int_list_list
 
 wire_exp:
   | closures                                { Close_exp $1  }
-  | IDE SLASH LCBR ide_list RCBR            { Sub_exp { out_name = $1;
+  | IDE SLASH LCBR ide_list_nonempty RCBR   { Sub_exp { out_name = $1;
                                                 in_names = $4;
-                                                sub_loc = loc $startpos $endpos; }};
+                                                sub_loc = loc $startpos $endpos; }}
+  | SLASH LCBR ide_list_nonempty RCBR       { Merge_close_exp {
+                                                m_cl_names = $3;
+                                                m_cl_loc = loc $startpos $endpos; }};
 
 closures: 
   | cs = nonempty_list(closure)             { cs }; 

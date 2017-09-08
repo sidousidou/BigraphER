@@ -1,7 +1,15 @@
+###1.3.0 (2017-09-09): ###
+
+* Add labels in the APIs to disambiguate arguments with the same type
+* Extend parser to support *merge* closures. Example: `/{x0,x1} b`
+* FIX: links are broken after applications of rules with instantiation maps
+
+
 ###1.2.1 (2017-07-24): ###
 
 * Use mandoc for man pages
 * Add support to parse a model from stdin
+
 
 ###1.2.0 (2017-06-28): ###
 
@@ -9,6 +17,7 @@
 * Add support for Probabilistic BRS
 * New syntax for BRS declarations: `begin [brs|pbrs|sbrs] ... end`
 * Add `Ctrl + C` trap
+
 
 ###1.1.0 (2017-03-10): ###
 
@@ -22,6 +31,7 @@
 * FIX: capture `NOT_PRIME` exception at run-time
 * FIX: typos in the documentation
 * FIX: warning 44
+
 
 ###1.0.2 (2016-05-20):###
 

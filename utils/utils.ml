@@ -40,8 +40,6 @@ let format_time () =
     tm.Unix.tm_sec
     (tm.Unix.tm_year + 1900)
 
-let (/) = Filename.concat
-
 let safe_mkdir dir =
   if not (Sys.file_exists dir) then
     try

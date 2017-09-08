@@ -37,7 +37,7 @@ let check_res res exp_res =
       ) (List.combine (sort_res res) (sort_res exp_res))
 
 let test_decomposition t p (i_n, i_e, f_e) =
-  let (c, d, id_big) = Big.decomp t p i_n i_e f_e in
+  let (c, d, id_big) = Big.decomp ~target:t ~pattern:p ~i_n ~i_e f_e in
   Big.(equal (comp c (comp (tens p id_big) d)) t)
 
 let attr_match = [("type", "ASSERT_MATCH");
@@ -66,7 +66,10 @@ let do_tests =
      xml_block "system-out" [] ["Decompositions:\n"
                                 ^ (List.mapi (fun i (i_n, i_e, f_e) ->
                                     let (c, d, id_big) =
-                                      Big.decomp t.target t.pattern i_n i_e f_e in
+                                      Big.decomp
+                                        ~target:t.target
+                                        ~pattern:t.pattern
+                                        ~i_n ~i_e f_e in
                                     "Occurrence "
                                     ^ (string_of_int i) ^ ":\nTarget:\n"
                                     ^ (Big.to_string t.target) ^ "\nPattern:\n"
@@ -89,7 +92,7 @@ let do_tests =
       and decomp_fail_msg =
         sprintf "Malformed %s decompositions of %s." t.p_name t.t_name in
       try
-        let occs = Big.occurrences t.target t.pattern in
+        let occs = Big.occurrences ~target:t.target ~pattern:t.pattern in
         t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
         if check_res t.res t.exp_res
         then (if List.for_all (fun o ->

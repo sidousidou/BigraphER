@@ -185,10 +185,11 @@ val nest : bg -> bg -> bg
     @raise COMP_ERROR if one composition cannot be performed. *)
 val share : bg -> bg -> bg -> bg
 
-(** [close f b] closes names in [f]. *)
+(** [close f b] closes names in [f]. Example: [\x0 \x1 b]. *)
 val close : Link.Face.t -> bg -> bg
 
-(** [rename inner outer b] renames the names in [in] to the names in [out]. *)
+(** [rename inner outer b] renames the names in [in] to the names in [out]. The
+    outer names in [b] not in [inner] are left untouched. *)
 val rename : inner:Link.Face.t -> outer:Link.Face.t -> bg -> bg
   
 (** {3 Predicates} *)

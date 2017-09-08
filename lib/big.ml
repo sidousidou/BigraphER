@@ -207,8 +207,11 @@ let share f psi g =
 let close f b =
   let g = Link.Face.diff (face_of_inter (outer b)) f
   and n = ord_of_inter (outer b)
-  and cs = tens_of_list (List.map (fun n ->
-      closure (Link.Face.singleton n)) (Link.Face.elements f)) in
+  and cs = 
+    Link.Face.elements f
+    |> List.map (fun n ->
+        closure (Link.Face.singleton n))
+    |> tens_of_list in
   comp (tens cs (id (Inter (n, g)))) b
 
 (* renaming through subsitution (o/i * b) *)

@@ -487,6 +487,7 @@ module Make (T: TsType.RS with type label = float) = struct
       (if is_atomic id p env then raise (ERROR (Atomic_ctrl id, p))
        else Big.ion face c)
 
+  (* Checking for duplicates. *)
   let parse_face ns p =
     let f =  Link.parse_face ns
     in if List.length ns != Link.Face.cardinal f
@@ -604,6 +605,11 @@ module Make (T: TsType.RS with type label = float) = struct
           (Big.rename
              ~inner:(parse_face s.in_names s.sub_loc)
              ~outer:(Link.parse_face [s.out_name]) b_v,
+           env_t')
+        | Merge_close_exp cs ->
+          (let outer = Link.parse_face ["~0"] in    
+            Big.rename ~inner:(Link.parse_face cs.m_cl_names) ~outer b_v
+           |> Big.close outer,
            env_t')
       end
 
@@ -1133,9 +1139,14 @@ module Make (T: TsType.RS with type label = float) = struct
           "Big.close (Link.parse_face " ^ (ml_of_ids (names_of_closures cs))
           ^ ") (" ^ (ml_of_big b) ^ ")"
         | Sub_exp s ->
-          "Big.rename (Link.parse_face " ^ (ml_of_ids s.in_names)
-          ^ ") (Link.parse_face " ^ (ml_of_ids [s.out_name])
+          "Big.rename ~inner:(Link.parse_face " ^ (ml_of_ids s.in_names)
+          ^ ") ~outer:(Link.parse_face " ^ (ml_of_ids [s.out_name])
           ^ ") (" ^ (ml_of_big b) ^ ")"
+        | Merge_close_exp cs ->
+          let outer = "(Link.parse_face [\"~0\"])" in    
+          "Big.rename ~inner:(Link.parse_face "
+          ^ (ml_of_ids cs.m_cl_names) ^ ") ~" ^ outer
+          ^ " (" ^ (ml_of_big b) ^ ") |> Big.close " ^ outer
       end
 
   let ml_of_eta = function
