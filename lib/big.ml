@@ -41,8 +41,10 @@ let string_of_inter (Inter (n, f)) =
   "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
 let to_string b =
-  (Nodes.to_string b.n) ^ "\n"
-  ^ (Place.to_string b.p) ^ (Link.to_string b.l)
+  List.filter (fun x -> not (String.equal "" x)) [ Nodes.to_string b.n;
+                                                   Place.to_string b.p;
+                                                   Link.to_string b.l ]
+  |> String.concat "\n"
 
 let parse lines =
   let (r, n, s, e) =

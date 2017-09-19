@@ -20,7 +20,9 @@ exception COMP_ERROR of (int * int)
 let to_string p =
   Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns)
   |> Sparse.to_string
-  |> sprintf "%d %d %d\n%s\n" p.r p.n p.s
+  |> fun s -> (string_of_int p.r) ^ " "
+              ^ (string_of_int p.n) ^ " "
+              ^ (string_of_int p.s) ^ "\n" ^ s
 
 (* Parse a place graph from a list of strings *)
 let parse ~regions:r ~nodes:n ~sites:s lines =
