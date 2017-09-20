@@ -27,12 +27,6 @@ let outer b = Inter (b.p.Place.r, Link.outer b.l)
 let inter_equal (Inter (i, n)) (Inter (j, m)) =
   (i = j) && (Link.Face.equal n m)
 
-(* let inter_compare (Inter (i, n)) (Inter (j, m)) = *)
-(*   let x = i - j in *)
-(*   match x with *)
-(*   | 0 -> Link.Face.compare n m *)
-(*   | _ -> x *)
-
 let ord_of_inter (Inter (i, _)) = i
 
 let face_of_inter (Inter (_, f)) = f
@@ -41,9 +35,10 @@ let string_of_inter (Inter (n, f)) =
   "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
 let to_string b =
-  List.filter (fun x -> not (String.equal "" x)) [ Nodes.to_string b.n;
-                                                   Place.to_string b.p;
-                                                   Link.to_string b.l ]
+  List.filter (fun x -> (String.compare "" x) != 0)
+    [ Nodes.to_string b.n;
+      Place.to_string b.p;
+      Link.to_string b.l ]
   |> String.concat "\n"
 
 let parse lines =
