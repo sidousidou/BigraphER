@@ -15,6 +15,25 @@ type pg = {
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : pg -> string
 
+(** Return a JSON representation of a place graph. Example:
+     
+    ["place_graph": \{
+       "regions": 2,
+       "nodes": 3,
+       "sites": 1,
+       "dag": [
+         \{
+           "source": 1,
+           "target": 2
+         \},
+         \{
+           "source": 0,
+           "target": 2
+         \}
+       ]
+     \}] *)
+val json_of_place : pg -> Base.JSON.json_node
+
 (** Compute the number of edges in the DAG. *)
 val edges : pg -> int
 

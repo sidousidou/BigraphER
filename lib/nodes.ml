@@ -41,6 +41,16 @@ let to_string s =
      |> String.concat ",")
   ^ "}"
 
+let json_of_nodes s =
+  let open JSON in
+  fold (fun i c acc ->
+      let n = J_node [ J_int ("node_id", i);
+                       J_record ("control", [
+                           J_string ("control_id", Ctrl.name c);
+                           J_int ("control_arity", Ctrl.arity c)]) ] in
+      n :: acc) s []
+  |> (fun l -> J_array ("nodes", l))
+
 let string_of_sorts s =
   "{"
   ^ (M_string.fold (fun c vs acc ->

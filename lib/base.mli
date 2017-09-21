@@ -17,6 +17,19 @@ module H_int : Hashtbl.S with type key = int
 
 module H_string : Hashtbl.S with type key = string
 
+
+(** {3 JSON format} *)
+module JSON :
+sig
+  type json_node =
+    | J_int of string * int
+    | J_string of string * string
+    | J_array of string * json_node list
+    | J_record of string * json_node list
+    | J_node of json_node list
+  val to_string : json_node -> string
+end
+
 (** {3 Helper functions} *)
 
 (** [safe (Some v)] returns value [v]. Raises an exception on [None].

@@ -55,6 +55,11 @@ val face_of_inter : inter -> Link.Face.t
 (** Compute the string representation of a bigraph. *)
 val to_string: bg -> string
 
+(** Return a JSON representation of a bigraph. See {!val:Nodes.json_of_nodes},
+    {!val:Place.json_of_place}, and {!val:Link.json_of_link} for example
+    outputs.*)
+val json_of_big: bg -> Base.JSON.json_node
+
 (** Parse a bigraph. *)
 val parse : string list -> bg
 

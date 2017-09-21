@@ -214,6 +214,30 @@ let to_string l =
   |> List.map string_of_edge
   |> String.concat "\n"
 
+let json_of_face f =
+  let open JSON in
+  Face.fold (fun (Nam x) acc ->
+      (J_string ("name", x)) :: acc) f []
+  
+let json_of_ports p =
+  let open JSON in
+  Ports.fold (fun n ar acc ->
+      (J_node [ J_int ("node_id", n);
+                J_int ("port_arity", ar) ])
+      :: acc) p []
+
+let json_of_edge e =
+  let open JSON in
+  J_node [ J_array ("inner", json_of_face e.i);
+           J_array ("outer", json_of_face e.o);
+           J_array ("ports", json_of_ports e.p) ]
+  
+let json_of_link l =
+  let open JSON in
+  Lg.fold (fun e acc ->
+      (json_of_edge e) :: acc) l []
+  |> (fun l ->  J_array ("link_graph", l))
+
 let parse lines =
   let build_edge s n =
     let a = Str.split (Str.regexp_string " ") s in

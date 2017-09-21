@@ -20,12 +20,34 @@ val empty : t
 (** Return [true] if the set is empty. *)			
 val is_empty : t -> bool
 
-(** Return a string representation of a node set. Example: ["\{(2, Ready:0),(0,
-      A:1),(3, Fun:0),(1, Snd:2)\}"]. *)
+(** Return a string representation of a node set. Example: 
+
+    [\{(2, Ready:0),(0, A:1),(3, Fun:0),(1, Snd:2)\}]. *)
 val to_string : t -> string
 
+(** Return a JSON representation of a node set. Example:
+ 
+    ["nodes": [
+       \{
+          "node_id": 1,
+          "control": \{
+            "control_id": "Send",
+            "control_arity": 2
+          \}
+       \},
+       \{
+          "node_id": 2,
+          "control": \{
+            "control_id": "New",
+            "control_arity": 1
+          \}
+       \}
+     ]]*)
+val json_of_nodes : t -> Base.JSON.json_node
+
 (** Return a string representation of the sorts of a node set. Example:
-    ["\{Ready, A, Fun, Snd\}"]. *)
+
+    [\{Ready, A, Fun, Snd\}]. *)
 val string_of_sorts : t -> string
 
 (** [to_dot ns] returns a string expressing node shapes in dot format. *)
@@ -43,8 +65,8 @@ val find_all : Ctrl.t -> t -> IntSet.t
 val tens : t -> t -> t
 
 (** [parse s m] parses the string representation of a node set. Argument [m]
-      is a map between node identifiers and arities. An example for [s] is: ["A
-      A B D"]. *)
+      is a map between node identifiers and arities. An example for [s] is:
+    ["A A B D"]. *)
 val parse : string -> int Base.M_int.t -> t
 
 (** Apply an isomorphism.
@@ -62,7 +84,9 @@ val filter_apply_iso : t -> int Iso.t -> t
 val not_sub : t -> t -> bool
 
 (** Compute the norm of a set. The norm is a defined as a sorted list of
-    controls. Example: [["A"; "A"; "C"; "D"; "T"]]. *)
+    controls. Example:
+
+    [["A"; "A"; "C"; "D"; "T"]]. *)
 val norm : t -> string list
 
 (** Equality test. Node identities are ignored. *)		    

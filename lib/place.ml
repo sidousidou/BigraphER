@@ -24,6 +24,20 @@ let to_string p =
               ^ (string_of_int p.n) ^ " "
               ^ (string_of_int p.s) ^ "\n" ^ s
 
+let json_of_place p =
+  let open JSON in
+  let m =
+    Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) in
+  Sparse.fold (fun i j acc ->
+      let e = J_node [ J_int ("source", i); J_int ("target", j) ] in
+      e :: acc) m []
+  |> (fun m ->
+      J_record ("place_graph", [ J_int ("regions", p.r);
+                                 J_int ("nodes", p.n);
+                                 J_int ("sites", p.s);
+                                 J_array ("dag", m)
+                               ]))
+
 (* Parse a place graph from a list of strings *)
 let parse ~regions:r ~nodes:n ~sites:s lines =
   assert (r >= 0);

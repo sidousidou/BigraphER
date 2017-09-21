@@ -41,6 +41,12 @@ let to_string b =
       Link.to_string b.l ]
   |> String.concat "\n"
 
+let json_of_big b  =
+  let open JSON in
+  J_node [ Nodes.json_of_nodes b.n;
+           Place.json_of_place b.p;
+           Link.json_of_link b.l ]
+  
 let parse lines =
   let (r, n, s, e) =
     let a =

@@ -48,6 +48,7 @@ sig
   type 'a t
 
   (** {3 Standard operations on maps} *)	   
+
   val empty : int t
   val is_empty : 'a t -> bool
   val mem : key -> 'a t -> bool
@@ -73,7 +74,9 @@ sig
   (** {3 Additional functions} *)
 
   (** [to_string s] gives the string representation of port set [s]. For
-      example: [\{(0, 0), (1, 3)\}]. *)
+      example:
+
+      [\{(0, 0), (1, 3)\}]. *)
   val to_string : int t -> string
 
   (** [of_nodes ns] transform a set of nodes into a set of ports. *)
@@ -157,6 +160,52 @@ val string_of_face : Face.t -> string
 
 (** [to_string l] computes the string representation of link graph [l]. *)
 val to_string : Lg.t -> string
+
+(** Return a JSON representation of a link graph. Example:
+ 
+    ["link_graph": [
+       \{
+         "inner": [
+           \{
+             "name": "x"
+           \},
+           \{
+             "name": "y"
+           \}
+         ],
+         "outer": [
+           \{
+             "name": "z"
+           \}
+         ],
+         "ports": [
+           \{
+             "node_id": 1,
+             "port_arity": 2
+           \},
+           \{
+             "node_id": 2,
+             "port_arity": 1
+           \}
+         ]
+       \},
+       \{
+         "inner": [],
+         "outer": [
+           \{
+             "name": "n"
+           \}
+         ],
+         "ports": [
+           \{
+             "node_id": 1,
+             "port_arity": 2
+           \}
+         ]
+       \}
+     ]]
+*)
+val json_of_link : Lg.t -> Base.JSON.json_node
 
 (** Parse a list of strings. *)
 val parse : string list -> Lg.t
