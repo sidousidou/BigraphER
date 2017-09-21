@@ -168,6 +168,7 @@ sig
   val cardinal : p_class list -> int
   val step : Big.bg -> react list -> occ list * int
   val random_step : Big.bg -> react list -> occ option * int
+  val apply : Big.bg -> react list -> Big.bg
   val fix : Big.bg -> react list -> Big.bg * int
   val rewrite : Big.bg -> p_class list -> Big.bg * int
   exception MAX of graph * stats
@@ -270,6 +271,8 @@ module Make (R : RrType.T)
 
   let rhs_of_react r = R.rhs r
 
+  let apply = R.apply
+                
   let fix = R.fix
 
   let step = R.step

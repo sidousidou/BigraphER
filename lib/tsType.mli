@@ -64,6 +64,7 @@ module type RS = sig
   val cardinal : p_class list -> int
   val step : Big.bg -> react list -> occ list * int
   val random_step : Big.bg -> react list -> occ option * int
+  val apply : Big.bg -> react list -> Big.bg
   val fix : Big.bg -> react list -> Big.bg * int
   val rewrite : Big.bg -> p_class list -> Big.bg * int  
   exception MAX of graph * stats
@@ -166,7 +167,9 @@ module Make (R : RrType.T)
   val step : Big.bg -> R.t list -> R.occ list * int
 
   val random_step : Big.bg -> R.t list -> R.occ option * int
-                                                                   
+
+  val apply : Big.bg -> R.t list -> Big.bg
+                                    
   val is_valid_priority : p_class -> bool
 
   val is_valid_priority_list : p_class list -> bool
