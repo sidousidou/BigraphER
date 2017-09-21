@@ -88,6 +88,7 @@ module type RS = sig
   val write_prism : graph -> name:string -> path:string -> int
   val write_lab : graph -> name:string -> path:string -> int
   val write_dot : graph -> name:string -> path:string -> int
+  val write_json : graph -> name:string -> path:string -> int
 end
 
 (* Discrete time or continuous time *)
@@ -206,5 +207,7 @@ module Make (R : RrType.T)
   val write_lab : t -> name:string -> path:string -> int
 
   val write_dot : t -> name:string -> path:string -> int
+    
+  val write_json : t -> name:string -> path:string -> int
 
 end

@@ -80,6 +80,15 @@ module MakeE (G : G) = struct
     |> List.append [(string_of_int s) ^ " " ^ (string_of_int e)]
     |> String.concat "\n"
 
+  let to_json g =
+    let open Base.JSON in
+    Base.H_int.fold (fun v u acc ->
+        (J_node [ J_int ("source", v);
+                  J_int ("target", G.dest u) ])
+        :: acc) (G.edges g) []
+    |> (fun l -> J_node [ J_array ("transition_system", l) ])
+    |> to_string
+  
   let to_dot g ~name =
     let rank = "{ rank=source; 0 };\n" in
     let states =
@@ -119,7 +128,7 @@ module MakeE (G : G) = struct
                     |> fun s -> s ::  acc) preds []
     |> List.rev
     |> String.concat ";\n"
-
+  
   let iter_states ~f g =
     Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
 
@@ -134,6 +143,9 @@ module MakeE (G : G) = struct
 
   let write_dot g ~name ~path =
     Export.write_string (to_dot g ~name) ~name ~path
+      
+  let write_json g ~name ~path =
+    Export.write_string (to_json g) ~name ~path
 
 end
 
@@ -193,6 +205,7 @@ sig
   val write_prism : graph -> name:string -> path:string -> int
   val write_lab : graph -> name:string -> path:string -> int
   val write_dot : graph -> name:string -> path:string -> int
+  val write_json : graph -> name:string -> path:string -> int
 end
 
 (* Discrete time or continuous time *)

@@ -98,6 +98,11 @@ val write_dot : bg -> name:string -> path:string -> int
     @raise Export.ERROR when an error occurs. *)
 val write_svg : bg -> name:string -> path:string -> int
 
+(** Export to file the string representation in [json] format of a bigraph.
+
+    @raise Export.ERROR when an error occurs. *)
+val write_json : bg -> name:string -> path:string -> int
+
 (** {3 Elementary bigraphs} *)
 
 (** Identity over interface [i]. *)

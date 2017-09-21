@@ -904,3 +904,8 @@ let write_svg b ~name ~path =
 
 let write_dot b ~name ~path =
   Export.write_string (to_dot b name) ~name ~path
+
+let write_json b ~name ~path =
+  json_of_big b
+  |> JSON.to_string    
+  |> Export.write_string ~name ~path

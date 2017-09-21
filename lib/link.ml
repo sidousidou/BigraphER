@@ -217,7 +217,7 @@ let to_string l =
 let json_of_face f =
   let open JSON in
   Face.fold (fun (Nam x) acc ->
-      (J_string ("name", x)) :: acc) f []
+      (J_node [ J_string ("name", x) ]) :: acc) f []
   
 let json_of_ports p =
   let open JSON in

@@ -28,6 +28,7 @@ type format_op =
   | Dot
   | Svg
   | Txt
+  | Json
 
 type opt =
   | Const of Ast.const list
@@ -199,6 +200,8 @@ let eval_env () =
     |> List.map (function
         | "svg" -> Svg
         | "dot" -> Dot
+        | "json" -> Json
+        | "txt" -> Txt
         | s -> raise (ERROR (Malformed_env s))) in
   (try
      defaults.verb <- (ignore (Sys.getenv "BIGVERBOSE"); true);
@@ -236,7 +239,7 @@ let msg_opt fmt = function
                 (colorise `underline "DIR")
   | Ext _ ->  fprintf fmt "@[<hov>Specify a comma-separated list@ of@ output@ \
                            formats@ for@ options@ `%s',@ `%s'@ and@ `%s'.@ \
-                           Supported@ formats@ are@ `dot',@ `svg'@ and@ \
+                           Supported@ formats@ are@ `dot',@ `json',@ `svg'@ and@ \
                            `txt'.@ This@ is@ equivalent@ to@ setting@ \
                            $BIGFORMAT@ to@ %s.@]"
                 (string_of_opt "|" (Decs ""))
@@ -399,6 +402,7 @@ let eval_version fmt () =
 let string_of_format f =
   List.map (function
       | Svg -> "svg"
+      | Json -> "json"
       | Dot -> "dot"
       | Txt -> "txt") f
   |> String.concat ","

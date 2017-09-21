@@ -203,4 +203,9 @@ val write_prism : graph -> name:string -> path:string -> int
     @raise Export.ERROR when an error occurs. *)
 val write_svg : graph -> name:string -> path:string -> int
 
+(** Export to file the string representation in [json] format of a CTMC. 
+
+    @raise Export.ERROR when an error occurs. *)
+val write_json : graph -> name:string -> path:string -> int
+
 (**/**)

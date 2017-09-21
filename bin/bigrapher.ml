@@ -147,6 +147,7 @@ let print_fun fmt c verb fname i =
 let format_map = function
   | Cmd.Svg -> (Big.write_svg, ".svg")
   | Cmd.Dot -> (Big.write_dot, ".dot")
+  | Cmd.Json -> (Big.write_json, ".json")
   | Cmd.Txt -> (Big.write_txt, ".txt")
 
 let export_prism fmt msg f =
@@ -314,6 +315,7 @@ module Run
     f ();
     let format_map = function
       | Cmd.Svg -> (T.write_svg graph, ".svg")
+      | Cmd.Json -> (T.write_json graph, ".json")
       | Cmd.Dot -> (T.write_dot graph, ".dot")
       | Cmd.Txt -> (T.write_prism graph, ".txt") in
     print_stats fmt stats;
