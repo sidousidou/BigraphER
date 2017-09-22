@@ -1,3 +1,9 @@
+###1.4.0 (2017-09-22): ###
+
+* Add support for `json` output format
+* FIX: `Big.to_string` when link graph is empty
+
+
 ###1.3.0 (2017-09-09): ###
 
 * Add labels in the APIs to disambiguate arguments with the same type
