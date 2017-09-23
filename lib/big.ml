@@ -46,6 +46,7 @@ let json_of_big b  =
   J_node [ Nodes.json_of_nodes b.n;
            Place.json_of_place b.p;
            Link.json_of_link b.l ]
+  |> to_string
   
 let parse lines =
   let (r, n, s, e) =
@@ -907,5 +908,4 @@ let write_dot b ~name ~path =
 
 let write_json b ~name ~path =
   json_of_big b
-  |> JSON.to_string    
   |> Export.write_string ~name ~path
