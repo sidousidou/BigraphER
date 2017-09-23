@@ -38,7 +38,9 @@ val of_list : (int * int) list -> int t
 
 (** [parse l] returns a function in which the numbers from [0] to [n - 1] (with
     [n] the length of [l]) are mapped to the elements of [l], in the given
-    order. Example: [parse [0;0;3;1;2] = [(0,0);(1,0);(2,3);(3,1);(4,2)]]. *)
+    order. Example:
+
+    [parse [0;0;3;1;2] = [(0,0);(1,0);(2,3);(3,1);(4,2)]]. *)
 val parse : int list -> int t
 
 (** Return the string representation of a function. Example: ["\{(1, 2), (2, 3),

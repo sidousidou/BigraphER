@@ -1,8 +1,9 @@
 # OASIS_START
-# DO NOT EDIT (digest: 71c09756e514a38ab46d1d1e65b26288)
+# DO NOT EDIT (digest: 76038a05363caad615e6c637f9f968db)
 Ctrl
 Nodes
 Iso
+Fun
 Rs
 Place
 Link
@@ -12,7 +13,6 @@ Sbrs
 Pbrs
 Base
 Cnf
-Fun
 IntSet
 Rel
 Sparse

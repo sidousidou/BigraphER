@@ -37,6 +37,7 @@ Library bigraph
   Modules:         Ctrl,
                    Nodes,
                    Iso,
+                   Fun,		   
                    Rs,
                    Place,
                    Link,
@@ -46,7 +47,6 @@ Library bigraph
                    Pbrs
  InternalModules:  Base,
                    Cnf,
-                   Fun,
                    IntSet,
                    Rel,
                    Sparse,

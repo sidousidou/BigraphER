@@ -4,9 +4,12 @@
 (** Type of isomorphisms on integers. *)
 type +'a t
 
-(** Isomorphisms are bijective functions. For example, pairs ["\{(1, 2), (3,
-    2)\}"] are not allowed because value [2] in the co-domain is the mapping of
-    both [1] and [3]. This exception is raised when an invalid isomorphism is
+(** Isomorphisms are bijective functions. For example, pairs 
+
+    ["\{(1, 2), (3, 2)\}"]
+
+    are not allowed because value [2] in the co-domain is the mapping of both
+    [1] and [3]. This exception is raised when an invalid isomorphism is
     generated. *)
 exception NOT_BIJECTIVE
 
@@ -41,8 +44,9 @@ val to_list : int t -> (int * int) list
     @raise NOT_BIJECTIVE if [l] is not a valid isomorphism. *)
 val of_list_exn : (int * int) list -> int t
 
-(** Return the string representation of an isomorphism. Example: ["\{(1, 1), (2,
-    3), (5, 2) \}"]. *)
+(** Return the string representation of an isomorphism. Example:
+
+    ["\{(1, 1), (2, 3), (5, 2) \}"]. *)
 val to_string : int t -> string
 
 (** [add_exn i j iso] adds a new pair [(i, j)] to isomorphism [iso]. If [i] was
