@@ -43,7 +43,9 @@ val to_string : t -> string
           \}
        \}
      ]]*)
-val json_of_nodes : t -> Base.JSON.json_node
+val json_of_nodes : t -> string
+                           
+val json_of_nodes_f : t -> Base.JSON.json_node
 
 (** Return a string representation of the sorts of a node set. Example:
 

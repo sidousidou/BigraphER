@@ -205,7 +205,9 @@ val to_string : Lg.t -> string
        \}
      ]]
 *)
-val json_of_link : Lg.t -> Base.JSON.json_node
+val json_of_link : Lg.t -> string
+  
+val json_of_link_f : Lg.t -> Base.JSON.json_node
 
 (** Parse a list of strings. *)
 val parse : string list -> Lg.t

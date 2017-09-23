@@ -32,7 +32,9 @@ val to_string : pg -> string
          \}
        ]
      \}] *)
-val json_of_place : pg -> Base.JSON.json_node
+val json_of_place : pg -> string
+                            
+val json_of_place_f : pg -> Base.JSON.json_node
 
 (** Compute the number of edges in the DAG. *)
 val edges : pg -> int

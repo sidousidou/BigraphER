@@ -232,11 +232,14 @@ let json_of_edge e =
            J_array ("outer", json_of_face e.o);
            J_array ("ports", json_of_ports e.p) ]
   
-let json_of_link l =
+let json_of_link_f l =
   let open JSON in
   Lg.fold (fun e acc ->
       (json_of_edge e) :: acc) l []
   |> (fun l ->  J_array ("link_graph", l))
+
+let json_of_link s =
+  JSON.to_string @@ json_of_link_f s
 
 let parse lines =
   let build_edge s n =

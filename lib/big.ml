@@ -43,10 +43,10 @@ let to_string b =
 
 let json_of_big b  =
   let open JSON in
-  J_node [ Nodes.json_of_nodes b.n;
-           Place.json_of_place b.p;
-           Link.json_of_link b.l ]
-  |> to_string
+  J_node [ Nodes.json_of_nodes_f b.n;
+           Place.json_of_place_f b.p;
+           Link.json_of_link_f b.l ]
+  |> JSON.to_string
   
 let parse lines =
   let (r, n, s, e) =

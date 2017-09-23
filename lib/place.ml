@@ -24,7 +24,7 @@ let to_string p =
               ^ (string_of_int p.n) ^ " "
               ^ (string_of_int p.s) ^ "\n" ^ s
 
-let json_of_place p =
+let json_of_place_f p =
   let open JSON in
   let m =
     Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns) in
@@ -37,6 +37,9 @@ let json_of_place p =
                                  J_int ("sites", p.s);
                                  J_array ("dag", m)
                                ]))
+
+let json_of_place s =
+  JSON.to_string @@ json_of_place_f s
 
 (* Parse a place graph from a list of strings *)
 let parse ~regions:r ~nodes:n ~sites:s lines =
