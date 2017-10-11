@@ -18,11 +18,14 @@ exception COMP_ERROR of (int * int)
 
 (* String representation *)
 let to_string p =
+  let head p = (string_of_int p.r) ^ " "
+               ^ (string_of_int p.n) ^ " "
+               ^ (string_of_int p.s) in 
   Sparse.stack (Sparse.append p.rn p.rs) (Sparse.append p.nn p.ns)
   |> Sparse.to_string
-  |> fun s -> (string_of_int p.r) ^ " "
-              ^ (string_of_int p.n) ^ " "
-              ^ (string_of_int p.s) ^ "\n" ^ s
+  |> (function
+      | "" -> head p
+      | s -> (head p) ^ "\n" ^ s) 
 
 let json_of_place_f p =
   let open JSON in
