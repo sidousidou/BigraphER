@@ -52,7 +52,16 @@ val face_of_inter : inter -> Link.Face.t
 
 (** {3 Functions on bigraphs} *)
 
-(** Compute the string representation of a bigraph. *)
+(** Compute the string representation of a bigraph. Example:
+
+    [{(0, A:3),(1, A:3)}
+     2 2 0
+     10
+     10
+     01
+     00
+     ({}, {}, {(0, 1), (1, 2)})
+     ({}, {}, {(0, 2), (1, 1)})] *)
 val to_string: bg -> string
 
 (** Return a JSON representation of a bigraph. See {!val:Nodes.json_of_nodes},
@@ -60,7 +69,23 @@ val to_string: bg -> string
     outputs.*)
 val json_of_big: bg -> string
 
-(** Parse a bigraph. *)
+(** Parse a bigraph. Example input format:
+
+    [2 2 0 2
+     A A
+     10
+     10
+     01
+     00
+     1 1 2 f
+     1 2 2 f]
+
+    The first line specifies the number of regions, nodes and sites in the
+    displayed order. The second line lists the controls of the nodes. It follows
+    the adjacency matrix for the place graph and a list of links. A link is open
+    (closed) if the corresponding line terminates with [t] ([f]). Note this
+    example corresponds to bigraph shown in the documentation of
+    {!val:Big.to_string}. *)
 val parse : string list -> bg
 
 (** [to_dot b i] compute the string expressing bigraph [b] named [i] in 
