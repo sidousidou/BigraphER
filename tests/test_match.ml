@@ -179,6 +179,33 @@ let do_equality_tests l ts =
               ^ (Printexc.get_backtrace ()) ]]))
       ts)
 
+let do_to_string_tests =
+  let success s msg =
+    (s,
+     module_name,
+     xml_block "system-out" [] [msg],
+     [])
+  and failure s msg_out msg =
+    (s,
+     module_name,
+     xml_block "system-out" [] [msg_out],
+     [xml_block "failure" attr_match [msg]])
+  and error n b =
+    n ^ "\n" ^ (Big.to_string b) ^ "\n"
+    ^ (Printexc.get_backtrace ()) in
+  List.map (fun (n, b) ->
+      let s = n ^ " = Big.of_string(Big.to_string(" ^ n ^ "))"
+      and s_b = Big.to_string b in
+      try
+        if Big.equal b (Big.of_string s_b) then success s "Bigraph parsed correctly"
+        else failure s "Parse error" (sprintf "%s != %s" s_b (Big.to_string (Big.of_string s_b)))
+      with
+      | _ ->
+        (s,
+         module_name,
+         xml_block "system-out" [] [error_msg],
+         [xml_block "error" attr_err [error n b]]))
+
 let tests bgs = (* TEST 1 *)
   [ {
     t_name = "T1";
@@ -540,9 +567,11 @@ let () =
     List.map (fun (n, ls) -> (n, (Big.parse ls))) bg_strings in
   let ts = tests bgs in
   let testcases_match = do_tests ts
-  and testcases_eq = do_equality_tests bgs ts in
+  and testcases_eq = do_equality_tests bgs ts
+  and testcases_to_string = do_to_string_tests bgs in
   write_xml (testsuite "test_match" testcases_match) Sys.argv.(2) "match-junit.xml";
   write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml";
+  write_xml (testsuite "test_to_string" testcases_to_string) Sys.argv.(2) "to-string-junit.xml";
   List.iter (fun (n, b) ->
       let name = n ^ ".svg" in
       try ignore (Big.write_svg b ~name ~path:Sys.argv.(3)) with
