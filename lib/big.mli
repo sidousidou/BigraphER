@@ -36,6 +36,9 @@ exception NO_MATCH
 (** Raised when the matching pattern has no nodes. *)
 exception NODE_FREE
 
+(** Raised when an export error occurs. *)
+exception EXPORT_ERROR of string
+
 (** {3 Functions on interfaces} *)
 
 (** Equality over interfaces. *)
@@ -114,24 +117,26 @@ val apply_exn : int Iso.t -> bg -> bg
     The link graph is the identity over face [f]. *)
 val placing : int list list -> int -> Link.Face.t -> bg
 
+(** {3 Export functions} *)
+
 (** Export to file the string representation in [txt] format of a bigraph. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise EXPORT_ERROR when an error occurs. *)
 val write_txt : bg -> name:string -> path:string -> int
   
 (** Export to file the string representation in [dot] format of a bigraph. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise EXPORT_ERROR when an error occurs. *)
 val write_dot : bg -> name:string -> path:string -> int
 
 (** Export to file the string representation in [svg] format of a bigraph.
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise EXPORT_ERROR when an error occurs. *)
 val write_svg : bg -> name:string -> path:string -> int
 
 (** Export to file the string representation in [json] format of a bigraph.
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise EXPORT_ERROR when an error occurs. *)
 val write_json : bg -> name:string -> path:string -> int
 
 (** {3 Elementary bigraphs} *)

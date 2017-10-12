@@ -992,11 +992,9 @@ module Make (T: TsType.RS with type label = float) = struct
     List.iter (fun (f_write, ext) ->
         List.iter (fun d ->
             try write f_write ext d with
-            | Export.ERROR e ->
+            | Big.EXPORT_ERROR msg ->
               (pp_print_flush fmt ();
-               fprintf err_formatter "@[<v>";
-               Export.report_error e
-               |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
+               fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err msg))
           decs)
       formats
 

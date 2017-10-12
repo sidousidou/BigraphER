@@ -576,5 +576,5 @@ let () =
   List.iter (fun (n, b) ->
       let name = n ^ ".svg" in
       try ignore (Big.write_svg b ~name ~path:Sys.argv.(3)) with
-      | Export.ERROR _ -> ())
+      | Big.EXPORT_ERROR _ -> ())
     bgs

@@ -198,11 +198,9 @@ let export_states fmt f g =
                    Cmd.(defaults.verb)
                    (Filename.concat path fname)
                with
-               | Export.ERROR e ->
+               | Big.EXPORT_ERROR msg ->
                  (pp_print_flush fmt ();
-                  fprintf err_formatter "@[<v>";
-                  Export.report_error e
-                  |> fprintf err_formatter "@[%s: %s@]@." Utils.err) in
+                  fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err msg) in
              Cmd.(defaults.out_format)
              |> List.map format_map
              |> List.iter (fun (f, ext) ->  aux i s f ext))
@@ -271,11 +269,9 @@ module Run
         Cmd.(defaults.verb)
         path
     with
-    | Export.ERROR e ->
+    | Big.EXPORT_ERROR msg ->
       (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>";
-       Export.report_error e
-       |> fprintf err_formatter "@[%s: %s@]@." Utils.err)
+       fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err msg)
 
   let export_model fmt m env env_t =
     (* DECLARATIONS *)

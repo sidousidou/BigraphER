@@ -18,7 +18,7 @@ exception CTRL_ERROR of int * Link.Face.t
 exception ISO_ERROR of int * int (* number of nodes, size domain *)
 exception NO_MATCH
 exception NODE_FREE
-(*exception INF_MATCHES of Iso.t * Iso.t*)
+exception EXPORT_ERROR of string
 
 let inner b = Inter (b.p.Place.s, Link.inner b.l)
 
@@ -921,14 +921,17 @@ let rewrite (i_n, i_e, f_e) ~s ~r0 ~r1 eta =
   | None -> comp c (comp (tens r1 id) d)
 
 let write_txt b ~name ~path =
-  Export.write_string (to_string b) ~name ~path
-
+  try Export.write_string (to_string b) ~name ~path with
+  | Export.ERROR e -> raise @@ EXPORT_ERROR (Export.report_error e) 
+      
 let write_svg b ~name ~path =
-  Export.write_svg (to_dot b name) ~name ~path
+  try Export.write_svg (to_dot b name) ~name ~path with
+  | Export.ERROR e -> raise @@ EXPORT_ERROR (Export.report_error e)
 
 let write_dot b ~name ~path =
-  Export.write_string (to_dot b name) ~name ~path
+  try Export.write_string (to_dot b name) ~name ~path with
+  | Export.ERROR e -> raise @@ EXPORT_ERROR (Export.report_error e)
 
 let write_json b ~name ~path =
-  json_of_big b
-  |> Export.write_string ~name ~path
+  try (json_of_big b |> Export.write_string ~name ~path) with
+  | Export.ERROR e -> raise @@ EXPORT_ERROR (Export.report_error e)
