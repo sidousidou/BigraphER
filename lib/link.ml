@@ -37,18 +37,20 @@ struct
 
   let of_string s =
     try
-      Base.remove_block_delims s
-      |> Str.split (Str.regexp_string ", ")
-      |> List.map (fun p ->
-          Base.remove_block_delims p
-          |> Str.split (Str.regexp_string ", ")
-          |> (function
-              | a :: b :: _ -> (int_of_string a, int_of_string b)
-              | _ -> invalid_arg ""))
-      |> List.fold_left (fun acc (a, b) -> add a b acc) empty
-   with
-   | Invalid_argument _ ->
-     invalid_arg "Not a valid string representation of a set of ports"
+      match s with
+      | "" -> empty
+      | _ ->
+        Base.remove_block_delims s
+        |> Str.split (Str.regexp_string "), (")
+        |> List.map (fun p ->
+            Str.split (Str.regexp_string ", ") p
+            |> (function
+                | a :: b :: _ -> (int_of_string a, int_of_string b)
+                | _ -> invalid_arg ""))
+        |> List.fold_left (fun acc (a, b) -> add a b acc) empty
+    with
+    | Invalid_argument _ ->
+      invalid_arg "Not a valid string representation of a set of ports"
   
   (* Transform a set of nodes in a set of ports *)
   let of_nodes ns =
@@ -217,8 +219,7 @@ let string_of_face f =
 
 let face_of_string s =
   try
-    Base.remove_block_delims s
-    |> Str.(split (regexp_string ", "))
+    Str.(split (regexp_string ", ")) s
     |> parse_face
   with
   | _ -> invalid_arg "Not a valid string representation of a face"
@@ -235,7 +236,8 @@ let string_of_edge e =
 let edge_of_string s =
   try
     Base.remove_block_delims s
-    |> Str.(split (regexp_string ", "))
+    |> Base.remove_block_delims 
+    |> Str.(split_delim (regexp_string "}, {"))
     |> (function
         | i :: o :: p :: [] ->
           { i = face_of_string i;

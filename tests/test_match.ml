@@ -190,8 +190,9 @@ let do_to_string_tests =
      module_name,
      xml_block "system-out" [] [msg_out],
      [xml_block "failure" attr_match [msg]])
-  and error n b =
+  and error n b e =
     n ^ "\n" ^ (Big.to_string b) ^ "\n"
+    ^ (Printexc.to_string e) ^ "\n"
     ^ (Printexc.get_backtrace ()) in
   List.map (fun (n, b) ->
       let s = n ^ " = Big.of_string(Big.to_string(" ^ n ^ "))"
@@ -200,11 +201,11 @@ let do_to_string_tests =
         if Big.equal b (Big.of_string s_b) then success s "Bigraph parsed correctly"
         else failure s "Parse error" (sprintf "%s != %s" s_b (Big.to_string (Big.of_string s_b)))
       with
-      | _ ->
+      | e ->
         (s,
          module_name,
          xml_block "system-out" [] [error_msg],
-         [xml_block "error" attr_err [error n b]]))
+         [xml_block "error" attr_err [error n b e]]))
 
 let tests bgs = (* TEST 1 *)
   [ {

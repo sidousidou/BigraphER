@@ -127,10 +127,12 @@ let parse s m =
 let of_string s =
   let err = "Not a valid string representation of a node set" in
   Base.remove_block_delims s
-  |> Str.(split (regexp_string ","))
+  |> (function
+      | "" -> ""
+      | s -> Base.remove_block_delims s)
+  |> Str.(split (regexp_string "),("))
   |> List.map (fun s ->
-      match Base.remove_block_delims s
-            |> Str.(split (regexp_string ", ")) with
+      match Str.(split (regexp_string ", ")) s with
       | i :: c :: [] ->
         (int_of_string i,
          match Str.(split (regexp_string ":")) c with
@@ -138,7 +140,7 @@ let of_string s =
          | _ -> invalid_arg err) 
       | _ -> invalid_arg err)
   |> List.fold_left (fun acc (i, c) -> add i c acc) empty 
-
+                  
 (* true when a contains a control that is not present in b *)
 let not_sub a b =
   try
