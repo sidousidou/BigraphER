@@ -25,6 +25,11 @@ val is_empty : t -> bool
     [\{(2, Ready:0),(0, A:1),(3, Fun:0),(1, Snd:2)\}]. *)
 val to_string : t -> string
 
+(** Opposite of {!val:Nodes.to_string}.
+   
+    @raise Invalid_argument if the input cannot be parsed. *)
+val of_string : string -> t
+
 (** Return a JSON representation of a node set. Example:
  
     ["nodes": [

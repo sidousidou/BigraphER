@@ -161,6 +161,11 @@ val string_of_face : Face.t -> string
 (** [to_string l] computes the string representation of link graph [l]. *)
 val to_string : Lg.t -> string
 
+(** Opposite of {!val:Link.to_string}.
+   
+    @raise Invalid_argument if the input cannot be parsed. *)
+val of_string : string -> Lg.t
+
 (** Return a JSON representation of a link graph. Example:
  
     ["link_graph": [

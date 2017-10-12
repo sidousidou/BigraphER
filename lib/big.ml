@@ -48,7 +48,8 @@ let json_of_big b  =
            Link.json_of_link_f b.l ]
   |> JSON.to_string
   
-let parse lines =
+let parse s =
+  let lines = Base.parse_lines s in
   let (r, n, s, e) =
     let a =
       Array.of_list (Str.split (Str.regexp_string " ") (List.hd lines)) in
@@ -75,6 +76,28 @@ let parse lines =
     l = l;
   }
 
+let of_string s =
+  let err = "Not a valid string representation of a bigraph" in
+  let parse_p_header h =
+    match Str.(split (regexp_string " ")) h with
+    | r :: n :: s :: _ ->
+      (int_of_string r, int_of_string n, int_of_string s)
+    | _ -> invalid_arg err in
+  let rec split_l n (a, b) =
+    if n > 0 then match b with
+      | x :: xs -> split_l (n - 1) (x :: a, xs)
+      | [] -> assert false
+    else (List.rev a, b) in
+  match Base.parse_lines s with
+  | n :: place_header :: rest ->
+    let (regions, nodes, sites) = parse_p_header place_header in
+    let (m, l) = split_l (regions + nodes) ([], rest) in
+      { n = Nodes.of_string n;
+        p = Place.parse ~regions ~nodes ~sites m;
+        l = Link.of_string (String.concat "\n" l);
+      }
+  | _ -> invalid_arg err
+    
 let id (Inter (m, i)) =
   { n = Nodes.empty;
     p = Place.elementary_id m;

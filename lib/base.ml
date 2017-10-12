@@ -43,6 +43,18 @@ let flip f x y = f y x
 
 let flip2 f a b c = f a c b
 
+(* "\n12\n4\n678\n" -> ["12"; "4"; "678"] 
+   "01234\n" -> ["01234"] 
+   "0123" -> ["0123"] *)
+let parse_lines = Str.(split (regexp_string "\n"))
+
+(* "{}" -> ""
+   "[123]" -> "123" *)
+let remove_block_delims s =
+  if String.length s >= 2 then
+    String.(sub s 1 (length s - 2))
+  else invalid_arg "String \"" ^ s ^ "\" has no block delimiters"
+
 module JSON = struct
 
   type json_node =
@@ -69,6 +81,6 @@ module JSON = struct
     | J_node l -> "{"
                   ^ (List.map to_string l
                      |> String.concat ",\n" )
-                  ^ "}"
-
+                  ^ "}"                  
+  
 end

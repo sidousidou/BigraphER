@@ -46,14 +46,13 @@ let json_of_place s =
 
 (* Parse a place graph from a list of strings *)
 let parse ~regions:r ~nodes:n ~sites:s lines =
-  assert (r >= 0);
-  assert (n >= 0);
-  assert (s >= 0);
-  assert (List.length lines = r + n);
-  assert (List.for_all (fun l -> String.length l = n + s) lines);
-  let ((rn, rs), (nn, ns)) =
-    Sparse.parse_string r n s lines in
-  { r; n; s; rn; rs; nn; ns; }
+  try
+    let ((rn, rs), (nn, ns)) =
+      Sparse.parse_string r n s lines in
+    { r; n; s; rn; rs; nn; ns; }
+  with
+  | Assert_failure _
+  | Sparse.PARSE_ERROR -> invalid_arg "Arguments do not specify a valid place graph"
 
 (* Apply isomorphism *)
 let apply_exn i p =

@@ -33,10 +33,12 @@ end
 (** {3 Helper functions} *)
 
 (** [safe (Some v)] returns value [v]. Raises an exception on [None].
+
     @raise Assert_failure when argument is [None]. *)  
 val safe : 'a option -> 'a
 
 (** [safe_exn f] tries to execute [f].
+
     @raise Assert_failure when [f] throws an exception. *)  
 val safe_exn : 'a -> 'a
 
@@ -54,4 +56,12 @@ val flip : ('a -> 'b -> 'c) -> 'b -> 'a -> 'c
 
 (** Flip order of the last two arguments *)					       
 val flip2 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'c -> 'b -> 'd
+
+(** Split string on new lines. *)
+val parse_lines : string -> string list
+
+(** Remove the first and last characters of a string.
+
+    @raise Invalid_argument if the input string's lenght is less than [2]. *)
+val remove_block_delims : string -> string
 (**/**)

@@ -41,7 +41,10 @@ val edges : pg -> int
 
 (** [parse r n s lines] computes a place graph with [r] regions, [n] nodes and [s]
     sites. Each element in [lines] is a string in the same format of the output
-    of {!Place.to_string}. *)
+    of {!Place.to_string}. 
+
+    @raise Invalid_argument if the arguments do not specify a valid place
+    graph. *)
 val parse : regions:int -> nodes:int -> sites:int -> string list -> pg
 
 (** [get_dot p] returns three strings expressing place graph [p] in dot format.

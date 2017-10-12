@@ -35,6 +35,21 @@ struct
        |> String.concat ", ")
     ^ "}"
 
+  let of_string s =
+    try
+      Base.remove_block_delims s
+      |> Str.split (Str.regexp_string ", ")
+      |> List.map (fun p ->
+          Base.remove_block_delims p
+          |> Str.split (Str.regexp_string ", ")
+          |> (function
+              | a :: b :: _ -> (int_of_string a, int_of_string b)
+              | _ -> invalid_arg ""))
+      |> List.fold_left (fun acc (a, b) -> add a b acc) empty
+   with
+   | Invalid_argument _ ->
+     invalid_arg "Not a valid string representation of a set of ports"
+  
   (* Transform a set of nodes in a set of ports *)
   let of_nodes ns =
     Nodes.fold (fun n c acc ->
@@ -200,6 +215,14 @@ let string_of_face f =
      |> String.concat ", ")
   ^ "}"
 
+let face_of_string s =
+  try
+    Base.remove_block_delims s
+    |> Str.(split (regexp_string ", "))
+    |> parse_face
+  with
+  | _ -> invalid_arg "Not a valid string representation of a face"
+
 let string_of_edge e =
   "("
   ^ (string_of_face e.i)
@@ -209,10 +232,29 @@ let string_of_edge e =
   ^ (Ports.to_string e.p)
   ^ ")"
 
+let edge_of_string s =
+  try
+    Base.remove_block_delims s
+    |> Str.(split (regexp_string ", "))
+    |> (function
+        | i :: o :: p :: [] ->
+          { i = face_of_string i;
+            o = face_of_string o;
+            p = Ports.of_string p;
+          }
+        | _ -> assert false)
+  with
+  | _ -> invalid_arg "Not a valid string representation of an edge"
+      
 let to_string l =
   Lg.elements l
   |> List.map string_of_edge
   |> String.concat "\n"
+
+let of_string s =
+  Str.split (Str.regexp_string "\n") s
+  |> List.map edge_of_string
+  |> List.fold_left (fun acc e -> Lg.add e acc) Lg.empty
 
 let json_of_face f =
   let open JSON in

@@ -64,6 +64,12 @@ val face_of_inter : inter -> Link.Face.t
      ({}, {}, {(0, 2), (1, 1)})] *)
 val to_string: bg -> string
 
+(** Parse a string produced by {!val:Big.to_string} to a value of type
+    {!type:Big.bg}.
+
+    @raise Invalid_argument if the string cannot be parsed. *)
+val of_string: string -> bg
+
 (** Return a JSON representation of a bigraph. See {!val:Nodes.json_of_nodes},
     {!val:Place.json_of_place}, and {!val:Link.json_of_link} for example
     outputs.*)
@@ -80,13 +86,13 @@ val json_of_big: bg -> string
      1 1 2 f
      1 2 2 f]
 
-    The first line specifies the number of regions, nodes and sites in the
-    displayed order. The second line lists the controls of the nodes. It follows
-    the adjacency matrix for the place graph and a list of links. A link is open
-    (closed) if the corresponding line terminates with [t] ([f]). Note this
-    example corresponds to bigraph shown in the documentation of
+    The first line specifies the number of regions, nodes, sites, and links in
+    the displayed order. The second line lists the controls of the nodes. It
+    follows the adjacency matrix for the place graph and a list of links. A link
+    is open (closed) if the corresponding line terminates with [t] ([f]). Note
+    this example corresponds to bigraph shown in the documentation of
     {!val:Big.to_string}. *)
-val parse : string list -> bg
+val parse : string -> bg
 
 (** [to_dot b i] compute the string expressing bigraph [b] named [i] in 
     [dot] format. *)
