@@ -490,7 +490,7 @@ module Make (T: TsType.RS with type label = float) = struct
   (* Checking for duplicates. *)
   let parse_face ns p =
     let f =  Link.parse_face ns
-    in if List.length ns != Link.Face.cardinal f
+    in if List.length ns <> Link.Face.cardinal f
     then raise (ERROR (Not_face ns, p))
     else f
 

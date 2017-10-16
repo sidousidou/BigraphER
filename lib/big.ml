@@ -35,7 +35,7 @@ let string_of_inter (Inter (n, f)) =
   "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
 let to_string b =
-  List.filter (fun x -> (String.compare "" x) != 0)
+  List.filter (fun x -> (String.compare "" x) <> 0)
     [ Nodes.to_string b.n;
       Place.to_string b.p;
       Link.to_string b.l ]
