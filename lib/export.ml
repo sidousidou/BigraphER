@@ -18,7 +18,7 @@ let report_error = function
     (Unix.error_message e) ^ " at \""^ fname ^ "\" \"" ^ arg ^ "\""
 
 let rec restart_on_EINTR f x =
-  try f x with Unix.(Unix_error (EINTR, _, _)) -> restart_on_EINTR f x
+  try f x with Unix.Unix_error (Unix.EINTR, _, _) -> restart_on_EINTR f x
 
 (* Write a string in dot format to an svg file *)
 let _write_svg s name path =
