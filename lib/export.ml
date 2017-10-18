@@ -17,6 +17,9 @@ let report_error = function
   | Internal_error (e, fname, arg) ->
     (Unix.error_message e) ^ " at \""^ fname ^ "\" \"" ^ arg ^ "\""
 
+let rec restart_on_EINTR f x =
+  try f x with Unix.(Unix_error (EINTR, _, _)) -> restart_on_EINTR f x
+
 (* Write a string in dot format to an svg file *)
 let _write_svg s name path =
   let (dot_in, bigmc_out) = Unix.pipe ()
@@ -41,7 +44,7 @@ let _write_svg s name path =
     (Unix.close dot_in;
      let b_w = Unix.write_substring bigmc_out s 0 (String.length s) in
      Unix.close bigmc_out;
-     match snd (Unix.waitpid [] pid) with
+     match snd (restart_on_EINTR (Unix.waitpid []) pid) with
      | Unix.WSTOPPED i -> raise (ERROR (Dot_stopped i))
      | Unix.WSIGNALED i -> raise (ERROR (Dot_killed i))
      | Unix.WEXITED 0 -> b_w
@@ -50,7 +53,7 @@ let _write_svg s name path =
 
 let catch_unix_errors f arg name path =
   try f arg name path with
-  | Unix.Unix_error (e,fname,args) ->
+  | Unix.Unix_error (e, fname, args) ->
     raise (ERROR (Internal_error (e, fname, args)))
 
 let write_svg s ~name ~path =
