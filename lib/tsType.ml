@@ -133,19 +133,24 @@ module MakeE (G : G) = struct
     Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
 
   let write_svg g ~name ~path =
-    Export.write_svg (to_dot g ~name) ~name ~path
+    try Export.write_svg (to_dot g ~name) ~name ~path with
+    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)
 
   let write_prism g ~name ~path =
-    Export.write_string (to_prism g) ~name ~path
+    try Export.write_string (to_prism g) ~name ~path with
+    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)
 
   let write_lab g ~name ~path =
-    Export.write_string (to_lab g) ~name ~path
+    try Export.write_string (to_lab g) ~name ~path with
+    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)
 
   let write_dot g ~name ~path =
-    Export.write_string (to_dot g ~name) ~name ~path
+    try Export.write_string (to_dot g ~name) ~name ~path with
+    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)
       
   let write_json g ~name ~path =
-    Export.write_string (to_json g) ~name ~path
+    try Export.write_string (to_json g) ~name ~path with
+    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)
 
 end
 

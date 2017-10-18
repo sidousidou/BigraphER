@@ -7,6 +7,9 @@ type t =
   | PBRS (** Probabilistic Bigraphical Reactive Systems *)
   | SBRS (** Stochasrtic Bigraphical Reactive Systems *)
 
+(** Raised when an export error occurs. *)
+exception EXPORT_ERROR of string
+
 val to_string : t -> string
 
 val to_string_ext : t -> string

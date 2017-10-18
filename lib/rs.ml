@@ -1,6 +1,8 @@
 (* Types of rective systems *)
 type t = BRS | PBRS | SBRS
 
+exception EXPORT_ERROR of string
+
 let to_string = function
   | BRS -> "BRS"
   | PBRS -> "Probabilistic BRS"

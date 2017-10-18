@@ -185,29 +185,29 @@ val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
 (** Export to file the string representation in [dot] format of a DTMC. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_dot : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [lab] format of the
     labelling function of a DTMC. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_lab : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [tra] format of a
     DTMC. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_prism : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in [svg] format of a DTMC. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_svg : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in [json] format of a DTMC. 
 
-    @raise Export.ERROR when an error occurs. *)
+    @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_json : graph -> name:string -> path:string -> int
 
 (**/**)

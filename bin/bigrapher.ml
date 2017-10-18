@@ -160,11 +160,9 @@ let export_prism fmt msg f =
          ~path:(Filename.dirname file)
        |> print_fun fmt `white Cmd.(defaults.verb) file
      with
-     | Export.ERROR e ->
+     | Rs.EXPORT_ERROR e ->
        (pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>";
-        Export.report_error e
-        |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
+        fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err e))
 
 let export_csl fmt f =
   match Cmd.(defaults.export_lab) with
@@ -175,11 +173,9 @@ let export_csl fmt f =
        f ~name:(Filename.basename file) ~path:(Filename.dirname file)
        |> print_fun fmt `white Cmd.(defaults.verb) file
      with
-     | Export.ERROR e ->
+     | Rs.EXPORT_ERROR e ->
        (pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>";
-        Export.report_error e
-        |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
+        fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err e))
 
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
@@ -224,11 +220,9 @@ let export_ts fmt msg formats =
            f ~name:(name ^ ext) ~path
            |> print_fun fmt `white Cmd.(defaults.verb) file
          with
-         | Export.ERROR e ->
+         | Rs.EXPORT_ERROR e ->
            (pp_print_flush fmt ();
-            fprintf err_formatter "@[<v>";
-            Export.report_error e
-            |> fprintf err_formatter "@[%s: %s@]@." Utils.err))
+            fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err e))
        formats)
 
 let check fmt =
@@ -269,9 +263,10 @@ module Run
         Cmd.(defaults.verb)
         path
     with
-    | Big.EXPORT_ERROR msg ->
+    | Export.ERROR e ->
       (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err msg)
+       fprintf err_formatter "@[<v>@[%s: %s@]@."
+         Utils.err (Export.report_error e))
 
   let export_model fmt m env env_t =
     (* DECLARATIONS *)
