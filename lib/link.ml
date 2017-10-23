@@ -4,12 +4,12 @@ open Printf
 (* ide strings no capital letter or number at the start *)
 type name = Nam of string
 
-module Face = Set.Make (struct
-    type t = name
-    let compare =
-      fun (Nam s0) (Nam s1) ->
-        String.compare s0 s1
-  end)
+module Face = S_opt (Set.Make (struct
+                       type t = name
+                       let compare =
+                         fun (Nam s0) (Nam s1) ->
+                           String.compare s0 s1
+                     end))
 
 (* Module used to compute equivalence classes *)
 module Face_set = Set.Make (struct
@@ -18,14 +18,31 @@ module Face_set = Set.Make (struct
   end)
 
 (* Map nodes to their port arity *)
-module Ports =
-struct
+module Ports = struct
 
-  include M_int
+  type t = int M_int.t
+
+  let choose = M_int.choose
+
+  let compare = M_int.compare
+
+  let empty = M_int.empty
+
+  let equal = M_int.equal
+
+  let filter = M_int.filter
+
+  let fold = M_int.fold
+
+  let is_empty = M_int.is_empty
+
+  let max_binding = M_int.max_binding
+
+  let min_binding = M_int.min_binding
 
   let to_string ps =
     "{"
-    ^ (bindings ps
+    ^ (M_int.bindings ps
        |> List.map (fun (a, b) ->
            "("
            ^ (string_of_int a)
@@ -47,15 +64,15 @@ struct
             |> (function
                 | a :: b :: _ -> (int_of_string a, int_of_string b)
                 | _ -> invalid_arg ""))
-        |> List.fold_left (fun acc (a, b) -> add a b acc) empty
+        |> List.fold_left (fun acc (a, b) -> M_int.add a b acc) empty
     with
     | Invalid_argument _ ->
       invalid_arg "Not a valid string representation of a set of ports"
-  
+
   (* Transform a set of nodes in a set of ports *)
   let of_nodes ns =
     Nodes.fold (fun n c acc ->
-        add n (Ctrl.arity c) acc)
+        M_int.add n (Ctrl.arity c) acc)
       ns empty
 
   (* Construct a list of control strings [AA;BBBB;C]*)
@@ -64,45 +81,37 @@ struct
       if n = 0 then ""
       else s ^ (replicate (n - 1) s) in
     fold (fun i arity acc ->
-        (try Nodes.get_ctrl_exn i n
-             |> Ctrl.name
-             |> replicate arity
-         with
-         | Not_found -> assert false) (*BISECT-IGNORE*)
-        :: acc)
+        (match Nodes.get_ctrl i n with
+         | None -> acc
+         | Some c -> (Ctrl.name c |> replicate arity) :: acc))
       p []
     |> List.fast_sort String.compare
 
   let to_IntSet ps =
-    bindings ps
+    M_int.bindings ps
     |> List.split
     |> fst
     |> IntSet.of_list
 
-  let apply_exn s iso =
-    fold (fun i p acc ->
-        add (Iso.apply_exn iso i) p acc)
-      s empty
-
-  let apply s iso =
+  let apply iso s =
     fold (fun i p acc ->
         match Iso.apply iso i with
-        | Some i' -> add i' p acc
+        | Some i' -> M_int.add i' p acc
         | None -> acc)
       s empty
 
-  let arity_exn ps i = find i ps
+  let arity ps i = M_int.find i ps
 
-  let compat_list a b n_a n_b =
+  let compat_list (a:t) (b:t) n_a n_b =
     let i_a = to_IntSet a
     and i_b = to_IntSet b in
     IntSet.fold (fun i acc ->
-        let ar_i = safe_exn (arity_exn a i)
-        and c_i = safe_exn (Nodes.get_ctrl_exn i n_a) in
+        let ar_i = safe @@ arity a i
+        and c_i = safe @@ Nodes.get_ctrl i n_a in
         let pairs =
           IntSet.filter (fun j ->
-              (ar_i = safe_exn (arity_exn b j))
-              && (Ctrl.(=) c_i (safe_exn (Nodes.get_ctrl_exn j n_b))))
+              (ar_i = safe @@ arity b j)
+              && (Ctrl.(=) c_i (safe @@ Nodes.get_ctrl j n_b)))
             i_b
           |> IntSet.elements
           |> List.map (fun j -> Cnf.M_lit (i, j)) in
@@ -111,17 +120,16 @@ struct
 
   let offset ps n =
     fold (fun i ar acc ->
-        add (i + n) ar acc)
+        M_int.add (i + n) ar acc)
       ps empty
 
   let add i ps =
-    try find i ps
-        |> (+) 1
-        |> flip2 add i ps
-    with Not_found -> add i 1 ps
+    match M_int.find i ps with
+    | Some a -> M_int.add i (a + 1) ps
+    | None -> M_int.add i 1 ps
 
   let sum =
-    merge (fun _ l r ->
+    M_int.merge (fun _ l r ->
         match (l, r) with
         | (Some ar, Some ar') -> Some (ar + ar')
         | (Some ar, None) | (None, Some ar) -> Some ar
@@ -145,9 +153,9 @@ struct
     | x -> x
 
   let multi_ctrl ps ns =
-    bindings ps
+    M_int.bindings ps
     |> List.map (fun (i, ar) ->
-        (safe_exn (Nodes.get_ctrl_exn i ns), ar))
+        (safe @@ Nodes.get_ctrl i ns, ar))
     |> List.fast_sort comp_multi
 
   let inter a b =
@@ -165,7 +173,7 @@ struct
 end
 
 (* (in, out, ports) *)
-type edg = { i: Face.t; o: Face.t; p: int Ports.t }
+type edg = { i: Face.t; o: Face.t; p: Ports.t }
 
 let edg_compare (h : edg) (k : edg) =
   match Face.compare h.i k.i with
@@ -236,7 +244,7 @@ let string_of_edge e =
 let edge_of_string s =
   try
     Base.remove_block_delims s
-    |> Base.remove_block_delims 
+    |> Base.remove_block_delims
     |> Str.(split_delim (regexp_string "}, {"))
     |> (function
         | i :: o :: p :: [] ->
@@ -247,7 +255,7 @@ let edge_of_string s =
         | _ -> assert false)
   with
   | _ -> invalid_arg "Not a valid string representation of an edge"
-      
+
 let to_string l =
   Lg.elements l
   |> List.map string_of_edge
@@ -262,7 +270,7 @@ let json_of_face f =
   let open JSON in
   Face.fold (fun (Nam x) acc ->
       (J_node [ J_string ("name", x) ]) :: acc) f []
-  
+
 let json_of_ports p =
   let open JSON in
   Ports.fold (fun n ar acc ->
@@ -275,7 +283,7 @@ let json_of_edge e =
   J_node [ J_array ("inner", json_of_face e.i);
            J_array ("outer", json_of_face e.o);
            J_array ("ports", json_of_ports e.p) ]
-  
+
 let json_of_link_f l =
   let open JSON in
   Lg.fold (fun e acc ->
@@ -285,7 +293,23 @@ let json_of_link_f l =
 let json_of_link s =
   JSON.to_string @@ json_of_link_f s
 
-let parse lines =
+let arities lg =
+  Lg.fold (fun e acc ->
+      Ports.sum e.p acc)
+    lg Ports.empty
+
+let parse_nodes s m =
+  Str.split (Str.regexp_string " ") s
+  |> List.fold_left (fun (acc, i) token ->
+      let ar =
+        match M_int.find i m with
+        | None -> 0
+        | Some v -> v in
+      (Nodes.add i (Ctrl.C (token, ar)) acc, i + 1))
+    (Nodes.empty, 0)
+  |> fst
+
+let parse ~links:lines ~nodes =
   let build_edge s n =
     let a = Str.split (Str.regexp_string " ") s in
     { p = List.rev a
@@ -296,10 +320,12 @@ let parse lines =
       o =  match List.nth a ((List.length a) - 1) with
         | "t" -> parse_face ["n" ^ (string_of_int n)]
         | _ -> Face.empty; } in
-  List.fold_left (fun (acc, i) l ->
-      (Lg.add (build_edge l i) acc, i + 1))
-    (Lg.empty, 0) lines
-  |> fst
+  let l =
+    List.fold_left (fun (acc, i) l ->
+        (Lg.add (build_edge l i) acc, i + 1))
+      (Lg.empty, 0) lines
+    |> fst in
+  (l, arities l |> parse_nodes nodes)
 
 (* Elementary substitution: one edge without ports *)
 let elementary_sub ~inner ~outer =
@@ -328,11 +354,6 @@ let offset (lg : Lg.t) (n : int) =
       Lg.add { e with
                p = Ports.offset e.p n;} acc)
     lg Lg.empty
-
-let arities lg =
-  Lg.fold (fun e acc ->
-      Ports.sum e.p acc)
-    lg Ports.empty
 
 (* n0 is necessary because some nodes my be present in the left place      *)
 (* graph but not in the link graph.                                        *)
@@ -500,9 +521,9 @@ let ppar a b n =
     tens (elementary_id (Face.diff f_in shared_in)) (dup_in shared_in) 0 in
   comp wiring_out (comp a_b wiring_in n) 0
 
-let apply_exn i l =
+let apply i l =
   Lg.fold (fun e acc ->
-      Lg.add { i = e.i; o= e.o; p = Ports.apply_exn e.p i } acc) l Lg.empty
+      Lg.add { i = e.i; o= e.o; p = Ports.apply i e.p } acc) l Lg.empty
 
 (* Is e a hyperedge? An extra node is not required when it is an edge or an
    idle name.*)
@@ -549,8 +570,8 @@ let norm l =
       (Lg.union (elementary_sub ~inner:xs ~outer:e.o) omega,
       Lg.union l l_e,
        i')) l (Lg.empty, Lg.empty, 0)
-  |> (fun (omega, l, _) -> (omega, l)) 
-      
+  |> (fun (omega, l, _) -> (omega, l))
+
 let get_dot l =
   match
     Lg.fold (fun e (i, buff_i, buff_o, buff_h, buff_adj) ->
@@ -605,7 +626,7 @@ let get_dot l =
                           tailclip=false, \
                           arrowsize=0.7, \
                           weight=5 ];\n"
-                   i (fst (Ports.choose e.p))
+                   i (fst @@ safe @@ Ports.choose e.p)
                else Ports.fold_arities (fun v buff ->
                    sprintf "%se%d -> v%d [dir=both, tailclip=false ];\n"
                      buff i v)
@@ -618,27 +639,28 @@ let get_dot l =
              if Ports.is_empty e.p then
                (* name -> name *)
                sprintf "%s\"i%s\" -> \"o%s\";\n" buff_adj
-                 (string_of_name (Face.choose e.i))
-                 (string_of_name (Face.choose e.o))
+                 (string_of_name @@ safe @@ Face.choose e.i)
+                 (string_of_name @@ safe @@ Face.choose e.o)
              else if Face.is_empty e.o then
                if Face.is_empty e.i then
                  (* port -> port *)
                  sprintf "%sv%d -> v%d [ dir=both, constraint=false ];\n"
                    buff_adj
-                   (fst (Ports.min_binding e.p))
-                   (fst (Ports.max_binding e.p))
+                   (fst @@ safe @@ Ports.min_binding e.p)
+                   (fst @@ safe @@ Ports.max_binding e.p)
                else
                  (* inner name -> port *)
                  sprintf "%s\"i%s\" -> v%d;\n"
                    buff_adj
-                   (string_of_name (Face.choose e.i))
-                   (fst (Ports.choose e.p))
+                   (string_of_name @@ safe @@ Face.choose e.i)
+                   (fst @@ safe @@ Ports.choose e.p)
              else
                (* port -> outer name *)
                sprintf "%sv%d -> \"o%s\" [ dir=back ];\n"
                  buff_adj
-                 (fst (Ports.choose e.p))
-                 (string_of_name (Face.choose e.o)) end)))
+                 (fst @@ safe @@ Ports.choose e.p)
+                 (string_of_name @@ safe @@ Face.choose e.o)
+           end)))
       l (0, "", "", "", "edge [ \
                          color=green, \
                          arrowhead=none, \
@@ -660,7 +682,7 @@ let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
   and f_e' = Fun.inverse f_e in (* Not a function *)
   (* Domains: disjoint subsets of T *)
   let closed_t = IntSet.of_list (Iso.dom i_e')
-  and non_empty_t = IntSet.of_list (Rel.dom f_e')
+  and non_empty_t = Rel.dom f_e'
   in
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
   let (c, d, b_id, _) =
@@ -693,7 +715,7 @@ let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
             (acc_c,
              Lg.add { i = e.i;
                       o = out_d;
-                      p = safe_exn (Ports.apply_exn p_d i_d);
+                      p = Ports.apply i_d p_d;
                     } acc_d,
              acc_id,
              n + 1)
@@ -703,7 +725,7 @@ let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
             (Lg.add {
                 i = in_c;
                 o = e.o;
-                p = safe_exn (Ports.apply_exn p_c i_c);
+                p = Ports.apply i_c p_c;
               } acc_c,
              acc_d,
              acc_id,
@@ -713,11 +735,11 @@ let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
             let name = Face.singleton (Nam (sprintf "~%d" n)) in
             (Lg.add { i = Face.union name in_c;
                       o = e.o;
-                      p = safe_exn (Ports.apply_exn p_c i_c);
+                      p = Ports.apply i_c p_c;
                     } acc_c,
              Lg.add { i = e.i;
                       o = Face.union name out_d;
-                      p = safe_exn (Ports.apply_exn p_d i_d)
+                      p = Ports.apply i_d p_d
                     } acc_d,
              Lg.add { i = name; o = name; p = Ports.empty } acc_id,
              n + 1)
@@ -759,8 +781,7 @@ let filter_iso f l =
         then (Lg.add e acc,
               i + 1,
               i' + 1,
-              try Iso.add_exn i' i iso with
-              | Iso.NOT_BIJECTIVE -> assert false) (*BISECT-IGNORE*)
+              Iso.add i' i iso)
         else (acc, i + 1, i', iso))
       l (Lg.empty, 0, 0, Iso.empty) in
   (l', iso)
@@ -795,7 +816,8 @@ let match_edges ~target ~pattern ~n_t ~n_p =
    IntSet.diff (IntSet.of_int (Lg.cardinal target)) (IntSet.of_list acc_c),
    Cnf.blocking_pairs acc_b)
 
-let _match_ports target pattern n_t n_p clauses : Cnf.clause list list =
+let _match_ports (target:Ports.t array) (pattern:Ports.t array)
+    n_t n_p clauses : Cnf.clause list list =
   (* printf "-------------------- _match_ports -------------------\n"; *)
   List.fold_left (fun acc e_match ->
       let (e_i, e_j) = Cnf.to_ij e_match in
@@ -838,17 +860,17 @@ let sub_edge p t n_t n_p =
 let compat_clauses e_p i t h_t n_t n_p =
   let p = Ports.to_IntSet e_p.p in
   IntSet.fold (fun j acc ->
-      let e_t = safe_exn (H_int.find h_t j) in
+      let e_t = safe @@ H_int.find h_t j in
       let clauses : Cnf.lit list list =
         IntSet.fold (fun v acc ->
-            let c_v = safe_exn (Nodes.get_ctrl_exn v n_p)
-            and arity_v = safe_exn (Ports.arity_exn e_p.p v)
+            let c_v = safe @@ Nodes.get_ctrl v n_p
+            and arity_v = safe @@ Ports.arity e_p.p v
             and p_t = Ports.to_IntSet e_t.p in
             (* find nodes in e_t that are compatible with v *)
             let compat_t =
               IntSet.filter (fun u ->
-                  (Ctrl.(=) c_v (safe_exn (Nodes.get_ctrl_exn u n_t)))
-                  && (arity_v <= safe_exn (Ports.arity_exn e_t.p u)))
+                  (Ctrl.(=) c_v (safe @@ Nodes.get_ctrl u n_t))
+                  && (arity_v <= safe @@ Ports.arity e_t.p u))
                 p_t in
             let nodes_assign =
               IntSet.fold (fun j acc ->
@@ -1017,6 +1039,6 @@ let prime_components lg =
   List.map (fun iso ->
       Lg.fold (fun edg acc ->
           Lg.add { edg with
-                   p = Ports.apply edg.p iso;
+                   p = Ports.apply iso edg.p;
                  } acc)
         lg Lg.empty)

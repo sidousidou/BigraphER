@@ -50,7 +50,7 @@ module type RS = sig
   val typ : Rs.t
   val string_of_stats : stats -> (string * string * bool) list
   val string_of_react : react -> string
-  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> react
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> react
   val lhs_of_react : react -> Big.bg
   val rhs_of_react : react -> Big.bg
   val string_of_limit : limit -> string
@@ -149,7 +149,7 @@ module Make (R : RrType.T)
 
   val string_of_react : R.t -> string
     
-  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> R.t
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> R.t
 
   val lhs_of_react : R.t -> Big.bg
 

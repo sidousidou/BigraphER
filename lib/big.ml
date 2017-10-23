@@ -10,7 +10,7 @@ type bg = {
 
 type inter = Inter of int * Link.Face.t
 
-type occ = int Iso.t * int Iso.t * int Fun.t
+type occ = Iso.t * Iso.t * Fun.t
 
 exception SHARING_ERROR
 exception COMP_ERROR of inter * inter
@@ -69,13 +69,11 @@ let parse s =
              (s_n, acc_p, acc_l, i + 1)))
       ("", [], [], 0) lines in
   assert (List.length lines_l = e);
-  let l = Link.parse lines_l in
-  { n = Link.arities l
-        |> Nodes.parse s_n;
+  let (l, s_n) = Link.parse ~links:lines_l ~nodes:s_n in
+  { n = s_n;
     p = Place.parse ~regions:r ~nodes:n ~sites:s lines_p;
-    l = l;
-  }
-
+    l = l; }
+  
 let of_string s =
   let err = "Not a valid string representation of a bigraph" in
   let parse_p_header h =
@@ -172,12 +170,12 @@ let placing l r f =
 (* Empty link graph and no nodes in the place graph. *)
 let is_plc b =
   (Link.Lg.equal b.l Link.id_empty) &&
-  (b.n.Nodes.size = 0) &&
+  (Nodes.size b.n = 0) &&
   (Place.is_plc b.p)
 
 (* Empty place graph and no nodes in the link graph. *)
 let is_wir b =
-  (b.p = Place.id0) && (b.n.Nodes.size = 0)
+  (b.p = Place.id0) && (Nodes.size b.n = 0)
 
 let is_id b =
   (Nodes.is_empty b.n) && (Place.is_id b.p) && (Link.is_id b.l)
@@ -185,13 +183,13 @@ let is_id b =
 let tens a b =
   { n = Nodes.tens a.n b.n;
     p = Place.tens a.p b.p;
-    l = Link.tens a.l b.l a.n.Nodes.size;
+    l = Link.tens a.l b.l (Nodes.size a.n);
   }
 
 let comp a b =
   try { n = Nodes.tens a.n b.n;
         p = Place.comp a.p b.p;
-        l = Link.comp a.l b.l a.n.Nodes.size;
+        l = Link.comp a.l b.l (Nodes.size a.n);
       }
   with
   | Place.COMP_ERROR _
@@ -201,7 +199,7 @@ let comp a b =
 let ppar a b =
   { n = Nodes.tens a.n b.n;
     p = Place.tens a.p b.p;
-    l = Link.ppar a.l b.l a.n.Nodes.size;
+    l = Link.ppar a.l b.l (Nodes.size a.n);
   }
 
 let ppar_of_list bs =
@@ -272,10 +270,10 @@ let is_ground b =
 (* TO DO *)
 (*let latex_of_big = function | Bg (ns, p, l) -> "latex representation"*)
 
-let apply_exn i b =
-  { n = Nodes.apply_exn b.n i;
-    p = Place.apply_exn i b.p;
-    l = Link.apply_exn i b.l;
+let apply i b =
+  { n = Nodes.apply i b.n;
+    p = Place.apply i b.p;
+    l = Link.apply i b.l;
   }
 
 let to_dot b ide =
@@ -319,7 +317,7 @@ let decomp ~target ~pattern ~i_n ~i_e f_e =
   let (l_c, l_d, l_id) =
     Link.decomp ~target:target.l ~pattern:pattern.l ~i_e ~i_c ~i_d f_e
   and (n_c, n_d) =
-    (Nodes.filter_apply_iso target.n i_c, Nodes.filter_apply_iso target.n i_d) in
+    (Nodes.apply i_c target.n, Nodes.apply i_d target.n) in
   ({ p = p_c; l = l_c; n = n_c },
    { p = p_d; l = l_d; n = n_d },
    { p = p_id; l = l_id; n = Nodes.empty })
@@ -329,7 +327,7 @@ let get_iso solver m =
   snd (Array.fold_left (fun (i, iso) r ->
       (i + 1, snd (Array.fold_left (fun (j, iso) x ->
            match solver#value_of x with
-           | Minisat.True -> (j + 1, safe_exn (Iso.add_exn i j iso))
+           | Minisat.True -> (j + 1, Iso.add i j iso)
            | Minisat.False | Minisat.Unknown -> (j + 1, iso)
          ) (0, iso) r))
     ) (0, Iso.empty) m)
@@ -355,14 +353,14 @@ type sat_vars = {
   z0_rows : Minisat.var array array;
   z0_cols : Minisat.var array array;
   iso_edges : Minisat.var array array;
-  map_edges_r : int Iso.t;
-  map_edges_c : int Iso.t;
+  map_edges_r : Iso.t;
+  map_edges_c : Iso.t;
   z1_rows : Minisat.var array array;
   z1_cols : Minisat.var array array;
   z2 : Minisat.var array array;
   iso_hyp : Minisat.var array array;
-  map_hyp_r : int Iso.t;
-  map_hyp_c : int Iso.t;
+  map_hyp_r : Iso.t;
+  map_hyp_c : Iso.t;
   z3 : Minisat.var array array;
 }
 
@@ -623,8 +621,8 @@ let aux_match t p t_trans =
 
 (* true when p is not a match *)
 let quick_unsat t p =
-  (p.n.Nodes.size > t.n.Nodes.size)
-  || (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn)
+  ((Nodes.size p.n) > (Nodes.size t.n))
+  || (Place.entries_bmatrix p.p.Place.nn > Place.entries_bmatrix t.p.Place.nn)
   || (Nodes.not_sub p.n t.n)
   || (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p))
   || (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p))
@@ -633,11 +631,11 @@ let quick_unsat t p =
 
 let occurs ~target:t ~pattern:p =
   try
-    if p.n.Nodes.size = 0 then true
+    if Nodes.size p.n = 0 then true
     else begin
       if quick_unsat t p then false
       else begin
-        let t_trans = Sparse.trans t.p.Place.nn in
+        let t_trans = Place.trans t.p in
         ignore (aux_match t p t_trans);
         true
       end
@@ -647,24 +645,22 @@ let occurs ~target:t ~pattern:p =
 
 let occurrence ~target:t ~pattern:p t_trans =
   (* replace with an assertion *)
-  if p.n.Nodes.size = 0 then raise NODE_FREE
+  if Nodes.size p.n = 0 then raise NODE_FREE
   else if quick_unsat t p then None
   else
     begin try
         let (s, vars) = aux_match t p t_trans in
         let i_v = get_iso s vars.iso_nodes
         and i_e =
-          Iso.transform_exn
+          Iso.transform
+            ~iso_dom:vars.map_edges_r
+            ~iso_codom:vars.map_edges_c
             (get_iso s vars.iso_edges)
-            vars.map_edges_r
-            vars.map_edges_c
-          |> safe_exn
         and i_h =
-          Fun.transform_exn
-            (get_fun s vars.iso_hyp)
-            vars.map_hyp_r
-            vars.map_hyp_c
-          |> safe_exn in
+          Fun.transform
+            ~iso_dom:vars.map_hyp_r
+            ~iso_codom:vars.map_hyp_c
+            (get_fun s vars.iso_hyp) in
         Some (i_v, i_e, i_h)
       with
       | NO_MATCH -> None
@@ -672,9 +668,9 @@ let occurrence ~target:t ~pattern:p t_trans =
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
-  if b.n.Nodes.size = 0 then raise NODE_FREE
+  if Nodes.size b.n = 0 then raise NODE_FREE
   else begin
-    let b_trans = Sparse.trans b.p.Place.nn
+    let b_trans = Place.trans b.p
     and rem_id res =
       List.filter (fun (i, e) ->
           not ((Iso.is_id i) && (Iso.is_id e))
@@ -711,7 +707,7 @@ let clause_of_iso iso m =
   )
 
 let occurrences ~target:t ~pattern:p =
-  if p.n.Nodes.size = 0 then raise NODE_FREE
+  if Nodes.size p.n = 0 then raise NODE_FREE
   else if quick_unsat t p then []
   else begin
     try
@@ -721,7 +717,7 @@ let occurrences ~target:t ~pattern:p =
              (*         ------- PATTERN:\n%!\ *)
              (*         %s\n" (to_string t) (to_string p); *)
       (**********************************************************)
-      let t_trans = Sparse.trans t.p.Place.nn in
+      let t_trans = Place.trans t.p in
       let (s, vars) = aux_match t p t_trans in
       let autos = auto p in
       let rec loop_occur res =
@@ -729,10 +725,10 @@ let occurrences ~target:t ~pattern:p =
         (****************AUTOMORPHISMS****************)
         let gen =
           List.combine
-            (safe_exn (Iso.gen_isos_exn
-                         (get_iso s vars.iso_nodes) (List.map fst autos)))
-            (safe_exn (Iso.gen_isos_exn
-                         (get_iso s vars.iso_edges) (List.map snd autos))) in
+            (Iso.gen_isos
+               (get_iso s vars.iso_nodes) (List.map fst autos))
+            (Iso.gen_isos
+               (get_iso s vars.iso_edges) (List.map snd autos)) in
         List.iter (fun (iso_i, iso_e) ->
             s#add_clause (
               (clause_of_iso iso_i vars.iso_nodes) @
@@ -742,31 +738,29 @@ let occurrences ~target:t ~pattern:p =
         (*********************************************)
         try
           ignore (filter_loop s t p vars t_trans);
-          loop_occur (
-            (get_iso s vars.iso_nodes,
-             safe_exn (Iso.transform_exn
-                         (get_iso s vars.iso_edges)
-                         vars.map_edges_r
-                         vars.map_edges_c),
-             safe_exn (Fun.transform_exn
-                         (get_fun s vars.iso_hyp)
-                         vars.map_hyp_r
-                         vars.map_hyp_c)
-            ) :: res
-          )
+          loop_occur
+            ((get_iso s vars.iso_nodes,
+              Iso.transform
+                ~iso_dom:vars.map_edges_r
+                ~iso_codom:vars.map_edges_c
+                (get_iso s vars.iso_edges),
+              Fun.transform
+                ~iso_dom:vars.map_hyp_r
+                ~iso_codom:vars.map_hyp_c
+                (get_fun s vars.iso_hyp))
+             :: res)
         with
         | NO_MATCH -> res in
-      loop_occur [
-        (get_iso s vars.iso_nodes,
-         safe_exn (Iso.transform_exn
-                     (get_iso s vars.iso_edges)
-                     vars.map_edges_r
-                     vars.map_edges_c),
-         safe_exn (Fun.transform_exn
-                     (get_fun s vars.iso_hyp)
-                     vars.map_hyp_r
-                     vars.map_hyp_c))
-      ]
+      loop_occur
+        [ (get_iso s vars.iso_nodes,
+           Iso.transform
+             ~iso_dom:vars.map_edges_r
+             ~iso_codom:vars.map_edges_c
+             (get_iso s vars.iso_edges),
+           Fun.transform
+             ~iso_dom:vars.map_hyp_r
+             ~iso_codom:vars.map_hyp_c
+             (get_fun s vars.iso_hyp)) ]
     with
     | NO_MATCH -> []
   end
@@ -845,9 +839,9 @@ let key b =
 let equal_opt a b =
   (Place.deg_regions a.p = Place.deg_regions b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
-  && (Sparse.equal a.p.Place.rs b.p.Place.rs)
+  && (Place.equal_bmatrix a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
-  if b.n.Nodes.size = 0 then
+  if Nodes.size b.n = 0 then
     (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
   else
     equal_SAT a b
@@ -860,9 +854,9 @@ let equal a b =
   && (Place.deg_regions a.p = Place.deg_regions b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
   && (Nodes.equal a.n b.n)
-  && (Sparse.equal a.p.Place.rs b.p.Place.rs)
+  && (Place.equal_bmatrix a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
-  if b.n.Nodes.size = 0 then
+  if Nodes.size b.n = 0 then
     (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
   else
     equal_SAT a b
@@ -874,7 +868,7 @@ let prime_components b =
   List.map (fun ((p, l), iso) ->
       { p = p;
         l = l;
-        n = Nodes.filter_apply_iso b.n iso;
+        n = Nodes.apply iso b.n;
       })
     (List.combine (List.combine pgs lgs) isos)
 
@@ -894,11 +888,11 @@ let decomp_d d id =
   | [l_d; l_id] ->
     ({ p = p_d;
        l = l_d;
-       n = Nodes.filter_apply_iso d.n iso_d;
+       n = Nodes.apply iso_d d.n;
      },
      { p = p_id;
        l = l_id;
-       n = Nodes.filter_apply_iso d.n iso_id;
+       n = Nodes.apply iso_id d.n;
      })
   | _ -> assert false (*BISECT-IGNORE*)
 

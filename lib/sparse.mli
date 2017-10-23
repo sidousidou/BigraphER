@@ -2,17 +2,13 @@
     maps. The module also provides operations on graphs. These are
     intended to be used when Boolean matrices are interpreted as adjacency
     matrices of Directed Acyclic Graphs (DAG).
+
     @author Michele Sevegnani *)
 
 (** The type of Boolean matrices. Only true values are stored in the matrix as
     row-column pairs. For example adding value ["(2, 1)"] means that the second
     element in the third row of the matrix is true. *)
-type bmatrix =
-  { r : int;                           (** Number of rows.          *)
-    c : int;                           (** Number of columns.       *)
-    r_major : IntSet.t Base.M_int.t;   (** Row-major order index    *)
-    c_major : IntSet.t Base.M_int.t;   (** Column-major order index *)
-  }
+type bmatrix
 
 (** {3 Basic operations} *)
 
@@ -28,20 +24,17 @@ val compare : bmatrix -> bmatrix -> int
 (** Return the string representation of a matrix. '0' = false and 1 = true *)
 val to_string : bmatrix -> string
 
-(** [apply_rows_exn iso m] returns matrix [m] with the rows reordered
+(** [apply_rows iso m] returns matrix [m] with the rows reordered
     according to [iso]. The domain of [iso] is assumed to be [{0,...,r}] with
-    [r] the number of rows of [m].
-    @raise Not_found if the isomorphism is undefined. *)
-val apply_rows_exn : int Iso.t -> bmatrix -> bmatrix
+    [r] the number of rows of [m]. *)
+val apply_rows : Iso.t -> bmatrix -> bmatrix
 
-(** Same as {!apply_rows_exn} but on columns.
-    @raise Not_found if the isomorphism is undefined. *)
-val apply_cols_exn : int Iso.t -> bmatrix -> bmatrix
+(** Same as {!apply_rows} but on columns. *)
+val apply_cols : Iso.t -> bmatrix -> bmatrix
 
-(** Same as {!apply_rows_exn} but on both rows and columns. The matrix is
-    assumed square.
-    @raise Not_found if the isomorphism is undefined. *)
-val apply_exn : int Iso.t -> bmatrix -> bmatrix
+(** Same as {!apply_rows} but on both rows and columns. The matrix is
+    assumed square. *)
+val apply : Iso.t -> bmatrix -> bmatrix
 
 (** [parse_vectors l r] parses list [l] of column vectors to a matrix with [r]
     rows and [c] columns, with [c] the length of [l] . Example: [parse_vectors
@@ -99,7 +92,7 @@ val fold_c : (int -> IntSet.t -> 'a -> 'a) -> bmatrix -> 'a -> 'a
     assumed to be valid indexes. *)
 val add : int -> int -> bmatrix -> bmatrix
 
-(** Add a list of elements as in {!Sparse.add}. *)				     
+(** Add a list of elements as in {!val:Sparse.add}. *)				     
 val add_list : bmatrix -> (int * int) list -> bmatrix
 
 (** Return the number of [true] elements in a matrix. This is equivalent to the
@@ -201,7 +194,7 @@ val orphans : bmatrix -> IntSet.t
     they share a parent. *)
 val siblings : bmatrix -> int -> IntSet.t
 
-(** Dual of {!Sparse.siblings}. *)
+(** Dual of {!val:Sparse.siblings}. *)
 val partners : bmatrix -> int -> IntSet.t
 
 (** [levels m] returns the level decomposition of [m]. Each level is obtained by
@@ -213,7 +206,7 @@ val levels : bmatrix -> IntSet.t list
     set is equal to [js].*)
 val row_eq : bmatrix -> IntSet.t -> IntSet.t
 
-(** Dual of {!Sparse.row_eq}. *)	       
+(** Dual of {!val:Sparse.row_eq}. *)	       
 val col_eq : bmatrix -> IntSet.t -> IntSet.t
 
 (**/**)

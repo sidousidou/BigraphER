@@ -7,11 +7,11 @@ sig
   val lhs : t -> Big.bg
   val rhs : t -> Big.bg
   val l : t -> label option
-  val map : t -> int Fun.t option
+  val map : t -> Fun.t option
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label option -> string
-  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> t
   val to_occ : Big.bg -> t -> occ
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
@@ -33,9 +33,9 @@ sig
   val lhs : t -> Big.bg
   val rhs : t -> Big.bg
   val l : t -> label option
-  val map : t -> int Fun.t option
+  val map : t -> Fun.t option
   val to_occ : Big.bg -> t -> occ
-  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> int Fun.t option -> t
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> t
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
   val update_occ : occ -> Big.bg -> occ
@@ -124,7 +124,7 @@ module Make (R : R) = struct
           (let s_lhs = lhs.Big.p.Place.s
            and s_rhs = rhs.Big.p.Place.s in
            (Fun.is_total s_rhs eta)
-           && (Fun.check_codom 0 (s_lhs - 1) eta)))
+           && (Fun.check_codom ~min:0 ~max:(s_lhs - 1) eta)))
     && val_chk r
 
   let is_valid_exn r =
@@ -144,7 +144,7 @@ module Make (R : R) = struct
             (let s_lhs = lhs.Big.p.Place.s
              and s_rhs = rhs.Big.p.Place.s in
              (Fun.is_total s_rhs eta)
-             && (Fun.check_codom 0 (s_lhs - 1) eta))
+             && (Fun.check_codom ~min:0 ~max:(s_lhs - 1) eta))
           then if val_chk r
             then true
             else raise (NOT_VALID Val_chk)
@@ -158,7 +158,7 @@ module Make (R : R) = struct
 
   let apply =
     List.fold_left (fun s r ->
-        let t_trans = Sparse.trans s.Big.p.Place.nn  in
+        let t_trans = Place.trans s.Big.p  in
         match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
         | Some o ->
           Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)
@@ -167,7 +167,7 @@ module Make (R : R) = struct
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)
   let fix b rules =
-    let t_trans = Sparse.trans b.Big.p.Place.nn in
+    let t_trans = Place.trans b.Big.p in
     let rec _step s = function
       | [] -> None
       | r :: rs ->

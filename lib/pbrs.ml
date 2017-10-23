@@ -1,7 +1,7 @@
 type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
-    eta : int Fun.t option;        (* Instantiation map *)
+    eta : Fun.t option;            (* Instantiation map *)
     p : float                      (* Probability *)
   }
 

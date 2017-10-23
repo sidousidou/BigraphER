@@ -37,7 +37,8 @@ Library bigraph
   Modules:         Ctrl,
                    Nodes,
                    Iso,
-                   Fun,		   
+                   Fun,
+                   IntSet,
                    Rs,
                    Place,
                    Link,
@@ -47,7 +48,6 @@ Library bigraph
                    Pbrs
  InternalModules:  Base,
                    Cnf,
-                   IntSet,
                    Rel,
                    Sparse,
                    RrType,
@@ -59,7 +59,7 @@ Library bigraph
   NativeOpt+:	   -noassert
   ByteOpt+:	   -noassert
   XMETARequires:   unix, minisat, str
-  XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems  
+  XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems
   Install:	   true
 
 Library "bigraph-utils"
@@ -93,7 +93,7 @@ Document bigraph_api
   Type:		   ocamlbuild (0.4)
   Title:      	   API reference for bigraph library
   Authors:	   Michele Sevegnani
-  BuildTools+: 	   ocamldoc 
+  BuildTools+: 	   ocamldoc
   Install:         true
   Format:	   html
   Index:	   API.html
@@ -105,7 +105,7 @@ Document bigraph_api
     bigraphical reactive systems with rule priorities.
   XOCamlbuildPath: lib
   XOCamlbuildLibraries:	bigraph
-  XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -charset utf-8'"
+  XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -show-missed-crossref -charset utf-8'"
 
 Library "junit"
   Path:            tests
@@ -149,7 +149,7 @@ Executable "decomp-test"
 
 Test "decomp"
   Run$:            flag(tests)
-  TestTools:	   mkdir	
+  TestTools:	   mkdir
   PreCommand:	   mkdir -p ./shippable/testresults
   Command:	   ./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
 

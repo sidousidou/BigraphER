@@ -2,7 +2,7 @@
 type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
-    eta : int Fun.t option         (* Instantiation map *)
+    eta : Fun.t option             (* Instantiation map *)
   }
 
 module RT = struct
@@ -53,7 +53,7 @@ module RT = struct
       | [] -> assert false (*BISECT-IGNORE*)
       | x :: l -> if i = i' then (x, l @ acc)
         else aux i (i' + 1) (x :: acc) l in
-    let t = Sparse.trans b.Big.p.Place.nn in
+    let t = Place.trans b.Big.p in
     let rec _random_step s m = function
       | [] -> (None, m)
       | rs ->

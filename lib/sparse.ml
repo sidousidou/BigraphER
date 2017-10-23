@@ -44,12 +44,9 @@ let to_string m =
   |> String.concat "\n"
 
 let add_m i j m =
-  try
-    M_int.find i m
-    |> IntSet.add j
-    |> flip2 M_int.add i m
-  with
-  | Not_found -> M_int.add i (IntSet.singleton j) m
+  match M_int.find i m with
+  | Some s -> IntSet.add j s |> flip2 M_int.add i m
+  | None -> M_int.add i (IntSet.singleton j) m
 
 let add i j m =
   assert (i >= 0);
@@ -116,37 +113,39 @@ let stack a b =
     c_major = M_int.merge merge_f a.c_major (off 0 a.r b.c_major);
   }
 
-let apply_rows_exn iso m =
+let apply_rows iso m =
   assert ((Iso.cardinal iso) = m.r);
   let (r_major, c_major) =
     M_int.fold (fun i js (acc_r, acc_c) ->
-        let i' = Iso.apply_exn iso i in
-        (M_int.add i' js acc_r,
-         IntSet.fold (fun j acc ->
-             M_int.add j (IntSet.singleton i') acc) js acc_c))
+        match Iso.apply iso i with
+        | Some i' -> (M_int.add i' js acc_r,
+                      IntSet.fold (fun j acc ->
+                          M_int.add j (IntSet.singleton i') acc) js acc_c)
+        | None -> (acc_r, acc_c))
       m.r_major (M_int.empty, M_int.empty) in
   { m with r_major;
            c_major;
   }
 
-let apply_cols_exn iso m =
+let apply_cols iso m =
   assert ((Iso.cardinal iso) = m.c);
   let (r_major, c_major) =
     M_int.fold (fun j is (acc_r, acc_c) ->
-        let j' = Iso.apply_exn iso j in
-        (IntSet.fold (fun i acc ->
-             M_int.add i (IntSet.singleton j') acc) is acc_r,
-         M_int.add j' is acc_c))
+        match Iso.apply iso j with
+        | Some j' -> (IntSet.fold (fun i acc ->
+            M_int.add i (IntSet.singleton j') acc) is acc_r,
+                      M_int.add j' is acc_c)
+        | None -> (acc_r, acc_c))
       m.c_major (M_int.empty, M_int.empty) in
   { m with r_major;
            c_major;
   }
 
-let apply_exn iso m =
+let apply iso m =
   assert ((Iso.cardinal iso) = m.r);
   assert (m.r = m.c);
-  apply_rows_exn iso m
-  |> apply_cols_exn iso
+  apply_rows iso m
+  |> apply_cols iso
 
 let parse_vectors adj rows =
   assert (rows >= 0);
@@ -159,14 +158,16 @@ let parse_vectors adj rows =
 let chl m i =
   assert (i >= 0);
   assert (i < m.r);
-  try M_int.find i m.r_major with
-  | Not_found -> IntSet.empty
+  match M_int.find i m.r_major with
+  | None -> IntSet.empty
+  | Some s -> s
 
 let prn m j =
   assert (j >= 0);
   assert (j < m.c);
-  try M_int.find j m.c_major with
-  | Not_found -> IntSet.empty
+  match M_int.find j m.c_major with
+  | None -> IntSet.empty
+  | Some s -> s
 
 let mul a b =
   assert (a.c = b.r);
@@ -349,12 +350,10 @@ let aux_eq m js =
     M_int.filter (fun _ js' -> IntSet.subset js' js) m in
   if M_int.is_empty m' then IntSet.empty
   else
-    try M_int.filter (fun _ js' -> IntSet.equal js' js) m'
-        |> M_int.choose
-        |> fst
-        |> IntSet.singleton
-    with
-    | Not_found -> aux (IntSet.empty, IntSet.empty) (M_int.bindings m')
+    match M_int.filter (fun _ js' -> IntSet.equal js' js) m'
+          |> M_int.choose with
+    | Some (i, _) -> IntSet.singleton i
+    | None -> aux (IntSet.empty, IntSet.empty) (M_int.bindings m')
 
 let row_eq m = aux_eq m.r_major
 let col_eq m = aux_eq m.c_major

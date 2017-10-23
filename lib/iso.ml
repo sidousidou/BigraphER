@@ -1,32 +1,53 @@
-include Base.M_int
+open Base
 
-let dom iso =
-  fst (List.split (bindings iso))
+type t = int M_int.t * int M_int.t
 
-let codom iso =
-  snd (List.split (bindings iso))
+let empty =
+  (M_int.empty, M_int.empty)
 
-let inverse iso =
-  fold (fun i j iso' ->
-      add j i iso')
-    iso empty
+let is_empty (i, _) =
+  M_int.is_empty i
 
-exception NOT_BIJECTIVE
+let mem v (i, _) =
+  M_int.mem v i
 
-let add_exn i j iso =
-  if List.mem j (codom iso) then raise NOT_BIJECTIVE
-  else add i j iso
+let iter f (i, _) =
+  M_int.iter f i
 
-let to_list = bindings
+let fold f (i, _) =
+  M_int.fold f i
 
-let of_list_exn =
-  List.fold_left (fun acc (i, j) ->
-      add_exn i j acc)
-    empty
+let cardinal (i, _) =
+  M_int.cardinal i
 
-let to_string iso =
+let dom (i, _) =
+  M_int.bindings i
+  |> List.split
+  |> fst
+  
+let codom (i, _) =
+  M_int.bindings i
+  |> List.split
+  |> snd
+
+(* Inverse of a bijection is a bijection *)
+let inverse (i, i') = (i', i)
+
+(* Add a binding only if the result is still a bijection *)
+let add x y (i, i') =
+  if M_int.mem x i || M_int.mem y i' then
+    (i, i')
+  else (M_int.add x y i, M_int.add y x i')
+
+let to_list (i, _) =
+  M_int.bindings i
+
+let of_list =
+  List.fold_left (fun acc (i, j) -> add i j acc) empty
+
+let to_string (i, _) =
   "{"
-  ^ (bindings iso
+  ^ (M_int.bindings i
      |> List.map (fun (i, j) ->
          "("
          ^ (string_of_int i)
@@ -35,28 +56,31 @@ let to_string iso =
          ^ ")")
      |> String.concat ", ")
   ^ "}"
+  
+let is_id (i, _) =
+  M_int.for_all int_equal i
 
-let is_id = for_all Base.int_equal
+let equal (i, _) (i', _) =
+  M_int.equal int_equal i i'
 
-let equal = equal Base.int_equal
+let compare (i, _) (i', _) =
+  M_int.compare int_compare i i'
 
-let compare = compare Base.int_compare
+let apply (i, _) x =
+  M_int.find x i
 
-let transform_exn iso i_dom i_codom =
+let transform ~iso_dom ~iso_codom iso =
   fold (fun i j iso' ->
-      add_exn (find i i_dom) (find j i_codom) iso')
+      match (apply iso_dom i, apply iso_codom j) with
+      | (Some i', Some j') -> add i' j' iso'
+      | _ -> iso')
     iso empty
 
-(* input:  i : P -> T  autos : P -> P *)
-let gen_isos_exn i autos =
-  List.map (fun a ->
+(* input:  i : P -> T  *)
+let gen_isos i =
+  List.map (fun auto ->
       fold (fun i j iso' ->
-          add_exn (find i a) j iso')
+          match apply auto i with
+          | None -> iso'
+          | Some i' -> add i' j iso')
         i empty)
-    autos
-
-let apply_exn iso i = find i iso
-
-let apply iso i =
-  try Some (apply_exn iso i) with
-  | Not_found -> None

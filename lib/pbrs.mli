@@ -7,7 +7,7 @@ type label = float
 type react =
   { rdx : Big.bg;                  (** Redex (left-hand side) *)
     rct : Big.bg;                  (** Reactum (right-hand side) *)
-    eta : int Fun.t option;        (** Instantiation map: a total function from the sites on the rhs to the sites on the lhs  *)
+    eta : Fun.t option;            (** Instantiation map: a total function from the sites on the rhs to the sites on the lhs  *)
     p : label                        (** Probability [0 < p <= 1] *)
   }
 
@@ -47,7 +47,7 @@ val string_of_stats : stats -> (string * string * bool) list
 val string_of_react : react -> string
 
 (** Create a new reaction rule. *)
-val parse_react : lhs:Big.bg -> rhs:Big.bg -> float option -> int Fun.t option -> react
+val parse_react : lhs:Big.bg -> rhs:Big.bg -> float option -> Fun.t option -> react
 
 (** The left-hand side (redex) of a reaction rule. **)
 val lhs_of_react : react -> Big.bg

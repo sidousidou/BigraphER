@@ -1,29 +1,46 @@
-include Base.M_int
+open Base
 
-let apply_exn r i = find i r
+type t = IntSet.t M_int.t
 
-let apply r i =
-  try apply_exn r i with
-  | Not_found -> IntSet.empty
+let cardinal = M_int.cardinal
 
-let add i js r =
-  add i (IntSet.union (apply r i) js) r
+let empty = M_int.empty
+
+let fold = M_int.fold
+
+let is_empty = M_int.is_empty
+
+let iter = M_int.iter
+
+let mem = M_int.mem
+
+let equal = M_int.equal IntSet.equal
+
+let compare = M_int.compare IntSet.compare
 
 let dom r =
-  fst (List.split (bindings r))
+  M_int.bindings r
+  |> List.split
+  |> fst
+  |> IntSet.of_list
 
 let codom r =
-  IntSet.union_list (snd (List.split (bindings r)))
+  M_int.bindings r
+  |> List.split
+  |> snd
+  |> IntSet.union_list
 
-let is_fun = for_all (fun _ js -> IntSet.cardinal js = 1)
+let apply r i =
+  match M_int.find i r with
+  | None -> IntSet.empty
+  | Some xs -> xs
 
-let equal = equal IntSet.equal
-
-let compare = compare IntSet.compare
+let add i js r =
+  M_int.add i (IntSet.union (apply r i) js) r
 
 let to_string r =
   "{"
-  ^ (bindings r
+  ^ (M_int.bindings r
      |> List.map (fun (i, js) ->
          "("
          ^ (string_of_int i)
@@ -32,20 +49,9 @@ let to_string r =
      |> String.concat ", " )
   ^ "}"
 
-let to_list = bindings
+let to_list = M_int.bindings
 
 let of_list =
   List.fold_left (fun acc (i, js) ->
       add i (IntSet.of_list js) acc)
     empty
-
-let inverse r =
-  fold (fun i js acc ->
-      IntSet.fold (fun j acc ->
-          add j (IntSet.singleton i) acc) js acc)
-    r empty
-
-let transform_exn r i_dom i_codom =
-  fold (fun i js r' ->
-      add (Iso.apply_exn i_dom i) (IntSet.apply_exn js i_codom) r')
-    r empty

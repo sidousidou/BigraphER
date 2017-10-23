@@ -58,13 +58,13 @@ val face_of_inter : inter -> Link.Face.t
 (** Compute the string representation of a bigraph. Example:
 
     [{(0, A:3),(1, A:3)}
-     2 2 0
-     10
-     10
-     01
-     00
-     ({}, {}, {(0, 1), (1, 2)})
-     ({}, {}, {(0, 2), (1, 1)})] *)
+2 2 0
+10
+10
+01
+00
+({}, {}, {(0, 1), (1, 2)})
+({}, {}, {(0, 2), (1, 1)})] *)
 val to_string: bg -> string
 
 (** Parse a string produced by {!val:Big.to_string} to a value of type
@@ -81,20 +81,22 @@ val json_of_big: bg -> string
 (** Parse a bigraph. Example input format:
 
     [2 2 0 2
-     A A
-     10
-     10
-     01
-     00
-     1 1 2 f
-     1 2 2 f]
+A A
+10
+10
+01
+00
+1 1 2 f
+1 2 2 f]
 
     The first line specifies the number of regions, nodes, sites, and links in
     the displayed order. The second line lists the controls of the nodes. It
     follows the adjacency matrix for the place graph and a list of links. A link
     is open (closed) if the corresponding line terminates with [t] ([f]). Note
     this example corresponds to bigraph shown in the documentation of
-    {!val:Big.to_string}. *)
+    {!val:Big.to_string}. 
+
+    @raise Invalid_argument if the input cannot be parsed. *)
 val parse : string -> bg
 
 (** [to_dot b i] compute the string expressing bigraph [b] named [i] in 
@@ -107,10 +109,8 @@ val inner : bg -> inter
 (** [outer b] computes the outer face of bigraph [b]. *)
 val outer : bg -> inter
 
-(** [apply_exn i b] applies isomorphism [i] to bigraph [b]. 
-
-    @raise Not_found if isomorphism [i] is not valid. *)
-val apply_exn : int Iso.t -> bg -> bg
+(** [apply i b] applies isomorphism [i] to bigraph [b]. *)
+val apply : Iso.t -> bg -> bg
 
 (** [placing l r f] computes a placing with [r] roots by parsing list [l]. The
     format of [l] is the same as the input for {!val:Place.parse_placing}.
@@ -274,8 +274,8 @@ val is_ground : bg -> bool
     isomorphism are from [p] to [t]. The elements in the result are the context,
     the parameter and the identity of the decomposition. Argument [f_e] is a
     total function from links in the pattern to links in the target. *)
-val decomp : target:bg -> pattern:bg -> i_n:int Iso.t -> i_e:int Iso.t ->
-  int Fun.t -> bg * bg * bg
+val decomp : target:bg -> pattern:bg -> i_n:Iso.t -> i_e:Iso.t ->
+  Fun.t -> bg * bg * bg
 
 (** {3 Comparison} *)
 
@@ -298,7 +298,7 @@ val equal_opt : bg -> bg -> bool
 
 (** The type of occurrences: an isomorphism over nodes, an isomorphism
     over edges and a function over hyper-edges. *)
-type occ = int Iso.t * int Iso.t * int Fun.t
+type occ = Iso.t * Iso.t * Fun.t
 
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]
     otherwise. *)
@@ -310,7 +310,7 @@ val occurs : target:bg -> pattern:bg ->  bool
     graph of [t].
 
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrence : target:bg -> pattern:bg -> Sparse.bmatrix -> occ option
+val occurrence : target:bg -> pattern:bg -> Place.bmatrix -> occ option
 
 (*(** Same as {!Big.occurrence}.
 
@@ -326,13 +326,13 @@ val occurrences : target:bg -> pattern:bg -> occ list
 (** [auto b] computes the non-trivial automorphisms of bigraph [b]. 
 
     @raise NODE_FREE when [p] has an empty node set. *)
-val auto : bg -> (int Iso.t * int Iso.t) list
+val auto : bg -> (Iso.t * Iso.t) list
 
 (** [rewrite o s r0 r1 eta] computes a bigraph obtained by replacing the
     occurrence of [r0] (specified by occurrence [o]) in [s] with [eta r1], where
     [eta] is a valid (no check performed) instantiation map.
 
     @raise Place.NOT_PRIME when [b] is not prime decomposable. *)
-val rewrite : occ -> s:bg -> r0:bg -> r1:bg -> int Fun.t option -> bg
+val rewrite : occ -> s:bg -> r0:bg -> r1:bg -> Fun.t option -> bg
 
 (**/**)

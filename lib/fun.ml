@@ -1,4 +1,18 @@
-include Base.M_int
+open Base
+
+type t = int M_int.t
+
+let add = M_int.add
+
+let empty = M_int.empty
+
+let equal = M_int.equal int_equal
+
+let compare = M_int.compare int_compare
+
+let fold = M_int.fold
+
+let to_list = M_int.bindings
 
 let dom f =
   fold (fun i _ acc ->
@@ -15,36 +29,28 @@ let inverse f =
       Rel.add j (IntSet.singleton i) rel)
     f Rel.empty
 
-let to_list = bindings
-
 let of_list =
   List.fold_left (fun acc (i, j) ->
-      add i j acc) empty
+      M_int.add i j acc) empty
 
 let parse l = of_list (List.mapi (fun i j -> (i, j)) l)
 
 let to_string f =
   "{"
-  ^ (bindings f
+  ^ (to_list f
      |> List.map (fun (i, j) ->
          "(" ^ (string_of_int i) ^ ", " ^ (string_of_int j) ^ ")")
      |> String.concat ", " )
   ^ "}"
 
-let equal = equal Base.int_equal
-
-let compare = compare Base.int_compare
-
-let transform_exn f i_dom i_codom =
+let transform ~iso_dom ~iso_codom f =
   fold (fun i j f' ->
-      add (Iso.apply_exn i_dom i) (Iso.apply_exn i_codom j) f')
+      match (Iso.apply iso_dom i, Iso.apply iso_codom j) with
+      | (Some i', Some j') -> M_int.add i' j' f'
+      | _ -> f')
     f empty
 
-let apply_exn f i = find i f
-
-let apply f i =
-  try Some (apply_exn f i) with
-  | Not_found -> None
+let apply f i =  M_int.find i f
 
 (* Check if there is a binding for each 0 ... (n - 1) *)
 let is_total n f =
@@ -56,8 +62,8 @@ let is_total n f =
       | None -> false in
   aux (n - 1) f
 
-let check_codom min max f =
+let check_codom ~min ~max f =
   assert (max >= min);
   let c = codom f in
   if IntSet.is_empty c then true
-  else (IntSet.min_elt c >= min) && (IntSet.max_elt c <= max)
+  else (safe @@ IntSet.min_elt c >= min) && (safe @@ IntSet.max_elt c <= max)

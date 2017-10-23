@@ -1,6 +1,6 @@
 (** This module provides operations on link graphs.
-    @author Michele Sevegnani *)
 
+    @author Michele Sevegnani *)
 
 (** {3 Faces} *)
 
@@ -8,68 +8,54 @@
 type name = Nam of string
 
 (** This module provides set operations for faces. *)
-module Face :
-sig
+module Face : sig
   type elt = name
   type t
-  val empty : t
-  val is_empty : t -> bool
-  val mem : elt -> t -> bool
   val add : elt -> t -> t
-  val singleton : elt -> t
-  val remove : elt -> t -> t
-  val union : t -> t -> t
-  val inter : t -> t -> t
-  val diff : t -> t -> t
+  val cardinal : t -> int
+  val choose : t -> elt option
   val compare : t -> t -> int
+  val diff : t -> t -> t
+  val elements : t -> elt list
+  val empty : t
   val equal : t -> t -> bool
-  val subset : t -> t -> bool
-  val iter : (elt -> unit) -> t -> unit
-  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-  val for_all : (elt -> bool) -> t -> bool
   val exists : (elt -> bool) -> t -> bool
   val filter : (elt -> bool) -> t -> t
+  val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (elt -> bool) -> t -> bool
+  val inter : t -> t -> t
+  val is_empty : t -> bool
+  val iter : (elt -> unit) -> t -> unit
+  val max_elt : t -> elt option
+  val mem : elt -> t -> bool
+  val min_elt : t -> elt option
   val partition : (elt -> bool) -> t -> t * t
-  val cardinal : t -> int
-  val elements : t -> elt list
-  val min_elt : t -> elt
-  val max_elt : t -> elt
-  val choose : t -> elt
+  val remove : elt -> t -> t
+  val singleton : elt -> t
   val split : elt -> t -> t * bool * t
+  val subset : t -> t -> bool
+  val union : t -> t -> t
 end
 
 (** {3 Ports} *)
 
 (** This module implements multisets of nodes as maps. *)
-module Ports :
-sig
+module Ports : sig
 
-  type key = int
-  type 'a t
+  type t
 
   (** {3 Standard operations on maps} *)	   
 
-  val empty : int t
-  val is_empty : 'a t -> bool
-  val mem : key -> 'a t -> bool
-  val singleton : key -> 'a -> 'a t
-  val remove : key -> 'a t -> 'a t
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  val iter : (key -> 'a -> unit) -> 'a t -> unit
-  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-  val for_all : (key -> 'a -> bool) -> 'a t -> bool
-  val exists : (key -> 'a -> bool) -> 'a t -> bool
-  val filter : (key -> 'a -> bool) -> 'a t -> 'a t
-  val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
-  val bindings : 'a t -> (key * 'a) list
-  val min_binding : 'a t -> key * 'a
-  val max_binding : 'a t -> key * 'a
-  val choose : 'a t -> key * 'a
-  val split : key -> 'a t -> 'a t * 'a option * 'a t
-  val find : key -> 'a t -> 'a
-  val map : ('a -> 'b) -> 'a t -> 'b t
-  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
+  (* val bindings : 'a t -> (key * 'a) list *)
+  val choose : t -> (int * int) option
+  val compare : (int -> int -> int) -> t -> t -> int
+  val empty : t
+  val equal : (int -> int -> bool) -> t -> t -> bool
+  val filter : (int -> int -> bool) -> t -> t
+  val fold : (int -> int -> 'b -> 'b) -> t -> 'b -> 'b
+  val is_empty : t -> bool
+  val max_binding : t -> (int * int) option
+  val min_binding : t -> (int * int) option
 
   (** {3 Additional functions} *)
 
@@ -77,38 +63,33 @@ sig
       example:
 
       [\{(0, 0), (1, 3)\}]. *)
-  val to_string : int t -> string
+  val to_string : t -> string
 
   (** [of_nodes ns] transform a set of nodes into a set of ports. *)
-  val of_nodes : Nodes.t -> int t
+  val of_nodes : Nodes.t -> t
 
   (** Construct a list of control strings. *)
-  val types : int t -> Nodes.t -> string list
+  val types : t -> Nodes.t -> string list
 
   (** [to_IntSet ps] returns a set of node identifiers form a set of ports. *)
-  val to_IntSet : int t -> IntSet.t
+  val to_IntSet : t -> IntSet.t
 
-  (** Apply an isomorphism.  
+  (** Apply an isomorphism. *)
+  val apply : Iso.t -> t -> t
 
-      @raise Not_found if a node identifier is not in the domain of the
-      isomorphism. *)
-  val apply_exn : int t -> int Iso.t -> int t
-
-  val apply : int t -> int Iso.t -> int t
-
-  val arity_exn : int t -> int -> int
+  val arity : t -> int -> int option
 
   (** Construct a list of possible node assignments starting from two compatible
       port sets. *)
-  val compat_list : int t -> int t -> Nodes.t -> Nodes.t -> Cnf.lit list list
+  val compat_list : t -> t -> Nodes.t -> Nodes.t -> Cnf.lit list list
 
-  val offset : int t -> int -> int t
+  val offset : t -> int -> t
 
-  val add : int -> int t -> int t
+  val add : int -> t -> t
 
-  val sum : int t -> int t -> int t
+  val sum : t -> t -> t
 
-  val cardinal : int t -> int
+  val cardinal : t -> int
 
 end
 
@@ -118,12 +99,11 @@ end
 type edg = {
   i : Face.t;    (** Inner face *)
   o : Face.t;    (** Outer face *)
-  p : int Ports.t; (** Set of ports *)
+  p : Ports.t;   (** Set of ports *)
 }
 
 (** This module provides set operations for link graphs. *)
-module Lg :
-sig
+module Lg : sig
   type elt = edg
   type t
   val empty : t
@@ -215,7 +195,7 @@ val json_of_link : Lg.t -> string
 val json_of_link_f : Lg.t -> Base.JSON.json_node
 
 (** Parse a list of strings. *)
-val parse : string list -> Lg.t
+val parse : links:string list -> nodes:string -> Lg.t * Nodes.t
 
 (** [get_dot l] computes a four-elements tuple encoding the dot
     representation of link graph [l]. The first two elements represent
@@ -230,11 +210,9 @@ val inner : Lg.t -> Face.t
 (** [outer l] computes the outer face of link graph [l]. *)
 val outer : Lg.t -> Face.t
 
-(** [apply_exn i l] computes a link graph obtained by applying
-    isomorphism [i] to [l].
-
-    @raise Not_found when a node is not defined in the iso. *)
-val apply_exn : int Iso.t -> Lg.t -> Lg.t
+(** [apply i l] computes a link graph obtained by applying
+    isomorphism [i] to [l]. *)
+val apply : Iso.t -> Lg.t -> Lg.t
 
 (** {3 Elementary link graphs} *)
 
@@ -253,8 +231,6 @@ val elementary_id: Face.t -> Lg.t
 
 (** [id_empty] is the empty link graph. *)
 val id_empty : Lg.t
-
-val arities : Lg.t -> int Base.M_int.t
 
 (** {3 Operations on link graphs} *)
 
@@ -318,7 +294,7 @@ val closed_edges : Lg.t -> int
 (** [closed_edges_iso l] computes the set of closed edges of link
     graph [l]. The computed isomorphism maps edge indices of the new link
     graph to indices of edges in [l]. *)
-val closed_edges_iso : Lg.t -> Lg.t * int Iso.t
+val closed_edges_iso : Lg.t -> Lg.t * Iso.t
 
 (** {3 Decompositions} *)
 
@@ -333,11 +309,11 @@ val norm : Lg.t -> Lg.t * Lg.t
      [i_e] is from edges in [p] to edges in [t]. Isos [i_c] and [i_d] are
      obtained by {!val:Place.decomp}. The results are link graph [c], [d] and
      [id]. *)
-val decomp : target:Lg.t -> pattern:Lg.t -> i_e:int Iso.t -> i_c:int Iso.t -> 
-  i_d:int Iso.t -> int Fun.t -> Lg.t * Lg.t * Lg.t
+val decomp : target:Lg.t -> pattern:Lg.t -> i_e:Iso.t -> i_c:Iso.t -> 
+  i_d:Iso.t -> Fun.t -> Lg.t * Lg.t * Lg.t
 
 (** Compute the prime components of a link graph. See {!val:Place.decomp}. *)					    
-val prime_components : Lg.t -> (int Iso.t) list -> Lg.t list 
+val prime_components : Lg.t -> Iso.t list -> Lg.t list 
 
 (** {3 Matching constraints} *)
 
@@ -364,14 +340,14 @@ val match_ports : target:Lg.t -> pattern:Lg.t -> n_t:Nodes.t -> n_p:Nodes.t ->
     @raise NOT_TOTAL when no matches are found. *)
 val match_peers : target:Lg.t -> pattern:Lg.t -> n_t:Nodes.t -> n_p:Nodes.t ->
   int * int * Cnf.clause list list * (int * int) list * 
-  Cnf.clause list * int Iso.t * int Iso.t
+  Cnf.clause list * Iso.t * Iso.t
 
-(** Similar to {!Link.match_edges} but constraints are for
+(** Similar to {!val:Link.match_edges} but constraints are for
     equality. *)
 val match_list_eq : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list * Cnf.clause list
 
-(** Similar to {!Link.match_ports} but constraints are for
+(** Similar to {!val:Link.match_ports} but constraints are for
     equality. *)
 val match_ports_eq : Lg.t -> Lg.t -> Nodes.t -> Nodes.t ->
   Cnf.clause list -> Cnf.clause list list

@@ -1,16 +1,18 @@
 open Printf
 open Base
 
+type bmatrix = Sparse.bmatrix
+
 (* Type for concrete place graphs. The elements are regions, nodes, sites and
    for adjacency matrices: regions to nodes, regions to sites, nodes to nodes and
    nodes to sites. *)
 type pg = { r: int;
             n: int;
             s: int;
-            rn: Sparse.bmatrix;
-            rs: Sparse.bmatrix;
-            nn: Sparse.bmatrix;
-            ns: Sparse.bmatrix;
+            rn: bmatrix;
+            rs: bmatrix;
+            nn: bmatrix;
+            ns: bmatrix;
           }
 
 (* Raised by comp. The elements are (sites, regions) *)
@@ -55,11 +57,11 @@ let parse ~regions:r ~nodes:n ~sites:s lines =
   | Sparse.PARSE_ERROR -> invalid_arg "Arguments do not specify a valid place graph"
 
 (* Apply isomorphism *)
-let apply_exn i p =
+let apply i p =
   { p with
-    rn = Sparse.apply_cols_exn i p.rn;
-    nn = Sparse.apply_exn i p.nn;
-    ns = Sparse.apply_rows_exn i p.ns;
+    rn = Sparse.apply_cols i p.rn;
+    nn = Sparse.apply i p.nn;
+    ns = Sparse.apply_rows i p.ns;
   }
 
 (* Elementary place graphs *)
@@ -241,12 +243,15 @@ let is_epi p =
 let is_guard p =
   (Sparse.entries p.rs) = 0
 
+let trans p =
+  Sparse.trans p.nn
+
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d
    expressed as rows of t. Pattern p is mono and epi.
    See page 76, proposition 4.2.4. *)
 let decomp ~target:t ~pattern:p iso =
-  let trans_t_nn = Sparse.trans t.nn (* memoisation *)
+  let trans_t_nn = trans t (* memoisation *)
   and iso' = Iso.inverse iso
   and v_p' = IntSet.of_list (Iso.codom iso) in
   (* ancestors of v_p' not in v_p' *)
@@ -312,7 +317,7 @@ let decomp ~target:t ~pattern:p iso =
   (* c regions to p nodes *)
   and edg_c_rp =
     Sparse.fold_r (fun r js acc ->
-        let sites = IntSet.filter_apply js iso'
+        let sites = IntSet.apply iso' js
                     |> Sparse.row_eq p.rn in
         IntSet.fold (fun s acc -> (r, s) :: acc) sites acc)
       t.rn []
@@ -320,7 +325,7 @@ let decomp ~target:t ~pattern:p iso =
   and edg_c_np =
     IntSet.fold (fun r acc ->
         let sites =
-          IntSet.filter_apply (Sparse.chl t.nn r) iso'
+          IntSet.apply iso' (Sparse.chl t.nn r)
           |> Sparse.row_eq p.rn in
         IntSet.fold (fun s acc ->
             (safe (Iso.apply iso_v_c r), s) :: acc)
@@ -331,7 +336,7 @@ let decomp ~target:t ~pattern:p iso =
   and edg_d_nn =
     IntSet.fold (fun n acc ->
         let sites =
-          IntSet.filter_apply (Sparse.prn t.nn n) iso'
+          IntSet.apply iso' (Sparse.prn t.nn n)
           |> Sparse.col_eq p.ns in
         IntSet.fold (fun s acc ->
             (s, safe (Iso.apply iso_v_d n)) :: acc)
@@ -340,7 +345,7 @@ let decomp ~target:t ~pattern:p iso =
   (* p nodes to d sites *)
   and edg_d_ns =
     Sparse.fold_c (fun s is acc ->
-        let sites = IntSet.filter_apply is iso'
+        let sites = IntSet.apply iso' is
                     |> Sparse.col_eq p.ns in
         IntSet.fold (fun r acc -> (r, s) :: acc) sites acc)
       t.ns [] in
@@ -460,7 +465,7 @@ module H =
 let partition_edges p n =
   let h = H.create (Sparse.entries p.nn) in
   Sparse.iter (fun i j ->
-      match (Nodes.get_ctrl_exn i n, Nodes.get_ctrl_exn j n) with
+      match (safe @@ Nodes.get_ctrl i n, safe @@ Nodes.get_ctrl j n) with
       | (Ctrl.C(a_string, _), Ctrl.C(b_string, _)) ->
         H.add h (a_string, b_string) (i, j))
     p.nn;
@@ -510,7 +515,7 @@ let match_list ~target:t ~pattern:p ~n_t ~n_p =
   let (clauses, clauses_exc, cols) =
     Sparse.fold (fun i j (acc, exc, acc_c) ->
         let (a, b) =
-          (Nodes.get_ctrl_exn i n_p, Nodes.get_ctrl_exn j n_p) in
+          (safe @@ Nodes.get_ctrl i n_p, safe @@ Nodes.get_ctrl j n_p) in
         match (a, b) with
         | (Ctrl.C(a_string, _), Ctrl.C(b_string, _)) ->
           begin
@@ -551,7 +556,7 @@ let match_leaves ~target:t ~pattern:p ~n_t ~n_p =
   and l_t = leaves t in
   let (clauses, c) =
     IntSet.fold (fun i (acc, acc_c) ->
-        let c = Nodes.get_ctrl_exn i n_p in
+        let c = safe @@ Nodes.get_ctrl i n_p in
         let compat_t =
           IntSet.inter (Nodes.find_all c n_t) l_t in
         if IntSet.is_empty compat_t then
@@ -571,7 +576,7 @@ let match_orphans ~target:t ~pattern:p ~n_t ~n_p =
   and o_t = orphans t in
   let (clauses, c) =
     IntSet.fold (fun i (acc, acc_c) ->
-        let c = Nodes.get_ctrl_exn i n_p in
+        let c = safe @@ Nodes.get_ctrl i n_p in
         let compat_t =
           IntSet.inter (Nodes.find_all c n_t) o_t in
         if IntSet.is_empty compat_t then
@@ -589,7 +594,7 @@ let match_orphans ~target:t ~pattern:p ~n_t ~n_p =
 let match_ctrl_deg_aux t p n_t n_p m =
   Sparse.fold (fun i _ (acc, acc_c) ->
       let js =
-        Nodes.get_ctrl_exn i n_p
+        safe @@ Nodes.get_ctrl i n_p
         |> flip Nodes.find_all n_t
         |> IntSet.filter (fun j -> compat t p j i) in
       if IntSet.is_empty js then raise_notrace NOT_TOTAL
@@ -642,7 +647,7 @@ let check_sites t p v_p' c_set iso =
        let candidate =
          IntSet.fold (fun s acc ->
              let prn_s =
-               safe_exn (IntSet.apply_exn (Sparse.prn p.ns s) iso) in
+               IntSet.apply iso (Sparse.prn p.ns s) in
              if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
              else acc)
            (IntSet.of_int p.s) IntSet.empty in
@@ -657,7 +662,7 @@ let check_sites t p v_p' c_set iso =
        let candidate =
          IntSet.fold (fun s acc ->
              let prn_s' =
-               safe_exn (IntSet.apply_exn (Sparse.prn p.ns s) iso) in
+               IntSet.apply iso (Sparse.prn p.ns s) in
              if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
              else acc)
            (IntSet.of_int p.s) IntSet.empty in
@@ -685,7 +690,7 @@ let check_regions t p v_p' iso =
        let candidate =
          IntSet.fold (fun r acc ->
              let chl_r =
-               safe_exn (IntSet.apply_exn (Sparse.chl p.rn r) iso) in
+               IntSet.apply iso (Sparse.chl p.rn r) in
              if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
              else acc
            ) (IntSet.of_int p.r) IntSet.empty in
@@ -700,7 +705,7 @@ let check_regions t p v_p' iso =
        let candidate =
          IntSet.fold (fun r acc ->
              let chl_r' =
-               safe_exn (IntSet.apply_exn (Sparse.chl p.rn r) iso) in
+               IntSet.apply iso (Sparse.chl p.rn r) in
              if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
              else acc
            ) (IntSet.of_int p.r) IntSet.empty in
@@ -748,7 +753,7 @@ let match_list_eq p t n_p n_t =
   let (clauses, clauses_exc, cols) =
     Sparse.fold (fun i j (acc, exc, acc_c) ->
         let (a, b) =
-          (Nodes.get_ctrl_exn i n_p, Nodes.get_ctrl_exn j n_p) in
+          (safe @@ Nodes.get_ctrl i n_p, safe @@ Nodes.get_ctrl j n_p) in
         match (a, b) with
         | (Ctrl.C (a_string, _), Ctrl.C (b_string, _)) ->
           begin
@@ -781,10 +786,10 @@ let match_list_eq p t n_p n_t =
 (* out clauses = (ij1 or ij2 or ij ...) :: ... *)
 let match_region_nodes a b n_a n_b =
   Sparse.fold (fun r i (acc, acc_c) ->
-      let c = Nodes.get_ctrl_exn i n_a in
+      let c = safe @@ Nodes.get_ctrl i n_a in
       let children =
         IntSet.filter (fun i ->
-            Ctrl.(=) c (Nodes.get_ctrl_exn i n_b))
+            Ctrl.(=) c (safe @@ Nodes.get_ctrl i n_b))
           (Sparse.chl b.rn r) in
       ((IntSet.fold (fun j acc ->
            (Cnf.P_var (Cnf.M_lit (i, j))) :: acc)
@@ -796,10 +801,10 @@ let match_region_nodes a b n_a n_b =
 (*Dual*)
 let match_nodes_sites a b n_a n_b =
   Sparse.fold (fun i s (acc, acc_c) ->
-      let c = Nodes.get_ctrl_exn i n_a in
+      let c = safe @@ Nodes.get_ctrl i n_a in
       let parents =
         IntSet.filter (fun i ->
-            Ctrl.(=) c (Nodes.get_ctrl_exn i n_b))
+            Ctrl.(=) c (safe @@ Nodes.get_ctrl i n_b))
           (Sparse.prn b.ns s) in
       ((IntSet.fold (fun j acc ->
            (Cnf.P_var (Cnf.M_lit (i, j))) :: acc)
@@ -807,6 +812,12 @@ let match_nodes_sites a b n_a n_b =
        (* IntSet.union acc_c (IntSet.of_list parents) *)
        acc_c))
     a.ns ([], IntSet.empty)
+
+let equal_bmatrix = Sparse.equal
+
+let compare_bmatrix = Sparse.compare
+
+let entries_bmatrix = Sparse.entries
 
 (******************************************************************************)
 (* Compute the reachable set via Depth First Search. *)

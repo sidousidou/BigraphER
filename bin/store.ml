@@ -37,7 +37,7 @@ module Make (T: TsType.RS with type label = float) = struct
     | A_ctrl_fun of int * Id.t list
     | React of T.react
     | React_fun of big_exp * big_exp *
-                   int Fun.t option * float_exp option * Id.t list
+                   Fun.t option * float_exp option * Id.t list
     | Int_param of int list
     | Float_param of float list
 
@@ -169,8 +169,9 @@ module Make (T: TsType.RS with type label = float) = struct
   let fetch id p (aux : typed_store_val -> 'a) (scope : scope) (env : store) =
     try aux (ScopeMap.find id scope) with
     | Not_found ->
-      (try (aux (Base.H_string.find env id)) with
-       | Not_found -> raise (ERROR (Unbound_variable id, p)))
+      match Base.H_string.find env id with
+      | Some v -> aux v
+      | None -> raise (ERROR (Unbound_variable id, p))
 
   let get_int id p scope env =
     let aux = function
@@ -224,51 +225,49 @@ module Make (T: TsType.RS with type label = float) = struct
     fetch id p aux scope env
 
   let get_ctrl id arity p env =
-    try
-      match Base.H_string.find env id with
-      | (A_ctrl c, _, _)
-      | (Ctrl c, _, _) ->
-        (let a = Ctrl.arity c in
-         if a = arity then c
-         else raise (ERROR (Arity (id, a, arity), p)))
-      | (Int _,t,_)
-      | (Float _,t,_)
-      | (Big _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p))
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some (A_ctrl c, _, _)
+    | Some (Ctrl c, _, _) ->
+      (let a = Ctrl.arity c in
+       if a = arity then c
+       else raise (ERROR (Arity (id, a, arity), p)))
+    | Some (Int _,t,_)
+    | Some (Float _,t,_)
+    | Some (Big _,t,_)
+    | Some (Big_fun (_,_),t,_)
+    | Some (Ctrl_fun (_,_),t,_)
+    | Some (A_ctrl_fun (_,_),t,_)
+    | Some (React _,t,_)
+    | Some (React_fun (_,_,_,_,_),t,_)
+    | Some (Int_param _,t,_)
+    | Some (Float_param _,t,_) ->
+      raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p))
 
   let get_ctrl_fun id arity act_types p env =
-    try
-      match Base.H_string.find env id with
-      | (A_ctrl_fun (a, forms), t, _)
-      | (Ctrl_fun (a, forms), t, _) ->
-        (if a = arity then (a, forms, t)
-         else raise (ERROR (Arity (id, a, arity), p)))
-      | (Int _,t,_)
-      | (Float _,t,_)
-      | (Big _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl _,t,_)
-      | (A_ctrl _,t,_)
-      | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p))
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some (A_ctrl_fun (a, forms), t, _)
+    | Some (Ctrl_fun (a, forms), t, _) ->
+      (if a = arity then (a, forms, t)
+       else raise (ERROR (Arity (id, a, arity), p)))
+    | Some (Int _,t,_)
+    | Some (Float _,t,_)
+    | Some (Big _,t,_)
+    | Some (Big_fun (_,_),t,_)
+    | Some (Ctrl _,t,_)
+    | Some (A_ctrl _,t,_)
+    | Some (React _,t,_)
+    | Some (React_fun (_,_,_,_,_),t,_)
+    | Some (Int_param _,t,_)
+    | Some (Float_param _,t,_) ->
+      raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p))
 
   let is_atomic id p env =
-    try
-      match get_val (Base.H_string.find env id) with
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some v ->
+      match get_val v with
       | A_ctrl _ |  A_ctrl_fun _ -> true
       | Int _
       | Float _
@@ -280,85 +279,75 @@ module Make (T: TsType.RS with type label = float) = struct
       | React_fun (_,_,_,_,_)
       | Int_param _
       | Float_param _ -> false
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
-
+        
   let get_big id p env =
-    try
-      match Base.H_string.find env id with
-      | (Big b, _, _) -> b
-      | (Int _,t,_)
-      | (Float _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl _,t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl _,t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `big_val `big), p))
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some (Big b, _, _) -> b
+    | Some (Int _,t,_)
+    | Some (Float _,t,_)
+    | Some (Big_fun (_,_),t,_)
+    | Some (Ctrl _,t,_)
+    | Some (Ctrl_fun (_,_),t,_)
+    | Some (A_ctrl _,t,_)
+    | Some (A_ctrl_fun (_,_),t,_)
+    | Some (React _,t,_)
+    | Some (React_fun (_,_,_,_,_),t,_)
+    | Some (Int_param _,t,_)
+    | Some (Float_param _,t,_) ->
+      raise (ERROR (Wrong_type (t, `big_val `big), p))
 
   let get_big_fun id arg_types p env =
-    try
-      match Base.H_string.find env id with
-      | (Big_fun (exp, forms), t, _) -> (exp, forms, t)
-      | (Int _,t,_)
-      | (Float _,t,_)
-      | (Big _,t,_)
-      | (Ctrl _,t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl _,t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p))
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some (Big_fun (exp, forms), t, _) -> (exp, forms, t)
+    | Some (Int _,t,_)
+    | Some (Float _,t,_)
+    | Some (Big _,t,_)
+    | Some (Ctrl _,t,_)
+    | Some (Ctrl_fun (_,_),t,_)
+    | Some (A_ctrl _,t,_)
+    | Some (A_ctrl_fun (_,_),t,_)
+    | Some (React _,t,_)
+    | Some (React_fun (_,_,_,_,_),t,_)
+    | Some (Int_param _,t,_)
+    | Some (Float_param _,t,_) ->
+      raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p))
 
   let get_react id p (env : store) =
-    try
-      match Base.H_string.find env id with
-      | (React r, _, _) -> r
-      | (Int _,t,_)
-      | (Float _,t,_)
-      | (Big _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl _,t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl _,t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `big_val `react), p))
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some (React r, _, _) -> r
+    | Some (Int _,t,_)
+    | Some (Float _,t,_)
+    | Some (Big _,t,_)
+    | Some (Big_fun (_,_),t,_)
+    | Some (Ctrl _,t,_)
+    | Some (Ctrl_fun (_,_),t,_)
+    | Some (A_ctrl _,t,_)
+    | Some (A_ctrl_fun (_,_),t,_)
+    | Some (React_fun (_,_,_,_,_),t,_)
+    | Some (Int_param _,t,_)
+    | Some (Float_param _,t,_) ->
+      raise (ERROR (Wrong_type (t, `big_val `react), p))
 
   let get_react_fun id arg_types p env =
-    try
-      match Base.H_string.find env id with
-      | (React_fun (l, r, eta, label, forms), t, _) ->
-        (l, r, label, eta, forms, t)
-      | (Int _,t,_)
-      | (Float _,t,_)
-      | (Big _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl _,t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl _,t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React _,t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `lambda (arg_types, `react)), p))
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some (React_fun (l, r, eta, label, forms), t, _) ->
+      (l, r, label, eta, forms, t)
+    | Some (Int _,t,_)
+    | Some (Float _,t,_)
+    | Some (Big _,t,_)
+    | Some (Big_fun (_,_),t,_)
+    | Some (Ctrl _,t,_)
+    | Some (Ctrl_fun (_,_),t,_)
+    | Some (A_ctrl _,t,_)
+    | Some (A_ctrl_fun (_,_),t,_)
+    | Some (React _,t,_)
+    | Some (Int_param _,t,_)
+    | Some (Float_param _,t,_) ->
+      raise (ERROR (Wrong_type (t, `lambda (arg_types, `react)), p))
 
   (******** EVAL FUNCTIONS *********)
 
@@ -670,8 +659,10 @@ module Make (T: TsType.RS with type label = float) = struct
     | (React_fun (_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
 
   let is_param id env p =
-    try
-      match get_val (Base.H_string.find env id) with
+    match Base.H_string.find env id with
+    | None -> raise (ERROR (Unbound_variable id, p))
+    | Some v ->
+      match get_val v with
       | Int_param _
       | Float_param _ -> true
       | Int _
@@ -684,8 +675,6 @@ module Make (T: TsType.RS with type label = float) = struct
       | A_ctrl_fun (_,_)
       | React _
       | React_fun (_,_,_,_,_) -> false
-    with
-    | Not_found -> raise (ERROR (Unbound_variable id, p))
 
   module IdSet = Set.Make(struct
       type t = Id.t
@@ -710,9 +699,11 @@ module Make (T: TsType.RS with type label = float) = struct
   (* a = [1.0; 2.0] c = [4; 8]
      [(a = 1.0; c = 4); (a = 1.0; c = 8); (a = 2.0; c = 4); (a = 2.0; c = 8)] *)
   let param_scopes env = function
-    | [] -> [ScopeMap.empty]
+    | [] -> [ ScopeMap.empty ]
     | ids ->
-      List.map (fun id -> param_to_vals (Base.H_string.find env id)) ids
+      List.map (fun id -> param_to_vals
+                   (Base.safe @@ Base.H_string.find env id))
+        ids
       |> param_comb
       |> List.map (fun comb ->
           List.fold_left2 (fun acc id v ->
@@ -816,11 +807,10 @@ module Make (T: TsType.RS with type label = float) = struct
   (******** ADD TO STORE FUNCTIONS *********)
 
   let add_to_store fmt env id (v : typed_store_val) =
-    (try
-       let p = get_pos (Base.H_string.find env id) in
-       report_warning fmt (Multiple_declaration (id, p, get_pos v));
-     with
-     | Not_found -> ());
+    (match Base.H_string.find env id with
+     | Some x -> 
+       report_warning fmt (Multiple_declaration (id, get_pos x, get_pos v));
+     | None -> ());
     Base.H_string.replace env id v
 
   let update fmt id (v : store_val) p env env_t =
@@ -965,7 +955,10 @@ module Make (T: TsType.RS with type label = float) = struct
       resolve_types env_t args_t
       |> List.map def_val in
     let aux id =
-      let args_t = dom_of_lambda (get_type (Base.H_string.find env id)) in
+      let args_t =
+        Base.safe @@ Base.H_string.find env id
+        |> get_type
+        |> dom_of_lambda in
       dummy_args args_t in
     let aux' eval_f id args p =
       eval_f id args env env_t p |> fst |> List.hd in

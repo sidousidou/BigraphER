@@ -1,10 +1,8 @@
-(** This module implements sets of integers.  
+(** This module implements finite sets of integers.  
+
     @author Michele Sevegnani *)
 
-(** Elements of a set. *)
-type elt = int
-
-(** The type of sets. *)	     
+(** The type of sets of integers. *)	     
 type t
 
 (** {3 Standard set operations} *)	 
@@ -12,30 +10,28 @@ type t
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
     library}. *)
 
-val empty : t
-val is_empty : t -> bool
-val mem : elt -> t -> bool
-val add : elt -> t -> t
-val singleton : elt -> t
-val remove : elt -> t -> t
-val union : t -> t -> t
-val inter : t -> t -> t
-val diff : t -> t -> t
-val compare : t -> t -> int
-val equal : t -> t -> bool
-val subset : t -> t -> bool
-val iter : (elt -> unit) -> t -> unit
-val fold : (elt -> 'a -> 'a) -> t -> 'a -> 'a
-val for_all : (elt -> bool) -> t -> bool
-val exists : (elt -> bool) -> t -> bool
-val filter : (elt -> bool) -> t -> t
-val partition : (elt -> bool) -> t -> t * t
+val add : int -> t -> t
 val cardinal : t -> int
-val elements : t -> elt list
-val min_elt : t -> elt
-val max_elt : t -> elt
-val choose : t -> elt
-val split : elt -> t -> t * bool * t
+val compare : t -> t -> int
+val diff : t -> t -> t
+val elements : t -> int list
+val empty : t
+val equal : t -> t -> bool
+val exists : (int -> bool) -> t -> bool
+val filter : (int -> bool) -> t -> t
+val fold : (int -> 'a -> 'a) -> t -> 'a -> 'a
+val for_all : (int -> bool) -> t -> bool
+val inter : t -> t -> t
+val is_empty : t -> bool
+val iter : (int -> unit) -> t -> unit
+val max_elt : t -> int option
+val mem : int -> t -> bool
+val min_elt : t -> int option
+val partition : (int -> bool) -> t -> t * t
+val remove : int -> t -> t
+val singleton : int -> t
+val subset : t -> t -> bool
+val union : t -> t -> t
 
 (** {3 Additional functions} *)
 
@@ -52,17 +48,13 @@ val of_int : int -> t
 val off : int -> t -> t
 
 (** Compute an isomorphism to fix the numbering of a set. For example, the
-    isomorphism for set ["\{2, 5, 6, 7\}"] is ["\{(2,0), (5,1), (6,2),
-    (7,3)\}"]. *)
-val fix : t -> int Iso.t
+    isomorphism for set ["\{2, 5, 6, 7\}"] is 
+    ["\{(2,0), (5,1), (6,2), (7,3)\}"]. *)
+val fix : t -> Iso.t
 
-(** Apply an isomorphism.
-    @raise Not_found if a node identifier is not in the domain of the 
-    isomorphism. *)
-val apply_exn : t -> int Iso.t -> t
-
-(** Apply an isomorphism only to the elements on which it is defined. *)
-val filter_apply : t -> int Iso.t -> t
+(** [apply iso s] applies [iso] to each element of [s]. Elements not mapped by
+    [iso] are ignored. *)
+val apply : Iso.t -> t -> t
 
 (** Compute the union of all the sets in a list. *)
 val union_list : t list -> t

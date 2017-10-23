@@ -1,15 +1,19 @@
 (** This module provides operations on place graphs.
+
     @author Michele Sevegnani *)
 
-(** The type of place graphs.*)
+(** The type of boolean matrices. *)
+type bmatrix
+
+(** The type of place graphs. *)
 type pg = {
   r : int; (** Number of regions *)
   n : int; (** Number of nodes *)
   s : int; (** Number of sites *)
-  rn : Sparse.bmatrix; (** Boolean adjacency matrix regions X nodes *)
-  rs : Sparse.bmatrix; (** Boolean adjacency matrix regions X sites *)
-  nn : Sparse.bmatrix; (** Boolean adjacency matrix nodes X nodes *)
-  ns : Sparse.bmatrix; (** Boolean adjacency matrix nodes X sites *)
+  rn : bmatrix; (** Boolean adjacency matrix regions X nodes *)
+  rs : bmatrix; (** Boolean adjacency matrix regions X sites *)
+  nn : bmatrix; (** Boolean adjacency matrix nodes X nodes *)
+  ns : bmatrix; (** Boolean adjacency matrix nodes X sites *)
 }
 
 (** [to_string p] returns a string representation of place graph [p]. *)
@@ -41,7 +45,7 @@ val edges : pg -> int
 
 (** [parse r n s lines] computes a place graph with [r] regions, [n] nodes and [s]
     sites. Each element in [lines] is a string in the same format of the output
-    of {!Place.to_string}. 
+    of {!val:to_string}. 
 
     @raise Invalid_argument if the arguments do not specify a valid place
     graph. *)
@@ -52,7 +56,8 @@ val parse : regions:int -> nodes:int -> sites:int -> string list -> pg
     node ranks and the fourth represents the adjacency matrix. *)
 val get_dot : pg -> string * string * string * string
 
-val apply_exn : int Iso.t -> pg -> pg
+(** Apply an isomorphism *)
+val apply : Iso.t -> pg -> pg
 
 (** [parse_placing l r] returns the placing with [r] regions defined by list [l]
     in which each element is a site's parent set. *)
@@ -103,6 +108,15 @@ val  equal_placing : pg -> pg -> bool
 (** [compare_placing a b] compares placings [a] and [b]. *)
 val compare_placing : pg -> pg -> int
 
+(** Equality for {!type:bmatrix}. *)
+val equal_bmatrix : bmatrix -> bmatrix -> bool
+
+(** Comparison for {!type:bmatrix}. *)
+val compare_bmatrix : bmatrix -> bmatrix -> int
+
+(** Return the number of edges in a {!type:bmatrix}. *)
+val entries_bmatrix : bmatrix -> int
+
 (** {3 Operations} *)
 
 (** Raised when a composition between two incompatible place graphs is
@@ -113,7 +127,7 @@ exception COMP_ERROR of (int * int)
 (** [tens p0 p1] returns the tensor product of place graphs [p0] and [p1]. *)
 val tens : pg -> pg -> pg
 
-(** Same as {!Place.tens} but on a list of place graphs. *)			 
+(** Same as {!val:tens} but on a list of place graphs. *)			 
 val tens_of_list : pg list -> pg
 
 (** [comp p0 p1] returns the composition of place graphs [p0] and [p1].
@@ -152,7 +166,7 @@ val is_guard : pg -> bool
     mono. The result tuple [(c, id, d, iso_c, iso_d)] is formed by context [c],
     identity [id], parameter [d], and nodes in [c] and [d] expressed as rows of
     [t]. *)
-val decomp : target:pg -> pattern:pg -> int Iso.t -> pg * pg * pg * int Iso.t * int Iso.t
+val decomp : target:pg -> pattern:pg -> Iso.t -> pg * pg * pg * Iso.t * Iso.t
 
 (** Raised when a place graph cannot be decomposed into prime components. The
     first element is a set of shared nodes and the second a set of shared
@@ -164,12 +178,12 @@ exception NOT_PRIME
     isomorphism. 
 
     @raise NOT_PRIME when some region is shared *)
-val prime_components : pg -> (pg * int Iso.t) list
+val prime_components : pg -> (pg * Iso.t) list
 
 (** Compute the decomposition [D = D' X D_id].
 
      @raise NOT_PRIME when some region is shared *)					      
-val decomp_d : pg -> int -> pg * pg * int Iso.t * int Iso.t
+val decomp_d : pg -> int -> pg * pg * Iso.t * Iso.t
 
 (** {3 Matching constraints} *)
 
@@ -188,25 +202,25 @@ val match_list : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
 
 (** [match_leaves t p n_t n_p] computes constraints to match the leaves 
     ({e i.e.} nodes without children) in [p] with those in [t]. [n_t] and [n_p]
-     are defined as in {!Place.match_list}.
+     are defined as in {!val:match_list}.
 
     @raise NOT_TOTAL when there are leaves in the pattern that cannot be
     matched. *)
 val match_leaves : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t -> 
   Cnf.clause list * IntSet.t
 
-(** Dual of {!Place.match_leaves}.
+(** Dual of {!val:match_leaves}.
 
     @raise NOT_TOTAL when there are orphans in the pattern that cannot be matched. *)
 val match_orphans : target:pg -> pattern:pg -> n_t:Nodes.t ->n_p: Nodes.t -> 
   Cnf.clause list * IntSet.t
 
 (** Compute constraints to match regions. Arguments are as in
-    {!Place.match_list}. Only controls and degrees are checked. *)
+    {!val:match_list}. Only controls and degrees are checked. *)
 val match_regions : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
   Cnf.clause list * IntSet.t
 
-(** Dual of {!Place.match_regions}. *)		      
+(** Dual of {!val:match_regions}. *)		      
 val match_sites : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
   Cnf.clause list * IntSet.t
 
@@ -215,18 +229,18 @@ val match_sites : target:pg -> pattern:pg -> n_t:Nodes.t -> n_p:Nodes.t ->
 val match_trans : target:pg -> pattern:pg -> Cnf.clause list
 
 (** [check_match t p trans iso] checks if [iso] from [p] to [t] is a valid match. *)
-val check_match : target:pg -> pattern:pg -> Sparse.bmatrix -> int Iso.t -> bool
+val check_match : target:pg -> pattern:pg -> bmatrix -> Iso.t -> bool
 
 (** Compute constraints for equality: regions must have children with the same
     controls. *)
 val match_region_nodes : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
-(** Dual of {!Place.match_region_nodes}. *)		      
+(** Dual of {!val:match_region_nodes}. *)		      
 val match_nodes_sites : pg -> pg -> Nodes.t -> Nodes.t -> 
   Cnf.clause list * IntSet.t
 
-(** Compute constraints for equality. Similar to {!Place.match_list}. *)		      
+(** Compute constraints for equality. Similar to {!val:match_list}. *)		      
 val match_list_eq : pg -> pg -> Nodes.t -> Nodes.t ->
   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
 
@@ -235,5 +249,9 @@ val deg_regions : pg -> int list
 
 (** Compute the inner degree of the sites of a place graph. *)			  
 val deg_sites : pg -> int list
+
+(** Compute the transitive closure of the nodes X nodes matrix of a place
+    graph. *)
+val trans : pg -> bmatrix
 
 (**/**)

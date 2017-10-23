@@ -12,12 +12,12 @@ let empty =
 
 let is_empty s = s.size = 0
 
+let size s = s.size
+
 let add_s name v m =
-  try
-    let vs = M_string.find name m in
-    M_string.add name (IntSet.add v vs) m
-  with
-  | Not_found -> M_string.add name (IntSet.singleton v) m
+  match M_string.find name m with
+  | Some vs -> M_string.add name (IntSet.add v vs) m
+  | None -> M_string.add name (IntSet.singleton v) m
 
 let add i c ns =
   assert (i >= 0);
@@ -66,16 +66,15 @@ let string_of_sorts s =
      |> String.concat ",")
   ^ "}"
 
-let get_ctrl_exn i s =
+let get_ctrl i s =
   assert (i >= 0);
   assert (i < s.size);
   M_int.find i s.ctrl
 
 let find_all (Ctrl.C (n, _)) s =
-  try
-    M_string.find n s.sort
-  with
-  | Not_found -> assert false (*BISECT-IGNORE*)
+  match M_string.find n s.sort with
+  | None -> IntSet.empty
+  | Some s -> s
 
 let to_dot s =
   fold (fun i (Ctrl.C (n, _)) acc ->
@@ -100,32 +99,16 @@ let tens a b =
         a.sort b.sort;
     size = a.size + b.size; }
 
-let apply_exn s iso =
+let apply iso s =
   fold (fun i c acc ->
-      add (Iso.apply_exn iso i) c acc)
-    s empty
-
-(* Only nodes in the domain of the isomorphism are transformed. Other nodes are
-   discarded. *)
-let filter_apply_iso s iso =
-  fold (fun v c acc ->
-      match Iso.apply iso v with
-      | Some v' -> add v' c acc
+      match Iso.apply iso i with
+      | Some i' ->  add i' c acc
       | None -> acc)
     s empty
 
-let parse s m =
-  Str.split (Str.regexp_string " ") s
-  |> List.fold_left (fun (acc, i) token ->
-      let ar =
-        try M_int.find i m with
-        | Not_found -> 0 in
-      (add i (Ctrl.C (token, ar)) acc, i + 1))
-    (empty, 0)
-  |> fst
-
 let of_string s =
-  let err = "Not a valid string representation of a node set" in
+  let err =
+    "Not a valid string representation of a node set" in
   Base.remove_block_delims s
   |> (function
       | "" -> ""
@@ -136,11 +119,11 @@ let of_string s =
       | i :: c :: [] ->
         (int_of_string i,
          match Str.(split (regexp_string ":")) c with
-         | n :: a :: [] -> Ctrl.C (n, (int_of_string a))
-         | _ -> invalid_arg err) 
+         | n :: a :: [] -> Ctrl.C (n, int_of_string a)
+         | _ -> invalid_arg err)
       | _ -> invalid_arg err)
-  |> List.fold_left (fun acc (i, c) -> add i c acc) empty 
-                  
+  |> List.fold_left (fun acc (i, c) -> add i c acc) empty
+
 (* true when a contains a control that is not present in b *)
 let not_sub a b =
   try

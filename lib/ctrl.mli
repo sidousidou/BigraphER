@@ -5,7 +5,7 @@
 type t = C of string * int
 
 (** [to_string c] gives the string representation of control [c] in the form
-    [name:arity]. *)
+    ["name:arity"]. *)
 val to_string : t -> string
 
 (** [arity c] returns the arity of control [c]. *)

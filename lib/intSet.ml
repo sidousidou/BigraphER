@@ -1,22 +1,43 @@
-include Set.Make (struct
-    type t = int
-    let compare = Base.int_compare
-  end)
+open Base
+
+module S = S_opt (Set.Make (struct
+                    type t = int
+                    let compare =int_compare
+                  end))
+
+type t = S.t
 
 let to_string s =
   "{"
-  ^ (List.map string_of_int (elements s)
+  ^ (List.map string_of_int (S.elements s)
      |> String.concat ",")
   ^ "}"
 
-(* Transform an int list to an Int_set *)
-let of_list =
-  List.fold_left (fun acc e ->
-      add e acc)
-    empty
+let add = S.add
+let cardinal = S.cardinal
+let compare = S.compare
+let diff = S.diff
+let elements = S.elements
+let empty = S.empty
+let equal = S.equal
+let exists = S.exists
+let filter = S.filter
+let fold = S.fold
+let for_all = S.for_all
+let inter = S.inter
+let is_empty = S.is_empty
+let iter = S.iter
+let max_elt = S.max_elt
+let mem = S.mem
+let min_elt = S.min_elt
+let partition = S.partition
+let remove = S.remove
+let singleton = S.singleton
+let subset = S.subset
+let union = S.union
 
-(* given a non-negative integer i return ordinal i = {0,1,....,i-1} i.e.   *)
-(* set with cardinality i                                                  *)
+(* Given a non-negative integer i return ordinal i = {0,1,....,i-1} i.e. set
+   with cardinality i. *)
 let of_int i =
   assert (i >= 0);
   let rec loop i acc =
@@ -25,33 +46,31 @@ let of_int i =
     | _ -> loop (i - 1) (add (i - 1) acc) in
   loop i empty
 
-(* add offset i to every element in set s *)
+(* Transform an int list to an Int_set *)
+let of_list =
+  List.fold_left (fun acc e ->
+      add e acc)
+    empty
+
+(* Add offset i to every element in set s. *)
 let off i s =
-  fold (fun x acc ->
+  S.fold (fun x acc ->
       add (x + i) acc)
     s empty
 
-let apply_exn s iso =
-  assert (Iso.cardinal iso >= cardinal s);
+let apply iso s =
   fold (fun i acc ->
-      add (Iso.apply_exn iso i) acc)
+      match Iso.apply iso i with
+      | None -> acc
+      | Some i' -> add i' acc)
     s empty
-
-let filter_apply s iso =
-  let s' = inter s (of_list (Iso.dom iso)) in
-  if is_empty s' then empty
-  else try apply_exn s' iso with
-    | Not_found -> assert false (*BISECT-IGNORE*)
 
 (* Generates an isomorphism to fix the numbering of a set of int.
      [2;5;6;7] --> [(2,0),(5,1),(6,2),(7,3)]                       *)
 let fix s =
-  try
     elements (of_int (cardinal s))
     |> List.combine (elements s)
-    |> Iso.of_list_exn
-  with
-  | Iso.NOT_BIJECTIVE -> assert false (*BISECT-IGNORE*)
+    |> Iso.of_list
 
 let union_list =
   List.fold_left (fun acc s ->
