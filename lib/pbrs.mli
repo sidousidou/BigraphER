@@ -97,9 +97,8 @@ val is_valid_priority_list : p_class list -> bool
 val cardinal : p_class list -> int
 
 (** Sequential application of a list of reaction rules. Non-enabled rules are
-    ignored. The input bigraph is returned unchanged if no reaction rules can be
-    applied. *)
-val apply : Big.bg -> react list -> Big.bg
+    ignored. *)
+val apply : Big.bg -> react list -> Big.bg option
 
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a probability rate. The total

@@ -45,7 +45,7 @@ sig
   val is_valid_exn : t -> bool
   val string_of_react_err : react_error -> string
   val is_enabled : Big.bg -> t -> bool
-  val apply : Big.bg -> t list -> Big.bg
+  val apply : Big.bg -> t list -> Big.bg option
   val fix : Big.bg -> t list -> Big.bg * int
   val step : Big.bg -> t list -> occ list * int
   val random_step : Big.bg -> t list -> occ option * int
@@ -156,13 +156,18 @@ module Make (R : R) = struct
   let is_enabled b r =
     Big.occurs ~target:b ~pattern:(lhs r)
 
-  let apply =
-    List.fold_left (fun s r ->
-        let t_trans = Place.trans s.Big.p  in
-        match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
-        | Some o ->
-          Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)
-        | None -> s)
+  let apply b reacts =
+    List.filter (is_enabled b) reacts
+    |> (function
+        | [] -> None
+        | l ->
+          Some (List.fold_left (fun s r ->
+              let t_trans = Place.trans s.Big.p  in
+              match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
+              | Some o ->
+                Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)
+              | None -> s)
+              b l))
   
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)

@@ -45,7 +45,7 @@ sig
   val is_valid_exn : t -> bool			  
   val string_of_react_err : react_error -> string
   val is_enabled : Big.bg -> t -> bool
-  val apply : Big.bg -> t list -> Big.bg
+  val apply : Big.bg -> t list -> Big.bg option
   val fix : Big.bg -> t list -> Big.bg * int
   val step : Big.bg -> t list -> occ list * int
   val random_step : Big.bg -> t list -> occ option * int
@@ -118,9 +118,8 @@ sig
   val is_enabled : Big.bg -> t -> bool
 
   (** Apply a list of reaction rules in sequence. Non-enabled rules are
-      ignored. The input bigraph is returned unchanged if no reaction rules can
-      be applied. *)
-  val apply : Big.bg -> t list -> Big.bg
+      ignored. *)
+  val apply : Big.bg -> t list -> Big.bg option
                                     
   (** [fix b r_list] applies the rewrite rules in list [r_list] to bigraph [b]
       until a fixed point [b'] is reached. The result is fixed point [b'] and
