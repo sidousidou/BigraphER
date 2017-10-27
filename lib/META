@@ -1,6 +1,6 @@
 # OASIS_START
-# DO NOT EDIT (digest: 0f7fb9b0522c0fbcc13d8160b2846087)
-version = "1.4.0"
+# DO NOT EDIT (digest: aef59751b09bb0fd0caccd0953d6e97e)
+version = "1.5.0"
 description =
 "API for the manipulation of bigraphs and bigraphical reactive systems"
 requires = "unix minisat str"

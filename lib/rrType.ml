@@ -168,7 +168,7 @@ module Make (R : R) = struct
                 Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)
               | None -> s)
               b l))
-  
+
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)
   let fix b rules =

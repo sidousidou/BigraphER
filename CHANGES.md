@@ -1,3 +1,15 @@
+###1.5.0 (2017-10-27): ###
+
+* Return option type in `Brs.apply`, `Pbrs.apply`, and `Sbrs.apply` 
+* Use error-aware return types in the API
+* FIX: call to `Unix.waitpid`
+* FIX: leak of `Export.ERROR`
+* FIX: `Node.of_string`, `Link.of_string`, and `Big.of_string`
+* FIX: exception in `Nodes.of_string`
+* Export `Iso` module
+* Return a string in `Big.json_of_big` 
+
+
 ###1.4.0 (2017-09-22): ###
 
 * Add support for `json` output format
