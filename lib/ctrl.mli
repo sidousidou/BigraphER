@@ -11,7 +11,7 @@ val to_string : t -> string
 (** [arity c] returns the arity of control [c]. *)
 val arity : t -> int
 
-(** [name c] returns the arity of control [c]. *)		   
+(** [name c] returns the name of control [c]. *)		   
 val name : t -> string		   
 
 (** Equality for type {!Ctrl.t}. *)
