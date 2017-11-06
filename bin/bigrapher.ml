@@ -162,7 +162,9 @@ let export_prism fmt msg f =
      with
      | Rs.EXPORT_ERROR e ->
        (pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err e))
+        fprintf err_formatter "@[<v>@[%s: %s@]@."
+          (Utils.err_opt Cmd.(defaults.colors))
+          e))
 
 let export_csl fmt f =
   match Cmd.(defaults.export_lab) with
@@ -175,7 +177,9 @@ let export_csl fmt f =
      with
      | Rs.EXPORT_ERROR e ->
        (pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err e))
+        fprintf err_formatter "@[<v>@[%s: %s@]@."
+          (Utils.err_opt Cmd.(defaults.colors))
+          e))
 
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
@@ -196,7 +200,9 @@ let export_states fmt f g =
                with
                | Big.EXPORT_ERROR msg ->
                  (pp_print_flush fmt ();
-                  fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err msg) in
+                  fprintf err_formatter "@[<v>@[%s: %s@]@."
+                    (Utils.err_opt Cmd.(defaults.colors))
+                    msg) in
              Cmd.(defaults.out_format)
              |> List.map format_map
              |> List.iter (fun (f, ext) ->  aux i s f ext))
@@ -222,7 +228,9 @@ let export_ts fmt msg formats =
          with
          | Rs.EXPORT_ERROR e ->
            (pp_print_flush fmt ();
-            fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err e))
+            fprintf err_formatter "@[<v>@[%s: %s@]@."
+              (Utils.err_opt Cmd.(defaults.colors))
+              e))
        formats)
 
 let check fmt =
@@ -245,6 +253,7 @@ module Run
       path
       (List.map format_map Cmd.(defaults.out_format))
       fmt
+      Cmd.(defaults.colors)
       (print_fun fmt `white Cmd.(defaults.verb))
 
   let export_ml fmt path m =
@@ -266,7 +275,8 @@ module Run
     | Export.ERROR e ->
       (pp_print_flush fmt ();
        fprintf err_formatter "@[<v>@[%s: %s@]@."
-         Utils.err (Export.report_error e))
+         (Utils.err_opt Cmd.(defaults.colors))
+         (Export.report_error e))
 
   let export_model fmt m env env_t =
     (* DECLARATIONS *)
@@ -388,11 +398,12 @@ module Run
       end
     | `check -> check fmt
 
-  let run fmt m exec_type =
+  let run fmt c m exec_type =
     try
-      let env = S.init_env fmt Cmd.(defaults.consts) in
+      let env = S.init_env fmt c
+          Cmd.(defaults.consts) in
       let (s0, pri, preds, env_t) =
-        S.eval_model fmt m env in
+        S.eval_model fmt c m env in
       print_stats_store fmt env pri;
       export_model fmt m env env_t;
       run_aux fmt s0 pri preds exec_type
@@ -401,7 +412,7 @@ module Run
       (pp_print_flush fmt ();
        fprintf err_formatter "@[<v>";
        Loc.print_loc err_formatter p;
-       S.report_error err_formatter e;
+       S.report_error err_formatter c e;
        pp_print_flush err_formatter ();
        exit 1)
 
@@ -441,7 +452,9 @@ let parse_cmd argv =
      Cmd.eval_help_top err_formatter ();
      exit 1)
   | Lexer.ERROR (e, _) ->
-    (Lexer.report_error err_formatter e;
+    (Lexer.report_error err_formatter
+       (Utils.err_opt Cmd.(defaults.colors))
+       e;
      pp_print_newline err_formatter ();
      Cmd.eval_help_top err_formatter ();
      exit 1)
@@ -477,7 +490,7 @@ let () =
                  type t = int
                  let stop = Cmd.(defaults.steps)
                end) in
-           R.run fmt m exec_type
+           R.run fmt Cmd.(defaults.colors) m exec_type
          end
        | Rs.PBRS ->
          begin
@@ -487,7 +500,7 @@ let () =
                  type t = int
                  let stop = Cmd.(defaults.steps)
                end) in
-           R.run fmt m exec_type
+           R.run fmt Cmd.(defaults.colors) m exec_type
          end
        | Rs.SBRS ->
          begin
@@ -497,7 +510,7 @@ let () =
                  type t = float
                  let stop = Cmd.(defaults.time)
                end) in
-           R.run fmt m exec_type
+           R.run fmt Cmd.(defaults.colors) m exec_type
          end);
     with
     | Place.NOT_PRIME ->
@@ -505,7 +518,7 @@ let () =
        fprintf
          err_formatter
          "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
-         Utils.err;
+         (Utils.err_opt Cmd.(defaults.colors));
        exit 1)
     | Parser.Error ->
       (pp_print_flush fmt ();
@@ -516,18 +529,22 @@ let () =
        fprintf
          err_formatter
          "@[%s: Syntax error near token `%s'@]@."
-         Utils.err
+         (Utils.err_opt Cmd.(defaults.colors))
          (Lexing.lexeme lexbuf);
        exit 1)
   with
   | Lexer.ERROR (e, p) ->
     (fprintf err_formatter "@[<v>";
      Loc.print_loc err_formatter p;
-     Lexer.report_error err_formatter e;
+     Lexer.report_error err_formatter
+       (Utils.err_opt Cmd.(defaults.colors))
+       e;
      pp_print_newline err_formatter ();
      exit 1)
   | Sys_error s ->
-    (fprintf err_formatter "@[%s: %s@]@." Utils.err s;
+    (fprintf err_formatter "@[%s: %s@]@."
+       (Utils.err_opt Cmd.(defaults.colors))
+       s;
      exit 1)
   | e ->
     (fprintf err_formatter "@[%s@,%s@]@."

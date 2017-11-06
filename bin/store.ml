@@ -147,13 +147,13 @@ module Make (T: TsType.RS with type label = float) = struct
                    duplicate names"
         (String.concat "," ns)
 
-  let report_error fmt err =
-    fprintf fmt "@[%s: %a@]@," Utils.err report_error_aux err
+  let report_error fmt c err =
+    fprintf fmt "@[%s: %a@]@," (Utils.err_opt c) report_error_aux err
 
-  let report_warning fmt = function
+  let report_warning fmt c = function
     | Multiple_declaration (id, p, p') ->
       fprintf fmt "%a@[%s: Identifier %s was already used at %s@]@,"
-        Loc.print_loc p' Utils.warn id (Loc.string_of_pos p)
+        Loc.print_loc p' (Utils.warn_opt c) id (Loc.string_of_pos p)
 
   (******** SCOPE *********)
 
@@ -806,22 +806,22 @@ module Make (T: TsType.RS with type label = float) = struct
 
   (******** ADD TO STORE FUNCTIONS *********)
 
-  let add_to_store fmt env id (v : typed_store_val) =
+  let add_to_store fmt c env id (v : typed_store_val) =
     (match Base.H_string.find env id with
      | Some x -> 
-       report_warning fmt (Multiple_declaration (id, get_pos x, get_pos v));
+       report_warning fmt c (Multiple_declaration (id, get_pos x, get_pos v));
      | None -> ());
     Base.H_string.replace env id v
 
-  let update fmt id (v : store_val) p env env_t =
+  let update fmt c id (v : store_val) p env env_t =
     let (t, env_t') = assign_type v env_t in
-    add_to_store fmt env id (v, t, p);
+    add_to_store fmt c env id (v, t, p);
     env_t'
 
-  let store_decs fmt decs env env_t =
+  let store_decs fmt c decs env env_t =
     let aux env_t d =
       let upd id v p =
-        update fmt id v p env env_t in
+        update fmt c id v p env env_t in
       match d with
       | Dctrl (Atomic (Ctrl_exp (id, ar, _), p)) ->
         upd id (A_ctrl (Ctrl.C (id, ar))) p
@@ -842,29 +842,29 @@ module Make (T: TsType.RS with type label = float) = struct
       | Dbig (Big_exp (id, exp, p)) ->
         (let (b_v, env_t') =
            eval_big exp ScopeMap.empty env env_t in
-         update fmt id (Big b_v) p env env_t')
+         update fmt c id (Big b_v) p env env_t')
       | Dbig (Big_fun_exp (id, forms, exp, p)) ->
         upd id (Big_fun (exp, forms)) p
       | Dreact (React_exp (id, lhs, rhs, label, eta, p)) ->
         (let (r_v, env_t') =
            eval_react lhs rhs (eval_eta eta) label ScopeMap.empty env env_t p in
-         update fmt id (React r_v) p env env_t')
+         update fmt c id (React r_v) p env env_t')
       | Dreact (React_fun_exp (id, forms, lhs, rhs, label, eta, p)) ->
         upd id (React_fun (lhs, rhs, eval_eta eta, label, forms)) p in
     List.fold_left aux env_t decs
 
-  let store_consts fmt consts (env : store) =
+  let store_consts fmt c consts (env : store) =
     let aux = function
       | Cint d ->
         let v = Int (eval_int d.dint_exp ScopeMap.empty env) in
-        ignore (update fmt d.dint_id v d.dint_loc env [])
+        ignore (update fmt c d.dint_id v d.dint_loc env [])
       | Cfloat d ->
         let v = Float (eval_float d.dfloat_exp ScopeMap.empty env) in
-        ignore (update fmt d.dfloat_id v d.dfloat_loc env []) in
+        ignore (update fmt c d.dfloat_id v d.dfloat_loc env []) in
     List.iter aux consts
 
   (* Store simple Ints or Floats when the list of values has only one element *)
-  let store_params fmt (params : param_exp list) env =
+  let store_params fmt c (params : param_exp list) env =
     let rec eval_int_range start incr stop acc =
       let start' = start + incr in
       if start' <= stop then eval_int_range start' incr stop (start' :: acc)
@@ -886,25 +886,25 @@ module Make (T: TsType.RS with type label = float) = struct
       | Param_int (ids, Param_int_val (exp, _), p) ->
         let v = Int (eval_int exp ScopeMap.empty env) in
         List.iter (fun id ->
-            add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_int (ids, Param_int_range (start, incr, stop, _), p) ->
         (let s = eval_int start ScopeMap.empty env in
          let v = flatten_int
              (eval_int_range s (eval_int incr ScopeMap.empty env)
                 (eval_int stop ScopeMap.empty env) [s]) in
          List.iter (fun id ->
-             add_to_store fmt env id (v, fst (assign_type v []), p)) ids)
+             add_to_store fmt c env id (v, fst (assign_type v []), p)) ids)
       | Param_int (ids, Param_int_set (exps, _), p) ->
         let v =
           List.map (fun e -> eval_int e ScopeMap.empty env) exps
           |> List.sort_uniq (fun a b -> a - b)
           |> flatten_int in
         List.iter (fun id ->
-            add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_float (ids, Param_float_val (exp, _), p) ->
         let v = Float (eval_float exp ScopeMap.empty env) in
         List.iter (fun id ->
-            add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_float (ids, Param_float_range (start, incr, stop, _), p) ->
         let s = eval_float start ScopeMap.empty env in
         let v = flatten_float
@@ -912,26 +912,26 @@ module Make (T: TsType.RS with type label = float) = struct
                (eval_float stop ScopeMap.empty env)
                [s]) in
         List.iter (fun id ->
-            add_to_store fmt env id (v, fst (assign_type v []), p)) ids
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_float (ids, Param_float_set (exps, _), p) ->
         let v =
           List.map (fun e -> eval_float e ScopeMap.empty env) exps
           |> List.sort_uniq compare
           |> flatten_float in
         List.iter (fun id ->
-            add_to_store fmt env id (v, fst (assign_type v []), p)) ids in
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids in
     List.iter aux params
 
   (******** INSTANTIATE REACTIVE SYSTEM *********)
 
-  let init_env fmt consts =
+  let init_env fmt c consts =
     let store = Base.H_string.create 1000 in
-    store_consts fmt consts store;
+    store_consts fmt c consts store;
     store
 
-  let eval_model fmt m env =
-    let env_t = store_decs fmt m.model_decs env [] in
-    store_params fmt m.model_rs.dbrs_params env;
+  let eval_model fmt c m env =
+    let env_t = store_decs fmt c m.model_decs env [] in
+    store_params fmt c m.model_rs.dbrs_params env;
     let (b, env_t') = eval_init m.model_rs.dbrs_init env env_t in
     let (p, env_t'') =
       eval_prs env env_t' m.model_rs.dbrs_pri m.model_rs.dbrs_loc in
@@ -941,7 +941,7 @@ module Make (T: TsType.RS with type label = float) = struct
   (******** EXPORT STORE *********)
 
   let export decs (env : store) (env_t : store_t) path
-      formats fmt
+      formats fmt c
       (print_fun : string -> int -> unit) =
     let concat = Filename.concat path in
     let write_pair id lhs rhs (f, ext) =
@@ -987,7 +987,7 @@ module Make (T: TsType.RS with type label = float) = struct
             try write f_write ext d with
             | Big.EXPORT_ERROR msg ->
               (pp_print_flush fmt ();
-               fprintf err_formatter "@[<v>@[%s: %s@]@." Utils.err msg))
+               fprintf err_formatter "@[<v>@[%s: %s@]@." (Utils.err_opt c) msg))
           decs)
       formats
 

@@ -190,15 +190,15 @@ and read_format = parse
 
 open Format
 
-let report_error fmt = function
+let report_error fmt err = function
   | Unknown_char c ->
-     fprintf fmt "@[%s: Unknown character `%c'@]" Utils.err c
+     fprintf fmt "@[%s: Unknown character `%c'@]" err c
   | Int_overflow s ->
      fprintf fmt "@[%s: Integer out of bounds: %s is not in [%i, %i]@]" 
-	     Utils.err s min_int max_int
+	     err s min_int max_int
   | Invalid_assign s ->
-     fprintf fmt "@[%s: Invalid constant assignments `%s'@]" Utils.err s
+     fprintf fmt "@[%s: Invalid constant assignments `%s'@]" err s
   | Invalid_format s ->
-     fprintf fmt "@[%s: Invalid format `%s'@]" Utils.err s
+     fprintf fmt "@[%s: Invalid format `%s'@]" err s
 
 }

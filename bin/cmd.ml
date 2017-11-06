@@ -476,7 +476,7 @@ let dot_msg = "`dot' is not installed on this system. "
 
 let report_warning fmt msg opt =
   fprintf fmt "@[<v>%s: %sIgnoring option `%s'@]@."
-    warn msg opt
+    (warn_opt defaults.colors) msg opt
 
 let usage fmt () =
   fprintf fmt "@[<v>%a@,@[Try `bigrapher --help' for more information.@]@]"
@@ -487,7 +487,7 @@ let usage_sub fmt cmd =
                Try `bigrapher %s --help' for more information.@]@." cmd cmd
 
 let report_error fmt e =
-  fprintf fmt "@[%s: %a@]@." err report_error_aux e
+  fprintf fmt "@[%s: %a@]@." (err_opt defaults.colors) report_error_aux e
 
 let check_states () =
   if defaults.export_states_flag then

@@ -25,6 +25,15 @@ let err =
   colorise `red "Error"
   |> colorise `bold
 
+let aux_opt f v s =
+  if f then v else s
+
+let err_opt f =
+  aux_opt f err "Error"
+
+let warn_opt f =
+  aux_opt f warn "Warning"
+    
 let days = [| "Sun"; "Mon"; "Tue"; "Wed"; "Thu"; "Fri"; "Sat" |]
 let months = [| "Jan"; "Feb"; "Mar"; "Apr"; "May"; "Jun";
                 "Jul"; "Aug"; "Sep"; "Oct"; "Nov"; "Dec" |]
