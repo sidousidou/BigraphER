@@ -1,3 +1,7 @@
+###1.5.1 (2017-11-06): ###
+
+* FIX: Suppress coloured errors and warnings when `-n` flag is present
+
 ###1.5.0 (2017-10-27): ###
 
 * Return option type in `Brs.apply`, `Pbrs.apply`, and `Sbrs.apply` 
