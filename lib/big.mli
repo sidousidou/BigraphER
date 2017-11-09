@@ -249,22 +249,29 @@ val is_plc : bg -> bool
 (** [is_wir b] returns [true] if bigraph [b] is a wiring, [false] otherwise. *)
 val is_wir : bg -> bool
 
-(** [is_epi b] returns [true] if bigraph [b] is epimorphic, [false] otherwise. *)
+(** [is_epi b] returns [true] if bigraph [b] is epimorphic, [false] otherwise.
+    A bigraph is epimorphic if both its place graph and link graph are
+    epimorphic. See {!val:Place.is_epi} and {!val:Link.is_epi}. *)
 val is_epi : bg -> bool
 
-(** [is_mono b] returns [true] if bigraph [b] is monomorphic, [false] 
-    otherwise. *)
+(** [is_mono b] returns [true] if bigraph [b] is monomorphic, [false]
+    otherwise. A bigraph is monomorphic if both its place graph and link graph
+    are monomorphic. See {!val:Place.is_mono} and {!val:Link.is_mono}. *)
 val is_mono : bg -> bool
 
-(** [is_guard b] returns [true] if bigraph [b] is an guarded, [false] 
-    otherwise. *)
+(** [is_guard b] returns [true] if bigraph [b] is an guarded, [false]
+    otherwise. A bigraph is guarded if both its place graph and link graph are
+    guarded. See {!val:Place.is_guard} and {!val:Link.is_guard}. *)
 val is_guard : bg -> bool
 
-(** [is_solid b] returns [true] if bigraph [b] is solid, [false] otherwise. *)
+(** [is_solid b] returns [true] if bigraph [b] is solid, [false] otherwise. A
+    bigraph is solid if it is epimorphic, monomorphic, and guarded. See
+    {!val:Big.is_epi}, {!val:Big.is_mono}, and {!val:Big.is_guard}. *)
 val is_solid : bg -> bool
 
-(** [is_ground b] returns [true] if bigraph [b] is an ground, [false] 
-    otherwise. *)
+(** [is_ground b] returns [true] if bigraph [b] is ground, [false] otherwise. A
+    bigraph is ground if its place graph and link graph are both ground. See
+    {!val:Place.is_ground} and {!val:Link.is_ground}. *)
 val is_ground : bg -> bool
 
 (** {3 Decompositions} *)

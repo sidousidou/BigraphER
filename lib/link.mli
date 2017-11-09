@@ -266,12 +266,12 @@ val comp : Lg.t -> Lg.t -> int -> Lg.t
     otherwise. *)
 val is_id : Lg.t -> bool
 
-(** [is_mono l] is [true] if link graph [l] is monomorphic, [false]
-    otherwise. *)
+(** [is_mono l] is [true] if link graph [l] is monomorphic, [false] otherwise. A
+    link graph is monomorphic if every edge has at most one inner name. *)
 val is_mono : Lg.t -> bool
 
-(** [is_epi l] is [true] if link graph [l] is epimorphic, [false]
-    otherwise. *)
+(** [is_epi l] is [true] if link graph [l] is epimorphic, [false] otherwise. A
+    link graph is epimorphic if no outer name is idle. *)
 val is_epi : Lg.t -> bool
 
 (** [is_ground l] is [true] if link graph [l] has no inner names, [false]

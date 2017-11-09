@@ -148,15 +148,17 @@ val is_plc : pg -> bool
 val is_ground : pg -> bool
 
 (** [is_mono p] is [true] if place graph [p] is monomorphic, [false]
-    otherwise. *)
+    otherwise. A place graph is monomorphic if no two sites are siblings and no
+    site is an orphan. *)
 val is_mono : pg -> bool
 
-(** [is_epi p] is [true] if place graph [p] is epimorphic, [false]
-    otherwise. *)
+(** [is_epi p] is [true] if place graph [p] is epimorphic, [false] otherwise. A
+    place graph is epimorphic if no root is idle and no two roots are
+    partners. *)
 val is_epi : pg -> bool
 
-(** [is_guard p] is [true] if place graph [p] is guarded, [false]
-    otherwise. *)
+(** [is_guard p] is [true] if place graph [p] is guarded, [false] otherwise. A
+    place graph is guarded if no region has sites as children. *)
 val is_guard : pg -> bool
 
 (** {3 Decompositions} *)

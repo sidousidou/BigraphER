@@ -61,7 +61,7 @@ val string_of_limit : limit -> string
 (** Return [true] if the inner (outer) interfaces of the redex (reactum) are
     equal, the redex is solid, the instantiation map is total and the
     probability is greater than zero and less or equal than one. Return [false]
-    otherwise. *)
+    otherwise. See {!val:Big.is_solid}. *)
 val is_valid_react : react -> bool
 
 (** The type of reaction validity errors. *)				
