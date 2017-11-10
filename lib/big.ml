@@ -694,17 +694,15 @@ let auto b =
   end
 
 let clause_of_iso iso m =
-  snd (
-    Array.fold_left (fun (i, acc) r ->
-        (i + 1, snd (
-            Array.fold_left (fun (j, acc) x ->
-                if safe (Iso.apply iso i) = j then
-                  (j + 1, neg_lit x :: acc)
-                else (j + 1, pos_lit x :: acc) (* Do we really need this? *)
-              ) (0, acc) r)
-        )
-      ) (0, []) m
-  )
+  snd
+    (Array.fold_left (fun (i, acc) r ->
+         (i + 1, snd
+            (Array.fold_left (fun (j, acc) x ->
+                 if safe (Iso.apply iso i) = j then
+                   (j + 1, neg_lit x :: acc)
+                 else (j + 1, pos_lit x :: acc)) (* Do we really need this? *)
+                (0, acc) r)))
+        (0, []) m)
 
 let occurrences ~target:t ~pattern:p =
   if Nodes.size p.n = 0 then raise NODE_FREE

@@ -171,19 +171,21 @@ module Make (R : R) = struct
 
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)
-  let fix b rules =
-    let t_trans = Place.trans b.Big.p in
-    let rec _step s = function
-      | [] -> None
-      | r :: rs ->
-        (match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
-         | Some o ->
-           Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r))
-         | None -> _step s rs) in
-    let rec _fix s rules i =
-      match _step s rules with
-      | Some b ->  _fix b rules (i + 1)
-      | None -> (s, i) in
-    _fix b rules 0
-
+  let fix b = function
+    | [] -> (b, 0)
+    | rules ->
+      let t_trans = Place.trans b.Big.p in
+      let rec _step s = function
+        | [] -> None
+        | r :: rs ->
+          (match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
+           | Some o ->
+             Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r))
+           | None -> _step s rs) in
+      let rec _fix s rules i =
+        match _step s rules with
+        | Some b ->  _fix b rules (i + 1)
+        | None -> (s, i) in
+      _fix b rules 0
+        
 end
