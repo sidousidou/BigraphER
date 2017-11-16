@@ -157,18 +157,23 @@ module Make (R : R) = struct
     Big.occurs ~target:b ~pattern:(lhs r)
 
   let apply b reacts =
-    List.filter (is_enabled b) reacts
-    |> (function
-        | [] -> None
-        | l ->
-          Some (List.fold_left (fun s r ->
-              let t_trans = Place.trans s.Big.p  in
-              match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
-              | Some o ->
-                Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)
-              | None -> s)
-              b l))
-
+    let apply_rule b r = 
+      match Big.occurrence
+              ~target:b
+              ~pattern:(lhs r)
+              (Place.trans b.Big.p) with
+      | Some o ->
+        Some (Big.rewrite o ~s:b ~r0:(lhs r) ~r1:(rhs r) (map r))
+      | None -> None in
+    List.fold_left (fun (s, n) r ->
+        match apply_rule s r with
+        | Some s' -> (s', n + 1)
+        | None -> (s, n))
+      (b, 0) reacts
+    |> (fun (b, n) ->
+        if n = 0 then None
+        else Some b)
+  
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)
   let fix b = function
