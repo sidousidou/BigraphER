@@ -62,6 +62,9 @@ let is_total n f =
       | None -> false in
   aux (n - 1) f
 
+let is_id =
+  M_int.for_all (fun i j -> i = j)  
+
 let check_codom ~min ~max f =
   assert (max >= min);
   let c = codom f in

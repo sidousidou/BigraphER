@@ -897,7 +897,11 @@ let decomp_d d id =
 let rewrite (i_n, i_e, f_e) ~s ~r0 ~r1 eta =
   let (c, d, id) = decomp ~target:s ~pattern:r0 ~i_n ~i_e f_e in
   match eta with
+  | None -> comp c (comp (tens r1 id) d)
   | Some eta' ->
+    if Fun.is_id eta' then
+      comp c (comp (tens r1 id) d)
+    else  
     (* Normalise link graph *)
     let (omega_l, d_norm_l) = Link.norm d.l in
     let d_norm =
@@ -910,7 +914,6 @@ let rewrite (i_n, i_e, f_e) ~s ~r0 ~r1 eta =
     comp omega d'' 
     |> comp (tens r1 id)
     |> comp c
-  | None -> comp c (comp (tens r1 id) d)
 
 let write_txt b ~name ~path =
   try Export.write_string (to_string b) ~name ~path with
