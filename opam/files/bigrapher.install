@@ -10,9 +10,9 @@ man: [
   "man/bigrapher-sim.1" {"man1/bigrapher-sim.1"}
 ]
 
-share: [
-  "emacs/site-lisp/big-mode.el"
-  "emacs/site-lisp/big-mode.elc"
+share_root: [
+  "big-mode/big-mode.el" {"emacs/site-lisp/big-mode.el"}
+  "?big-mode/big-mode.elc" {"emacs/site-lisp/big-mode.elc"}
 ]
 
 doc: [
