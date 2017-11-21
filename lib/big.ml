@@ -41,6 +41,9 @@ let to_string b =
       Link.to_string b.l ]
   |> String.concat "\n"
 
+let size b =
+  (Nodes.size b.n) + (Link.Lg.cardinal b.l)
+
 let json_of_big b  =
   let open JSON in
   J_node [ Nodes.json_of_nodes_f b.n;

@@ -6,6 +6,7 @@
 * Simplify signature of modules `Brs`, `Pbrs`, and `Sbrs`
 * Optimise `Big.rewrite` when instantiation map is the identity function
 * FIX: ridefinition of `Brs.apply`
+* Add `Big.size`
 
 
 ###1.5.1 (2017-11-06): ###

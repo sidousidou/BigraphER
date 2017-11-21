@@ -117,6 +117,10 @@ val apply : Iso.t -> bg -> bg
     The link graph is the identity over face [f]. *)
 val placing : int list list -> int -> Link.Face.t -> bg
 
+(** Compute the size of a bigraph as the sum of the cardinalities of the node
+    set and edge set. *)
+val size : bg -> int
+  
 (** {3 Export functions} *)
 
 (** Export to file the string representation in [txt] format of a bigraph. 
