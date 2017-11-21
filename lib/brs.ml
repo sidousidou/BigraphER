@@ -27,12 +27,10 @@ module RT = struct
     | None -> ""
     | Some _ -> assert false (*BISECT-IGNORE*)
 
-  let parse ~lhs ~rhs p eta =
-    match p with
-    | None -> { rdx = lhs;
-                rct = rhs;
-                eta = eta; }
-    | Some _ -> assert false (*BISECT-IGNORE*)
+  let parse ~lhs ~rhs _ eta =
+    { rdx = lhs;
+      rct = rhs;
+      eta = eta; }
 
   let to_occ b _ = b
 
@@ -116,3 +114,6 @@ module T = struct
 end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
+
+let parse_react ~lhs ~rhs eta =
+  parse_react ~lhs ~rhs 0.0 eta (* Label is ignored *)

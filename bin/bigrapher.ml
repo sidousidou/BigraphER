@@ -304,7 +304,7 @@ module Run
     |> print_table fmt
 
   let print_stats fmt stats =
-    T.string_of_stats stats
+    Stats.descr stats
     |> List.map (fun (descr, value, flag) ->
         { descr = (descr, `green);
           value = `s value;
@@ -485,7 +485,12 @@ let () =
        | Rs.BRS ->
          begin
            Cmd.check_brs_opt ();
-           let module R = Run (Brs)
+           let module R = Run
+               (struct
+                 include Brs
+                 type label = float
+                 let parse_react ~lhs ~rhs _ f = parse_react ~lhs ~rhs f
+               end)
                (struct
                  type t = int
                  let stop = Cmd.(defaults.steps)
@@ -495,7 +500,11 @@ let () =
        | Rs.PBRS ->
          begin
            Cmd.check_pbrs_opt ();
-           let module R = Run (Pbrs)
+           let module R = Run
+               (struct
+                 include Pbrs
+                 type label = float
+               end)
                (struct
                  type t = int
                  let stop = Cmd.(defaults.steps)
@@ -505,7 +514,11 @@ let () =
        | Rs.SBRS ->
          begin
            Cmd.check_sbrs_opt ();
-           let module R = Run (Sbrs)
+           let module R = Run
+               (struct
+                 include Sbrs
+                 type label = float
+               end)
                (struct
                  type t = float
                  let stop = Cmd.(defaults.time)

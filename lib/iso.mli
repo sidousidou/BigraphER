@@ -40,7 +40,7 @@ val of_list : (int * int) list -> t
 
 (** Return the string representation of an isomorphism. Example:
 
-    ["\{(1, 1), (2, 3), (5, 2) \}"]. *)
+    ["\{(1, 1), (2, 3), (5, 2)\}"]. *)
 val to_string : t -> string
 
 (** Equality between isomorphisms. *)		       

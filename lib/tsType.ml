@@ -24,40 +24,6 @@ module type T = sig
   val typ : Rs.t
 end
 
-type stats_t = { time : float;
-                 states : int;
-                 trans : int;
-                 occs : int; }
-
-(* Execution statistics *)
-module type S = sig
-  type t = stats_t
-  type g
-  val init : float -> g -> int -> t
-  (* Returns a list of string triples (description, value, run dependant) *)
-  val to_string : t -> (string * string * bool) list
-end
-
-module MakeS (G : G) = struct
-
-  type t = stats_t
-
-  (*type g = G.t*)
-
-  let init t0 g m =
-    { time = (Unix.gettimeofday () -. t0);
-      states = Base.H_int.length (G.states g);
-      trans = Base.H_int.length (G.edges g);
-      occs = m; }
-
-  let to_string stats =
-    [ ("Build time:", Printf.sprintf "%-3g" stats.time, true);
-      ("States:", Printf.sprintf "%-8d" stats.states, false);
-      ("Transitions:", Printf.sprintf "%-8d" stats.trans, false);
-      ("Occurrences:", Printf.sprintf "%-8d" stats.occs, false) ]
-
-end
-
 (* Export functions *)
 module MakeE (G : G) = struct
 
@@ -154,24 +120,18 @@ module MakeE (G : G) = struct
 
 end
 
-(* The interface of a Reactive System *)
-module type RS =
+module type RS_core =
 sig
   type react
   type p_class =
     | P_class of react list
     | P_rclass of react list
-  type stats = stats_t
   type graph
   type react_error
   type occ
   type limit
-  type label
   val typ : Rs.t
-  val string_of_stats : stats -> (string * string * bool) list
   val string_of_react : react -> string
-  val parse_react :
-    lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> react
   val lhs_of_react : react -> Big.bg
   val rhs_of_react : react -> Big.bg
   val string_of_limit : limit -> string
@@ -179,7 +139,6 @@ sig
   exception NOT_VALID of react_error
   val is_valid_react_exn : react -> bool
   val string_of_react_err : react_error -> string
-  (* val is_inst : react -> bool *)
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
@@ -188,20 +147,20 @@ sig
   val apply : Big.bg -> react list -> Big.bg option
   val fix : Big.bg -> react list -> Big.bg * int
   val rewrite : Big.bg -> p_class list -> Big.bg * int
-  exception MAX of graph * stats
+  exception MAX of graph * Stats.t
   val bfs :
     s0:Big.bg ->
     priorities:p_class list ->
     predicates:(Base.H_string.key * Big.bg) list ->
-    max:int -> iter_f:(int -> Big.bg -> unit) -> graph * stats
-  exception DEADLOCK of graph * stats * limit
-  exception LIMIT of graph * stats
+    max:int -> iter_f:(int -> Big.bg -> unit) -> graph * Stats.t
+  exception DEADLOCK of graph * Stats.t * limit
+  exception LIMIT of graph * Stats.t
   val sim :
     s0:Big.bg ->
     priorities:p_class list ->
     predicates:(Base.H_string.key * Big.bg) list
     -> init_size:int -> stop:limit -> iter_f:(int -> Big.bg -> unit)
-    -> graph * stats
+    -> graph * Stats.t
   val to_prism : graph -> string
   val to_dot : graph -> name:string -> string
   val to_lab : graph -> string
@@ -211,6 +170,14 @@ sig
   val write_lab : graph -> name:string -> path:string -> int
   val write_dot : graph -> name:string -> path:string -> int
   val write_json : graph -> name:string -> path:string -> int
+end
+
+(* The complete interface of a Reactive System *)
+module type RS = sig
+  include RS_core
+  type label
+  val parse_react :
+    lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> react option
 end
 
 (* Discrete time or continuous time *)
@@ -248,32 +215,30 @@ module Make (R : RrType.T)
 
   include Ty
 
-  module S = MakeS (G)
-
-  type stats = S.t
-
   type occ = R.occ
 
   type limit = L.t
 
   type label = R.label
 
-  exception MAX of t * stats
+  exception MAX of t * Stats.t
 
-  exception LIMIT of t * stats
+  exception LIMIT of t * Stats.t
 
-  exception DEADLOCK of t * stats * limit
+  exception DEADLOCK of t * Stats.t * limit
 
   (* Override some functions *)
   type react_error = R.react_error
 
   exception NOT_VALID of react_error
 
-  let string_of_stats = S.to_string
-
   let string_of_react = R.to_string
 
-  let parse_react = R.parse
+  let parse_react ~lhs ~rhs l f =
+    let r = R.parse ~lhs ~rhs l f in
+    if R.is_valid r then
+      Some r
+    else None
 
   let string_of_limit = L.to_string
 
@@ -331,10 +296,23 @@ module Make (R : RrType.T)
         if Big.occurs ~target:s ~pattern:p then
           Base.H_string.add h id i)
 
+  (* Number of states in a graph *)
+  let size_s g =
+    Base.H_int.length (G.states g)
+
+  (* NUmber of edges in a graph. *)
+  let size_t g =
+    Base.H_int.length (G.edges g)
+  
   let rec _bfs g q i m t0 priorities predicates max iter_f =
     if not (Queue.is_empty q) then
       if i > max then
-        raise (MAX (g, S.init t0 g m))
+        raise (MAX (g,
+                    Stats.init
+                      ~t0
+                      ~states:(size_s g)
+                      ~trans:(size_t g)
+                      ~occs:m))
       else begin
         let (v, curr) = Queue.pop q in
         let ((new_s, old_s, i'), m') =
@@ -361,7 +339,7 @@ module Make (R : RrType.T)
         (* recursive call *)
         _bfs g q i' (m + m') t0 priorities predicates max iter_f end
     else
-      (g, S.init t0 g m)
+      (g, Stats.init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m)
 
   let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
     let q = Queue.create () in
@@ -380,13 +358,24 @@ module Make (R : RrType.T)
 
   let rec _sim trace s i t_sim m t0 priorities predicates t_max iter_f =
     if L.is_greater t_sim t_max then
-      raise (LIMIT (trace, S.init t0 trace m))
+      raise (LIMIT (trace,
+                    Stats.init
+                      ~t0
+                      ~states:(size_s trace)
+                      ~trans:(size_t trace)
+                      ~occs:m))
     else
       match P.scan_sim s
               ~const_pri:priorities
               priorities with
       | (None, m') ->
-        raise (DEADLOCK (trace, S.init t0 trace (m + m'), t_sim))
+        raise (DEADLOCK (trace,
+                         Stats.init
+                           ~t0
+                           ~states:(size_s trace)
+                           ~trans:(size_t trace)
+                           ~occs:(m + m'),
+                         t_sim))
       | (Some o, m') ->
         (let s' = R.big_of_occ o in
          iter_f (i + 1) s';

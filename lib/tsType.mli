@@ -23,34 +23,18 @@ module type T = sig
   val typ : Rs.t
 end
 
-type stats_t = { time : float; 
-                 states : int;  
-                 trans : int;  
-                 occs : int }
-               
-module type S = sig
-  type t = stats_t
-  type g
-  val init : float -> g -> int -> t
-  val to_string : t -> (string * string * bool) list
-end
-
-(* The interface of a Reactive System *)
-module type RS = sig
+(* The core interface of a RS *)
+module type RS_core = sig
   type react
   type p_class =
     | P_class of react list
     | P_rclass of react list
-  type stats = stats_t
   type graph
   type react_error
   type occ
   type limit
-  type label
   val typ : Rs.t
-  val string_of_stats : stats -> (string * string * bool) list
   val string_of_react : react -> string
-  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> react
   val lhs_of_react : react -> Big.bg
   val rhs_of_react : react -> Big.bg
   val string_of_limit : limit -> string
@@ -58,7 +42,6 @@ module type RS = sig
   exception NOT_VALID of react_error
   val is_valid_react_exn : react -> bool
   val string_of_react_err : react_error -> string
-  (*  val is_inst : react -> bool *)
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
@@ -67,19 +50,19 @@ module type RS = sig
   val apply : Big.bg -> react list -> Big.bg option
   val fix : Big.bg -> react list -> Big.bg * int
   val rewrite : Big.bg -> p_class list -> Big.bg * int  
-  exception MAX of graph * stats
+  exception MAX of graph * Stats.t
   val bfs :
     s0:Big.bg ->
     priorities:p_class list ->
     predicates:(Base.H_string.key * Big.bg) list ->
-    max:int -> iter_f:(int -> Big.bg -> unit) -> graph * stats
-  exception DEADLOCK of graph * stats * limit
-  exception LIMIT of graph * stats  
+    max:int -> iter_f:(int -> Big.bg -> unit) -> graph * Stats.t
+  exception DEADLOCK of graph * Stats.t * limit
+  exception LIMIT of graph * Stats.t  
   val sim :
     s0:Big.bg ->
     priorities:p_class list ->
     predicates:(Base.H_string.key * Big.bg) list ->
-    init_size:int -> stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * stats
+    init_size:int -> stop:limit -> iter_f:(int -> Big.bg -> unit) -> graph * Stats.t
   val to_prism : graph -> string
   val to_dot : graph -> name:string -> string
   val to_lab : graph -> string
@@ -89,6 +72,13 @@ module type RS = sig
   val write_lab : graph -> name:string -> path:string -> int
   val write_dot : graph -> name:string -> path:string -> int
   val write_json : graph -> name:string -> path:string -> int
+end
+
+(* The complete interface of a Reactive System *)
+module type RS = sig
+  include RS_core
+  type label
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> react option
 end
 
 (* Discrete time or continuous time *)
@@ -125,8 +115,6 @@ module Make (R : RrType.T)
     | P_class of R.t list
     | P_rclass of R.t list
 
-  type stats = stats_t
-  
   type occ = R.occ
   
   type limit = L.t
@@ -135,21 +123,19 @@ module Make (R : RrType.T)
                  
   type react_error = R.react_error
 
-  exception MAX of t * stats
+  exception MAX of t * Stats.t
 
-  exception LIMIT of t * stats
+  exception LIMIT of t * Stats.t
 
-  exception DEADLOCK of t * stats * limit
+  exception DEADLOCK of t * Stats.t * limit
 
   exception NOT_VALID of react_error
 
   val typ : Rs.t
 
-  val string_of_stats : stats -> (string * string * bool) list
-
   val string_of_react : R.t -> string
     
-  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> R.t
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> R.t option
 
   val lhs_of_react : R.t -> Big.bg
 
@@ -183,14 +169,14 @@ module Make (R : RrType.T)
     s0:Big.bg ->
     priorities:P.p_class list ->
     predicates:(string * Big.bg) list ->
-    max:int -> iter_f:(int -> Big.bg -> unit) -> t * stats
+    max:int -> iter_f:(int -> Big.bg -> unit) -> t * Stats.t
 
   val sim :
     s0:Big.bg ->
     priorities:P.p_class list ->
     predicates:(string * Big.bg) list ->
     init_size:int ->
-    stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * stats
+    stop:limit -> iter_f:(int -> Big.bg -> unit) -> t * Stats.t
 
   val to_prism : t -> string
 

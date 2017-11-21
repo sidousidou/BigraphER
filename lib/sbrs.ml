@@ -28,12 +28,10 @@ module RT = struct
     | None -> assert false (*BISECT-IGNORE*)
 
   let parse ~lhs ~rhs r eta =
-    match r with
-    | None -> assert false (*BISECT-IGNORE*)
-    | Some r -> { rdx = lhs;
-                  rct = rhs;
-                  eta = eta;
-                  rate = r; }
+    { rdx = lhs;
+      rct = rhs;
+      eta = eta;
+      rate = r; }
 
   let to_occ b r = (b, r.rate)
 

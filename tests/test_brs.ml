@@ -49,13 +49,13 @@ let g =
       comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one ]
 
 let reacts =
-  [ Brs.P_class [ { Brs.rdx = r; rct = r_p; eta = None };
-                  { Brs.rdx = g; rct = r; eta = None } ] ]
+  [ Brs.P_class [ Base.safe @@ Brs.parse_react ~lhs:r ~rhs:r_p None;
+                  Base.safe @@ Brs.parse_react ~lhs:g ~rhs:r None ] ]
 
 let sreacts =
   [ Sbrs.P_class
-      [ { Sbrs.rdx = r; rct = r_p; rate = 2.0; eta = None };
-        { Sbrs.rdx = g; rct = r; rate = 4.0; eta = None } ] ]
+      [ Base.safe @@ Sbrs.parse_react ~lhs:r ~rhs:r_p 2.0 None;
+        Base.safe @@ Sbrs.parse_react ~lhs:g ~rhs:r 4.0 None ] ]
 
 let () =
   print_endline "test_brs";
@@ -66,7 +66,7 @@ let () =
   and print_res l =
     xml_block "system-out" []
       [List.filter (fun (_, _, flag) -> not flag) l
-       |> List.map (fun (desc, value, _) -> desc ^ ": " ^ value)
+       |> List.map (fun (desc, value, _) -> desc ^ " " ^ value)
        |> String.concat "     "] in
   let failures l = List.map (fun (id, reference, out) ->
       assert_eq_int id reference out) l
@@ -86,8 +86,8 @@ let () =
         | Brs.MAX (_, stats) -> stats in
       ("brs",
        __MODULE__,
-       print_res (Brs.string_of_stats stats),
-       failures TsType.(ass_list stats.states stats.trans stats.occs))
+       print_res @@ Stats.descr stats,
+       failures Stats.(ass_list stats.states stats.trans stats.occs))
     end;
        begin
          let stats =
@@ -103,9 +103,9 @@ let () =
            | Brs.DEADLOCK (_, stats, _) -> stats in
          ("sim_brs",
           __MODULE__,
-          print_res (Brs.string_of_stats stats),
-          failures [("States", states_reference, TsType.(stats.states));
-                    ("Reactions", reacts_reference, TsType.(stats.trans));
+          print_res @@ Stats.descr stats,
+          failures [("States", states_reference, Stats.(stats.states));
+                    ("Reactions", reacts_reference, Stats.(stats.trans));
                     (* ("Occurrences", 31, stats.Brs.occs) *) (* RANDOM *)
                    ])
        end;
@@ -121,8 +121,8 @@ let () =
            | Sbrs.MAX (_, stats) -> stats in
          ("sbrs",
           __MODULE__,
-          print_res (Sbrs.string_of_stats stats),
-          failures TsType.((ass_list stats.states stats.trans stats.occs)))
+          print_res @@ Stats.descr stats,
+          failures Stats.(ass_list stats.states stats.trans stats.occs))
        end;
        begin
          let stats =
@@ -138,7 +138,7 @@ let () =
            | Sbrs.DEADLOCK (_, stats, _) -> stats in
          ("sim_sbrs",
           __MODULE__,
-          print_res (Sbrs.string_of_stats stats),
-          failures TsType.((ass_list stats.states stats.trans stats.occs)))
+          print_res @@ Stats.descr stats,
+          failures Stats.(ass_list stats.states stats.trans stats.occs))
        end; ] in
   write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2)

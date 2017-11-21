@@ -615,18 +615,15 @@ module Make (T: TsType.RS with type label = float) = struct
   let eval_react lhs rhs eta l scope env env_t p =
     let (lhs_v, rhs_v, env_t') =
       eval_react_aux lhs rhs scope env env_t in
-    let r =
+    match
       T.parse_react ~lhs:lhs_v ~rhs:rhs_v
         (match l with
-         | Some f_exp -> Some (eval_float f_exp scope env)
-         | None -> None)
-        eta in
-    try if T.is_valid_react_exn r then (r, env_t')
-      else assert false with (*BISECT-IGNORE*)
-    | T.NOT_VALID err ->
-      let msg = "Invalid reaction: "
-                ^ (T.string_of_react_err err) in
-      raise (ERROR (Reaction msg, p))
+         | Some f_exp -> eval_float f_exp scope env
+         | None -> 0.0)
+        eta with
+    | None ->
+      raise (ERROR (Reaction "Invalid reaction", p))
+    | Some r ->(r, env_t')
 
   (* Compute all the combinations of input values *)
   let rec param_comb (pars : typed_store_val list list) =

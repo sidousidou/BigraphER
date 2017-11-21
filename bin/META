@@ -1,6 +1,6 @@
 # OASIS_START
-# DO NOT EDIT (digest: 98678235774dabf85cd67287a842074b)
-version = "1.5.1"
+# DO NOT EDIT (digest: 99d837b408b4d03e4feda834442c3bfb)
+version = "1.6.0"
 description = "Implementation of bigraphical reactive systems"
 requires = "bigraph-utils str"
 archive(byte) = "bigrapher-utils.cma"

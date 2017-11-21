@@ -12,7 +12,7 @@ sig
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label option -> string
-  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> t
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> t
   val to_occ : Big.bg -> t -> occ
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
@@ -35,7 +35,7 @@ sig
   val l : t -> label option
   val map : t -> Fun.t option
   val to_occ : Big.bg -> t -> occ
-  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> t
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> t
   val big_of_occ : occ -> Big.bg
   val merge_occ : occ -> occ -> occ
   val update_occ : occ -> Big.bg -> occ
@@ -81,7 +81,7 @@ sig
   val map : t -> Fun.t option
 
   (** Creare a new reaction rule. *)
-  val parse : lhs:Big.bg -> rhs:Big.bg -> label option -> Fun.t option -> t
+  val parse : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> t
 
   (** Return an occurrence from a bigraph and a rewrite rule. *)		 
   val to_occ : Big.bg -> t -> occ

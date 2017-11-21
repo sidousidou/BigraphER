@@ -118,6 +118,7 @@ module JSON = struct
 
   type json_node =
     | J_int of string * int
+    | J_float of string * float
     | J_string of string * string
     | J_array of string * json_node list
     | J_record of string * json_node list
@@ -128,6 +129,7 @@ module JSON = struct
 
   let rec to_string = function
     | J_int (id, x) -> (wrap_string id) ^ ": " ^ (string_of_int x)
+    | J_float (id, x) -> (wrap_string id) ^ ": " ^ (string_of_float x)
     | J_string (id, s) -> (wrap_string id) ^ ": " ^ (wrap_string s)
     | J_array (id, l) -> (wrap_string id) ^ ": ["
                          ^ (List.map to_string l
