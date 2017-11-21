@@ -1,6 +1,17 @@
+###1.6.0 (2017-11-21): ###
+
+* Improve documentation for predicates, e.g. `Big.is_epi`, `Link.is_ground`, ..
+* FIX: install big-mode in `emacs/site-lisp/`
+* Export `Stats` module
+* Simplify signature of modules `Brs`, `Pbrs`, and `Sbrs`
+* Optimise `Big.rewrite` when instantiation map is the identity function
+* FIX: ridefinition of `Brs.apply`
+
+
 ###1.5.1 (2017-11-06): ###
 
 * FIX: Suppress coloured errors and warnings when `-n` flag is present
+
 
 ###1.5.0 (2017-10-27): ###
 
