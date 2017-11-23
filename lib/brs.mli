@@ -27,9 +27,12 @@ val typ : Rs.t
     the reactum are computed by {!val:Big.to_string}. *)
 val string_of_react : react -> string
 
-(** [parse ~lhs ~rhs eta] creates a new reaction rule. If [eta = None], then the
-   identity function is used as instantiation map. The function returns [None]
-   if it is impossible to parse a valid reaction. *)
+(** Create a new reaction rule. If [eta = None], the identity function is used
+    as instantiation map. No validity check is performed. *)
+val parse_react_unsafe : lhs:Big.bg -> rhs:Big.bg -> Fun.t option -> react
+
+(** Same {!val:Brs.parse_ract_unsafe} but returns [None] if it is impossible to
+    parse a valid reaction. *)
 val parse_react : lhs:Big.bg -> rhs:Big.bg -> Fun.t option -> react option
 
 (** The left-hand side (redex) of a reaction rule. **)

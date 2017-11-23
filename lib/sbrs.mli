@@ -3,17 +3,17 @@
 
 (** The type of stochastic bigraphical reaction rules.*)
 type react
-  
+
 (** The type of priority classes, {e i.e.}, lists of stochastic reaction
     rules. Intermediate states resulting from the application of reaction rules
     in reducible priority classes are ignored. *)
-type p_class = 
+type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list (** Reducible priority class *)
 
 (** The type of Continuous Time Markov Chains (CTMC). *)
 type graph
-  
+
 (** Type of occurrences {e i.e.}, a bigraph and a *)
 type occ = Big.bg * float
 
@@ -26,6 +26,9 @@ val typ : Rs.t
 (** Same as {!val:Brs.string_of_stats} for stochastic reaction rules. *)
 val string_of_react : react -> string
 
+(** Same as {!val:Brs.parse_react_unsafe} for stochastic reaction rules. *)
+val parse_react_unsafe : lhs:Big.bg -> rhs:Big.bg -> float -> Fun.t option -> react
+
 (** Same as {!val:Brs.parse_react} for stochastic reaction rules. *)
 val parse_react : lhs:Big.bg -> rhs:Big.bg -> float -> Fun.t option -> react option
 
@@ -34,22 +37,22 @@ val lhs_of_react : react -> Big.bg
 
 (** The right-hand side (reactum) of a stochastic reaction rule. *)
 val rhs_of_react : react -> Big.bg
- 
+
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string
-  
+
 (** Same as {!val:Brs.is_valid_react} but also checks that the rate is greater
     than zero. Return [false] otherwise. See {!val:Big.is_solid}. *)
 val is_valid_react : react -> bool
 
-(** The type of reaction validity errors. *)				
+(** The type of reaction validity errors. *)
 type react_error
 
 (** Raised when a reaction rule is not valid. *)
 exception NOT_VALID of react_error
 
 (** Same as {!is_valid_react} but an exception is raised when the rule is not
-    valid. 
+    valid.
 
     @raise NOT_VALID when the rule is not valid. *)
 val is_valid_react_exn : react -> bool
@@ -84,7 +87,7 @@ val step : Big.bg -> react list -> occ list * int
 
 (** Select step of {{: https://en.wikipedia.org/wiki/Gillespie_algorithm}
     Gillespie SSA}. The total number of occurrences is also returned. *)
-val random_step : Big.bg -> react list -> occ option * int 
+val random_step : Big.bg -> react list -> occ option * int
 
 (** Same as {!val:Brs.fix} for probabilistic reaction rules. Note that
     stochastic rates are ignored. *)
@@ -94,7 +97,7 @@ val fix : Big.bg -> react list -> Big.bg * int
     applied or when a non reducible priority class is enabled. Also return the
     number of rewriting steps performed in the loop. *)
 val rewrite : Big.bg -> p_class list -> Big.bg * int
-  
+
 (** {3 Continuous Time Markov Chains} *)
 
 (** Raised when the size of the transition system reaches the maximum number of
@@ -120,7 +123,7 @@ val bfs : s0:Big.bg ->
 
 (** {3 Stochastic simulation traces} *)
 
-(** Raised when the simulation reaches a deadlock state. *)			     
+(** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * Stats.t * float
 
 (** Raised when the simulation reaches the maximum simulation time. *)
@@ -155,32 +158,32 @@ val to_dot : graph -> name:string -> string
     function of a CTMC. *)
 val to_lab : graph -> string
 
-(** Apply [f] to every state. *)			
+(** Apply [f] to every state. *)
 val iter_states : f:(int -> Big.bg -> unit) -> graph -> unit
 
-(** Export to file the string representation in [dot] format of a CTMC. 
+(** Export to file the string representation in [dot] format of a CTMC.
 
     @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_dot : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [lab] format of the
-    labelling function of a CTMC. 
+    labelling function of a CTMC.
 
     @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_lab : graph -> name:string -> path:string -> int
 
 (** Export to file the string representation in PRISM [tra] format of a
-    CTMC. 
+    CTMC.
 
     @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_prism : graph -> name:string -> path:string -> int
 
-(** Export to file the string representation in [svg] format of a CTMC. 
+(** Export to file the string representation in [svg] format of a CTMC.
 
     @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_svg : graph -> name:string -> path:string -> int
 
-(** Export to file the string representation in [json] format of a CTMC. 
+(** Export to file the string representation in [json] format of a CTMC.
 
     @raise Rs.EXPORT_ERROR when an error occurs. *)
 val write_json : graph -> name:string -> path:string -> int

@@ -49,13 +49,13 @@ let g =
       comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", 1))) one ]
 
 let reacts =
-  [ Brs.P_class [ Base.safe @@ Brs.parse_react ~lhs:r ~rhs:r_p None;
-                  Base.safe @@ Brs.parse_react ~lhs:g ~rhs:r None ] ]
+  [ Brs.P_class [ Brs.parse_react_unsafe ~lhs:r ~rhs:r_p None;
+                  Brs.parse_react_unsafe ~lhs:g ~rhs:r None ] ]
 
 let sreacts =
   [ Sbrs.P_class
-      [ Base.safe @@ Sbrs.parse_react ~lhs:r ~rhs:r_p 2.0 None;
-        Base.safe @@ Sbrs.parse_react ~lhs:g ~rhs:r 4.0 None ] ]
+      [ Sbrs.parse_react_unsafe ~lhs:r ~rhs:r_p 2.0 None;
+        Sbrs.parse_react_unsafe ~lhs:g ~rhs:r 4.0 None ] ]
 
 let () =
   print_endline "test_brs";

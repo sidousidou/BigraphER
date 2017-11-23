@@ -176,6 +176,8 @@ end
 module type RS = sig
   include RS_core
   type label
+  val parse_react_unsafe :
+    lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> react
   val parse_react :
     lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> react option
 end
@@ -234,6 +236,8 @@ module Make (R : RrType.T)
 
   let string_of_react = R.to_string
 
+  let parse_react_unsafe = R.parse
+  
   let parse_react ~lhs ~rhs l f =
     let r = R.parse ~lhs ~rhs l f in
     if R.is_valid r then

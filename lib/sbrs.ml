@@ -2,7 +2,7 @@ type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
     eta : Fun.t option;            (* Instantiation map *)
-    rate : float                   (* Reaction rate *)
+    rate : float                   (* Reaction rate     *)
   }
 
 module RT = struct
@@ -123,3 +123,4 @@ module T = struct
 end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
+

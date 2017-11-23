@@ -2,7 +2,7 @@ type react =
   { rdx : Big.bg;                  (* Redex   --- lhs   *)
     rct : Big.bg;                  (* Reactum --- rhs   *)
     eta : Fun.t option;            (* Instantiation map *)
-    p : float                      (* Probability *)
+    p : float                      (* Probability       *)
   }
 
 module RT = struct

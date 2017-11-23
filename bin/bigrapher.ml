@@ -489,6 +489,7 @@ let () =
                (struct
                  include Brs
                  type label = float
+                 let parse_react_unsafe ~lhs ~rhs _ f = parse_react_unsafe ~lhs ~rhs f
                  let parse_react ~lhs ~rhs _ f = parse_react ~lhs ~rhs f
                end)
                (struct

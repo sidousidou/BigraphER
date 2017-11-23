@@ -115,5 +115,8 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
+let parse_react_unsafe ~lhs ~rhs eta =
+  parse_react_unsafe ~lhs ~rhs 0.0 eta (* Label is ignored *)
+
 let parse_react ~lhs ~rhs eta =
   parse_react ~lhs ~rhs 0.0 eta (* Label is ignored *)

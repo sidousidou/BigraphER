@@ -78,6 +78,7 @@ end
 module type RS = sig
   include RS_core
   type label
+  val parse_react_unsafe : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> react
   val parse_react : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> react option
 end
 
@@ -132,11 +133,13 @@ module Make (R : RrType.T)
   exception NOT_VALID of react_error
 
   val typ : Rs.t
-
+  
   val string_of_react : R.t -> string
-    
-  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> R.t option
 
+  val parse_react_unsafe : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> R.t
+
+  val parse_react : lhs:Big.bg -> rhs:Big.bg -> label -> Fun.t option -> R.t option
+  
   val lhs_of_react : R.t -> Big.bg
 
   val rhs_of_react : R.t -> Big.bg

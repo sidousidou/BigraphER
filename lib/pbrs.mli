@@ -26,6 +26,9 @@ val typ : Rs.t
 (** Same as {!val:Brs.string_of_stats} for probabilistic reaction rules. *)
 val string_of_react : react -> string
 
+(** Same as {!val:Brs.parse_react_unsafe} for probabilistic reaction rules. *)
+val parse_react_unsafe : lhs:Big.bg -> rhs:Big.bg -> float -> Fun.t option -> react
+
 (** Same as {!val:Brs.parse_react} for probabilistic reaction rules. *)
 val parse_react : lhs:Big.bg -> rhs:Big.bg -> float -> Fun.t option -> react option
 
