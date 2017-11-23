@@ -1,3 +1,8 @@
+###1.6.1 (2017-11-23): ###
+
+* Add `parse_react_unsafe` to modules `Brs`, `Pbrs`, and `Sbrs`
+
+
 ###1.6.0 (2017-11-21): ###
 
 * Improve documentation for predicates, e.g. `Big.is_epi`, `Link.is_ground`, ..

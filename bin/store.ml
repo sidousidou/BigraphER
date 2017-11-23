@@ -1143,14 +1143,14 @@ module Make (T: TsType.RS with type label = float) = struct
 
   let ml_of_react lhs rhs l eta =
     match T.typ with
-    | Rs.BRS -> "safe @@ Brs.parse_react\n~lhs:("
+    | Rs.BRS -> "Brs.parse_react_unsafe\n~lhs:("
                 ^ (ml_of_big lhs)
                 ^ ")\n~rhs:("
                 ^ (ml_of_big rhs)
                 ^ ")\n("
                 ^ (ml_of_eta eta)
                 ^ ")"
-    | Rs.PBRS -> "safe @@ Pbrs.parse_react\n~lhs:("
+    | Rs.PBRS -> "Pbrs.parse_react_unsafe\n~lhs:("
                  ^ (ml_of_big lhs)
                  ^ ")\n~rhs:("
                  ^ (ml_of_big rhs)
@@ -1159,7 +1159,7 @@ module Make (T: TsType.RS with type label = float) = struct
                  ^ ")\n("
                  ^ (ml_of_eta eta)
                  ^ ")"
-    | Rs.SBRS -> "safe @@ Sbrs.parse_react\n~lhs:("
+    | Rs.SBRS -> "Sbrs.parse_react_unsafe\n~lhs:("
                  ^ (ml_of_big lhs)
                  ^ ")\n~rhs:("
                  ^ (ml_of_big rhs)
