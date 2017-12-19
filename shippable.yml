@@ -15,7 +15,7 @@ build:
       pull: true
 
   ci:
-    - sudo apt-get -qy update && sudo apt-get -qy upgrade
+    - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get install zlib1g-dev minisat
     - opam update -y -u
     - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/"
     - opam install -y minisat jbuilder
