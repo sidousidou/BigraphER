@@ -16,7 +16,9 @@ build:
 
   ci:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade
-    - opam update -y -u && opam repository add glasgow http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam install -y minisat jbuilder
+    - opam update -y -u
+    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/"
+    - opam install -y minisat jbuilder
     - mkdir -p shippable/testresults
     - make test
 
