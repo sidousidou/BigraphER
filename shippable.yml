@@ -11,11 +11,11 @@ env:
 build:
   pre_ci_boot:
       image_name: ocaml/opam
-      image_tag: ubuntu_ocaml-$OCAML_VERSION
+      image_tag: ubuntu-17.04_ocaml-$OCAML_VERSION
       pull: true
 
   ci:
-    - sudo apk update && apk upgrade
+    - sudo apt-get -qy update && sudo apt-get -qy upgrade
     - opam update -y -u && opam repository add glasgow http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam install -y minisat jbuilder
     - mkdir -p shippable/testresults
     - make test
