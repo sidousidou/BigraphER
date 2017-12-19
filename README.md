@@ -1,5 +1,4 @@
-# bigraph - OCaml library to programmatically manipulate
-  bigraphs and Bigraphical Reactive Systems #
+# bigraph - OCaml library to programmatically manipulate bigraphs and Bigraphical Reactive Systems #
 
 Version 1.0.0
 
