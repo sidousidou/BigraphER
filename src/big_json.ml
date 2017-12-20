@@ -105,6 +105,15 @@ let eta e f =
     f;
   lexeme e `Ae
 
+let iso e i =
+  lexeme e `As;
+  Iso.iter (fun x y ->
+      pair e
+        ("i", int e, x)
+        ("j", int e, y))
+    i;
+  lexeme e `Ae
+  
 let react e r =
   triple e
     ("brs_lhs", big e, Brs.lhs r)
@@ -119,13 +128,37 @@ let sreact e r =
   field e "sbrs_eta" (option e eta) (Sbrs.map r);
   lexeme e `Oe
 
-let preact  e r =
+let preact e r =
   lexeme e `Os;
   field e "pbrs_lhs" (big e) (Pbrs.lhs r);
   field e "pbrs_rhs" (big e) (Pbrs.rhs r);
   field e "pbrs_p" (float e) (Pbrs.prob r);
   field e "pbrs_eta" (option e eta) (Pbrs.map r);
   lexeme e `Oe
+
+let occs e l =
+  lexeme e `As;
+  List.iter (fun b -> big e b) l;
+  lexeme e `Ae
+  
+let p_occs name e l =
+  lexeme e `As;
+  List.iter (fun (b, r) ->
+      pair e
+        ("state", big e, b)
+        (name, float e, r))
+    l;
+  lexeme e `Ae
+
+let matches e l =
+  lexeme e `As;
+  List.iter (fun (i, i', f) ->
+      triple e
+        ("iso_n", iso e, i)
+        ("iso_e", iso e, i')
+        ("f_e", eta e, f))
+    l;
+  lexeme e `Ae  
 
 let b_size = 65536
 
@@ -159,3 +192,15 @@ let preact_to_json ?(minify=true) =
 
 let sreact_to_json ?(minify=true) =
   to_json ~minify sreact
+
+let occs_to_json ?(minify=true) =
+  to_json ~minify occs
+
+let p_occs_to_json ?(minify=true) =
+  to_json ~minify (p_occs "prob")
+
+let s_occs_to_json ?(minify=true) =
+  to_json ~minify (p_occs "rate")
+
+let matches_to_json ?(minify=true) =
+  to_json ~minify matches

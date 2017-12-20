@@ -78,4 +78,15 @@ let () =
   print_endline "Testing sreact_to_json:\n";
   print_endline @@ sreact_to_json ~minify:false sr_test;
   print_newline ();
+  print_endline "Testing s_occs_to_json:\n";
+  print_endline
+  @@ s_occs_to_json ~minify:false
+  @@ fst
+  @@ Sbrs.step big_test [ sr_test ];
+  print_newline ();
+  print_endline "Testing matches_to_json:\n";
+  print_endline
+  @@ matches_to_json ~minify:false
+  @@ Big.occurrences ~target:big_test ~pattern:big_test;
+  print_newline ();
   
