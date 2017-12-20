@@ -1,6 +1,6 @@
-# bigraph #
+# bigraph 
 
-### OCaml library for the manipulation of [Bigraphs](https://en.wikipedia.org/wiki/Bigraph) and Bigraphical Reactive Systems ###
+### OCaml library for the manipulation of Bigraphs and Bigraphical Reactive Systems 
 
 Version 1.0.0
 
@@ -9,6 +9,9 @@ Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele)
 [![Run Status](https://api.shippable.com/projects/5a393d35fa6ab10700435cb8/badge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigraph)
 
 ----------------------------------------------------------------------------
+## Background
+
+[Bigraphs](https://en.wikipedia.org/wiki/Bigraph)
 
 To get started, checkout the
 [Install](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#inst) and
