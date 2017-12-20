@@ -105,6 +105,28 @@ let eta e f =
     f;
   lexeme e `Ae
 
+let react e r =
+  triple e
+    ("brs_lhs", big e, Brs.lhs r)
+    ("brs_rhs", big e, Brs.rhs r)
+    ("brs_eta", option e eta, Brs.map r)
+
+let sreact e r =
+  lexeme e `Os;
+  field e "sbrs_lhs" (big e) (Sbrs.lhs r);
+  field e "sbrs_rhs" (big e) (Sbrs.rhs r);
+  field e "sbrs_rate" (float e) (Sbrs.rate r);
+  field e "sbrs_eta" (option e eta) (Sbrs.map r);
+  lexeme e `Oe
+
+let preact  e r =
+  lexeme e `Os;
+  field e "pbrs_lhs" (big e) (Pbrs.lhs r);
+  field e "pbrs_rhs" (big e) (Pbrs.rhs r);
+  field e "pbrs_p" (float e) (Pbrs.prob r);
+  field e "pbrs_eta" (option e eta) (Pbrs.map r);
+  lexeme e `Oe
+
 let b_size = 65536
 
 let to_json ?(minify=true) f v =
@@ -128,3 +150,12 @@ let link_to_json ?(minify=true) =
 
 let big_to_json ?(minify=true) =
   to_json ~minify big
+
+let react_to_json ?(minify=true) =
+  to_json ~minify react
+
+let preact_to_json ?(minify=true) =
+  to_json ~minify preact
+
+let sreact_to_json ?(minify=true) =
+  to_json ~minify sreact

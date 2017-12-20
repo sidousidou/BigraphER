@@ -42,6 +42,16 @@ let big_test =
     { p = place_test;
       n = nodes_test;
       l = link_test }
+    
+let r_test =
+  Brs.parse_react_unsafe ~lhs:big_test ~rhs:big_test None
+
+let pr_test =
+  Pbrs.parse_react_unsafe ~lhs:big_test ~rhs:big_test 0.476 None
+
+let sr_test =
+  let eta = (Fun.of_list [ (0, 1); (1, 1) ]) in
+  Sbrs.parse_react_unsafe ~lhs:big_test ~rhs:big_test 8.031 (Some eta)
 
 let () =
   print_endline "Testing ctrl_to_json:\n";
@@ -58,5 +68,14 @@ let () =
   print_newline ();
   print_endline "Testing big_to_json:\n";
   print_endline @@ big_to_json ~minify:false big_test;
+  print_newline ();
+  print_endline "Testing react_to_json:\n";
+  print_endline @@ react_to_json ~minify:false r_test;
+  print_newline ();
+  print_endline "Testing preact_to_json:\n";
+  print_endline @@ preact_to_json ~minify:false pr_test;
+  print_newline ();
+  print_endline "Testing sreact_to_json:\n";
+  print_endline @@ sreact_to_json ~minify:false sr_test;
   print_newline ();
   
