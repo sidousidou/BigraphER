@@ -17,9 +17,9 @@
   (action  (run ${<} ${ROOT}/../../files/ ${ROOT}/../../shippable/testresults decomp-junit.xml))
 ))
 
-; (alias
-;  ((name    runtest)
-;   (deps    (test_brs.exe))
-;   (action  (run ${<} ${ROOT}/../../shippable/testresults brs-junit.xml))
-; ))
+(alias
+ ((name    runtest)
+  (deps    (test_brs.exe))
+  (action  (run ${<} ${ROOT}/../../shippable/testresults brs-junit.xml))
+))
 

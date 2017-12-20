@@ -32,7 +32,6 @@ let sreacts =
         Sbrs.parse_react_unsafe ~lhs:g ~rhs:r 4.0 None ] ]
 
 let () =
-  print_endline "test_brs";
   let iter_f _ _ = ()
   and states_reference = 30
   and reacts_reference = 29
