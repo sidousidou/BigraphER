@@ -1,0 +1,18 @@
+opam-version: "1.2"
+maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
+version: "0.1.0"
+authors: [ "Michele Sevegnani" ]
+license: "BSD-3-clause"
+tags: [ "bigraphs" "json" ]
+homepage: "https://bitbucket.org/mseve/big_json"
+dev-repo: "git+https://bitbucket.org/mseve/big_json.git"
+
+depends: [
+  "jbuilder" {build & >= "1.0+beta13"}
+  "jsonm" {>= "1.0.1"}
+  "bigraph" {>= "1.0.0"}
+]
+
+build: [ "jbuilder" "build" "-p" name "-j" jobs ]
+
+available: [ ocaml-version >= "4.02.0" ]

@@ -1,0 +1,12 @@
+B ../_build/default/src
+B ../_build/default/test
+FLG -w -40
+PKG bigraph
+PKG bytes
+PKG jsonm
+PKG minisat
+PKG str
+PKG uchar
+PKG unix
+PKG uutf
+S ../src
