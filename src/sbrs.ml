@@ -124,3 +124,4 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
+let rate r = r.rate

@@ -103,8 +103,9 @@ sig
   type limit
   val typ : Rs.t
   val string_of_react : react -> string
-  val lhs_of_react : react -> Big.t
-  val rhs_of_react : react -> Big.t
+  val lhs : react -> Big.t
+  val rhs : react -> Big.t
+  val map : react -> Fun.t option
   val string_of_limit : limit -> string
   val is_valid_react : react -> bool
   exception NOT_VALID of react_error
@@ -220,9 +221,11 @@ module Make (R : RrType.T)
 
   let string_of_react_err = R.string_of_react_err
 
-  let lhs_of_react r = R.lhs r
+  let lhs = R.lhs
 
-  let rhs_of_react r = R.rhs r
+  let rhs = R.rhs
+
+  let map = R.map
 
   let apply = R.apply
                 

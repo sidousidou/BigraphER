@@ -23,7 +23,7 @@ type limit = float
 (** Type of transition system: {{!Rs.t}[SBRS]}. *)
 val typ : Rs.t
 
-(** Same as {!val:Brs.string_of_stats} for stochastic reaction rules. *)
+(** Same as {!val:Brs.string_of_react} for stochastic reaction rules. *)
 val string_of_react : react -> string
 
 (** Same as {!val:Brs.parse_react_unsafe} for stochastic reaction rules. *)
@@ -33,10 +33,16 @@ val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> reac
 val parse_react : lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> react option
 
 (** The left-hand side (redex) of a stochastic reaction rule. **)
-val lhs_of_react : react -> Big.t
+val lhs : react -> Big.t
 
 (** The right-hand side (reactum) of a stochastic reaction rule. *)
-val rhs_of_react : react -> Big.t
+val rhs : react -> Big.t
+
+(** The instantiation map of a reaction rule. *)
+val map : react -> Fun.t option
+
+(** The rate of a reaction rule. *)
+val rate : react -> float
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string

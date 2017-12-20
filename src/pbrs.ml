@@ -83,7 +83,7 @@ end
 module R = RrType.Make (RT)
 
 let is_determ r =
-  match  R.l r with
+  match R.l r with
   | Some r -> r = 1.0
   | None -> assert false (*BISECT-IGNORE*)
 
@@ -133,3 +133,6 @@ module T = struct
 end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
+
+let prob r = r.p
+  

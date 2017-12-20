@@ -4,7 +4,7 @@
 (** The type of probabilistic bigraphical reaction rules. *)
 type react
   
-(** The type of priority classes, {e i.e.}, lists of stochastic reaction
+(** The type of priority classes, {e i.e.}, lists of probabilistic reaction
     rules. Intermediate states resulting from the application of reaction rules
     in reducible priority classes are ignored. *)
 type p_class =
@@ -23,7 +23,7 @@ type limit = int
 (** Type of transition system: {{!Rs.t}[PBRS]}. *)
 val typ : Rs.t
 
-(** Same as {!val:Brs.string_of_stats} for probabilistic reaction rules. *)
+(** Same as {!val:Brs.string_of_react} for probabilistic reaction rules. *)
 val string_of_react : react -> string
 
 (** Same as {!val:Brs.parse_react_unsafe} for probabilistic reaction rules. *)
@@ -33,10 +33,16 @@ val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> reac
 val parse_react : lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> react option
 
 (** The left-hand side (redex) of a probabilistic reaction rule. **)
-val lhs_of_react : react -> Big.t
+val lhs : react -> Big.t
 
 (** The right-hand side (reactum) of a probabilistic reaction rule. *)
-val rhs_of_react : react -> Big.t
+val rhs : react -> Big.t
+
+(** The instantiation map of a reaction rule. *)
+val map : react -> Fun.t option
+
+(** The probability of a reaction rule. *)
+val prob : react -> float
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string

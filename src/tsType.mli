@@ -35,8 +35,9 @@ module type RS_core = sig
   type limit
   val typ : Rs.t
   val string_of_react : react -> string
-  val lhs_of_react : react -> Big.t
-  val rhs_of_react : react -> Big.t
+  val lhs : react -> Big.t
+  val rhs : react -> Big.t
+  val map : react -> Fun.t option
   val string_of_limit : limit -> string
   val is_valid_react : react -> bool
   exception NOT_VALID of react_error
@@ -135,10 +136,12 @@ module Make (R : RrType.T)
 
   val parse_react : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> R.t option
   
-  val lhs_of_react : R.t -> Big.t
+  val lhs : R.t -> Big.t
 
-  val rhs_of_react : R.t -> Big.t
-  
+  val rhs : R.t -> Big.t
+
+  val map : R.t -> Fun.t option
+ 
   val string_of_limit : limit -> string
   
   val is_valid_react : R.t -> bool

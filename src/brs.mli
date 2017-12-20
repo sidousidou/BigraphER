@@ -31,15 +31,18 @@ val string_of_react : react -> string
     as instantiation map. No validity check is performed. *)
 val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> Fun.t option -> react
 
-(** Same {!val:Brs.parse_ract_unsafe} but returns [None] if it is impossible to
+(** Same as {!val:Brs.parse_react_unsafe} but returns [None] if it is impossible to
     parse a valid reaction. *)
 val parse_react : lhs:Big.t -> rhs:Big.t -> Fun.t option -> react option
 
 (** The left-hand side (redex) of a reaction rule. **)
-val lhs_of_react : react -> Big.t
+val lhs : react -> Big.t
 
 (** The right-hand side (reactum) of a reaction rule. *)
-val rhs_of_react : react -> Big.t
+val rhs : react -> Big.t
+
+(** The instantiation map of a reaction rule. *)
+val map : react -> Fun.t option
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string
