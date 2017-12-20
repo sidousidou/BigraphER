@@ -19,8 +19,9 @@ build:
     - opam update -y -u && opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam install -y minisat jbuilder
     - mkdir -p shippable/testresults
     - whoami
-    - echo $PATH && which jbuilder && pwd
-    - eval `opam config env` && echo $PATH && which jbuilder && pwd
+    - echo $PATH
+    - pwd
+    - eval `opam config env` && echo $PATH
     - jbuilder runtest
 
 integrations:
