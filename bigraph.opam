@@ -15,3 +15,5 @@ depends: [
 build: [ "jbuilder" "build" "-p" name "-j" jobs ]
 
 available: [ ocaml-version >= "4.02.0" ]
+
+conflicts: [ "bigrapher" {<= "1.6.1"} ]
