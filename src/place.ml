@@ -1,7 +1,7 @@
 open Printf
 open Base
 
-type bmatrix = Sparse.bmatrix
+type m = Sparse.t
 
 (* Type for concrete place graphs. The elements are regions, nodes, sites and
    for adjacency matrices: regions to nodes, regions to sites, nodes to nodes and
@@ -9,10 +9,10 @@ type bmatrix = Sparse.bmatrix
 type t = { r: int;
            n: int;
            s: int;
-           rn: bmatrix;
-           rs: bmatrix;
-           nn: bmatrix;
-           ns: bmatrix;
+           rn: m;
+           rs: m;
+           nn: m;
+           ns: m;
           }
 
 (* Raised by comp. The elements are (sites, regions) *)
@@ -789,12 +789,6 @@ let match_nodes_sites a b n_a n_b =
        (* IntSet.union acc_c (IntSet.of_list parents) *)
        acc_c))
     a.ns ([], IntSet.empty)
-
-let equal_bmatrix = Sparse.equal
-
-let compare_bmatrix = Sparse.compare
-
-let entries_bmatrix = Sparse.entries
 
 (******************************************************************************)
 (* Compute the reachable set via Depth First Search. *)

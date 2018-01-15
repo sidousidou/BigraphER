@@ -636,7 +636,7 @@ let aux_match t p t_trans =
 (* true when p is not a match *)
 let quick_unsat t p =
   ((Nodes.size p.n) > (Nodes.size t.n))
-  || (Place.entries_bmatrix p.p.Place.nn > Place.entries_bmatrix t.p.Place.nn)
+  || (Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn)
   || (Nodes.not_sub p.n t.n)
   || (IntSet.cardinal (Place.leaves p.p) > IntSet.cardinal (Place.leaves t.p))
   || (IntSet.cardinal (Place.orphans p.p) > IntSet.cardinal (Place.orphans t.p))
@@ -851,7 +851,7 @@ let key b =
 let equal_opt a b =
   (Place.deg_regions a.p = Place.deg_regions b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
-  && (Place.equal_bmatrix a.p.Place.rs b.p.Place.rs)
+  && (Sparse.equal a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
   if Nodes.size b.n = 0 then
     (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)
@@ -866,7 +866,7 @@ let equal a b =
   && (Place.deg_regions a.p = Place.deg_regions b.p)
   && (Place.deg_sites a.p = Place.deg_sites b.p)
   && (Nodes.equal a.n b.n)
-  && (Place.equal_bmatrix a.p.Place.rs b.p.Place.rs)
+  && (Sparse.equal a.p.Place.rs b.p.Place.rs)
   && (* Placing or wiring *)
   if Nodes.size b.n = 0 then
     (Place.equal_placing a.p b.p) && (Link.Lg.equal a.l b.l)

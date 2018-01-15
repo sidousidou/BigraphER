@@ -1,6 +1,6 @@
 open Base
 
-type bmatrix =
+type t =
   { r: int;
     c: int;
     r_major: IntSet.t M_int.t; (* Row-major order: i -> j,...,j' *)
@@ -97,7 +97,7 @@ let tens a b =
     c_major = M_int.merge merge_f a.c_major (off a.c a.r b.c_major);
   }
 
-let append (a : bmatrix) (b : bmatrix) =
+let append (a : t) (b : t) =
   assert (a.r = b.r);
   { r = a.r;
     c = a.c + b.c;

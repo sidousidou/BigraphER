@@ -3,24 +3,24 @@
     @author Michele Sevegnani *)
 
 (** The type of boolean matrices. *)
-type bmatrix
+type m = Sparse.t
 
 (** The type of place graphs. *)
 type t = {
   r : int; (** Number of regions *)
   n : int; (** Number of nodes *)
   s : int; (** Number of sites *)
-  rn : bmatrix; (** Boolean adjacency matrix regions X nodes *)
-  rs : bmatrix; (** Boolean adjacency matrix regions X sites *)
-  nn : bmatrix; (** Boolean adjacency matrix nodes X nodes *)
-  ns : bmatrix; (** Boolean adjacency matrix nodes X sites *)
+  rn : m;  (** Boolean adjacency matrix regions X nodes *)
+  rs : m;  (** Boolean adjacency matrix regions X sites *)
+  nn : m;  (** Boolean adjacency matrix nodes X nodes *)
+  ns : m;  (** Boolean adjacency matrix nodes X sites *)
 }
 
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : t -> string
 
 (** Computes the representation of a boolean matrix as a list of edges. *)
-val edges : bmatrix -> (int * int) list
+val edges : m -> (int * int) list
 
 (** Compute the number of edges in the DAG. *)
 val size : t -> int
@@ -91,13 +91,13 @@ val  equal_placing : t -> t -> bool
 val compare_placing : t -> t -> int
 
 (** Equality for {!type:bmatrix}. *)
-val equal_bmatrix : bmatrix -> bmatrix -> bool
+(*val equal_bmatrix : bmatrix -> bmatrix -> bool
 
 (** Comparison for {!type:bmatrix}. *)
 val compare_bmatrix : bmatrix -> bmatrix -> int
 
 (** Return the number of edges in a {!type:bmatrix}. *)
-val entries_bmatrix : bmatrix -> int
+  val entries_bmatrix : bmatrix -> int*)
 
 (** {3 Operations} *)
 
@@ -214,7 +214,7 @@ val match_sites : target:t -> pattern:t -> n_t:Nodes.t -> n_p:Nodes.t ->
 val match_trans : target:t -> pattern:t -> Cnf.clause list
 
 (** [check_match t p trans iso] checks if [iso] from [p] to [t] is a valid match. *)
-val check_match : target:t -> pattern:t -> bmatrix -> Iso.t -> bool
+val check_match : target:t -> pattern:t -> m -> Iso.t -> bool
 
 (** Compute constraints for equality: regions must have children with the same
     controls. *)
@@ -237,6 +237,6 @@ val deg_sites : t -> int list
 
 (** Compute the transitive closure of the nodes X nodes matrix of a place
     graph. *)
-val trans : t -> bmatrix
+val trans : t -> m
 
 (**/**)

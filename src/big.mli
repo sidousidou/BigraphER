@@ -331,7 +331,7 @@ val occurs : target:t -> pattern:t ->  bool
     graph of [t].
 
     @raise NODE_FREE when [p] has an empty node set. *)
-val occurrence : target:t -> pattern:t -> Place.bmatrix -> occ option
+val occurrence : target:t -> pattern:t -> Sparse.t -> occ option
 
 (** [occurrences t p] returns a list of occurrences.
 
