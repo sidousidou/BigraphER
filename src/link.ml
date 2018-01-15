@@ -2,12 +2,12 @@ open Base
 open Printf
 
 (* ide strings no capital letter or number at the start *)
-type name = Nam of string
+type name = Name of string
 
 module Face = S_opt (Set.Make (struct
                        type t = name
                        let compare =
-                         fun (Nam s0) (Nam s1) ->
+                         fun (Name s0) (Name s1) ->
                            String.compare s0 s1
                      end))
 
@@ -213,11 +213,11 @@ exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
 (* Composition fails *)
 exception FACES_MISMATCH of (Face.t * Face.t)
 
-let string_of_name (Nam s) = s
+let string_of_name (Name s) = s
 
 let parse_face =
   List.fold_left (fun acc x ->
-      Face.add (Nam x) acc)
+      Face.add (Name x) acc)
     Face.empty
 
 let string_of_face f =
@@ -448,7 +448,7 @@ let rename_shared l i f_i f_o =
   let rename_face f i shr =
     Face.fold (fun n acc ->
         if Face.mem n shr then
-          Face.add (Nam (sprintf "%d%s" i (string_of_name n))) acc
+          Face.add (Name (sprintf "%d%s" i (string_of_name n))) acc
         else
           Face.add n acc) f Face.empty in
   Lg.fold (fun e acc ->
@@ -464,8 +464,8 @@ let dup_out f =
       tens
         (elementary_sub
            ~inner:(Face.add
-                     (Nam (sprintf "0%s" (string_of_name n)))
-                     (Face.singleton (Nam (sprintf "1%s" (string_of_name n)))))
+                     (Name (sprintf "0%s" (string_of_name n)))
+                     (Face.singleton (Name (sprintf "1%s" (string_of_name n)))))
            ~outer:(Face.singleton n))
         acc 0)
     f Lg.empty
@@ -476,8 +476,8 @@ let dup_in f =
         (elementary_sub
            ~inner:(Face.singleton n)
            ~outer:(Face.add
-                     (Nam (sprintf "0%s" (string_of_name n)))
-                     (Face.singleton (Nam (sprintf "1%s" (string_of_name n))))))
+                     (Name (sprintf "0%s" (string_of_name n)))
+                     (Face.singleton (Name (sprintf "1%s" (string_of_name n))))))
         acc 0)
     f Lg.empty
 
@@ -528,13 +528,13 @@ let norm l =
   (* Normalise an edge. Outer names are numbered starting from i. *)
   let norm_edge e i =
     Face.fold (fun y (l, f, i) ->
-        let x = Face.singleton (Nam (sprintf "~%i" i)) in
+        let x = Face.singleton (Name (sprintf "~%i" i)) in
         (tens (elementary_sub ~inner:(Face.singleton y) ~outer:x) l 0,
          Face.union x f,
          i + 1))
       e.i (Lg.empty, Face.empty, i)
     |> (Ports.fold (fun v _ (l, f, i) ->
-        let x = Face.singleton (Nam (sprintf "~%i" i)) in
+        let x = Face.singleton (Name (sprintf "~%i" i)) in
         (Lg.add { i = Face.empty;
                   o = x;
                   p = Ports.add v Ports.empty } l,
@@ -707,7 +707,7 @@ let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
              n + 1)
           else begin
             (* id *)
-            let name = Face.singleton (Nam (sprintf "~%d" n)) in
+            let name = Face.singleton (Name (sprintf "~%d" n)) in
             (Lg.add { i = Face.union name in_c;
                       o = e.o;
                       p = Ports.apply i_c p_c;

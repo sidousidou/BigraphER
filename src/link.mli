@@ -5,7 +5,7 @@
 (** {3 Faces} *)
 
 (** The type of names. *)
-type name = Nam of string
+type name = Name of string
 
 (** This module provides set operations for faces. *)
 module Face : sig

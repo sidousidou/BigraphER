@@ -299,7 +299,7 @@ let to_dot b ide =
       let ss =
         (List.map (fun i ->
              sprintf "r%d" i) (IntSet.elements (IntSet.of_int ord))) @
-        (List.map (fun (Link.Nam n) ->
+        (List.map (fun (Link.Name n) ->
              sprintf "\"o%s\"" n) (Link.Face.elements f)) in
       match ss with
       | [] -> ""
@@ -308,7 +308,7 @@ let to_dot b ide =
       let xs =
         (List.map (fun i ->
              sprintf "s%d" i) (IntSet.elements (IntSet.of_int ord))) @
-        (List.map (fun (Link.Nam n) ->
+        (List.map (fun (Link.Name n) ->
              sprintf "\"i%s\"" n) (Link.Face.elements f)) in
       match xs with
       | [] -> ""
