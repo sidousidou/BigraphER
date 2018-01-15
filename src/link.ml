@@ -42,6 +42,9 @@ module Ports = struct
 
   let min_binding = M_int.min_binding
 
+  let of_list =
+    List.fold_left (fun res (i, a) -> M_int.add i a res) M_int.empty
+  
   let to_string ps =
     "{"
     ^ (M_int.bindings ps

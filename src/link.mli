@@ -68,6 +68,8 @@ module Ports : sig
   val arity : t -> int -> int option
 
   val cardinal : t -> int
+
+  val of_list : (int * int) list -> t
   
   (** [of_nodes ns] transform a set of nodes into a set of ports. *)
   val of_nodes : Nodes.t -> t
