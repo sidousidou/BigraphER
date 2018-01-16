@@ -19,6 +19,11 @@ module RT = struct
 
   let map r = r.eta
 
+  let equal r r' =
+    Big.equal r.rdx r'.rdx
+    && Big.equal r.rct r'.rct
+    && Base.opt_equal Fun.equal r.eta r'.eta
+  
   let val_chk _ = true
 
   let val_chk_error_msg = ""

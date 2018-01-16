@@ -111,6 +111,7 @@ sig
   exception NOT_VALID of react_error
   val is_valid_react_exn : react -> bool
   val string_of_react_err : react_error -> string
+  val equal_react : react -> react -> bool
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
@@ -219,6 +220,8 @@ module Make (R : RrType.T)
     try R.is_valid_exn r with
     | R.NOT_VALID e -> raise (NOT_VALID e)
 
+  let equal_react = R.equal
+  
   let string_of_react_err = R.string_of_react_err
 
   let lhs = R.lhs

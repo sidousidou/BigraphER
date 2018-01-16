@@ -7,6 +7,7 @@ sig
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label option
+  val equal : t -> t -> bool
   val map : t -> Fun.t option
   val val_chk : t -> bool
   val val_chk_error_msg : string
@@ -33,6 +34,7 @@ sig
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label option
+  val equal : t -> t -> bool
   val map : t -> Fun.t option
   val to_occ : Big.t -> t -> occ
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t

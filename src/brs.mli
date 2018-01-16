@@ -52,6 +52,9 @@ val string_of_limit : limit -> string
     otherwise. See {!val:Big.is_solid}. *)
 val is_valid_react : react -> bool
 
+(** Equality for reaction rules. *)
+val equal_react : react -> react -> bool
+
 (** The type of reaction validity errors. *)
 type react_error
 

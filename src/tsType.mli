@@ -43,6 +43,7 @@ module type RS_core = sig
   exception NOT_VALID of react_error
   val is_valid_react_exn : react -> bool
   val string_of_react_err : react_error -> string
+  val equal_react : react -> react -> bool
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
@@ -147,6 +148,8 @@ module Make (R : RrType.T)
   val is_valid_react : R.t -> bool
 
   val is_valid_react_exn : R.t -> bool
+
+  val equal_react : R.t -> R.t -> bool
 
   val string_of_react_err : react_error -> string
 

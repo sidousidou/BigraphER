@@ -98,6 +98,12 @@ let ints_compare (i0, p0) (i1, p1) =
   | 0 -> p0 - p1
   | x -> x
 
+let opt_equal eq a b =
+  match (a, b) with
+  | (None, None) -> true
+  | (None, _) | (_, None) -> false
+  | (Some v, Some v') -> eq v v'
+
 let flip f x y = f y x
 
 let flip2 f a b c = f a c b

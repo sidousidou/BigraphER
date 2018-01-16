@@ -17,6 +17,12 @@ module RT = struct
 
   let l r = Some r.rate
 
+  let equal r r' =
+    Big.equal r.rdx r'.rdx
+    && Big.equal r.rct r'.rct
+    && Base.opt_equal Fun.equal r.eta r'.eta
+    && r.rate = r'.rate
+    
   let map r = r.eta
 
   let val_chk r = r.rate > 0.0
