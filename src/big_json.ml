@@ -500,4 +500,4 @@ let step ?(encoding=`UTF_8) ?(minify=true) s =
         | `S rs -> aux Sbrs.step (s_occs_to_json ~minify) b rs) in
   match res with
   | Ok s -> s
-  | Error s -> to_json ~minify:true (fun e -> singleton e "error" (string e)) s
+  | Error s -> to_json ~minify (fun e -> singleton e "error" (string e)) s

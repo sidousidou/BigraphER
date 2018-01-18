@@ -16,12 +16,12 @@ let nodes_test =
 
 let place_test =
   Place.parse ~regions:2 ~nodes:4 ~sites:2
-    [ "110000";
+    [ "100000";
       "010000";
       "001000";
       "001100";
-      "000011";
-      "000000" ]
+      "000010";
+      "000001" ]
 
 let link_test =
   let open Link in
@@ -55,8 +55,8 @@ let sr_test =
 
 let test v e d eq f =
   match d @@ e v with
-  | Ok v' -> (if (eq v v') then "true"
-              else "false "^ "\n" ^ (f v') ^ "\n" ^ (f v))
+  | Ok v' -> (if (eq v v') then "Ok"
+              else "Error:\n" ^ (f v') ^ "\n" ^ (f v))
   | Error msg -> msg
 
 let input b rs t f =
@@ -99,10 +99,9 @@ let () =
   print_endline @@ test sr_test sreact_to_json sreact_of_json Sbrs.equal_react Sbrs.string_of_react;
   print_newline ();
   print_endline "MATCHING ENGINE";
-  print_string "Testing Brs.step: ";
-  print_endline @@ step ~minify:true @@ input big_test [ r_test ] "reacts" (react_to_json ~minify:true);   
-  print_string "Testing Pbrs.step: ";
-  print_endline @@ step ~minify:true @@ input big_test [ pr_test ] "preacts" (preact_to_json ~minify:false);   
-  print_string "Testing Sbrs.step: ";
-  print_endline @@ step ~minify:true @@ input big_test [ sr_test ] "sreacts" (sreact_to_json ~minify:false)
-
+  print_string "Testing Brs.step:\n";
+  print_endline @@ step ~minify:false @@ input big_test [ r_test ] "reacts" (react_to_json ~minify:true);   
+  print_string "Testing Pbrs.step:\n";
+  print_endline @@ step ~minify:false @@ input big_test [ pr_test ] "preacts" (preact_to_json ~minify:true);   
+  print_string "Testing Sbrs.step:\n";
+  print_endline @@ step ~minify:false @@ input big_test [ sr_test ] "sreacts" (sreact_to_json ~minify:true)
