@@ -3,14 +3,6 @@
 
 (** {3 Encoder} *)
 
-val ctrl_to_json : ?minify:bool -> Bigraph.Ctrl.t -> String.t 
-
-val nodes_to_json : ?minify:bool -> Bigraph.Nodes.t -> String.t 
-
-val place_to_json : ?minify:bool -> Bigraph.Place.t -> String.t 
-
-val link_to_json : ?minify:bool -> Bigraph.Link.Lg.t -> String.t 
-
 val big_to_json : ?minify:bool -> Bigraph.Big.t -> String.t 
 
 val react_to_json : ?minify:bool -> Bigraph.Brs.react -> String.t 
@@ -29,5 +21,18 @@ val matches_to_json : ?minify:bool -> Bigraph.Big.occ list -> String.t
 
 (** {3 Decoder} *)
 
+val big_of_json : ?encoding:Jsonm.encoding -> String.t  -> (Bigraph.Big.t, String.t) result
+
+val react_of_json : ?encoding:Jsonm.encoding -> String.t  -> (Bigraph.Brs.react, String.t) result
+
+val preact_of_json : ?encoding:Jsonm.encoding -> String.t  -> (Bigraph.Pbrs.react, String.t) result
+
+val sreact_of_json : ?encoding:Jsonm.encoding -> String.t  -> (Bigraph.Sbrs.react, String.t) result
+
+(** {3 Interface to the matching engine} *)
+
+(** Compute the set of reachable states in one step. Note that isomorphic states
+    are merged. *)
+val step : ?encoding:Jsonm.encoding -> ?minify:bool -> String.t -> String.t
 
 (**/**)

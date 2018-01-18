@@ -1,5 +1,7 @@
 open Bigraph
 
+(* Encoder *)
+
 let lexeme e l = ignore (Jsonm.encode e (`Lexeme l))
 
 let string e s = lexeme e (`String s)
@@ -70,7 +72,7 @@ let place e p =
 let link e l =
   let face e f =
     lexeme e `As;
-    Link.Face.iter (fun (Link.Nam x) ->
+    Link.Face.iter (fun (Link.Name x) ->
         singleton e "name" (string e) x)
       f;
     lexeme e `Ae
@@ -169,18 +171,6 @@ let to_json ?(minify=true) f v =
   ignore (Jsonm.encode e `End);
   Buffer.contents b
 
-let ctrl_to_json ?(minify=true) =
-  to_json ~minify ctrl
-
-let nodes_to_json ?(minify=true) =
-  to_json ~minify nodes
-
-let place_to_json ?(minify=true) =
-  to_json ~minify place
-
-let link_to_json ?(minify=true) =
-  to_json ~minify link
-
 let big_to_json ?(minify=true) =
   to_json ~minify big
 
@@ -204,3 +194,310 @@ let s_occs_to_json ?(minify=true) =
 
 let matches_to_json ?(minify=true) =
   to_json ~minify matches
+
+(* Decoder *)
+
+type json =
+  [ `Null | `Bool of bool | `Float of float | `String of string
+  | `A of json list | `O of (string * json) list ]
+  
+exception Escape of ((int * int) * (int * int)) * Jsonm.error
+
+(* Error messages *)
+
+let dec_err (_, (l, c)) e =
+  Jsonm.pp_error Format.str_formatter e; 
+  "Line " ^ (string_of_int l) ^ ", character "
+  ^ (string_of_int c) ^ ":\nError:"
+  ^ (Buffer.contents @@ Format.stdbuf)
+
+let err_cmp l =
+  List.find (fun (n, n') -> n <> n') l
+  |> (fun (n, n') -> "'" ^ n ^ "' = '" ^ n' ^ "'")
+
+let type_err _ msg =
+  "Error: " ^ msg ^ " expected."
+
+let disj_type_err =
+  String.concat "|"
+
+let json_of_src ?(encoding=`UTF_8) src =
+  let dec d =
+    match Jsonm.decode d with
+    | `Lexeme l -> l
+    | `Error e -> raise (Escape (Jsonm.decoded_range d, e))
+    | `End | `Await -> assert false in
+  let rec value v k d =
+    match v with
+    | `Os -> obj [] k d
+    | `As -> arr [] k d
+    | `Null | `Bool _ | `String _ | `Float _ as v -> k v d
+    | _ -> assert false
+  and arr vs k d =
+    match dec d with
+    | `Ae -> k (`A (List.rev vs)) d
+    | v -> value v (fun v -> arr (v :: vs) k) d
+  and obj ms k d =
+    match dec d with
+    | `Oe -> k (`O (List.rev ms)) d
+    | `Name n -> value (dec d) (fun v -> obj ((n, v) :: ms) k) d
+    | _ -> assert false in
+  let d = Jsonm.decoder ~encoding src in
+  try `JSON (value (dec d) (fun v _ -> v) d) with
+  | Escape (r, e) -> `Error (r, e)
+
+ let exp_string = function
+  | `String s -> Ok s 
+  | (`A _ | `Bool _ | `Float _ | `Null | `O _) as j -> Error (j, "'string'")
+
+let exp_float = function 
+  | `Float f -> Ok f 
+  | (`A _ | `Bool _ | `String _ | `Null | `O _) as j -> Error (j, "'float'")
+
+let exp_int = function 
+  | `Float f -> Ok (int_of_float f) 
+  | (`A _ | `Bool _ | `String _ | `Null | `O _) as j -> Error (j, "'int'")
+
+let bind f = function
+  | Ok v -> f v
+  | Error _ as e -> e
+
+let (>>=) f g = bind g f
+
+let exp_singleton name f = function
+  | `O [ (n, v) ] as j ->
+    (if name = n then f v else Error (j, err_cmp [ (name, n) ])) 
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as j -> Error (j, "singleton")
+
+let exp_pair (n0, f0) (n1, f1) = function
+  | `O [ (n, v); (n', v') ] as t ->
+    (if n0 = n && n1 = n'
+     then f0 v
+       >>= fun v0 -> f1 v'
+       >>= fun v1 -> Ok (v0, v1)
+     else Error (t, err_cmp [ (n0, n); (n1, n') ])) 
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "pair")
+
+let exp_triple (n0, f0) (n1, f1) (n2, f2) = function
+  | `O [ (n, v); (n', v'); (n'', v'') ] as t ->
+    (if n0 = n && n1 = n' && n2 = n''
+     then f0 v
+       >>= fun v0 -> f1 v'
+       >>= fun v1 -> f2 v''
+       >>= fun v2 -> Ok (v0, v1, v2)
+     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n'') ])) 
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "triple")
+
+let exp_quadruple (n0, f0) (n1, f1) (n2, f2) (n3, f3) = function
+  | `O [ (n, v); (n', v'); (n'', v''); (n''', v''') ] as t ->
+    (if n0 = n && n1 = n' && n2 = n'' && n3 = n'''
+     then f0 v
+       >>= fun v0 -> f1 v'
+       >>= fun v1 -> f2 v''
+       >>= fun v2 -> f3 v'''
+       >>= fun v3 -> Ok (v0, v1, v2, v3)
+     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n''); (n3, n''') ])) 
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "4-tuple")
+
+let rec conv j msgs = function
+  | [] -> Error (j, disj_type_err msgs)
+  | f :: fs ->
+    (match f j with
+     | Ok v -> Ok v
+     | Error (_, e) -> conv j (e :: msgs) fs)
+
+let rec map_bind f res = function
+  | [] -> Ok (List.rev res)
+  | j :: js ->
+    (match conv j [] f with
+     | Ok v -> map_bind f (v :: res) js
+     | Error _ as e -> e)
+
+let exp_array f = function
+  | `A l -> map_bind f [] l
+  | (`Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "array")
+
+let exp_option f (j:json) =
+  conv j []
+    [ (function
+          | `Null -> Ok None
+          |(`Bool _ | `Float _ | `A _ | `String _ | `O _) as t -> Error (t, "option"));
+      (fun j -> f j >>= fun v -> Ok (Some v)) ]
+
+let exp_ctrl (j:json) =
+  exp_triple
+    ("ctrl_name", exp_string)
+    ("ctrl_params", exp_array
+       [ exp_singleton "ctrl_int" (fun j -> exp_int j >>= fun i -> Ok (Ctrl.I i));
+         exp_singleton "ctrl_float" (fun j -> exp_float j >>= fun f -> Ok (Ctrl.F f));
+         exp_singleton "ctrl_string" (fun j -> exp_string j >>= fun s -> Ok (Ctrl.S s)) ])
+    ("ctrl_arity", exp_int)
+    j
+  >>= fun (n, ps, a) -> Ok (Ctrl.C (n, ps, a))
+
+let exp_nodes (j:json) =
+  exp_array
+    [ exp_pair ("node_id", exp_int) ("control", exp_ctrl) ]
+    j
+  >>= fun l -> Ok (List.fold_left (fun ns (i, c) -> Nodes.add i c ns) Nodes.empty l)
+
+let exp_bmatrix (j:json) r c =
+  exp_array
+    [ exp_pair ("source", exp_int) ("target", exp_int) ]
+    j
+  >>= fun l -> Ok (Sparse.add_list (Sparse.make r c) l)
+
+let exp_place = function
+  | `O [ (n0, v0); (n1, v1); (n2, v2); (n3, v3);
+         (n4, v4); (n5, v5); (n6, v6) ] as t ->
+    (if n0 = "num_regions" && n1 = "num_nodes" && n2 = "num_sites"
+        && n3 = "rn" && n4 = "rs" && n5 = "nn" && n6 = "ns"
+     then exp_int v0
+       >>= fun r -> exp_int v1
+       >>= fun n -> exp_int v2
+       >>= fun s -> exp_bmatrix v3 r n
+       >>= fun rn -> exp_bmatrix v4 r s
+       >>= fun rs -> exp_bmatrix v5 n n
+       >>= fun nn -> exp_bmatrix v6 n s
+       >>= fun ns -> Ok (Place.{ r = r;
+                                 n = n;
+                                 s = s;
+                                 rn = rn;
+                                 rs = rs;
+                                 nn = nn;
+                                 ns =ns })
+     else Error (t, err_cmp [ (n0, "num_regions"); (n1, "num_nodes");
+                              (n2, "num_sites"); (n3, "rn"); (n4, "rs");
+                              (n5, "nn"); (n6, "ns") ])) 
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "7-tuple")
+
+let exp_link (j:json) =
+  let exp_face (j:json) =
+    exp_array [ exp_singleton "name" exp_string ] j
+    >>= fun l -> Ok (Link.parse_face l)
+  and exp_ports (j:json) =
+    exp_array
+      [ exp_pair
+          ("node_id", exp_int)
+          ("port_arity", exp_int) ]
+      j
+    >>= fun l -> Ok (Link.Ports.of_list l) in
+  let exp_edg (j:json) =
+    exp_triple 
+      ("inner", exp_face)
+      ("outer", exp_face)
+      ("ports", exp_ports)
+      j
+    >>= fun (i, o, p) -> Ok (Link.{ i = i; o = o; p = p }) in
+  exp_array [ exp_edg ] j
+  >>= fun l -> Ok (List.fold_left (fun res e -> Link.Lg.add e res) Link.Lg.empty l)
+
+let exp_big (j:json) =
+  exp_triple
+    ("nodes", exp_nodes)
+    ("place_graph", exp_place)
+    ("link_graph", exp_link)
+    j
+    >>= fun (n, p, l) -> Ok (Big.{ p = p; l = l; n = n })
+
+let exp_eta (j:json) =
+  exp_array
+    [ exp_pair
+        ("x", exp_int)
+        ("y", exp_int) ]
+    j
+  >>= fun l -> Ok (Fun.of_list l)
+
+let exp_react (j:json) =
+  exp_triple
+    ("brs_lhs", exp_big)
+    ("brs_rhs", exp_big)
+    ("brs_eta", exp_option exp_eta)
+    j
+  >>= fun (lhs, rhs, e) -> Ok (Brs.parse_react_unsafe ~lhs ~rhs e)
+
+let exp_sreact (j:json) =
+  exp_quadruple
+    ("sbrs_lhs", exp_big)
+    ("sbrs_rhs", exp_big)
+    ("sbrs_rate", exp_float)
+    ("sbrs_eta", exp_option exp_eta)
+    j
+  >>= fun (lhs, rhs, r, e) -> Ok (Sbrs.parse_react_unsafe ~lhs ~rhs r e)
+
+let exp_preact (j:json) =
+  exp_quadruple
+    ("pbrs_lhs", exp_big)
+    ("pbrs_rhs", exp_big)
+    ("pbrs_p", exp_float)
+    ("pbrs_eta", exp_option exp_eta)
+    j
+  >>= fun (lhs, rhs, p, e) -> Ok (Pbrs.parse_react_unsafe ~lhs ~rhs p e)
+
+let parse_err = function
+  | Ok _ as v -> v
+  | Error (j, msg) -> Error (type_err j msg)
+
+let of_json encoding s f = 
+  match json_of_src ~encoding (`String s) with
+  | `Error (r, e) -> Error (dec_err r e)
+  | `JSON j -> parse_err @@ f j
+
+let big_of_json ?(encoding=`UTF_8) s =
+  of_json encoding s exp_big
+    
+let react_of_json ?(encoding=`UTF_8) s =
+   of_json encoding s exp_react
+
+let preact_of_json ?(encoding=`UTF_8) s =
+   of_json encoding s exp_preact
+
+let sreact_of_json ?(encoding=`UTF_8) s =
+   of_json encoding s exp_sreact
+
+(* INTERFACE TO MATCHING ENGINE *)
+
+let exp_step_input (j:json) =
+  let aux n f (j:json) =
+    exp_pair
+      ("state", exp_big)
+      (n, f)
+      j in
+  let aux_r (j:json) =
+    aux "reacts" (exp_array [ exp_react ]) j
+    >>= fun (b, reacts) -> Ok (b, `B reacts)
+  and aux_p (j:json) =
+    aux "preacts" (exp_array [ exp_preact ]) j
+    >>= fun (b, reacts) -> Ok (b, `P reacts)
+  and aux_s (j:json) =
+    aux "sreacts" (exp_array [ exp_sreact ]) j
+    >>= fun (b, reacts) -> Ok (b, `S reacts) in
+  conv j [] [ aux_r; aux_p; aux_s ]
+
+let check_aux f reacts =
+  try
+    if List.for_all f reacts then Ok true
+    else assert false
+  with
+  | Brs.NOT_VALID e -> Error (Brs.string_of_react_err e)
+  | Pbrs.NOT_VALID e -> Error (Pbrs.string_of_react_err e)
+  | Sbrs.NOT_VALID e -> Error (Sbrs.string_of_react_err e)
+           
+let check_validity = function
+  | `B reacts -> check_aux Brs.is_valid_react_exn reacts
+  | `P reacts -> check_aux Pbrs.is_valid_react_exn reacts
+  | `S reacts -> check_aux Sbrs.is_valid_react_exn reacts
+
+let step ?(encoding=`UTF_8) ?(minify=true) s =
+  let aux s_f j_f b rs =
+    Ok (s_f b rs) >>= fun (occs, _) -> Ok (j_f occs) in
+  let res =
+    of_json encoding s exp_step_input
+    >>= fun (b, reacts) -> check_validity reacts
+    >>= fun _ -> (match reacts with
+        | `B rs -> aux Brs.step (occs_to_json ~minify) b rs
+        | `P rs -> aux Pbrs.step (p_occs_to_json ~minify) b rs
+        | `S rs -> aux Sbrs.step (s_occs_to_json ~minify) b rs) in
+  match res with
+  | Ok s -> s
+  | Error s -> to_json ~minify:true (fun e -> singleton e "error" (string e)) s
