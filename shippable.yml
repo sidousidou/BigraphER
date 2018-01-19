@@ -11,7 +11,7 @@ env:
 build:
   pre_ci_boot:
       image_name: ocaml/opam
-      image_tag: ubuntu-17.04_ocaml-$OCAML_VERSION
+      image_tag: ubuntu-16.04_ocaml-$OCAML_VERSION
       pull: true
 
   ci:
