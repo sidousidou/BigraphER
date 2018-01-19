@@ -14,6 +14,10 @@ depends: [
 
 build: [ "jbuilder" "build" "-p" name "-j" jobs ]
 
+build-test: [ "jbuilder" "runtest" "-p" name "-j" jobs ]
+
+build-doc: [ "jbuilder" "build" "@doc" "-j" jobs ]
+    
 available: [ ocaml-version >= "4.02.0" ]
 
 conflicts: [ "bigrapher" {<= "1.6.1"} ]
