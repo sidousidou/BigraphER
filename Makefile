@@ -1,4 +1,4 @@
-.PHONY: build release install uninstall clean test doc reindent
+.PHONY: build release install uninstall clean test doc dist
 
 build:
 	jbuilder build @install --dev
@@ -21,6 +21,7 @@ test:
 doc:
 	jbuilder build @doc
 
-reindent:
-#	- ocp-indent -i *.mli 2> /dev/null
-	ocp-indent -i *.ml
+ARCH = big_json-0.1.0.tar.gz
+
+dist:
+	git archive --format=tar --prefix="bigraph/" HEAD | gzip -n > $(ARCH)
