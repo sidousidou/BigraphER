@@ -3,7 +3,7 @@ maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 version: "0.1.0"
 authors: [ "Michele Sevegnani" ]
 license: "BSD-3-clause"
-tags: [ "bigraphs" "json" ]
+tags: [ "bigraphs" "json" "codec"]
 homepage: "https://bitbucket.org/mseve/big_json"
 dev-repo: "git+https://bitbucket.org/mseve/big_json.git"
 
@@ -15,4 +15,8 @@ depends: [
 
 build: [ "jbuilder" "build" "-p" name "-j" jobs ]
 
+build-test: [ "jbuilder" "runtest" "-p" name "-j" jobs ]
+
+build-doc: [ "jbuilder" "build" "@doc" "-j" jobs ]
+    
 available: [ ocaml-version >= "4.03.0" ]

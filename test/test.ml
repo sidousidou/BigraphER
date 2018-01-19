@@ -100,8 +100,8 @@ let () =
   print_newline ();
   print_endline "MATCHING ENGINE";
   print_string "Testing Brs.step:\n";
-  print_endline @@ step ~minify:false @@ input big_test [ r_test ] "reacts" (react_to_json ~minify:true);   
+  print_endline @@ step ~minify:false @@ input big_test [ r_test ] "reacts" (react_to_json ~minify:true);
   print_string "Testing Pbrs.step:\n";
-  print_endline @@ step ~minify:false @@ input big_test [ pr_test ] "preacts" (preact_to_json ~minify:true);   
+  print_endline @@ step ~minify:false @@ input big_test [ pr_test ] "preacts" (preact_to_json ~minify:true);
   print_string "Testing Sbrs.step:\n";
   print_endline @@ step ~minify:false @@ input big_test [ sr_test ] "sreacts" (sreact_to_json ~minify:true)

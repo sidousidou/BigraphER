@@ -115,7 +115,7 @@ let iso e i =
         ("j", int e, y))
     i;
   lexeme e `Ae
-  
+
 let react e r =
   triple e
     ("brs_lhs", big e, Brs.lhs r)
@@ -142,7 +142,7 @@ let occs e l =
   lexeme e `As;
   List.iter (fun b -> big e b) l;
   lexeme e `Ae
-  
+
 let p_occs name e l =
   lexeme e `As;
   List.iter (fun (b, r) ->
@@ -160,7 +160,7 @@ let matches e l =
         ("iso_e", iso e, i')
         ("f_e", eta e, f))
     l;
-  lexeme e `Ae  
+  lexeme e `Ae
 
 let b_size = 65536
 
@@ -200,13 +200,13 @@ let matches_to_json ?(minify=true) =
 type json =
   [ `Null | `Bool of bool | `Float of float | `String of string
   | `A of json list | `O of (string * json) list ]
-  
+
 exception Escape of ((int * int) * (int * int)) * Jsonm.error
 
 (* Error messages *)
 
 let dec_err (_, (l, c)) e =
-  Jsonm.pp_error Format.str_formatter e; 
+  Jsonm.pp_error Format.str_formatter e;
   "Line " ^ (string_of_int l) ^ ", character "
   ^ (string_of_int c) ^ ":\nError:"
   ^ (Buffer.contents @@ Format.stdbuf)
@@ -247,15 +247,15 @@ let json_of_src ?(encoding=`UTF_8) src =
   | Escape (r, e) -> `Error (r, e)
 
  let exp_string = function
-  | `String s -> Ok s 
+  | `String s -> Ok s
   | (`A _ | `Bool _ | `Float _ | `Null | `O _) as j -> Error (j, "'string'")
 
-let exp_float = function 
-  | `Float f -> Ok f 
+let exp_float = function
+  | `Float f -> Ok f
   | (`A _ | `Bool _ | `String _ | `Null | `O _) as j -> Error (j, "'float'")
 
-let exp_int = function 
-  | `Float f -> Ok (int_of_float f) 
+let exp_int = function
+  | `Float f -> Ok (int_of_float f)
   | (`A _ | `Bool _ | `String _ | `Null | `O _) as j -> Error (j, "'int'")
 
 let bind f = function
@@ -266,7 +266,7 @@ let (>>=) f g = bind g f
 
 let exp_singleton name f = function
   | `O [ (n, v) ] as j ->
-    (if name = n then f v else Error (j, err_cmp [ (name, n) ])) 
+    (if name = n then f v else Error (j, err_cmp [ (name, n) ]))
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as j -> Error (j, "singleton")
 
 let exp_pair (n0, f0) (n1, f1) = function
@@ -275,7 +275,7 @@ let exp_pair (n0, f0) (n1, f1) = function
      then f0 v
        >>= fun v0 -> f1 v'
        >>= fun v1 -> Ok (v0, v1)
-     else Error (t, err_cmp [ (n0, n); (n1, n') ])) 
+     else Error (t, err_cmp [ (n0, n); (n1, n') ]))
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "pair")
 
 let exp_triple (n0, f0) (n1, f1) (n2, f2) = function
@@ -285,7 +285,7 @@ let exp_triple (n0, f0) (n1, f1) (n2, f2) = function
        >>= fun v0 -> f1 v'
        >>= fun v1 -> f2 v''
        >>= fun v2 -> Ok (v0, v1, v2)
-     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n'') ])) 
+     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n'') ]))
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "triple")
 
 let exp_quadruple (n0, f0) (n1, f1) (n2, f2) (n3, f3) = function
@@ -296,7 +296,7 @@ let exp_quadruple (n0, f0) (n1, f1) (n2, f2) (n3, f3) = function
        >>= fun v1 -> f2 v''
        >>= fun v2 -> f3 v'''
        >>= fun v3 -> Ok (v0, v1, v2, v3)
-     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n''); (n3, n''') ])) 
+     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n''); (n3, n''') ]))
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "4-tuple")
 
 let rec conv j msgs = function
@@ -368,7 +368,7 @@ let exp_place = function
                                  ns =ns })
      else Error (t, err_cmp [ (n0, "num_regions"); (n1, "num_nodes");
                               (n2, "num_sites"); (n3, "rn"); (n4, "rs");
-                              (n5, "nn"); (n6, "ns") ])) 
+                              (n5, "nn"); (n6, "ns") ]))
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "7-tuple")
 
 let exp_link (j:json) =
@@ -383,7 +383,7 @@ let exp_link (j:json) =
       j
     >>= fun l -> Ok (Link.Ports.of_list l) in
   let exp_edg (j:json) =
-    exp_triple 
+    exp_triple
       ("inner", exp_face)
       ("outer", exp_face)
       ("ports", exp_ports)
@@ -438,14 +438,14 @@ let parse_err = function
   | Ok _ as v -> v
   | Error (j, msg) -> Error (type_err j msg)
 
-let of_json encoding s f = 
+let of_json encoding s f =
   match json_of_src ~encoding (`String s) with
   | `Error (r, e) -> Error (dec_err r e)
   | `JSON j -> parse_err @@ f j
 
 let big_of_json ?(encoding=`UTF_8) s =
   of_json encoding s exp_big
-    
+
 let react_of_json ?(encoding=`UTF_8) s =
    of_json encoding s exp_react
 
@@ -482,7 +482,7 @@ let check_aux f reacts =
   | Brs.NOT_VALID e -> Error (Brs.string_of_react_err e)
   | Pbrs.NOT_VALID e -> Error (Pbrs.string_of_react_err e)
   | Sbrs.NOT_VALID e -> Error (Sbrs.string_of_react_err e)
-           
+
 let check_validity = function
   | `B reacts -> check_aux Brs.is_valid_react_exn reacts
   | `P reacts -> check_aux Pbrs.is_valid_react_exn reacts
