@@ -1,15 +1,16 @@
 opam-version: "1.2"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 version: "1.0.0"
-authors: [ "Michele Sevegnani" ]
+authors: [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk> "]
 license: "BSD-3-clause"
-tags: [ "bigraphs" ]
+tags: [ "bigraphs" "rewriting" "org:dcs" ]
 homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 dev-repo: "git+https://bitbucket.org/mseve/bigraph.git"
 
 depends: [
   "jbuilder" {build & >= "1.0+beta13"}
   "minisat" {>= "0.5.3"}
+  "odoc" {doc}
 ]
 
 build: [ "jbuilder" "build" "-p" name "-j" jobs ]

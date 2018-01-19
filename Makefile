@@ -1,4 +1,4 @@
-.PHONY: build release install uninstall clean test doc
+.PHONY: build release install uninstall clean test doc dist
 
 build:
 	jbuilder build @install --dev
@@ -21,3 +21,9 @@ test:
 
 doc:
 	jbuilder build @doc
+
+ARCH = bigraph-1.0.0.tar.gz
+
+dist:
+	git archive --format=tar --prefix="bigraph/" HEAD | gzip -n > $(ARCH)
+
