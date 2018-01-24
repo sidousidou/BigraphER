@@ -1,19 +1,3 @@
-(** JSON codec for bigraphical structures.
-
-    [Big_json] is a codec to {{!section:enc}encode} and {{!section:dec}decode}
-    bigraphical structures such as {e bigraphs} and {e bigraphical rules} to the
-    {{:http://tools.ietf.org/html/rfc7159}JSON} data format. The library also
-    provides a JSON interface to the {{!section:match}matching engine} of the
-    {{:../../bigraph/index.html}Bigraph} library.
-
-    {3 References} {ul {- T. Bray Ed.  {e
-    {{:http://tools.ietf.org/html/rfc7159}The JavaScript Object Notation (JSON)
-    Data Interchange Format}, 2014}} {- M. Sevegnani and M. Calder {e
-    {{:http://doi.org/10.1016/j.tcs.2015.02.011}Bigraphs with sharing},
-    Theoretical Computer Science, Volume 577, pp 43-73, Elsevier, 2015}}}
-
-    @author Michele Sevegnani *)
-
 (** {1:enc Encoder} *)
 
 (** [big_to_json minify b] is a JSON encoder that outputs bigraph [b] to a

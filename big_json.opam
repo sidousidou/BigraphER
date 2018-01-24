@@ -11,6 +11,7 @@ depends: [
   "jbuilder" {build & >= "1.0+beta13"}
   "jsonm" {>= "1.0.1"}
   "bigraph" {>= "1.0.0"}
+  "odoc" {doc}
 ]
 
 build: [ "jbuilder" "build" "-p" name "-j" jobs ]
