@@ -18,7 +18,6 @@ build:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install zlib1g-dev minisat graphviz
     - opam update -y -u && opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam install -y bigraph conf-graphviz bisect_ppx oasis menhir && eval `opam config env`
     - mkdir -p shippable/testresults
-    - mkdir -p shippable/linktest
     - mkdir -p shippable/svg
     - mkdir -p shippable/parser
     - mkdir -p shippable/bisect/html
@@ -26,7 +25,6 @@ build:
     - mkdir -p shippable/man
     - ./scripts/shippable-build.sh
     - ./scripts/shippable-doc.sh
-    - ./scripts/shippable-link.sh
     - ./scripts/shippable-opam-lint.sh
     - ./scripts/shippable-cover.sh
 

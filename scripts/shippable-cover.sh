@@ -12,8 +12,6 @@ OBJ=_build
 BISECT=$(opam config var bin)/bisect-ppx-report
 
 echo "Cleaning"
-
-ocamlfind remove bigraph
 ocaml setup.ml -distclean
 
 echo "Compiling for coverage"
