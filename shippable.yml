@@ -24,7 +24,6 @@ build:
     - mkdir -p shippable/api
     - mkdir -p shippable/man
     - ./scripts/shippable-build.sh
-    - ./scripts/shippable-doc.sh
     - ./scripts/shippable-opam-lint.sh
     - ./scripts/shippable-cover.sh
 
