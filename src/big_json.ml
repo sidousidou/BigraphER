@@ -488,16 +488,27 @@ let check_validity = function
   | `P reacts -> check_aux Pbrs.is_valid_react_exn reacts
   | `S reacts -> check_aux Sbrs.is_valid_react_exn reacts
 
-let step ?(encoding=`UTF_8) ?(minify=true) s =
+let aux_step minify (b, reacts) =
   let aux s_f j_f b rs =
     Ok (s_f b rs) >>= fun (occs, _) -> Ok (j_f occs) in
-  let res =
-    of_json encoding s exp_step_input
-    >>= fun (b, reacts) -> check_validity reacts
-    >>= fun _ -> (match reacts with
-        | `B rs -> aux Brs.step (occs_to_json ~minify) b rs
-        | `P rs -> aux Pbrs.step (p_occs_to_json ~minify) b rs
-        | `S rs -> aux Sbrs.step (s_occs_to_json ~minify) b rs) in
-  match res with
+  check_validity reacts
+  >>= fun _ -> (match reacts with
+      | `B rs -> aux Brs.step (occs_to_json ~minify) b rs
+      | `P rs -> aux Pbrs.step (p_occs_to_json ~minify) b rs
+      | `S rs -> aux Sbrs.step (s_occs_to_json ~minify) b rs)
+    
+let aux_string minify = function
   | Ok s -> s
   | Error s -> to_json ~minify (fun e -> singleton e "error" (string e)) s
+
+let step ?(encoding=`UTF_8) ?(minify=true) s =
+  of_json encoding s exp_step_input >>= aux_step minify
+  |> aux_string minify
+
+let big_match ?(minify=true) in_ch out_ch =
+  (match json_of_src (`Channel in_ch) with
+  | `Error (r, e) -> Error (dec_err r e)
+  | `JSON j -> parse_err @@ exp_step_input j)
+  >>= aux_step minify
+  |> aux_string minify
+  |> (fun s -> output_string out_ch s)

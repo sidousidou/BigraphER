@@ -348,4 +348,7 @@ val sreact_of_json : ?encoding:Jsonm.encoding -> String.t  -> (Bigraph.Sbrs.reac
     {!val:Bigraph.Sbrs.step} for more details on how reachable states are
     computed. *)
 val step : ?encoding:Jsonm.encoding -> ?minify:bool -> String.t -> String.t
+
+(** Similar to {!val:Big_json.step} but input and output are channels. *)
+val big_match : ?minify:bool -> in_channel -> out_channel -> unit
 (**/**)
