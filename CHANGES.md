@@ -1,3 +1,8 @@
+###1.7.0 (2018-01-26): ###
+
+* Depend on external library `bigraph`
+
+
 ###1.6.1 (2017-11-23): ###
 
 * Add `parse_react_unsafe` to modules `Brs`, `Pbrs`, and `Sbrs`

@@ -1,6 +1,7 @@
 open Format
 open Ast
 open Unify
+open Bigraph
 
 module Make (T: TsType.RS with type label = float) = struct
 
@@ -29,7 +30,7 @@ module Make (T: TsType.RS with type label = float) = struct
   type store_val =
     | Int of int
     | Float of float
-    | Big of Big.bg
+    | Big of Big.t
     | Big_fun of big_exp * Id.t list
     | Ctrl of Ctrl.t
     | Ctrl_fun of int * Id.t list
@@ -462,11 +463,16 @@ module Make (T: TsType.RS with type label = float) = struct
         aux id v (`num_val t) s) scope
 
   let eval_ctrl_fun id nums arity =
-    let id' =
-      id ^ "("
-      ^ (String.concat "," (List.map string_of_store_val nums))
-      ^ ")" in
-    Ctrl.C (id', arity)
+    let params =
+      List.map
+        (function
+          | Float v -> Ctrl.F v
+          | Int v -> Ctrl.I v
+          | Big _ | Big_fun (_,_) | Ctrl _ | Ctrl_fun (_,_)
+          | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_)
+          | Int_param _ | Float_param _ -> assert false (*BISECT-IGNORE*))
+        nums in
+    Ctrl.C (id, params, arity)
 
   let check_atomic id p env face c = function
     | true ->
@@ -536,7 +542,7 @@ module Make (T: TsType.RS with type label = float) = struct
                         p))
       end
     | Big_new_name (n, _) ->
-      (Big.intro (Link.Face.singleton (Link.Nam n)), env_t)
+      (Big.intro (Link.Face.singleton (Link.Name n)), env_t)
     | Big_comp (l, r, p) ->
       (try binary_eval l r scope env env_t Big.comp with
        | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
@@ -821,11 +827,11 @@ module Make (T: TsType.RS with type label = float) = struct
         update fmt c id v p env env_t in
       match d with
       | Dctrl (Atomic (Ctrl_exp (id, ar, _), p)) ->
-        upd id (A_ctrl (Ctrl.C (id, ar))) p
+        upd id (A_ctrl (Ctrl.C (id, [], ar))) p
       | Dctrl (Atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
         (upd id (A_ctrl_fun (ar, forms)) p)
       | Dctrl (Non_atomic (Ctrl_exp (id, ar, _), p)) ->
-        upd id (Ctrl (Ctrl.C (id, ar))) p
+        upd id (Ctrl (Ctrl.C (id, [], ar))) p
       | Dctrl (Non_atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
         upd id (Ctrl_fun (ar, forms)) p
       | Dint d ->
@@ -974,15 +980,15 @@ module Make (T: TsType.RS with type label = float) = struct
          |> print_fun (concat (id ^ ext)))
       | Dreact (React_exp (id, _, _, _, _, p)) ->
         (let r = get_react id p env in
-         write_pair id (T.lhs_of_react r) (T.rhs_of_react r) (f_write, ext))
+         write_pair id (T.lhs r) (T.rhs r) (f_write, ext))
       | Dreact (React_fun_exp (id, _, _, _, _, _, p)) ->
         (let args = aux id in
          let r = aux' eval_react_fun_app id args p in
-         write_pair id (T.lhs_of_react r) (T.rhs_of_react r) (f_write, ext)) in
+         write_pair id (T.lhs r) (T.rhs r) (f_write, ext)) in
     List.iter (fun (f_write, ext) ->
         List.iter (fun d ->
             try write f_write ext d with
-            | Big.EXPORT_ERROR msg ->
+            | Failure msg ->
               (pp_print_flush fmt ();
                fprintf err_formatter "@[<v>@[%s: %s@]@." (Utils.err_opt c) msg))
           decs)

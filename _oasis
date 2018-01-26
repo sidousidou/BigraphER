@@ -1,6 +1,6 @@
 OASISFormat:	0.4
 Name:		bigrapher
-Version:	1.6.1
+Version:	1.7.0
 Synopsis:	Implementation of bigraphical reactive systems
 Description: BigraphER is an efficient implementation of Bigraphical Reactive
  Systems (BRS) that supports bigraphs with sharing, stochastic and probabilistic
@@ -30,39 +30,6 @@ Executable bigrapher
   CCOpt+:	   -O3
   Install:	   true
 
-Library bigraph
-  Path:            lib
-  FindlibName:	   bigraph
-# Pack:            true
-  Modules:         Ctrl,
-                   Nodes,
-                   Iso,
-                   Fun,
-                   IntSet,
-                   Rs,
-                   Place,
-                   Link,
-                   Big,
-                   Stats,
-                   Brs,
-                   Sbrs,
-                   Pbrs
- InternalModules:  Base,
-                   Cnf,
-                   Rel,
-                   Sparse,
-                   RrType,
-                   PriType,
-                   TsType,
-                   Export
-  BuildDepends:    unix, minisat, str
-  CCOpt+:	   -O3
-  NativeOpt+:	   -noassert
-  ByteOpt+:	   -noassert
-  XMETARequires:   unix, minisat, str
-  XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems
-  Install:	   true
-
 Library "bigraph-utils"
   Path:            utils
   Modules:         Utils
@@ -79,6 +46,7 @@ Library "bigrapher-utils"
                    Loc,
                    Lexer,
                    Parser,
+                   Export,
                    Unify
   BuildDepends:    bigraph-utils, str
   CCOpt+:	   -O3
@@ -90,69 +58,11 @@ SourceRepository master
   Branch: 	   master
   Browser: 	   https://bitbucket.org/mseve/bigrapher
 
-Document bigraph_api
-  Type:		   ocamlbuild (0.4)
-  Title:      	   API reference for bigraph library
-  Authors:	   Michele Sevegnani
-  BuildTools+: 	   ocamldoc
-  Install:         true
-  Format:	   html
-  Index:	   API.html
-  Abstract:
-    API reference for library [bigraph]. It provides modules for: * manipulation
-    of place graphs link graphs and bigraphs with sharing, * definition of
-    reaction rules with support for probabilities, stochastic rates, and
-    instantiation maps, * full generation of the state space and simulation of
-    bigraphical reactive systems with rule priorities.
-  XOCamlbuildPath: lib
-  XOCamlbuildLibraries:	bigraph
-  XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -charset utf-8'"
-
 Library "junit"
   Path:            tests
   Modules:         Junit
   Install:	   false
   Build$:          flag(tests)
-
-Executable "matching-test"
-  Path:		   tests
-  MainIs:     	   test_match.ml
-  CompiledObject:  best
-  BuildDepends:	   bigraph, bigraph-utils, junit
-  Install:	   false
-  Build$:          flag(tests)
-
-Test "matching"
-  Run$:            flag(tests)
-  Command:	   ./test_match.native ./tests/files/match/ ./shippable/testresults ./shippable/svg
-
-Executable "brs-test"
-  Path:		   tests
-  MainIs:     	   test_brs.ml
-  CompiledObject:  best
-  BuildDepends:	   bigraph, bigraph-utils, junit
-  Install:	   false
-  Build$:          flag(tests)
-
-Test "brs"
-  Run$:            flag(tests)
-  TestTools:	   mkdir
-  PreCommand:	   mkdir -p ./shippable/testresults
-  Command:	   ./test_brs.native ./shippable/testresults brs-junit.xml
-
-Executable "decomp-test"
-  Path:		   tests
-  MainIs:     	   test_decomp.ml
-  CompiledObject:  best
-  BuildDepends:	   bigraph, bigraph-utils, junit
-  Install:	   false
-  Build$:          flag(tests)
-
-Test "decomp"
-  Run$:            flag(tests)
-  TestTools:	   mkdir
-  PreCommand:	   mkdir -p ./shippable/testresults
-  Command:	   ./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
 
 Executable "parser-test"
   Path:            tests

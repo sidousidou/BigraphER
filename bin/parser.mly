@@ -3,7 +3,8 @@
 open Loc 
 open Ast
 open Cmd
-       
+open Bigraph
+
 %}
 
 (* BIG *)
@@ -411,7 +412,7 @@ format:
 
 ext:
   | F_SVG  { Svg }
-  | F_JSON { Json }	
+  /*| F_JSON { Json }	*/
   | F_DOT  { Dot }
   | F_TXT  { Txt };
 

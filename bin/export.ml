@@ -69,3 +69,49 @@ let write_string s ~name ~path =
     String.length s
   with
   | Sys_error s -> raise (ERROR (Sys s))
+
+module B = struct
+
+  open Bigraph
+
+  let write_txt b ~name ~path =
+    try write_string (Big.to_string b) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  let write_svg b ~name ~path =
+    try write_svg (Big.to_dot b name) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  let write_dot b ~name ~path =
+    try write_string (Big.to_dot b name) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  (*let write_json b ~name ~path =
+    try (json_of_big b |> write_string ~name ~path) with
+    | ERROR e -> raise @@ ERROR (report_error e)*)
+
+end
+
+module T (S: Bigraph.TsType.RS) = struct
+
+  let write_svg g ~name ~path =
+    try write_svg (S.to_dot g ~name) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  let write_prism g ~name ~path =
+    try write_string (S.to_prism g) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  let write_lab g ~name ~path =
+    try write_string (S.to_lab g) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  let write_dot g ~name ~path =
+    try write_string (S.to_dot g ~name) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
+  (*let write_json g ~name ~path =
+    try Export.write_string (to_json g) ~name ~path with
+    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)*)
+
+end

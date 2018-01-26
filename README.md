@@ -1,21 +1,15 @@
 # BigraphER - Bigraph Evaluator & Rewriting #
 
-Version 1.6.1
+Version 1.7.0
 
 [![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
 [![Coverage Badge](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
 
 ----------------------------------------------------------------------------
 
-BigraphER is an implementation of [Bigraphical Reactive System (BRS)][milner]
-that supports [bigraphs with sharing][share], probabilistic/stochastic reaction
-rules, rule priorities and functional rules. It consists of:
-
-* `bigraph`, an OCaml library to programmatically manipulate
-  bigraphs and BRSs, and
-* `bigrapher`, a command-line tool to compute the transition system
-  of a BRS and export it to the stochastic model checker
-  [PRISM](http://www.prismmodelchecker.org/) or to graphical form.
+BigraphER is a command-line tool to compute the transition system of a BRS and
+export it to the stochastic model checker
+[PRISM](http://www.prismmodelchecker.org/) or to graphical form.
 
 To get started, checkout the
 [Install](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#inst) and
@@ -76,7 +70,7 @@ will be available under `bigraph_api.docdir/`.
 
 ## Copyright and license
 
-Copyright 2012-2015 Michele Sevegnani
+Copyright 2012-2018 Michele Sevegnani
 
 All rights reserved. BigraphER is distributed under the terms of the Simplified
 BSD License that can be found in the [LICENSE file](LICENSE.md).

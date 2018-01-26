@@ -3,7 +3,7 @@ name: "${pkg_name}"
 version: "${pkg_version}"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 authors: [ "Michele Sevegnani" ]
-license: "BSD-3-clause"
+license: "BSD-2-clause"
 homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 
 doc: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
@@ -14,10 +14,7 @@ tags: [
   "bigraphs"
   "rewriting engine"
   "stochastic simulation"
-]
-
-libraries: [
-  "bigraph"
+  "org:dcs"
 ]
 
 build: [
@@ -44,6 +41,7 @@ depends: [
   "menhir" {build}
   "ocamlbuild" {build}
   "conf-graphviz"
+  "bigraph"
 ]
 
 available: [ ocaml-version >= "4.02.0" ]

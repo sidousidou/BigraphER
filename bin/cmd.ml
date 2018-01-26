@@ -28,7 +28,7 @@ type format_op =
   | Dot
   | Svg
   | Txt
-  | Json
+  (*  | Json *)
 
 type opt =
   | Const of Ast.const list
@@ -200,7 +200,7 @@ let eval_env () =
     |> List.map (function
         | "svg" -> Svg
         | "dot" -> Dot
-        | "json" -> Json
+        (*   | "json" -> Json *)
         | "txt" -> Txt
         | s -> raise (ERROR (Malformed_env s))) in
   (try
@@ -402,7 +402,7 @@ let eval_version fmt () =
 let string_of_format f =
   List.map (function
       | Svg -> "svg"
-      | Json -> "json"
+      (*  | Json -> "json" *)
       | Dot -> "dot"
       | Txt -> "txt") f
   |> String.concat ","

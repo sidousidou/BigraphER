@@ -1,10 +1,8 @@
-S lib
 S bin
 S utils
 S tests
 
 B _build/
-B _build/lib
 B _build/bin
 B _build/utils
 B _build/tests
@@ -12,3 +10,4 @@ B _build/tests
 PKG unix
 PKG minisat
 PKG str
+PKG bigraph

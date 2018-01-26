@@ -1,5 +1,6 @@
 open Format
 open Ast
+open Bigraph
 
 (******** PRETTY PRINTING FUNCTIONS *********)
 
@@ -145,10 +146,10 @@ let print_fun fmt c verb fname i =
     print_msg fmt c ((string_of_int i) ^ " bytes written to `" ^ fname ^ "'")
 
 let format_map = function
-  | Cmd.Svg -> (Big.write_svg, ".svg")
-  | Cmd.Dot -> (Big.write_dot, ".dot")
-  | Cmd.Json -> (Big.write_json, ".json")
-  | Cmd.Txt -> (Big.write_txt, ".txt")
+  | Cmd.Svg -> (Export.B.write_svg, ".svg")
+  | Cmd.Dot -> (Export.B.write_dot, ".dot")
+  (*  | Cmd.Json -> (Export.B.write_json, ".json")*)
+  | Cmd.Txt -> (Export.B.write_txt, ".txt")
 
 let export_prism fmt msg f =
   match Cmd.(defaults.export_prism) with
@@ -198,7 +199,7 @@ let export_states fmt f g =
                    Cmd.(defaults.verb)
                    (Filename.concat path fname)
                with
-               | Big.EXPORT_ERROR msg ->
+               | Failure msg ->
                  (pp_print_flush fmt ();
                   fprintf err_formatter "@[<v>@[%s: %s@]@."
                     (Utils.err_opt Cmd.(defaults.colors))
@@ -244,6 +245,8 @@ module Run
 
   module S = Store.Make (T)
 
+  module E = Export.T (T)
+  
   let export_decs fmt path m env env_t =
     print_msg fmt `yellow ("Exporting declarations to "
                            ^ path ^ " ...");
@@ -315,10 +318,10 @@ module Run
   let after fmt f (graph, stats) =
     f ();
     let format_map = function
-      | Cmd.Svg -> (T.write_svg graph, ".svg")
-      | Cmd.Json -> (T.write_json graph, ".json")
-      | Cmd.Dot -> (T.write_dot graph, ".dot")
-      | Cmd.Txt -> (T.write_prism graph, ".txt") in
+      | Cmd.Svg -> (E.write_svg graph, ".svg")
+      (*  | Cmd.Json -> (E.write_json graph, ".json")*)
+      | Cmd.Dot -> (E.write_dot graph, ".dot")
+      | Cmd.Txt -> (E.write_prism graph, ".txt") in
     print_stats fmt stats;
     export_ts fmt
       ("Exporting " ^ (Rs.to_string T.typ) ^ " to ")
@@ -326,8 +329,8 @@ module Run
     export_states fmt T.iter_states graph;
     export_prism fmt
       ("Exporting " ^ (Rs.to_string T.typ) ^ " in PRISM format to ")
-      (T.write_prism graph);
-    export_csl fmt (T.write_lab graph);
+      (E.write_prism graph);
+    export_csl fmt (E.write_lab graph);
     pp_print_flush err_formatter ();
     exit 0
 

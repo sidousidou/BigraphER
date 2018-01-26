@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 97e37f2bd0458bf79c723c7af3235839) *)
+(* DO NOT EDIT (digest: da9a5176206f9cfebe2d0734a73a6e3b) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -881,7 +881,6 @@ let package_default =
   {
      MyOCamlbuildBase.lib_ocaml =
        [
-          ("bigraph", ["lib"], []);
           ("bigraph-utils", ["utils"], []);
           ("bigrapher-utils", ["bin"], []);
           ("junit", ["tests"], [])
@@ -889,20 +888,6 @@ let package_default =
      lib_c = [];
      flags =
        [
-          (["oasis_library_bigraph_ccopt"; "compile"],
-            [(OASISExpr.EBool true, S [A "-ccopt"; A "-O3"])]);
-          (["oasis_library_bigraph_byte"; "ocaml"; "link"; "byte"],
-            [(OASISExpr.EBool true, S [A "-noassert"])]);
-          (["oasis_library_bigraph_native"; "ocaml"; "link"; "native"],
-            [(OASISExpr.EBool true, S [A "-noassert"])]);
-          (["oasis_library_bigraph_byte"; "ocaml"; "ocamldep"; "byte"],
-            [(OASISExpr.EBool true, S [A "-noassert"])]);
-          (["oasis_library_bigraph_native"; "ocaml"; "ocamldep"; "native"],
-            [(OASISExpr.EBool true, S [A "-noassert"])]);
-          (["oasis_library_bigraph_byte"; "ocaml"; "compile"; "byte"],
-            [(OASISExpr.EBool true, S [A "-noassert"])]);
-          (["oasis_library_bigraph_native"; "ocaml"; "compile"; "native"],
-            [(OASISExpr.EBool true, S [A "-noassert"])]);
           (["oasis_library_bigraph_utils_ccopt"; "compile"],
             [(OASISExpr.EBool true, S [A "-ccopt"; A "-O3"])]);
           (["oasis_library_bigrapher_utils_ccopt"; "compile"],
@@ -910,7 +895,7 @@ let package_default =
           (["oasis_executable_bigrapher_ccopt"; "compile"],
             [(OASISExpr.EBool true, S [A "-ccopt"; A "-O3"])])
        ];
-     includes = [("tests", ["lib"; "utils"]); ("bin", ["lib"; "utils"])]
+     includes = [("tests", ["utils"]); ("bin", ["utils"])]
   }
   ;;
 
@@ -918,7 +903,7 @@ let conf = {MyOCamlbuildFindlib.no_automatic_syntax = false}
 
 let dispatch_default = MyOCamlbuildBase.dispatch_default conf package_default;;
 
-# 922 "myocamlbuild.ml"
+# 907 "myocamlbuild.ml"
 (* OASIS_STOP *)
 flag ["ocaml"; "menhir"; "strict"] (A "--strict"); 
 Ocamlbuild_plugin.dispatch dispatch_default;;
