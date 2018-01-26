@@ -4,7 +4,7 @@ open Utils
 
 let bin = "./bigrapher.native full"
 let out_dir name = "./shippable/parser/" ^ name
-let dec_out path = "-f svg,dot,txt,json -d " ^ path
+let dec_out path = "-f svg,dot,txt -d " ^ path
 let l_out name = "-l " ^ name ^ ".csl"
 let prism_out name = "-p " ^ name ^ ".tra"
 let ts_out name = "-s -t " ^ name
