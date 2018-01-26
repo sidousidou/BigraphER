@@ -12,7 +12,7 @@ Bigraph is a library to programmaticaly manipulate bigraphs, reaction rules and
 Bigraphical Reactive Systems (BRS). It supports both bigraphs and bigraphs with
 sharing, probabilistic and stochastic reaction rules, rule priorities, rules
 with instantiation maps, parameterised controls, simulation, exhaustive state
-space exploration, export to probabilistic model checker [PRISM][prims], and
+space exploration, export to probabilistic model checker [PRISM][prism], and
 predicate checking. It is based on an efficient matching engine based on SAT.
 
 ### Install
@@ -53,7 +53,7 @@ The documentation of the library can be accessed at
 [share]:   <http://doi.org/10.1016/j.tcs.2015.02.011>
            "Michele Sevegnani and Muffy Calder. Bigraphs with sharing. Theoretical Computer Science 577 (2015): 43-73."
 [opam]:    <http://opam.ocaml.org/> "OPAM: OCaml package manager"
-[prism]:   <http://www.prismmodelchecker.org/> "PRISM probabilistic model checker"
+[prism]:   <http://www.prismmodelchecker.org/> "PRISM: probabilistic model checker"
 ## Copyright and license
 
 Copyright 2018 Michele Sevegnani
