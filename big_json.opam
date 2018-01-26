@@ -2,9 +2,9 @@ opam-version: "1.2"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 version: "0.1.0"
 authors: [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
-license: "BSD-3-clause"
+license: "BSD-2-clause"
 tags: [ "bigraphs" "json" "codec" "org:dcs" ]
-homepage: "https://bitbucket.org/mseve/big_json"
+homepage: "http://www.dcs.gla.ac.uk/~michele/docs/_doc/big_json"
 dev-repo: "git+https://bitbucket.org/mseve/big_json.git"
 
 depends: [
