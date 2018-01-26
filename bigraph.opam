@@ -2,9 +2,9 @@ opam-version: "1.2"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 version: "1.0.0"
 authors: [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk> "]
-license: "BSD-3-clause"
+license: "BSD-2-clause"
 tags: [ "bigraphs" "rewriting" "org:dcs" ]
-homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
+homepage: "http://www.dcs.gla.ac.uk/~michele/docs/_doc/bigraph"
 dev-repo: "git+https://bitbucket.org/mseve/bigraph.git"
 
 depends: [

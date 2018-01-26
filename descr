@@ -7,4 +7,4 @@ with instantiation maps, parameterised controls, simulation, exhaustive state
 space exploration, export to probabilistic model checker PRISM, and predicate
 checking. It is based on an efficient matching engine based on SAT.
 
-bigraph is distributed under the BSD-3 license.
+bigraph is distributed under the BSD-2 license.
