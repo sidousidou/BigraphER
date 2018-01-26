@@ -46,7 +46,7 @@ The documentation of the library can be accessed at
 - [Michele Sevegnani and Muffy Calder. *Bigraphs with sharing*. Theoretical
   Computer Science 577 (2015): 43-73.][share]  
 - [OPAM: OCaml package manager][opam]
-- [PRISM probabilistic model checker][prism]
+- [PRISM: probabilistic model checker][prism]
 
 [milner]:  <http://dl.acm.org/citation.cfm?id=1540607>
            "Robin Milner. The space and motion of communicating agents. Cambridge University Press (2009)."
