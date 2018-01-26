@@ -2,7 +2,6 @@
 
 (executable
  ((name test)
-  (public_name test.exe)
   (libraries (bigraph big_json))
 ))
 
