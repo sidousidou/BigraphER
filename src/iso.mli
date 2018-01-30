@@ -4,7 +4,7 @@
 (** Type of isomorphisms over integers. *)
 type t
 
-(** {3 Standard map operations} *)	 
+(** {2 Standard map operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
@@ -16,7 +16,7 @@ val is_empty : t -> bool
 val iter : (int -> int -> unit) -> t -> unit
 val mem : int -> t -> bool
 
-(** {3 Additional functions} *)
+(** {2 Additional functions} *)
 
 (** Return the domain of an isomorphism. *)
 val dom : t -> int list

@@ -5,7 +5,7 @@
 (** Type of finite binary relations on integers. *)
 type t
 
-(** {3 Standard map operations} *)	 
+(** {2 Standard map operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
@@ -17,7 +17,7 @@ val is_empty : t -> bool
 val iter : (int -> IntSet.t -> unit) -> t -> unit
 val mem : int -> t -> bool
 
-(** {3 Additional functions} *)
+(** {2 Additional functions} *)
 
 (** Return the domain of a binary relation. *)
 val dom : t -> IntSet.t

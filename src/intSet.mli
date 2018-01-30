@@ -5,7 +5,7 @@
 (** The type of sets of integers. *)	     
 type t
 
-(** {3 Standard set operations} *)	 
+(** {2 Standard set operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Set.Make.html } standard
     library}. *)
@@ -33,7 +33,7 @@ val singleton : int -> t
 val subset : t -> t -> bool
 val union : t -> t -> t
 
-(** {3 Additional functions} *)
+(** {2 Additional functions} *)
 
 (** Return the string representation of a set. Example: ["\{1,4,7\}"]. *)
 val to_string : t -> string

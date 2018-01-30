@@ -5,7 +5,7 @@
 type t = { time : float;     (** Build time            *)
            states : int;     (** Number of states      *) 
            trans : int;      (** Number of transitions *)
-           occs : int;      (** Number of occurrences *)
+           occs : int;       (** Number of occurrences *)
          }
          
 (** Initialise a new value of type {!type:Stats.t}. Argument [t0] is the time

@@ -29,7 +29,7 @@ type tseitin_clause =
   | Enc of clause * b_clause list  (** A clause of auxiliary variables and a 
                                        list binary disjunctions *)	   
 
-(** {3 Manipulation of boolean formulae} *)
+(** {2 Manipulation of boolean formulae} *)
 
 (** Return the string representation of a clause. For example: ["1 V 2 V 3"]. *)
 val string_of_clause : clause -> string
@@ -99,7 +99,7 @@ val impl : lit -> lit list list -> clause list
             ...) and (!M or Y0 or Y1 or ...) and ..."]. *)
 val equiv : lit -> lit list list -> b_clause list * clause list 
 
-(** {3 Commander-variable Encoding} *)
+(** {2 Commander-variable Encoding} *)
 
 (** The following type structures and functions implement the encoding defined
     in this {{:
@@ -139,7 +139,7 @@ val exactly_one_cmd : cmd_tree -> cmd_constraint
 (** Block the roots of a tree. *)
 val block_cmd : int list -> clause list
 
-(** {3 Higher level functions} *)
+(** {2 Higher level functions} *)
 
 (** The type of a commander-variable constraint. *)				   
 type cmd = {
@@ -165,7 +165,7 @@ val tot_fun : int -> int -> int -> int -> cmd
 val one_to_one : int -> int -> int -> 
   (cmd_constraint list * int) * (cmd_constraint list * int)
 
-(** {3 Integration with Minisat} *)
+(** {2 Integration with Minisat} *)
 
 (** Initialise a vector of (auxiliary) variables. *)
 val init_aux_v : int -> Minisat.solver -> Minisat.var array 

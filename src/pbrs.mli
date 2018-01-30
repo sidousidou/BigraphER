@@ -109,7 +109,7 @@ val fix : Big.t -> react list -> Big.t * int
     number of rewriting steps performed in the loop. *)
 val rewrite : Big.t -> p_class list -> Big.t * int
 
-(** {3 Discrete Time Markov Chains} *)
+(** {2 Discrete Time Markov Chains} *)
 
 (** Raised when the size of the transition system reaches the maximum number of
     states. *)
@@ -132,7 +132,7 @@ val bfs : s0:Big.t ->
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
 
-(** {3 Simulation traces} *)
+(** {2 Simulation traces} *)
 
 (** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * Stats.t * limit
@@ -157,7 +157,7 @@ val sim :
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
 
-(** {3 Export functions} *)
+(** {2 Export functions} *)
 
 (** Compute the string representation in PRISM [tra] format of a DTMC. *)
 val to_prism : graph -> string
@@ -169,7 +169,7 @@ val to_dot : graph -> name:string -> string
     function of a DTMC. *)
 val to_lab : graph -> string
 
-(** {3 Iterators} *)
+(** {2 Iterators} *)
 
 val iter_states : (int -> Big.t -> unit) -> graph -> unit
 val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a

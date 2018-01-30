@@ -10,7 +10,7 @@
     element in the third row of the matrix is true. *)
 type t
 
-(** {3 Basic operations} *)
+(** {2 Basic operations} *)
 
 (** [make r c] returns an empty matrix with [r] rows and [c] columns. *) 
 val make : int -> int -> t
@@ -99,7 +99,7 @@ val entries : t -> int
 (** Return the representation of a binary matrix as a list of edges. *)
 val edges : t -> (int * int) list
 
-(** {3 Matrix operations} *)
+(** {2 Matrix operations} *)
 
 (** [row n] returns a row vector of [n] [true] elements. *)			     
 val row : int -> t
@@ -176,7 +176,7 @@ val mul : t -> t -> t
 (** Transitive closure. *)
 val trans : t -> t
 
-(** {3 Graph operations} *)
+(** {2 Graph operations} *)
 
 (** Return the children set of a node. *)			 
 val chl : t -> int -> IntSet.t

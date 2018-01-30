@@ -2,7 +2,7 @@
 
     @author Michele Sevegnani *)
 
-(** {3 Faces} *)
+(** {2 Faces} *)
 
 (** The type of names. *)
 type name = Name of string
@@ -37,14 +37,14 @@ module Face : sig
   val union : t -> t -> t
 end
 
-(** {3 Ports} *)
+(** {2 Ports} *)
 
 (** This module implements multisets of nodes as maps. *)
 module Ports : sig
 
   type t
 
-  (** {3 Standard operations on maps} *)	   
+  (** {2 Standard operations on maps} *)	   
 
   (* val bindings : 'a t -> (key * 'a) list *)
   val choose : t -> (int * int) option
@@ -58,7 +58,7 @@ module Ports : sig
   val max_binding : t -> (int * int) option
   val min_binding : t -> (int * int) option
 
-  (** {3 Additional functions} *)
+  (** {2 Additional functions} *)
 
   val add : int -> t -> t
   
@@ -87,7 +87,7 @@ module Ports : sig
 
 end
 
-(** {3 Link graphs} *)
+(** {2 Link graphs} *)
 
 (** The type of edges. *)	
 type edg = {
@@ -160,7 +160,7 @@ val outer : Lg.t -> Face.t
     isomorphism [i] to [l]. *)
 val apply : Iso.t -> Lg.t -> Lg.t
 
-(** {3 Elementary link graphs} *)
+(** {2 Elementary link graphs} *)
 
 (** [elementary_sub inner outer] computes a substitution consisting of a single
     edge in which [inner] and [outer] are the inner and outer face,
@@ -178,7 +178,7 @@ val elementary_id: Face.t -> Lg.t
 (** [id_empty] is the empty link graph. *)
 val id_empty : Lg.t
 
-(** {3 Operations on link graphs} *)
+(** {2 Operations on link graphs} *)
 
 (** Raised when the tensor product between two incompatible link
     graphs cannot be performed. The first element is the set of inner
@@ -206,7 +206,7 @@ val ppar : Lg.t -> Lg.t -> int-> Lg.t
     differ. *)
 val comp : Lg.t -> Lg.t -> int -> Lg.t
 
-(** {3 Predicates} *)
+(** {2 Predicates} *)
 
 (** [is_id l] is [true] if link graph [l] is an identity, [false]
     otherwise. *)
@@ -242,7 +242,7 @@ val closed_edges : Lg.t -> int
     graph to indices of edges in [l]. *)
 val closed_edges_iso : Lg.t -> Lg.t * Iso.t
 
-(** {3 Decompositions} *)
+(** {2 Decompositions} *)
 
 (** Normalise link graph [l] as follows: [l = omega o l'] where [omega] is a
     linking and [l'] is the same as [l] but with all links open. *)
@@ -261,7 +261,7 @@ val decomp : target:Lg.t -> pattern:Lg.t -> i_e:Iso.t -> i_c:Iso.t ->
 (** Compute the prime components of a link graph. See {!val:Place.decomp}. *)					    
 val prime_components : Lg.t -> Iso.t list -> Lg.t list 
 
-(** {3 Matching constraints} *)
+(** {2 Matching constraints} *)
 
 exception NOT_TOTAL
 

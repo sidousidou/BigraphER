@@ -12,7 +12,7 @@ type t = {
 type inter = Inter of int * Link.Face.t
 (** [Inter (i,n)] creates an interface with ordinal [i] and names [n]. *)
 
-(** {3 Exceptions} *)
+(** {2 Exceptions} *)
 
 (** Raised when the composition in a sharing expression fails. *)
 exception SHARING_ERROR
@@ -36,7 +36,7 @@ exception NO_MATCH
 (** Raised when the matching pattern has no nodes. *)
 exception NODE_FREE
 
-(** {3 Functions on interfaces} *)
+(** {2 Functions on interfaces} *)
 
 (** Equality over interfaces. *)
 val inter_equal : inter -> inter -> bool
@@ -50,7 +50,7 @@ val ord_of_inter : inter -> int
 (** Compute the face ({e i.e.} name-set) of an interface. *)
 val face_of_inter : inter -> Link.Face.t
 
-(** {3 Functions on bigraphs} *)
+(** {2 Functions on bigraphs} *)
 
 (** Compute the string representation of a bigraph. Example:
 
@@ -113,7 +113,7 @@ val placing : int list list -> int -> Link.Face.t -> t
     set and edge set. *)
 val size : t -> int
 
-(** {3 Elementary bigraphs} *)
+(** {2 Elementary bigraphs} *)
 
 (** Identity over interface [i]. *)
 val id : inter -> t
@@ -166,7 +166,7 @@ val closure : Link.Face.t -> t
     function is the dual of {!Big.closure}. *)
 val intro : Link.Face.t -> t
 
-(** {3 Operations} *)
+(** {2 Operations} *)
 
 (** [close f b] closes names in [f]. Example: [\x0 \x1 b]. *)
 val close : Link.Face.t -> t -> t
@@ -252,7 +252,7 @@ val tens_of_list : t list -> t
     @raise Link.NAMES_ALREADY_DEFINED when two addends have shared names. *)
 val tens_seq : start:int -> stop:int -> (int -> t) -> t
 
-(** {3 Predicates} *)
+(** {2 Predicates} *)
 
 (** [is_id b] returns [true] if bigraph [b] is an identity, [false] otherwise. *)
 val is_id : t -> bool
@@ -288,7 +288,7 @@ val is_solid : t -> bool
     {!val:Place.is_ground} and {!val:Link.is_ground}. *)
 val is_ground : t -> bool
 
-(** {3 Decompositions} *)
+(** {2 Decompositions} *)
 
 (** [decomp t p i_n i_e f_e] computes the decomposition of target [t] given
     pattern [p], node isomorphism [i_n] and edge isomorphism [i_e]. The
@@ -298,7 +298,7 @@ val is_ground : t -> bool
 val decomp : target:t -> pattern:t -> i_n:Iso.t -> i_e:Iso.t ->
   Fun.t -> t * t * t
 
-(** {3 Comparison} *)
+(** {2 Comparison} *)
 
 (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic, [false] otherwise. *)
 val equal : t -> t -> bool
@@ -315,7 +315,7 @@ val key : t -> big_key
     has already failed. *)
 val equal_opt : t -> t -> bool
 
-(** {3 Matching} *)
+(** {2 Matching} *)
 
 (** The type of occurrences: an isomorphism over nodes, an isomorphism
     over edges and a function over hyper-edges. *)

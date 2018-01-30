@@ -5,7 +5,7 @@
 (** Type of finite functions over integers. *)
 type t
 
-(** {3 Standard map operations} *)	 
+(** {2 Standard map operations} *)	 
 (** These functions are described in the {{:
     http://caml.inria.fr/pub/docs/manual-ocaml/libref/Map.Make.html } standard
     library}. *)
@@ -17,7 +17,7 @@ val equal : t -> t -> bool
 val fold : (int -> int -> 'b -> 'b) -> t -> 'b -> 'b
 val iter : (int -> int -> unit) -> t -> unit
 
-(** {3 Additional functions} *)
+(** {2 Additional functions} *)
 
 (** Return the domain of a function. *)
 val dom : t -> IntSet.t

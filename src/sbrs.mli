@@ -108,7 +108,7 @@ val fix : Big.t -> react list -> Big.t * int
     number of rewriting steps performed in the loop. *)
 val rewrite : Big.t -> p_class list -> Big.t * int
 
-(** {3 Continuous Time Markov Chains} *)
+(** {2 Continuous Time Markov Chains} *)
 
 (** Raised when the size of the transition system reaches the maximum number of
     states. *)
@@ -131,7 +131,7 @@ val bfs : s0:Big.t ->
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
 
-(** {3 Stochastic simulation traces} *)
+(** {2 Stochastic simulation traces} *)
 
 (** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * Stats.t * float
@@ -156,7 +156,7 @@ val sim :
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
 
-(** {3 Export functions} *)
+(** {2 Export functions} *)
 
 (** Compute the string representation in PRISM [tra] format of a CTMC. *)
 val to_prism : graph -> string
@@ -168,7 +168,7 @@ val to_dot : graph -> name:string -> string
     function of a CTMC. *)
 val to_lab : graph -> string
 
-(** {3 Iterators} *)
+(** {2 Iterators} *)
 
 val iter_states : (int -> Big.t -> unit) -> graph -> unit
 val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
