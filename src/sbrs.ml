@@ -6,16 +6,16 @@ type react =
   }
 
 module RT = struct
+
   type t = react
+
   type label = float
-  type occ = Big.t * float
-  type edge = int * float
 
   let lhs r = r.rdx
 
   let rhs r = r.rct
 
-  let l r = Some r.rate
+  let l r = r.rate
 
   let equal r r' =
     Big.equal r.rdx r'.rdx
@@ -29,9 +29,7 @@ module RT = struct
 
   let val_chk_error_msg = "Not a stochastic rate"
 
-  let string_of_label = function
-    | Some r -> Printf.sprintf "%-3g" r
-    | None -> assert false (*BISECT-IGNORE*)
+  let string_of_label = Printf.sprintf "%-3g"
 
   let parse ~lhs ~rhs r eta =
     { rdx = lhs;
@@ -39,18 +37,9 @@ module RT = struct
       eta = eta;
       rate = r; }
 
-  let to_occ b r = (b, r.rate)
-
-  let big_of_occ (b, _) = b
-
-  let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
-
-  let update_occ (_, rho) b' = (b', rho)
-
-  let edge_of_occ (_, rho) i = (i, rho)
-
-  let step b rules = RrType.gen_step b rules
-      ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
+  let step b rules =
+    let merge_occ (b, rho) (_, rho') = (b, rho +. rho') in
+    RrType.gen_step b rules ~merge_occ ~lhs ~rhs ~label:l ~map
 
   let random_step b rules =
     (* Sort transitions by rate *)
@@ -79,9 +68,7 @@ end
 module R = RrType.Make (RT)
 
 let is_inst r =
-  match  R.l r with
-  | Some r -> r = infinity
-  | None -> assert false (*BISECT-IGNORE*)
+  R.l r = infinity
 
 module PT = struct
   type t = R.t list
@@ -96,13 +83,13 @@ module H_string = Base.H_string
 module S_string = Base.S_string
 
 type graph = { v : (int * Big.t) H_int.t;
-               e : R.edge H_int.t;
+               e : (int * R.label) H_int.t;
                l : int H_string.t;
                preds : S_string.t; }
 
 module G = struct
   type t = graph
-  type edge_type = RT.edge
+  type l = R.label
   let init n preds =
     { v = H_int.create n;
       e = H_int.create n;
@@ -111,15 +98,14 @@ module G = struct
   let states g = g.v
   let label g = (g.preds, g.l)
   let edges g = g.e
-  let dest u = fst u
-  let string_of_arrow u = Printf.sprintf "%.4g" (snd u)
+  let string_of_l = Printf.sprintf "%.4g"
 end
 
 module L = struct
   type t = float
-  type occ = R.occ
+  type l = R.label
   let init = 0.0
-  let increment t o = t +. (snd (R.edge_of_occ o 0))
+  let increment t l = t +. l
   let is_greater = ( > )
   let to_string = Printf.sprintf "%.4g"
 end

@@ -15,10 +15,11 @@ module Make (R : RrType.T)
   val cardinal : p_class list -> int				    
   val rewrite : Big.t -> p_class list -> Big.t * int
   val scan : Big.t * int ->
-    part_f:(R.occ list -> ((int * R.occ) list * R.edge list * int)) ->
+    part_f:  ((Big.t * R.label) list ->
+              ((int * (Big.t * R.label)) list * (int * R.label) list * int)) ->
     const_pri:p_class list -> p_class list ->
-    ((int * R.occ) list * R.edge list * int) * int
+    ((int * (Big.t * R.label)) list * (int * R.label) list * int) * int
   val scan_sim : Big.t ->
     const_pri:p_class list -> p_class list ->
-    R.occ option * int
+    (Big.t * R.label) option * int
 end

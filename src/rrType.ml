@@ -2,46 +2,31 @@ module type R =
 sig
   type t
   type label
-  type occ
-  type edge
   val lhs : t -> Big.t
   val rhs : t -> Big.t
-  val l : t -> label option
+  val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
   val val_chk : t -> bool
   val val_chk_error_msg : string
-  val string_of_label : label option -> string
+  val string_of_label : label -> string
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-  val to_occ : Big.t -> t -> occ
-  val big_of_occ : occ -> Big.t
-  val merge_occ : occ -> occ -> occ
-  val update_occ : occ -> Big.t -> occ
-  (* Replace the bigraph in an occurrence with an index *)
-  val edge_of_occ : occ -> int -> edge
-  val step : Big.t -> t list -> occ list * int
-  val random_step : Big.t -> t list -> occ option * int
+  val step : Big.t -> t list -> (Big.t * label) list * int
+  val random_step : Big.t -> t list -> (Big.t * label) option * int
 end
 
 module type T =
 sig
   type t
   type label
-  type occ
-  type edge
   type react_error
   exception NOT_VALID of react_error
   val lhs : t -> Big.t
   val rhs : t -> Big.t
-  val l : t -> label option
+  val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
-  val to_occ : Big.t -> t -> occ
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-  val big_of_occ : occ -> Big.t
-  val merge_occ : occ -> occ -> occ
-  val update_occ : occ -> Big.t -> occ
-  val edge_of_occ : occ -> int -> edge
   val to_string : t -> string
   val is_valid : t -> bool
   val is_valid_exn : t -> bool
@@ -49,12 +34,14 @@ sig
   val is_enabled : Big.t -> t -> bool
   val apply : Big.t -> t list -> Big.t option
   val fix : Big.t -> t list -> Big.t * int
-  val step : Big.t -> t list -> occ list * int
-  val random_step : Big.t -> t list -> occ option * int
+  val step : Big.t -> t list -> (Big.t * label) list * int
+  val random_step : Big.t -> t list -> (Big.t * label) option * int
 end
 
 (* Generic step function *)
-let gen_step s rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
+let gen_step s rules
+    ~(merge_occ:(Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b))
+    ~lhs ~rhs ~label ~map  =
   (* Input list is assumed without duplicates. Example: extract 4
      [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)
   let rec extract (pred :'a -> bool) acc = function
@@ -65,7 +52,7 @@ let gen_step s rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
     let aux1 acc o =
       let (iso, non_iso) =
         extract (fun o' ->
-            Big.equal (big_of_occ o) (big_of_occ o'))
+            Big.equal (fst o) (fst o'))
           [] acc in
       match iso with
       | None -> o :: acc
@@ -75,8 +62,7 @@ let gen_step s rules ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map =
     (Big.occurrences ~target:s ~pattern:(lhs r)
      (* Parmap.parmap *)
      |> List.map (fun o ->
-         to_occ
-           (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)) r))
+         (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r)))
     @ acc in
   List.fold_left aux2 [] rules
   |> filter_iso

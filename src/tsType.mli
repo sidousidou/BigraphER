@@ -1,38 +1,39 @@
+(* Labelled directed graphs *)
 module type G = sig
   type t
-  type edge_type
+  type l
   val init : int -> String.t list -> t
   val states : t -> (int * Big.t) Base.H_int.t
   val label : t -> (Base.S_string.t * int Base.H_string.t)
-  val edges : t -> edge_type Base.H_int.t
-  val dest : edge_type -> int
-  val string_of_arrow : edge_type -> string
+  val edges : t -> (int * l) Base.H_int.t
+  val string_of_l : l -> string
 end
 
+(* Type of computation limit *)
 module type L = sig
   type t
-  type occ
+  type l
   val init : t
-  val increment : t -> occ -> t
-  (* is_greater a b = a > b *)
+  val increment : t -> l -> t
   val is_greater : t -> t -> bool
   val to_string : t -> string
 end
 
+(* Reactive system descriptions *)
 module type T = sig
   val typ : Rs.t
 end
 
-(* The core interface of a RS *)
-module type RS_core = sig
+(* Reactive systems *)
+module type RS = sig
   type react
   type p_class =
     | P_class of react list
     | P_rclass of react list
   type graph
-  type react_error
-  type occ
+  type label
   type limit
+  type react_error
   val typ : Rs.t
   val string_of_react : react -> string
   val lhs : react -> Big.t
@@ -47,8 +48,8 @@ module type RS_core = sig
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
-  val step : Big.t -> react list -> occ list * int
-  val random_step : Big.t -> react list -> occ option * int
+  val step : Big.t -> react list -> (Big.t * label) list * int
+  val random_step : Big.t -> react list -> (Big.t * label) option * int
   val apply : Big.t -> react list -> Big.t option
   val fix : Big.t -> react list -> Big.t * int
   val rewrite : Big.t -> p_class list -> Big.t * int  
@@ -68,21 +69,12 @@ module type RS_core = sig
   val to_prism : graph -> string
   val to_dot : graph -> name:string -> string
   val to_lab : graph -> string
-  val iter_states : f:(int -> Big.t -> unit) -> graph -> unit
-end
-
-(* The complete interface of a Reactive System *)
-module type RS = sig
-  include RS_core
-  type label
+  val iter_states : (int -> Big.t -> unit) -> graph -> unit
+  val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
+  val iter_edges : (int -> int -> label -> unit) -> graph -> unit
+  val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
   val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react
   val parse_react : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react option
-end
-
-(* Discrete time or continuous time *)
-module type TT = sig
-  type t
-  val stop : t
 end
 
 module Make (R : RrType.T)
@@ -95,16 +87,16 @@ module Make (R : RrType.T)
        val cardinal : p_class list -> int
        val rewrite : Big.t -> p_class list -> Big.t * int
        val scan : Big.t * int ->
-         part_f:(R.occ list ->
-                 ((int * R.occ) list * R.edge list * int)) ->
+         part_f:((Big.t * R.label) list ->
+                 ((int * (Big.t * R.label)) list * (int * R.label) list * int)) ->
          const_pri:p_class list -> p_class list ->
-         ((int * R.occ) list * R.edge list * int) * int
+         ((int * (Big.t * R.label)) list * (int * R.label) list * int) * int
        val scan_sim : Big.t ->
          const_pri:p_class list -> p_class list ->
-         R.occ option * int
+         (Big.t * R.label) option * int
      end)
-    (L : L with type occ = R.occ)
-    (G : G with type edge_type = R.edge)
+    (L : L with type l = R.label)
+    (G : G with type l = R.label)
     (Ty : T): sig
 
   type t = G.t
@@ -112,8 +104,6 @@ module Make (R : RrType.T)
   type p_class = P.p_class =
     | P_class of R.t list
     | P_rclass of R.t list
-
-  type occ = R.occ
   
   type limit = L.t
 
@@ -155,9 +145,9 @@ module Make (R : RrType.T)
 
   val fix : Big.t -> R.t list -> Big.t * int
 
-  val step : Big.t -> R.t list -> R.occ list * int
+  val step : Big.t -> R.t list -> (Big.t * R.label) list * int
 
-  val random_step : Big.t -> R.t list -> R.occ option * int
+  val random_step : Big.t -> R.t list -> (Big.t * R.label) option * int
 
   val apply : Big.t -> R.t list -> Big.t option
                                     
@@ -188,6 +178,12 @@ module Make (R : RrType.T)
 
   val to_lab : t -> string
 
-  val iter_states : f:(int -> Big.t -> unit) -> t -> unit
+  val iter_states : (int -> Big.t -> unit) -> t -> unit
+
+  val fold_states : (int -> Big.t -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val iter_edges : (int -> int -> label -> unit) -> t -> unit
+
+  val fold_edges : (int -> int -> label -> 'a -> 'a) -> t -> 'a -> 'a
 
 end

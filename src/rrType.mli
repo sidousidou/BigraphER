@@ -3,45 +3,31 @@ module type R =
 sig    
   type t
   type label
-  type occ
-  type edge
   val lhs : t -> Big.t
   val rhs : t -> Big.t
-  val l : t -> label option
+  val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
   val val_chk : t -> bool
   val val_chk_error_msg : string
-  val string_of_label : label option -> string
+  val string_of_label : label -> string
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-  val to_occ : Big.t -> t -> occ
-  val big_of_occ : occ -> Big.t
-  val merge_occ : occ -> occ -> occ
-  val update_occ : occ -> Big.t -> occ
-  val edge_of_occ : occ -> int -> edge
-  val step : Big.t -> t list -> occ list * int
-  val random_step : Big.t -> t list -> occ option * int
+  val step : Big.t -> t list -> (Big.t * label) list * int
+  val random_step : Big.t -> t list -> (Big.t * label) option * int
 end
 
 module type T =
 sig
   type t
   type label
-  type occ
-  type edge
   type react_error
   exception NOT_VALID of react_error
   val lhs : t -> Big.t
   val rhs : t -> Big.t
-  val l : t -> label option
+  val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
-  val to_occ : Big.t -> t -> occ
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-  val big_of_occ : occ -> Big.t
-  val merge_occ : occ -> occ -> occ
-  val update_occ : occ -> Big.t -> occ
-  val edge_of_occ : occ -> int -> edge
   val to_string : t -> string
   val is_valid : t -> bool
   val is_valid_exn : t -> bool			  
@@ -49,22 +35,17 @@ sig
   val is_enabled : Big.t -> t -> bool
   val apply : Big.t -> t list -> Big.t option
   val fix : Big.t -> t list -> Big.t * int
-  val step : Big.t -> t list -> occ list * int
-  val random_step : Big.t -> t list -> occ option * int
+  val step : Big.t -> t list -> (Big.t * label) list * int
+  val random_step : Big.t -> t list -> (Big.t * label) option * int
 end
 
 (** Module for the concrete implementation of basic operations on rewrite
     rules. *)
-module Make (R : R) :
-sig
+module Make (R : R) : sig
 
   type t = R.t
 
   type label = R.label
-
-  type occ = R.occ
-
-  type edge = R.edge
 
   type react_error
 
@@ -76,8 +57,8 @@ sig
   (** Return the right-hand side of a rewrite rule. *)
   val rhs : t -> Big.t
 
-  (** Return the label of a rewrite rule if any. *)
-  val l : t -> label option
+  (** Return the label of a rewrite rule. *)
+  val l : t -> label
 
   (** Eqaulity for reaction rules *)
   val equal : t -> t -> bool
@@ -87,21 +68,6 @@ sig
 
   (** Creare a new reaction rule. *)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-
-  (** Return an occurrence from a bigraph and a rewrite rule. *)		 
-  val to_occ : Big.t -> t -> occ
-
-  (** Return the bigraph component of an occurrence. *)				  
-  val big_of_occ : occ -> Big.t
-
-  (** Merge two occurrences. *)			 
-  val merge_occ : occ -> occ -> occ
-
-  (** [update_occ o b] returns a copy of [o] with [b] as bigraph. *)				    
-  val update_occ : occ -> Big.t -> occ
-
-  (** Replace the bigraph in an occurrence with an integer. *)					
-  val edge_of_occ : occ -> int -> edge
 
   (** String representation of a rewrite rule. *)
   val to_string : t -> string
@@ -134,23 +100,22 @@ sig
 
   (** All the possible evolutions in one step. Total number of occurrences also
       returned. *)
-  val step : Big.t -> t list -> occ list * int
+  val step : Big.t -> t list -> (Big.t * label) list * int
 
   (** Random step. *)
-  val random_step : Big.t -> t list -> occ option * int
+  val random_step : Big.t -> t list -> (Big.t * label) option * int
   
 end
 
 (** Generic step function *)
 val gen_step :
   Big.t ->
-  'b list ->
-  big_of_occ:('a -> Big.t) ->
-  to_occ:(Big.t -> 'b -> 'a) ->
-  merge_occ:('a -> 'a -> 'a) ->
-  lhs:('b -> Big.t) ->
-  rhs:('b -> Big.t) ->
-  map:('b -> Fun.t option) ->
-  'a list * int
+  'a list ->
+  merge_occ:((Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b)) ->
+  lhs:('a -> Big.t) ->
+  rhs:('a -> Big.t) ->
+  label:('a -> 'b) ->
+  map:('a -> Fun.t option) ->
+  (Big.t * 'b) list * int
                                                                     
 (**/**)

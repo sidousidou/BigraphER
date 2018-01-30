@@ -14,8 +14,9 @@ type p_class =
 (** The type of Discrete Time Markov Chains (DTMC). *)
 type graph
   
-(** Type of occurrences {e i.e.}, a bigraph and a probability. *)
-type occ = Big.t * float
+(** The type of edge labels in Discrete Time Markov Chains (DTMC), {e i.e.},
+    probabilities. *)
+type label = float
 
 (** Type of simulation limit {e i.e.}, number of execution steps. *)
 type limit = int
@@ -92,12 +93,12 @@ val apply : Big.t -> react list -> Big.t option
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a probability rate. The total
     number of occurrences is also returned. *)
-val step : Big.t -> react list -> occ list * int
+val step : Big.t -> react list -> (Big.t * label) list * int
 
 (** Compute a random state reachable in one step. The probability of reaching a
     given state depends on the probability associated to the reaction rule
     generating it. The total number of occurrences is also returned. *)
-val random_step : Big.t -> react list -> occ option * int
+val random_step : Big.t -> react list -> (Big.t * label) option * int
 
 (** Same as {!val:Brs.fix} for probabilistic reaction rules. Note that
     probabilities are ignored. *)
@@ -168,7 +169,11 @@ val to_dot : graph -> name:string -> string
     function of a DTMC. *)
 val to_lab : graph -> string
 
-(** Apply [f] to every state. *)
-val iter_states : f:(int -> Big.t -> unit) -> graph -> unit
+(** {3 Iterators *)
+
+val iter_states : (int -> Big.t -> unit) -> graph -> unit
+val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
+val iter_edges : (int -> int -> label -> unit) -> graph -> unit
+val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
 
 (**/**)

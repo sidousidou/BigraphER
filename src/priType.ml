@@ -52,19 +52,20 @@ struct
     let rec _scan (b, i) ~matches ~part_f ~const_pri = function
       | [] -> (([], [], i), matches)
       | (P_class rr) :: cs ->
-        (let (ss, l) = R.step b rr in
-         if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs
-         else
-           (* Apply rewriting - instantaneous *)
-           let (ss', l') =
-             (* Parmap.parfold *)
-             List.fold_left (fun (ss,  l) o ->
-                 let (s', l') =
-                   rewrite (R.big_of_occ o) const_pri in
-                 ((R.update_occ o s') :: ss, l + l'))
-               ([], l) ss in
-           ((part_f ss' :
-               (int * R.occ) list * R.edge list * int), matches + l'))
+        begin
+          let (ss, l) = R.step b rr in
+          if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs
+          else
+            (* Apply rewriting - instantaneous *)
+            let (ss', l') =
+              (* Parmap.parfold *)
+              List.fold_left (fun (ss,  l) o ->
+                  let (s', l') =
+                    rewrite (fst o) const_pri in
+                  ((s', snd o) :: ss, l + l'))
+                ([], l) ss in
+            (part_f ss', matches + l')
+        end
       | (P_rclass _) :: cs -> (* Skip *)
         _scan (b, i) ~matches ~part_f ~const_pri cs in
     _scan (b, i) ~matches:0 ~part_f ~const_pri
@@ -77,8 +78,8 @@ struct
          | (None, m') -> (* Skip *)
            _scan_sim b (m + m') ~const_pri cs
          | (Some o, m') ->
-           (let (b', m'') = rewrite (R.big_of_occ o) const_pri in
-            (Some (R.update_occ o b'), m + m' + m'')))
+           (let (b', m'') = rewrite (fst o) const_pri in
+            (Some (b', snd o), m + m' + m'')))
       | (P_rclass _) :: cs -> (* Skip *)
         _scan_sim b m ~const_pri cs in
     _scan_sim b 0 ~const_pri

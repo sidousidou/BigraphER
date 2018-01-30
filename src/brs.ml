@@ -6,16 +6,16 @@ type react =
   }
 
 module RT = struct
-  type t = react
-  type label = float
-  type occ = Big.t
-  type edge = int
 
+  type t = react
+
+  type label = unit
+  
   let lhs r = r.rdx
 
   let rhs r = r.rct
 
-  let l _ = None
+  let l _ = ()
 
   let map r = r.eta
 
@@ -28,27 +28,16 @@ module RT = struct
 
   let val_chk_error_msg = ""
 
-  let string_of_label = function
-    | None -> ""
-    | Some _ -> assert false (*BISECT-IGNORE*)
-
+  let string_of_label _ = ""
+    
   let parse ~lhs ~rhs _ eta =
     { rdx = lhs;
       rct = rhs;
       eta = eta; }
 
-  let to_occ b _ = b
-
-  let big_of_occ b = b
-
-  let merge_occ b _ = b
-
-  let update_occ _ b = b
-
-  let edge_of_occ _ i = i
-
-  let step b rules = RrType.gen_step b rules
-      ~big_of_occ ~to_occ ~merge_occ ~lhs ~rhs ~map
+  let step b rules =
+    let merge_occ (b, _) _ = (b, ()) in
+    RrType.gen_step b rules ~merge_occ ~lhs ~rhs ~label:l ~map
 
   let random_step b rules =
     (* Remove element with index i *)
@@ -64,7 +53,7 @@ module RT = struct
            aux (Random.int (List.length rs)) 0 [] rs in
          match Big.occurrence ~target:s ~pattern:(lhs r) t with
          | Some o ->
-           (Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r)), m + 1)
+           (Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), ()), m + 1)
          | None -> _random_step s (m + 1) rs') in
     _random_step b 0 rules
 
@@ -86,13 +75,13 @@ module H_string = Base.H_string
 module S_string = Base.S_string
 
 type graph = { v : (int * Big.t) H_int.t;
-               e : R.edge H_int.t;
+               e : (int * R.label) H_int.t;
                l : int H_string.t;
                preds : S_string.t; }
 
 module G = struct
   type t = graph
-  type edge_type = R.edge
+  type l = R.label
   let init n preds =
     { v = H_int.create n;
       e = H_int.create n;
@@ -101,13 +90,12 @@ module G = struct
   let states g = g.v
   let label g = (g.preds, g.l)
   let edges g = g.e
-  let dest u = u
-  let string_of_arrow _ = ""
+  let string_of_l _ = ""
 end
 
 module L = struct
   type t = int
-  type occ = R.occ
+  type l = R.label
   let init = 0
   let increment t _ = t + 1
   let is_greater = ( > )
@@ -121,7 +109,7 @@ end
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
 let parse_react_unsafe ~lhs ~rhs eta =
-  parse_react_unsafe ~lhs ~rhs 0.0 eta (* Label is ignored *)
+  parse_react_unsafe ~lhs ~rhs () eta (* Label is ignored *)
 
 let parse_react ~lhs ~rhs eta =
-  parse_react ~lhs ~rhs 0.0 eta (* Label is ignored *)
+  parse_react ~lhs ~rhs () eta (* Label is ignored *)

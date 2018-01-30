@@ -1,21 +1,18 @@
 module type G = sig
   type t
-  type edge_type
+  type l
   val init : int -> String.t list -> t
   val states : t -> (int * Big.t) Base.H_int.t
   val label : t -> (Base.S_string.t * int Base.H_string.t)
-  val edges : t -> edge_type Base.H_int.t
-  val dest : edge_type -> int
-  val string_of_arrow : edge_type -> string
+  val edges : t -> (int * l) Base.H_int.t
+  val string_of_l : l -> string
 end
 
-(* Limit *)
 module type L = sig
   type t
-  type occ
+  type l
   val init : t
-  val increment : t -> occ -> t
-  (* is_greater a b = a > b *)
+  val increment : t -> l -> t
   val is_greater : t -> t -> bool
   val to_string : t -> string
 end
@@ -24,7 +21,7 @@ module type T = sig
   val typ : Rs.t
 end
 
-(* Export functions *)
+(* Export functions for graphs *)
 module MakeE (G : G) = struct
 
   let to_prism g =
@@ -34,18 +31,18 @@ module MakeE (G : G) = struct
       Base.H_int.fold (fun v u acc ->
           (v, u) :: acc) (G.edges g) [] in
     List.fast_sort (fun (v, u) (v', u') ->
-        Base.ints_compare (v, G.dest u) (v', G.dest u'))
+        Base.ints_compare (v, fst u) (v', fst u'))
       edges
     |> List.map (fun (v, u) ->
         (string_of_int v)
         ^ " "
-        ^ (string_of_int (G.dest u))
-        ^ (match G.string_of_arrow u with
+        ^ (string_of_int (fst u))
+        ^ (match G.string_of_l (snd u) with
             | "" -> ""
             | s -> " " ^ s))
-    |> List.append [(string_of_int s) ^ " " ^ (string_of_int e)]
+    |> List.append [ (string_of_int s) ^ " " ^ (string_of_int e) ]
     |> String.concat "\n"
-  
+
   let to_dot g ~name =
     let rank = "{ rank=source; 0 };\n" in
     let states =
@@ -68,7 +65,7 @@ module MakeE (G : G) = struct
           Printf.sprintf
             "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
              arrowhead=\"vee\", arrowsize=0.5 ];\n"
-            buff v (G.dest u) (G.string_of_arrow u))
+            buff v (fst u) (G.string_of_l (snd u)))
         (G.edges g) "" in
     Printf.sprintf "digraph \"%s\" {\n\
                     stylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
@@ -86,21 +83,29 @@ module MakeE (G : G) = struct
     |> List.rev
     |> String.concat ";\n"
   
-  let iter_states ~f g =
+  let iter_states f g =
     Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
+
+  let fold_states f g =
+    Base.H_int.fold (fun _ (i, b) acc -> f i b acc) (G.states g)
+
+  let iter_edges f g =
+    Base.H_int.iter (fun v (u, l) -> f v u l) (G.edges g)
+
+  let fold_edges f g =
+    Base.H_int.fold (fun v (u, l) acc -> f v u l acc) (G.edges g)
 
 end
 
-module type RS_core =
-sig
+module type RS = sig
   type react
   type p_class =
     | P_class of react list
     | P_rclass of react list
   type graph
-  type react_error
-  type occ
+  type label
   type limit
+  type react_error
   val typ : Rs.t
   val string_of_react : react -> string
   val lhs : react -> Big.t
@@ -115,8 +120,8 @@ sig
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
-  val step : Big.t -> react list -> occ list * int
-  val random_step : Big.t -> react list -> occ option * int
+  val step : Big.t -> react list -> (Big.t * label) list * int
+  val random_step : Big.t -> react list -> (Big.t * label) option * int
   val apply : Big.t -> react list -> Big.t option
   val fix : Big.t -> react list -> Big.t * int
   val rewrite : Big.t -> p_class list -> Big.t * int
@@ -137,23 +142,12 @@ sig
   val to_prism : graph -> string
   val to_dot : graph -> name:string -> string
   val to_lab : graph -> string
-  val iter_states : f:(int -> Big.t -> unit) -> graph -> unit
-end
-
-(* The complete interface of a Reactive System *)
-module type RS = sig
-  include RS_core
-  type label
-  val parse_react_unsafe :
-    lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react
-  val parse_react :
-    lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react option
-end
-
-(* Discrete time or continuous time *)
-module type TT = sig
-  type t
-  val stop : t
+  val iter_states : (int -> Big.t -> unit) -> graph -> unit
+  val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
+  val iter_edges : (int -> int -> label -> unit) -> graph -> unit
+  val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
+  val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react
+  val parse_react : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react option
 end
 
 module Make (R : RrType.T)
@@ -165,18 +159,17 @@ module Make (R : RrType.T)
        val is_valid_list : p_class list -> bool
        val rewrite : Big.t -> p_class list -> Big.t * int
        val cardinal : p_class list -> int
-       val scan :
-         Big.t * int
-         -> part_f:(R.occ list ->
-                    ((int * R.occ) list * R.edge list * int))
-         -> const_pri:p_class list -> p_class list
-         -> ((int * R.occ) list * R.edge list * int) * int
+         val scan : Big.t * int ->
+         part_f:((Big.t * R.label) list ->
+                 ((int * (Big.t * R.label)) list * (int * R.label) list * int)) ->
+         const_pri:p_class list -> p_class list ->
+         ((int * (Big.t * R.label)) list * (int * R.label) list * int) * int
        val scan_sim : Big.t ->
          const_pri:p_class list -> p_class list ->
-         R.occ option * int
+         (Big.t * R.label) option * int
      end)
-    (L : L with type occ = R.occ)
-    (G : G with type edge_type = R.edge)
+    (L : L with type l = R.label)
+    (G : G with type l = R.label)
     (Ty : T) = struct
 
   type t = G.t
@@ -184,8 +177,6 @@ module Make (R : RrType.T)
   include P
 
   include Ty
-
-  type occ = R.occ
 
   type limit = L.t
 
@@ -257,13 +248,13 @@ module Make (R : RrType.T)
   (* Partition a list of occurrences into new and old states *)
   let partition g i f_iter =
     List.fold_left (fun (new_acc, old_acc, i) o ->
-        let b = R.big_of_occ o in
+        let b = fst o in
         match is_new b (G.states g) with
         | None ->
           (let i' = i + 1 in (* Stop here when i > max *)
            f_iter i' b;
            ((i', o) :: new_acc, old_acc, i'))
-        | Some x -> (new_acc, (R.edge_of_occ o x) :: old_acc, i))
+        | Some x -> (new_acc, (x, snd o) :: old_acc, i))
       ([], [], i)
 
   (* Add labels for predicates *)
@@ -295,18 +286,15 @@ module Make (R : RrType.T)
           P.scan (curr, i)
             ~part_f:(partition g i iter_f)
             ~const_pri:priorities priorities in
-        List.iter (fun (i, o) ->
-            let b = R.big_of_occ o in
+        List.iter (fun (i, (b, l)) ->
             (* Add new states to v *)
             Base.H_int.add (G.states g) (Big.key b) (i, b);
+            (* Add edges from v to new states *)
+            Base.H_int.add (G.edges g) v (i, l);
             (* Add labels for new states *)
             check (i, b) (G.label g) predicates;
             (* Add new states to q *)
-            Queue.push (i, R.big_of_occ o) q)
-          new_s;
-        (* Add edges from v to new states *)
-        List.iter (fun (u, o) ->
-            Base.H_int.add (G.edges g) v (R.edge_of_occ o u))
+            Queue.push (i, b) q)
           new_s;
         (* Add edges from v to old states *)
         List.iter (fun e ->
@@ -352,13 +340,13 @@ module Make (R : RrType.T)
                            ~trans:(size_t trace)
                            ~occs:(m + m'),
                          t_sim))
-      | (Some o, m') ->
-        (let s' = R.big_of_occ o in
+      | (Some (s', l), m') ->
+        ((*let s' = R.big_of_occ o in*)
          iter_f (i + 1) s';
          Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
          check (i + 1, s') (G.label trace) predicates;
-         Base.H_int.add (G.edges trace) i (R.edge_of_occ o (i + 1));
-         _sim trace s' (i + 1) (L.increment t_sim o) (m + m')
+         Base.H_int.add (G.edges trace) i (i + 1, l);
+         _sim trace s' (i + 1) (L.increment t_sim l) (m + m')
            t0 priorities predicates t_max iter_f)
 
   let sim ~s0 ~priorities ~predicates ~init_size ~stop ~iter_f =

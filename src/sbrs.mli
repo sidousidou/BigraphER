@@ -14,8 +14,9 @@ type p_class =
 (** The type of Continuous Time Markov Chains (CTMC). *)
 type graph
 
-(** Type of occurrences {e i.e.}, a bigraph and a *)
-type occ = Big.t * float
+(** The type of edge labels in Continuous Time Markov Chains (CTMC), {e i.e.},
+    stochastic rates. *)
+type label = float
 
 (** Type of simulation limit {e i.e.}, execution time. *)
 type limit = float
@@ -92,11 +93,11 @@ val apply : Big.t -> react list -> Big.t option
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a transition rate. The total
     number of occurrences is also returned. *)
-val step : Big.t -> react list -> occ list * int
+val step : Big.t -> react list -> (Big.t * label) list * int
 
 (** Select step of {{: https://en.wikipedia.org/wiki/Gillespie_algorithm}
     Gillespie SSA}. The total number of occurrences is also returned. *)
-val random_step : Big.t -> react list -> occ option * int
+val random_step : Big.t -> react list -> (Big.t * label) option * int
 
 (** Same as {!val:Brs.fix} for probabilistic reaction rules. Note that
     stochastic rates are ignored. *)
@@ -167,7 +168,11 @@ val to_dot : graph -> name:string -> string
     function of a CTMC. *)
 val to_lab : graph -> string
 
-(** Apply [f] to every state. *)
-val iter_states : f:(int -> Big.t -> unit) -> graph -> unit
+(** {3 Iterators *)
+
+val iter_states : (int -> Big.t -> unit) -> graph -> unit
+val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
+val iter_edges : (int -> int -> label -> unit) -> graph -> unit
+val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
 
 (**/**)
