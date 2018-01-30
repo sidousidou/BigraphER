@@ -169,7 +169,7 @@ val to_dot : graph -> name:string -> string
     function of a DTMC. *)
 val to_lab : graph -> string
 
-(** {3 Iterators *)
+(** {3 Iterators} *)
 
 val iter_states : (int -> Big.t -> unit) -> graph -> unit
 val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
