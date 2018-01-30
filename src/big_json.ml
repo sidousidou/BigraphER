@@ -140,7 +140,7 @@ let preact e r =
 
 let occs e l =
   lexeme e `As;
-  List.iter (fun b -> big e b) l;
+  List.iter (fun (b, _) -> big e b) l;
   lexeme e `Ae
 
 let p_occs name e l =
@@ -161,6 +161,45 @@ let matches e l =
         ("f_e", eta e, f))
     l;
   lexeme e `Ae
+
+let aux_graph l f_i f e g =
+  singleton e l (fun g ->
+      lexeme e `As;
+      f_i f g;
+      lexeme e `Ae)
+    g   
+
+let brs e rs =
+  aux_graph "brs"
+    Brs.iter_edges
+    (fun i j _ ->
+       pair e
+        ("source", int e, i)
+        ("target", int e, j))
+    e
+    rs
+    
+let sbrs e rs =
+  aux_graph "sbrs"
+    Sbrs.iter_edges
+    (fun i j l ->
+      triple e
+        ("source", int e, i)
+        ("target", int e, j)
+        ("rate", float e, l))
+    e
+    rs
+
+let pbrs e rs =
+  aux_graph "pbrs"
+    Pbrs.iter_edges
+    (fun i j l ->
+       triple e
+         ("source", int e, i)
+         ("target", int e, j)
+         ("probability", float e, l))
+    e
+    rs
 
 let b_size = 65536
 
@@ -194,6 +233,15 @@ let s_occs_to_json ?(minify=true) =
 
 let matches_to_json ?(minify=true) =
   to_json ~minify matches
+
+let ts_to_json ?(minify=true) =
+  to_json ~minify brs
+
+let dtmc_to_json ?(minify=true) =
+  to_json ~minify pbrs
+
+let ctmc_to_json ?(minify=true) =
+  to_json ~minify sbrs
 
 (* Decoder *)
 

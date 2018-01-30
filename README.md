@@ -2,6 +2,8 @@
 
 Version 0.1.0
 
+Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele)
+
 ----------------------------------------------------------------------------
 
 Big_json is a codec to encode and decode bigraphical structures such as bigraphs
@@ -34,7 +36,6 @@ The documentation of the library can be accessed at
 <http://www.dcs.gla.ac.uk/~michele/docs/_doc/big_json>.
 
 ## References
-
 
 - [Robin Milner. *The space and motion of communicating agents*. Cambridge
   University Press (2009).][milner]  
