@@ -148,7 +148,7 @@ let print_fun fmt c verb fname i =
 let format_map = function
   | Cmd.Svg -> (Export.B.write_svg, ".svg")
   | Cmd.Dot -> (Export.B.write_dot, ".dot")
-  (*  | Cmd.Json -> (Export.B.write_json, ".json")*)
+  | Cmd.Json -> (Export.B.write_json, ".json")
   | Cmd.Txt -> (Export.B.write_txt, ".txt")
 
 let export_prism fmt msg f =
@@ -189,7 +189,7 @@ let export_states fmt f g =
       | None -> assert false (*BISECT-IGNORE*)
       | Some path ->
         (print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
-         f ~f:(fun i s ->
+         f (fun i s ->
              let aux i s f ext =
                let fname = (string_of_int i) ^ ext in
                try
@@ -240,12 +240,21 @@ let check fmt =
   exit 0
 
 module Run
-    (T: TsType.RS with type label = float)
-    (L: TsType.TT with type t = T.limit) = struct
+    (T: TsType.RS)
+    (L: sig
+       val stop : T.limit
+     end)
+    (P: sig
+       val parse_react : Big.t -> Big.t -> [ `E of unit | `F of float ]
+         -> Fun.t option -> T.react option
+    end)
+    (J: sig
+       val f: ?minify:bool -> T.graph -> String.t
+     end) = struct
 
-  module S = Store.Make (T)
+  module S = Store.Make (T) (P)
 
-  module E = Export.T (T)
+  module E = Export.T (T) (J)
   
   let export_decs fmt path m env env_t =
     print_msg fmt `yellow ("Exporting declarations to "
@@ -319,7 +328,7 @@ module Run
     f ();
     let format_map = function
       | Cmd.Svg -> (E.write_svg graph, ".svg")
-      (*  | Cmd.Json -> (E.write_json graph, ".json")*)
+      | Cmd.Json -> (E.write_json graph, ".json")
       | Cmd.Dot -> (E.write_dot graph, ".dot")
       | Cmd.Txt -> (E.write_prism graph, ".txt") in
     print_stats fmt stats;
@@ -490,28 +499,44 @@ let () =
            Cmd.check_brs_opt ();
            let module R = Run
                (struct
+
                  include Brs
-                 type label = float
-                 let parse_react_unsafe ~lhs ~rhs _ f = parse_react_unsafe ~lhs ~rhs f
-                 let parse_react ~lhs ~rhs _ f = parse_react ~lhs ~rhs f
+
+                 let parse_react_unsafe ~lhs ~rhs (label:label) eta =
+                   parse_react_unsafe ~lhs ~rhs eta
+                
+                 let parse_react ~lhs ~rhs (label:label) eta =
+                   parse_react ~lhs ~rhs eta
+                   
                end)
                (struct
-                 type t = int
                  let stop = Cmd.(defaults.steps)
-               end) in
+               end)
+               (struct
+                 let parse_react lhs rhs _ eta =
+                   Brs.parse_react ~lhs ~rhs eta
+               end)
+               (struct
+                  let f = Big_json.ts_to_json
+                end) in
            R.run fmt Cmd.(defaults.colors) m exec_type
          end
        | Rs.PBRS ->
          begin
            Cmd.check_pbrs_opt ();
            let module R = Run
+               (Pbrs)
                (struct
-                 include Pbrs
-                 type label = float
+                 let stop = Cmd.(defaults.steps)
                end)
                (struct
-                 type t = int
-                 let stop = Cmd.(defaults.steps)
+                 let parse_react lhs rhs l eta =
+                   match l with
+                   | `F f -> Pbrs.parse_react ~lhs ~rhs f eta
+                   | _ -> assert false  (*BISECT-IGNORE*)
+               end)
+               (struct
+                 let f = Big_json.dtmc_to_json
                end) in
            R.run fmt Cmd.(defaults.colors) m exec_type
          end
@@ -519,14 +544,19 @@ let () =
          begin
            Cmd.check_sbrs_opt ();
            let module R = Run
+               (Sbrs)
                (struct
-                 include Sbrs
-                 type label = float
+                 let stop = Cmd.(defaults.time)
                end)
                (struct
-                 type t = float
-                 let stop = Cmd.(defaults.time)
-               end) in
+                 let parse_react lhs rhs l eta =
+                   match l with
+                   | `F f -> Sbrs.parse_react ~lhs ~rhs f eta
+                   |  _ -> assert false  (*BISECT-IGNORE*)
+               end)
+               (struct
+                 let f = Big_json.ctmc_to_json
+                end) in
            R.run fmt Cmd.(defaults.colors) m exec_type
          end);
     with

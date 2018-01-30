@@ -48,7 +48,7 @@ Library "bigrapher-utils"
                    Parser,
                    Export,
                    Unify
-  BuildDepends:    bigraph-utils, str
+  BuildDepends:    bigraph-utils, str, big_json
   CCOpt+:	   -O3
   Install:	   false
 

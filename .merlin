@@ -11,3 +11,4 @@ PKG unix
 PKG minisat
 PKG str
 PKG bigraph
+PKG big_json

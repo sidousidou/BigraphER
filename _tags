@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 9803ae53b807056b8ec2585298ec75cc)
+# DO NOT EDIT (digest: 1ad8294ba5937ce33065a5c4c52f1651)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -23,11 +23,13 @@ true: annot, bin_annot
 <bin/*.ml{,i,y}>: oasis_library_bigrapher_utils_ccopt
 # Executable bigrapher
 <bin/*.ml{,i,y}>: oasis_executable_bigrapher_ccopt
+<bin/bigrapher.{native,byte}>: package(big_json)
 <bin/bigrapher.{native,byte}>: package(bigraph)
 <bin/bigrapher.{native,byte}>: package(str)
 <bin/bigrapher.{native,byte}>: package(unix)
 <bin/bigrapher.{native,byte}>: use_bigraph-utils
 <bin/bigrapher.{native,byte}>: use_bigrapher-utils
+<bin/*.ml{,i,y}>: package(big_json)
 <bin/*.ml{,i,y}>: package(bigraph)
 <bin/*.ml{,i,y}>: package(str)
 <bin/*.ml{,i,y}>: package(unix)

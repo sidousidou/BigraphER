@@ -3,7 +3,11 @@ open Ast
 open Unify
 open Bigraph
 
-module Make (T: TsType.RS with type label = float) = struct
+module Make (T: TsType.RS)
+    (P: sig
+       val parse_react : Big.t -> Big.t -> [ `E of unit | `F of float ]
+         -> Fun.t option -> T.react option
+     end) = struct
 
   type store_type =
     [ `num_val of num_type
@@ -622,10 +626,10 @@ module Make (T: TsType.RS with type label = float) = struct
     let (lhs_v, rhs_v, env_t') =
       eval_react_aux lhs rhs scope env env_t in
     match
-      T.parse_react ~lhs:lhs_v ~rhs:rhs_v
+      P.parse_react lhs_v rhs_v
         (match l with
-         | Some f_exp -> eval_float f_exp scope env
-         | None -> 0.0)
+         | Some f_exp -> `F (eval_float f_exp scope env)
+         | None -> `E ())
         eta with
     | None ->
       raise (ERROR (Reaction "Invalid reaction", p))

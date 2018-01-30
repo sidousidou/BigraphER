@@ -86,13 +86,17 @@ module B = struct
     try write_string (Big.to_dot b name) ~name ~path with
     | ERROR e -> failwith @@ report_error e
 
-  (*let write_json b ~name ~path =
-    try (json_of_big b |> write_string ~name ~path) with
-    | ERROR e -> raise @@ ERROR (report_error e)*)
+  let write_json b ~name ~path =
+    try (Big_json.big_to_json ~minify:false b
+         |> write_string ~name ~path) with
+    | ERROR e -> failwith @@ report_error e 
 
 end
 
-module T (S: Bigraph.TsType.RS) = struct
+module T (S: Bigraph.TsType.RS)
+    (F: sig
+       val f: ?minify:bool -> S.graph -> String.t
+     end) = struct
 
   let write_svg g ~name ~path =
     try write_svg (S.to_dot g ~name) ~name ~path with
@@ -110,8 +114,8 @@ module T (S: Bigraph.TsType.RS) = struct
     try write_string (S.to_dot g ~name) ~name ~path with
     | ERROR e -> failwith @@ report_error e
 
-  (*let write_json g ~name ~path =
-    try Export.write_string (to_json g) ~name ~path with
-    | Export.ERROR e -> raise @@ Rs.EXPORT_ERROR (Export.report_error e)*)
+  let write_json g ~name ~path =
+    try (F.f ~minify:false g |> write_string ~name ~path) with
+    | ERROR e -> failwith @@ report_error e
 
 end
