@@ -2,32 +2,40 @@
 
 Version 1.7.0
 
+Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele)
+
 [![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
 [![Coverage Badge](https://api.shippable.com/projects/540f670b21c97efdb898a046/coverageBadge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
 
 ----------------------------------------------------------------------------
 
 BigraphER is a command-line tool to compute the transition system of a BRS and
-export it to the stochastic model checker
-[PRISM](http://www.prismmodelchecker.org/) or to graphical form.
+export it to the stochastic model checker [PRISM](prism) or to graphical form.
 
 To get started, checkout the
 [Install](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#inst) and
 [Usage](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#tool) guides.
 
-BigraphER is created and maintained by [Michele
-Sevegnani](http://www.dcs.gla.ac.uk/~michele).
+### Install
 
-## Compiling this repo
+[OPAM][opam] is a source-based package manager for OCaml. It supports all the
+major Linux distributions, macOS, BSD systems and Windows (Cygwin). Once OPAM is
+installed on your system, add the repository of the University of Glasgow with
+the following command:
 
-* Make sure you have OCaml >= 4.02.0, ocamlfind, minisat (obtainable
-  [here](http://www.dcs.gla.ac.uk/~michele/camlminisat.html)), and optionally
-  [Graphviz](http://www.graphviz.org/) to support graphical output.
-* Run `ocaml setup.ml -configure`.
-* Run `ocaml setup.ml -build`.
-* Run `ocaml setup.ml -install`.
+```
+opam repository add glasgow 'http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/'
+```
+
+Then, to install BigraphER simply run:
+
+```
+opam install bigrapher
+```
+
+OPAM will automatically download and install all the dependencies.
 	    
-## Documentation
+### Documentation
 
 #### User manual
 
@@ -41,34 +49,23 @@ A tutorial is available online at
 <http://www.dcs.gla.ac.uk/~michele/bigrapher.html>.  A more extensive guide is
 available in PDF format as [CAV 2016 tool paper][tech].
 
-#### API documentation
-
-The API documentation can be generated with command `ocaml setup.ml -doc`. It
-will be available under `bigraph_api.docdir/`.
-
-## OPAM repository
-
-- [dcs-opam-repository] is the repository of the University of Glasgow for the
-  BigraphER related [OPAM](http://opam.ocaml.org/) packages. Run the following
-  command to add this repository to OPAM: `opam repository add glasgow
-  'http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/'`. The latest release
-  of BigraphER can then be installed by running command `opam install
-  bigrapher`. OPAM will take care of downloading and installing all the
-  dependencies.
-
-## References
+### References
 
 - [Robin Milner. *The space and motion of communicating agents*. Cambridge
   University Press (2009).][milner]
 - [Michele Sevegnani and Muffy Calder. *Bigraphs with sharing*. Theoretical
   Computer Science 577 (2015): 43-73.][share]
 - [Michele Sevegnani and Muffy Calder. *BigraphER: rewriting and analysis engine for bigraphs*. Proceedings of Computer Aided Verification (CAV 2016), Lecture Notes in Computer Science 9780 (2016): 494-501.][tech]
+- [OPAM: OCaml package manager][opam]
+- [PRISM: probabilistic model checker][prism]
 
-[milner]: http://dl.acm.org/citation.cfm?id=1540607 "Robin Milner. *The space and motion of communicating agents*. Cambridge University Press (2009)."
-[share]: http://doi.org/10.1016/j.tcs.2015.02.011 "Michele Sevegnani and Muffy Calder. *Bigraphs with sharing*. Theoretical Computer Science 577 (2015): 43-73."
-[tech]: http://doi.org/10.1007/978-3-319-41540-6_27 "Michele Sevegnani and Muffy Calder. *BigraphER: rewriting and analysis engine for bigraphs*. Proceedings of Computer Aided Verification (CAV 2016), Lecture Notes in Computer Science 9780 (2016): 494-501"
+[milner]: <http://dl.acm.org/citation.cfm?id=1540607> "Robin Milner. *The space and motion of communicating agents*. Cambridge University Press (2009)."
+[share]: <http://doi.org/10.1016/j.tcs.2015.02.011> "Michele Sevegnani and Muffy Calder. *Bigraphs with sharing*. Theoretical Computer Science 577 (2015): 43-73."
+[tech]: <http://doi.org/10.1007/978-3-319-41540-6_27> "Michele Sevegnani and Muffy Calder. *BigraphER: rewriting and analysis engine for bigraphs*. Proceedings of Computer Aided Verification (CAV 2016), Lecture Notes in Computer Science 9780 (2016): 494-501"
+[opam]:    <http://opam.ocaml.org/> "OPAM: OCaml package manager"
+[prism]:   <http://www.prismmodelchecker.org/> "PRISM: probabilistic model checker"
 
-## Copyright and license
+### Copyright and license
 
 Copyright 2012-2018 Michele Sevegnani
 
