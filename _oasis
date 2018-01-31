@@ -11,7 +11,7 @@ Authors:	Michele Sevegnani
 Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
 License:     	BSD-2-clause
 LicenseFile:	LICENSE.md
-OCamlVersion:	>= 4.02.0
+OCamlVersion:	>= 4.03.0
 Plugins:     	META (0.4), DevFiles (0.4)
 Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
 BuildTools:	ocamlbuild, menhir
