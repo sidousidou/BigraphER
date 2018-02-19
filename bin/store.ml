@@ -1009,13 +1009,13 @@ module Make (T: TsType.RS)
                 (String.concat " " params) ^ " =\n  " ^
                 exp
 
-  (* TO BE FIXED *)
   let ml_of_ctrl exp =
     let aux id params c ar =
       ml_of_dec
         ("ctrl_" ^ id)
         params
-        "Ctrl.C (" ^ c ^ ", " ^ (string_of_int ar) ^ ")" in
+        "Ctrl.C (" ^ c ^ ", [" ^ (String.concat "; " params) ^ "], "
+      ^ (string_of_int ar) ^ ")" in
     match exp with
     | Ctrl_exp (id, ar, _) ->
       aux id [] ("\"" ^ id ^ "\"") ar
@@ -1023,9 +1023,7 @@ module Make (T: TsType.RS)
       aux
         id
         params
-        ("\"" ^ id ^ "(\" ^ " ^
-         (String.concat " ^ \",\" ^ " params) ^
-         " ^ \")\"")
+        ("\"" ^ id ^ "\"")
         ar
 
   let ml_of_list f l =
@@ -1036,34 +1034,35 @@ module Make (T: TsType.RS)
 
   let ml_of_ints =
     ml_of_list string_of_int
-
+  
   let rec ml_of_int = function
     | Int_val (v, _) -> string_of_int v
-    | Int_var (id, _) -> (id : string)
+    | Int_var (id, _) -> "int_of_param " ^ (id : string)
     | Int_plus (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ " + " ^ (ml_of_int r) ^ ")"
+      "(" ^ (ml_of_int l) ^ ") + (" ^ (ml_of_int r) ^ ")"
     | Int_minus (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ " - " ^ (ml_of_int r) ^ ")"
+      "(" ^ (ml_of_int l) ^ ") - (" ^ (ml_of_int r) ^ ")"
     | Int_prod (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ " * " ^ (ml_of_int r) ^ ")"
+      "(" ^ (ml_of_int l) ^ ") * (" ^ (ml_of_int r) ^ ")"
     | Int_div (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ " / " ^ (ml_of_int r) ^ ")"
+      "(" ^ (ml_of_int l) ^ ") / (" ^ (ml_of_int r) ^ ")"
     | Int_pow (l, r, _) ->
-      "(pow_int " ^ (ml_of_int l) ^ " " ^ (ml_of_int r) ^ ")"
+      "pow_int (" ^ (ml_of_int l) ^ ") (" ^ (ml_of_int r) ^ ")"
 
   let rec ml_of_float =  function
-    | Float_val (v, _) -> string_of_float v
-    | Float_var (id, _) -> (id : string)
+    | Float_val (v, _) ->
+      if v = infinity then "infinity" else (string_of_float v)
+    | Float_var (id, _) -> "float_of_param " ^ (id : string)
     | Float_plus (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ " +. " ^ (ml_of_float r) ^ ")"
+      "(" ^ (ml_of_float l) ^ ") +. (" ^ (ml_of_float r) ^ ")"
     | Float_minus (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ " -. " ^ (ml_of_float r) ^ ")"
+      "(" ^ (ml_of_float l) ^ ") -. (" ^ (ml_of_float r) ^ ")"
     | Float_prod (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ " *. " ^ (ml_of_float r) ^ ")"
+      "(" ^ (ml_of_float l) ^ ") *. (" ^ (ml_of_float r) ^ ")"
     | Float_div (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ " /. " ^ (ml_of_float r) ^ ")"
+      "(" ^ (ml_of_float l) ^ ") /. (" ^ (ml_of_float r) ^ ")"
     | Float_pow (l, r, _) ->
-      "(pow_float " ^ (ml_of_float l) ^ " " ^ (ml_of_float r) ^ ")"
+      "pow_float (" ^ (ml_of_float l) ^ ") (" ^ (ml_of_float r) ^ ")"
 
   (* TO BE FIXED *)
   let rec ml_of_num = function
@@ -1071,44 +1070,46 @@ module Make (T: TsType.RS)
     | Num_float_val (v, _) -> string_of_float v
     | Num_var (id, _) -> (id : string)
     | Num_plus (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ " + " ^ (ml_of_num b) ^ ")"
+      "(" ^ (ml_of_num a) ^ ") + (" ^ (ml_of_num b) ^ ")"
     | Num_minus (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ " - " ^ (ml_of_num b) ^ ")"
+      "(" ^ (ml_of_num a) ^ ") - (" ^ (ml_of_num b) ^ ")"
     | Num_prod (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ " * " ^ (ml_of_num b) ^ ")"
+      "(" ^ (ml_of_num a) ^ ") * (" ^ (ml_of_num b) ^ ")"
     | Num_div (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ " / " ^ (ml_of_num b) ^ ")"
+      "(" ^ (ml_of_num a) ^ ") / (" ^ (ml_of_num b) ^ ")"
     | Num_pow (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ " ^^ " ^ (ml_of_num b) ^ ")"
+      "(" ^ (ml_of_num a) ^ ") ^^ (" ^ (ml_of_num b) ^ ")"
 
   let ml_of_params p =
     List.map ml_of_num p
     |> String.concat " "
 
+  let ml_of_face = function
+    | [] -> "Link.Face.empty"
+    | [n] -> "Link.Face.singleton (Link.Name \"" ^ n ^ "\")"
+    | names -> "Link.parse_face " ^ (ml_of_ids names)
+  
   let rec ml_of_big = function
     | Big_var (id, _) -> (id : string)
     | Big_var_fun  (id, params, _) ->
       (id : string) ^ " " ^ (ml_of_params params)
     | Big_new_name (n, _) ->
-      "Big.intro (Link.Face.singleton (Link.Nam \"" ^ n ^ "\"))"
+      "Big.intro (" ^ (ml_of_face [n]) ^ ")"
     | Big_num (v, _) ->
       (match v with
        | 0 -> "Big.zero"
        | 1 -> "Big.one"
        | _ -> assert false)
     | Big_id exp ->
-      "Big.id (Big.Inter ("
-      ^ (string_of_int exp.id_place)
-      ^ ", Link.parse_face "
-      ^ (ml_of_ids exp.id_link)
-      ^ "))"
+      "Big.id (Big.Inter (" ^ (string_of_int exp.id_place) ^ ", "
+      ^ (ml_of_face exp.id_link) ^ "))"
     | Big_merge (n, _) -> "Big.merge " ^ (string_of_int n)
     | Big_split (n, _) -> "Big.split " ^ (string_of_int n)
     | Big_close exp ->
-      "Big.closure (Link.parse_face " ^ (ml_of_ids [exp.cl_name]) ^ ")"
+      "Big.closure (" ^ (ml_of_face [exp.cl_name]) ^ ")"
     | Big_sub exp ->
-      "Big.sub (Link.parse_face " ^ (ml_of_ids exp.in_names)
-      ^ ") (Link.parse_face " ^ (ml_of_ids [exp.out_name]) ^ ")"
+      "Big.sub (" ^ (ml_of_face exp.in_names) ^ ") ("
+      ^ (ml_of_face [exp.out_name]) ^ ")"
     | Big_comp (a, b, _) ->
       "Big.comp\n(" ^  (ml_of_big a) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_tens (a, b, _) ->
@@ -1124,27 +1125,23 @@ module Make (T: TsType.RS)
       "Big.placing " ^ (ml_of_list ml_of_ints exp.plc_parents) ^ " "
       ^ (string_of_int exp.plc_roots) ^ " Link.Face.empty"
     | Big_ion (Big_ion_exp (id, names, _)) ->
-      "Big.ion (Link.parse_face " ^ (ml_of_ids names) ^ ") ctrl_" ^ id
+      "Big.ion (" ^ (ml_of_face names) ^ ") ctrl_" ^ id
     | Big_ion (Big_ion_fun_exp (id, params, names, _)) ->
-      "Big.ion (Link.parse_face " ^ (ml_of_ids names)
-      ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"
+      "Big.ion (" ^ (ml_of_face names) ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"
     | Big_nest (i, b, _) ->
       "Big.nest\n(" ^  (ml_of_big (Big_ion i)) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_wire (c, b, _) ->
       begin
         match c with
         | Close_exp cs ->
-          "Big.close (Link.parse_face " ^ (ml_of_ids (names_of_closures cs))
-          ^ ") (" ^ (ml_of_big b) ^ ")"
+          "Big.close\n(" ^ (ml_of_face (names_of_closures cs)) ^ ")\n(" ^ (ml_of_big b) ^ ")"
         | Sub_exp s ->
-          "Big.rename ~inner:(Link.parse_face " ^ (ml_of_ids s.in_names)
-          ^ ") ~outer:(Link.parse_face " ^ (ml_of_ids [s.out_name])
-          ^ ") (" ^ (ml_of_big b) ^ ")"
+          "Big.rename ~inner:(" ^ (ml_of_face s.in_names) ^ ") ~outer:("
+          ^ (ml_of_face [s.out_name]) ^ ") (" ^ (ml_of_big b) ^ ")"
         | Merge_close_exp cs ->
-          let outer = "(Link.parse_face [\"~0\"])" in    
-          "Big.rename ~inner:(Link.parse_face "
-          ^ (ml_of_ids cs.m_cl_names) ^ ") ~" ^ outer
-          ^ " (" ^ (ml_of_big b) ^ ") |> Big.close " ^ outer
+          let outer = (ml_of_face ["~0"]) in    
+          "Big.rename ~inner:(" ^ (ml_of_face cs.m_cl_names) ^ ") ~"
+          ^ outer ^ " (" ^ (ml_of_big b) ^ ") |> Big.close " ^ outer
       end
 
   let ml_of_eta = function
@@ -1225,19 +1222,27 @@ module Make (T: TsType.RS)
     | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
       ml_of_dec id params (ml_of_react lhs rhs l eta)
     | Dint exp ->
-      ml_of_dec exp.dint_id [] (ml_of_int exp.dint_exp)
+      ml_of_dec exp.dint_id [] ("Ctrl.I (" ^ (ml_of_int exp.dint_exp) ^ ")")
     | Dfloat exp  ->
-      ml_of_dec exp.dfloat_id [] (ml_of_float exp.dfloat_exp)
+      ml_of_dec exp.dfloat_id [] ("Ctrl.F (" ^ (ml_of_float exp.dfloat_exp) ^ ")")
 
   let ml_of_model m file =
     let file_id = Filename.basename file
                   |> Filename.chop_extension in
     "(* Generated by BigraphER "
     ^ Version.version ^ " *)\n(* "
-    ^ file ^ " *)\n
-let safe = function
-  | Some v -> v
-  | None -> assert false\n\n"
+    ^ file ^ " *)\nopen Bigraph\n
+let int_of_param = function
+  | Ctrl.I i -> i
+  | Ctrl.F _ | Ctrl.S _ -> failwith \"cast error\"
+
+let float_of_param = function
+  | Ctrl.F f -> f
+  | Ctrl.I _ | Ctrl.S _ -> failwith \"Cast error\"
+
+let string_of_parm = function
+  | Ctrl.S s -> s
+  | Ctrl.I _ | Ctrl.F _ -> failwith \"Cast error\"\n\n"
     ^ (((List.map ml_of_dec m.model_decs)
         @ (List.map ml_of_param m.model_rs.dbrs_params))
        |> String.concat "\n\n")
