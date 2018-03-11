@@ -1,6 +1,6 @@
 opam-version: "1.2"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
-version: "1.0.0"
+version: "1.0.1"
 authors: [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk> "]
 license: "BSD-2-clause"
 tags: [ "bigraphs" "rewriting" "org:dcs" ]

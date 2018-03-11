@@ -913,14 +913,18 @@ let rewrite (i_n, i_e, f_e) ~s ~r0 ~r1 eta =
   match eta with
   | None -> comp c (comp (tens r1 id) d)
   | Some eta' ->
-    if Fun.is_id eta' then
-      comp c (comp (tens r1 id) d)
+    if (Fun.is_id eta') &&
+       (Fun.is_surj (inner r0 |> ord_of_inter) eta')
+    then comp c (comp (tens r1 id) d)
     else  
     (* Normalise link graph *)
     let (omega_l, d_norm_l) = Link.norm d.l in
     let d_norm =
       { d with l = d_norm_l; } in
-    let (d', d_id) = decomp_d d_norm (ord_of_inter (inner id)) in
+    let (d', d_id) =
+      inner id
+      |> ord_of_inter
+      |> decomp_d d_norm  in
     let d'' = ppar (instantiate eta' d') d_id in
     let omega = { p = Place.elementary_id (d''.p.Place.r);
                   l = omega_l;

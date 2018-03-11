@@ -41,7 +41,7 @@ val to_string : t -> string
 (** Return a set containing the elements of a list. *)
 val of_list : int list -> t
 
-(** [of_int i] returns a set [{0, 1, ...., i - 1}]. *)
+(** [of_int n] returns a set [{0, 1, ...., n - 1}]. *)
 val of_int : int -> t
 
 (** [off i s] adds offset [i] to all the elements of set [s]. *)

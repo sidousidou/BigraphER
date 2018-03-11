@@ -57,8 +57,12 @@ val apply : t -> int -> int option
 val transform : iso_dom:Iso.t -> iso_codom:Iso.t -> t -> t
 
 (** [is_total n f] returns [true] if function [f] is total over domain
-    [1,...,n-1], [false] otherwise. *)
+    [0,...,n-1], [false] otherwise. *)
 val is_total : int -> t -> bool
+
+(** [is_surj n f] returns [true] if function [f] is surjective over codomain
+    [0,...,n-1], [false] otherwise. *)
+val is_surj : int -> t -> bool
 
 (** [is_id f] returns [true] if [f(i) = i] for each [i], [false] otherwise. *)
 val is_id : t -> bool

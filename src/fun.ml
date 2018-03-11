@@ -59,10 +59,13 @@ let is_total n f =
   assert (n >= 0);
   let rec aux i f =
     if i < 0 then true
-    else match apply f i with
-      | Some _ -> aux (i - 1) f
-      | None -> false in
+    else if M_int.mem i f then aux (i - 1) f
+    else false in
   aux (n - 1) f
+
+(* Check if f is surjective *)
+let is_surj n f =
+  IntSet.equal (codom f) (IntSet.of_int n)
 
 let is_id =
   M_int.for_all (fun i j -> i = j)  
