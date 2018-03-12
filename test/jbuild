@@ -1,7 +1,7 @@
 (jbuild_version 1)
 
 (executables
- ((names (test_match test_decomp test_brs))
+ ((names (test_match test_decomp test_brs test_inst))
   (libraries (bigraph))
 ))
 
@@ -21,5 +21,11 @@
  ((name    runtest)
   (deps    (test_brs.exe))
   (action  (run ${<} ${ROOT}/../../shippable/testresults brs-junit.xml))
+))
+
+(alias
+ ((name    runtest)
+  (deps    (test_inst.exe))
+  (action  (run ${<} ${ROOT}/../../shippable/testresults inst-junit.xml))
 ))
 
