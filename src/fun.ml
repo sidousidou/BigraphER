@@ -65,13 +65,12 @@ let is_total n f =
 
 (* Check if f is surjective *)
 let is_surj n f =
+  assert (n >= 0);
   IntSet.equal (codom f) (IntSet.of_int n)
 
 let is_id =
   M_int.for_all (fun i j -> i = j)  
 
-let check_codom ~min ~max f =
-  assert (max >= min);
-  let c = codom f in
-  if IntSet.is_empty c then true
-  else (safe @@ IntSet.min_elt c >= min) && (safe @@ IntSet.max_elt c <= max)
+let check_codom n f =
+  assert (n >= 0);
+  IntSet.subset (codom f) (IntSet.of_int n) 

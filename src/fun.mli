@@ -67,8 +67,8 @@ val is_surj : int -> t -> bool
 (** [is_id f] returns [true] if [f(i) = i] for each [i], [false] otherwise. *)
 val is_id : t -> bool
 
-(** [check_codom ~min ~max f] returns [true] if the codomain of [f] is in the
-    range [[min, max]]. *)
-val check_codom : min:int -> max:int -> t -> bool
+(** [check_codom n f] returns [true] if the codomain of [f] is in the
+    range [[0, n-1]]. *)
+val check_codom : int -> t -> bool
 
 (**/**)

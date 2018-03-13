@@ -111,8 +111,7 @@ module Make (R : R) = struct
         | Some eta ->
           (let s_lhs = lhs.Big.p.Place.s
            and s_rhs = rhs.Big.p.Place.s in
-           (Fun.is_total s_rhs eta)
-           && (Fun.check_codom ~min:0 ~max:(s_lhs - 1) eta)))
+           (Fun.is_total s_rhs eta) && (Fun.check_codom s_lhs eta)))
     && val_chk r
 
   let is_valid_exn r =
@@ -131,8 +130,7 @@ module Make (R : R) = struct
           | Some eta ->
             (let s_lhs = lhs.Big.p.Place.s
              and s_rhs = rhs.Big.p.Place.s in
-             (Fun.is_total s_rhs eta)
-             && (Fun.check_codom ~min:0 ~max:(s_lhs - 1) eta))
+             (Fun.is_total s_rhs eta) && (Fun.check_codom s_lhs eta))
           then if val_chk r
             then true
             else raise (NOT_VALID Val_chk)
