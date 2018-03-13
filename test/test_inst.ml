@@ -5,7 +5,9 @@ open Bigraph
 let a = Big.ion Link.Face.empty (Ctrl.C ("A", [], 0))
 and b = Big.ion Link.Face.empty (Ctrl.C ("B", [], 0))
 and c = Big.ion Link.Face.empty (Ctrl.C ("C", [], 0))
-let e n = Big.ion Link.Face.empty (Ctrl.C ("E", [ Ctrl.I n], 0))
+let e n = Big.nest
+    (Big.ion Link.Face.empty (Ctrl.C ("E", [ Ctrl.I n], 0)))
+    Big.one
 let e1 = e 1
 and e2 = e 2
 and e3 = e 3 
@@ -18,32 +20,32 @@ let check (a, r, b) =
   | Big.COMP_ERROR (_, _) -> false
     
 (* Test 1 *)
-let b1 = Big.ppar_of_list [ Big.nest a e1;
-                            Big.nest b e2;
+let b1 = Big.par_of_list [ Big.nest a e1;
+                           Big.nest b e2;
+                           Big.nest c e3 ]
+and b1' = Big.par_of_list [ Big.nest a e1;
                             Big.nest c e3 ]
-and b1' = Big.ppar_of_list [ Big.nest a e1;
-                             Big.nest c e3 ]
-and r1 = Big.ppar_of_list [ a; b; c ]
-and r1' = Big.ppar_of_list [ a; c ]
+and r1 = Big.par_of_list [ a; b; c ]
+and r1' = Big.par_of_list [ a; c ]
 and eta1 = Some (Fun.parse [ 0; 2 ])
 let rr1 = Brs.parse_react_unsafe ~lhs:r1 ~rhs:r1' eta1
 
 (* Test 2 *)
-let b2 = Big.ppar_of_list [ Big.nest a e1;
-                            Big.nest b e2 ]
-and b2' = Big.ppar_of_list [ Big.nest a e2;
-                             Big.nest b e1 ]
-and r2 = Big.ppar_of_list [ a; b ]
+let b2 = Big.par_of_list [ Big.nest a e1;
+                           Big.nest b e2 ]
+and b2' = Big.par_of_list [ Big.nest a e2;
+                            Big.nest b e1 ]
+and r2 = Big.par_of_list [ a; b ]
 let r2' = r2
 and eta2 = Some (Fun.parse [ 1; 0 ])
 let rr2 = Brs.parse_react_unsafe ~lhs:r2 ~rhs:r2' eta2
 
 (* Test 3 *)
-let b3 = Big.ppar_of_list [ Big.nest a e1;
-                            Big.nest b e2 ]
-and b3' = Big.ppar_of_list [ Big.nest a Big.one;
-                             Big.nest b Big.one ]
-and r3 = Big.ppar_of_list [ a; b ]
+let b3 = Big.par_of_list [ Big.nest a e1;
+                           Big.nest b e2 ]
+and b3' = Big.par_of_list [ Big.nest a Big.one;
+                            Big.nest b Big.one ]
+and r3 = Big.par_of_list [ a; b ]
 let r3' = b3'
 and eta3 = Some (Fun.parse [ ])
 let rr3 = Brs.parse_react_unsafe ~lhs:r3 ~rhs:r3' eta3

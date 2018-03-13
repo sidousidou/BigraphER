@@ -33,7 +33,7 @@ let assert_eq_int id reference out =
       [sprintf "%s: %-8d != %-8d" id out reference]
 
 let testsuite name cases =
-  header ^ "\n<testsuites name=\"BigraphER\">\n" ^
+  header ^ "\n<testsuites name=\"bigraph\">\n" ^
   (xml_block "testsuite"
      [("name", name); ("tests", string_of_int (List.length cases))]
      (List.map (fun (name, mod_name, out, fail) ->
