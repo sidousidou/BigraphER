@@ -91,7 +91,7 @@ val of_string: string -> t
     @raise Invalid_argument if the input cannot be parsed. *)
 val parse : string -> t
 
-(** [to_dot b i] compute the string expressing bigraph [b] named [i] in 
+(** [to_dot b n] compute the string expressing bigraph [b] named [n] in 
     [dot] format. *)
 val to_dot : t -> string -> string
 

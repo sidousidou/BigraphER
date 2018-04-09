@@ -319,7 +319,8 @@ let to_dot b ide =
   and rank_out = build_rank (outer b) true
   and rank_in = build_rank (inner b) false in
   sprintf "digraph \"%s\" {\n\
-           stylesheet = \"style.css\"\n\
+           newrank = true;\n\
+           stylesheet = \"style.css\";\n\
            %s%s%s%s%s\n\
            %s%s%s%s%s%s}"
     ide roots_shp outer_shp rank_out hyp_shp nodes_shp sites_shp
