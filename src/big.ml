@@ -33,6 +33,10 @@ let face_of_inter (Inter (_, f)) = f
 let string_of_inter (Inter (n, f)) =
   "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
+let pp_inter out (Inter (n, f)) =
+  let open Format in
+  fprintf out "@[<%d, %a>@]" n Link.pp_face f
+
 let to_string b =
   List.filter (fun x -> (String.compare "" x) <> 0)
     [ Nodes.to_string b.n;

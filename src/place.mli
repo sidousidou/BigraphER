@@ -19,6 +19,9 @@ type t = {
 (** [to_string p] returns a string representation of place graph [p]. *)
 val to_string : t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+
 (** Computes the representation of a boolean matrix as a list of edges. *)
 val edges : m -> (int * int) list
 

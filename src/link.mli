@@ -132,8 +132,14 @@ val parse_face : string list -> Face.t
 (** [string_of_face f] computes the string representation of face [f]. *)
 val string_of_face : Face.t -> string
 
+(** Pretty printer. *)
+val pp_face : Format.formatter -> Face.t -> unit
+
 (** [to_string l] computes the string representation of link graph [l]. *)
 val to_string : Lg.t -> string
+
+(** Pretty printer. *)
+val pp : Format.formatter -> Lg.t -> unit
 
 (** Opposite of {!val:Link.to_string}.
    

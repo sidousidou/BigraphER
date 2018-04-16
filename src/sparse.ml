@@ -30,7 +30,7 @@ let compare a b =
       | x -> x)
   | x -> x
 
-let to_string m =
+let _init_array m = 
   let buff = Array.make_matrix m.r m.c "0" in
   M_int.iter (fun i js ->
       IntSet.iter (fun j ->
@@ -38,10 +38,24 @@ let to_string m =
         js)
     m.r_major;
   buff
+
+let to_string m =
+  _init_array m
   |> Array.map (fun r ->
       String.concat "" (Array.to_list r))
   |> Array.to_list
   |> String.concat "\n"
+
+let pp out m =
+  let open Format in
+  let buff = _init_array m
+  and pp_ints out a =
+    pp_open_hbox out ();
+    Array.iter (fun i -> pp_print_string out i) a; 
+    pp_close_box out () in
+  pp_open_vbox out 2;
+  Array.iter (fun r -> pp_ints out r) buff;
+  pp_close_box out ()
 
 let add_m i j m =
   match M_int.find i m with

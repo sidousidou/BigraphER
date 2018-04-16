@@ -44,6 +44,9 @@ val inter_equal : inter -> inter -> bool
 (** Compute the string representation of an interface. *)
 val string_of_inter: inter -> string
 
+(** Pretty printer. *)
+val pp_inter : Format.formatter -> inter -> unit
+
 (** Compute the ordinal of an interface. *)
 val ord_of_inter : inter -> int
 

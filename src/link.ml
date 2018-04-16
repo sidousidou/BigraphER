@@ -57,6 +57,34 @@ module Ports = struct
        |> String.concat ", ")
     ^ "}"
 
+  let pp out ps =
+    let open Format in
+    let pp_ints out a b =
+      pp_open_hbox out ();     
+      pp_print_string out "(";
+      pp_print_int out a;
+      pp_print_string out ",";
+      pp_print_space out ();
+      pp_print_int out b;
+      pp_print_string out ")";
+      pp_close_box out () in
+    pp_open_hbox out ();
+    pp_print_string out "{";
+    (match M_int.max_binding ps with
+     | None -> ()
+     | Some (a, b) -> 
+       begin
+         let ps' = M_int.remove a ps in
+         M_int.iter (fun a b ->
+             pp_ints out a b;
+             pp_print_string out ",";
+             pp_print_space out ())
+           ps';
+         pp_ints out a b
+       end);
+    pp_print_string out "}";
+    pp_close_box out ()
+
   let of_string s =
     try
       match s with
@@ -226,10 +254,28 @@ let parse_face =
 let string_of_face f =
   "{"
   ^ (Face.elements f
-     |>List.map string_of_name
+     |> List.map string_of_name
      |> String.concat ", ")
   ^ "}"
 
+let pp_face out f =
+  let open Format in
+  pp_open_hbox out ();
+  pp_print_string out "{";
+  (match Face.max_elt f with
+   | None -> ()
+   | Some ((Name s) as max) -> 
+     begin
+       let f' = Face.remove max f in
+       Face.iter (fun (Name s) ->
+           pp_print_string out (s ^ ",");
+           pp_print_space out ())
+         f';
+       pp_print_string out s
+     end);
+  pp_print_string out "}";
+  pp_close_box out ()
+    
 let face_of_string s =
   try
     Str.(split (regexp_string ", ")) s
@@ -246,6 +292,13 @@ let string_of_edge e =
   ^ (Ports.to_string e.p)
   ^ ")"
 
+let pp_edge out e =
+  let open Format in
+  fprintf out "@[(%a, %a, %a)@]"
+    pp_face e.i
+    pp_face e.o
+    Ports.pp e.p
+  
 let edge_of_string s =
   try
     Base.remove_block_delims s
@@ -265,6 +318,12 @@ let to_string l =
   Lg.elements l
   |> List.map string_of_edge
   |> String.concat "\n"
+
+let pp out l =
+  let open Format in
+  pp_open_vbox out 2;
+  Lg.iter (fun e -> pp_edge out e) l;
+  pp_close_box out ()
 
 let of_string s =
   Str.split (Str.regexp_string "\n") s

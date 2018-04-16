@@ -24,6 +24,9 @@ val compare : t -> t -> int
 (** Return the string representation of a matrix. '0' = false and 1 = true *)
 val to_string : t -> string
 
+(** Pretty printer *)
+val pp : Format.formatter -> t -> unit
+
 (** [apply_rows iso m] returns matrix [m] with the rows reordered
     according to [iso]. The domain of [iso] is assumed to be [{0,...,r}] with
     [r] the number of rows of [m]. *)

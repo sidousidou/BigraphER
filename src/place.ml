@@ -29,6 +29,14 @@ let to_string p =
       | "" -> head p
       | s -> (head p) ^ "\n" ^ s) 
 
+let pp out p =
+  let open Format in
+  fprintf out "@[<v 2>@[%d %d %d@]%a@]"
+    p.r p.n p.s 
+    Sparse.pp (Sparse.stack
+                 (Sparse.append p.rn p.rs)
+                 (Sparse.append p.nn p.ns))
+
 (* Parse a place graph from a list of strings *)
 let parse ~regions:r ~nodes:n ~sites:s lines =
   try
