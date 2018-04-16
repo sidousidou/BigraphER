@@ -553,7 +553,15 @@ let tests bgs = (* TEST 1 *)
       pattern = List.assoc "P37" bgs;
       exp_res = [];
       res = [];
-    } ]
+    } ; (* TEST 39 *)
+    {
+      t_name = "T27";
+      p_name = "P38";
+      target = List.assoc "T27" bgs;
+      pattern = List.assoc "P38" bgs;
+      exp_res = [];
+      res = [];
+    }]
 
 (* Args: PATH PATH-out*)
 let () =
