@@ -70,7 +70,7 @@ let add i j m =
   { m with r_major = add_m i j m.r_major;
            c_major = add_m j i m.c_major;
   }
-
+  
 let flip_major m =
   M_int.fold (fun i js acc ->
       IntSet.fold (fun j acc ->
@@ -175,6 +175,10 @@ let chl m i =
   match M_int.find i m.r_major with
   | None -> IntSet.empty
   | Some s -> s
+
+let mem m i j =
+  chl m i
+  |> IntSet.mem j
 
 let prn m j =
   assert (j >= 0);

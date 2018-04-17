@@ -34,8 +34,8 @@ let check_res res exp_res =
   else
     List.for_all
       (fun ((i0, j0), (i1, j1)) ->
-         (Iso.equal i0 i1) && (Iso.equal j0 j1)
-      ) (List.combine (sort_res res) (sort_res exp_res))
+         (Iso.equal i0 i1) && (Iso.equal j0 j1))
+      (List.combine (sort_res res) (sort_res exp_res))
 
 let test_decomposition t p (i_n, i_e, f_e) =
   let (c, d, id_big) = Big.decomp ~target:t ~pattern:p ~i_n ~i_e f_e in

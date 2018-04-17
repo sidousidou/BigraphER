@@ -712,6 +712,21 @@ let check_trans t_trans v_p' c_set =
         (Sparse.chl t_trans c))
       c_set)
 
+(* If there is an edge in the target between two nodes in the co-domain then
+   there must be an edge in the pattern between the corresponding nodes in the
+   domain. *)
+let check_edges t p v_p' iso =
+  let iso' = Iso.inverse iso in
+  IntSet.fold (fun u acc ->
+      IntSet.fold (fun v acc ->
+          (u, v) :: acc)
+        (IntSet.inter v_p' (Sparse.chl t.nn u)) acc)
+    v_p' []
+  |> List.for_all (fun (u, v) ->
+      Sparse.mem p.nn
+        (safe @@ Iso.apply iso' u)
+        (safe @@ Iso.apply iso' v))
+    
 (* Check if iso i : p -> t is valid *)
 let check_match ~target:t ~pattern:p t_trans iso =
   let v_p' =
@@ -723,6 +738,7 @@ let check_match ~target:t ~pattern:p t_trans iso =
       v_p' IntSet.empty in
   (check_sites t p v_p' c_set iso)
   && (check_regions t p v_p' iso)
+  && (check_edges t p v_p' iso)
   && (check_trans t_trans v_p' c_set)
 
 (* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)

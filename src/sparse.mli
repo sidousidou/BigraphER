@@ -102,6 +102,9 @@ val entries : t -> int
 (** Return the representation of a binary matrix as a list of edges. *)
 val edges : t -> (int * int) list
 
+(** [mem m i j] returns [true] if edge [(i,j)] is defined by [m]. *)
+val mem : t -> int -> int -> bool
+
 (** {2 Matrix operations} *)
 
 (** [row n] returns a row vector of [n] [true] elements. *)			     
