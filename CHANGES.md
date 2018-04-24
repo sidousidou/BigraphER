@@ -1,3 +1,10 @@
+###1.2.0 (2018-04-24): ###
+
+* Use `newrank` to fix dot generation
+* Add some pretty printers
+* Fix bug in matching engine
+
+
 ###1.0.1 (2018-03-13): ###
 
 * Breaking change in `Fun.check_codom` 
