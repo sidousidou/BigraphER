@@ -7,6 +7,7 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
+  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label -> string
@@ -26,6 +27,7 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
+  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
@@ -38,26 +40,28 @@ sig
   val random_step : Big.t -> t list -> (Big.t * label) option * int
 end
 
-(* Generic step function *)
-let gen_step s rules
-    ~(merge_occ:(Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b))
-    ~lhs ~rhs ~label ~map  =
+(* Merge isomorphic occurrences *)
+let filter_iso merge_occ l =
   (* Input list is assumed without duplicates. Example: extract 4
      [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)
   let rec extract (pred :'a -> bool) acc = function
     | [] -> (None, acc)
     | x :: l -> if pred x then (Some x, l @ acc)
       else extract pred (x :: acc) l in
-  let filter_iso l =
-    let aux1 acc o =
-      let (iso, non_iso) =
-        extract (fun o' ->
-            Big.equal (fst o) (fst o'))
-          [] acc in
-      match iso with
-      | None -> o :: acc
-      | Some iso_o -> (merge_occ o iso_o) :: non_iso in
-    (List.fold_left aux1 [] l, List.length l) in
+  let aux1 acc o =
+    let (iso, non_iso) =
+      extract (fun o' ->
+          Big.equal (fst o) (fst o'))
+        [] acc in
+    match iso with
+    | None -> o :: acc
+    | Some iso_o -> (merge_occ o iso_o) :: non_iso in
+  List.fold_left aux1 [] l
+
+(* Generic step function *)
+let gen_step s rules
+    (merge_occ:(Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b))
+    ~lhs ~rhs ~label ~map  =
   let aux2 acc r =
     (Big.occurrences ~target:s ~pattern:(lhs r)
      (* Parmap.parmap *)
@@ -65,7 +69,8 @@ let gen_step s rules
          (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r)))
     @ acc in
   List.fold_left aux2 [] rules
-  |> filter_iso
+  |> filter_iso merge_occ
+  |> fun l -> (l, List.length l)
 
 module Make (R : R) = struct
 
@@ -141,7 +146,7 @@ module Make (R : R) = struct
 
   let is_enabled b r =
     Big.occurs ~target:b ~pattern:(lhs r)
-
+  
   let apply b reacts =
     let apply_rule b r = 
       match Big.occurrence

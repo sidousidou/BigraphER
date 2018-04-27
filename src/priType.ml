@@ -63,7 +63,10 @@ struct
                   let (s', l') =
                     rewrite (fst o) const_pri in
                   ((s', snd o) :: ss, l + l'))
-                ([], l) ss in
+                ([], l) ss
+              (* Merge isomorphic states *)
+              |> (fun (ss, l) ->
+                  (RrType.filter_iso R.merge_occ ss, l)) in
             (part_f ss', matches + l')
         end
       | (P_rclass _) :: cs -> (* Skip *)

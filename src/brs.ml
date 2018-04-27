@@ -19,6 +19,8 @@ module RT = struct
 
   let map r = r.eta
 
+  let merge_occ (b, _) _ = (b, ())
+  
   let equal r r' =
     Big.equal r.rdx r'.rdx
     && Big.equal r.rct r'.rct
@@ -36,9 +38,8 @@ module RT = struct
       eta = eta; }
 
   let step b rules =
-    let merge_occ (b, _) _ = (b, ()) in
-    RrType.gen_step b rules ~merge_occ ~lhs ~rhs ~label:l ~map
-
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
+  
   let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function

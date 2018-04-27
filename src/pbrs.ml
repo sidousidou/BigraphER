@@ -25,6 +25,8 @@ module RT = struct
       
   let map r = r.eta
 
+  let merge_occ (b, p) (_, p') = (b, p +. p')
+                                 
   let val_chk r = r.p > 0.0 && r.p <= 1.0
 
   let val_chk_error_msg = "Not a probability"
@@ -43,10 +45,9 @@ module RT = struct
     (List.map (fun (b, p) -> (b, p /. sum)) l, n)
 
   let step b rules =
-    let merge_occ (b, p) (_, p') = (b, p +. p') in
-    RrType.gen_step b rules ~merge_occ ~lhs ~rhs ~label:l ~map
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
     |> norm
-
+    
   let random_step b rules =
     let (ss, m) = step b rules in
     match ss with

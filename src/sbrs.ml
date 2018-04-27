@@ -25,6 +25,8 @@ module RT = struct
     
   let map r = r.eta
 
+  let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
+
   let val_chk r = r.rate > 0.0
 
   let val_chk_error_msg = "Not a stochastic rate"
@@ -36,11 +38,10 @@ module RT = struct
       rct = rhs;
       eta = eta;
       rate = r; }
-
+    
   let step b rules =
-    let merge_occ (b, rho) (_, rho') = (b, rho +. rho') in
-    RrType.gen_step b rules ~merge_occ ~lhs ~rhs ~label:l ~map
-
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
+      
   let random_step b rules =
     (* Sort transitions by rate *)
     let (ss, m) = step b rules in

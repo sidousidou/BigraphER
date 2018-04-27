@@ -8,6 +8,7 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
+  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label -> string
@@ -27,6 +28,7 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
+  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
@@ -66,6 +68,9 @@ module Make (R : R) : sig
   (** Return the instantition map of a rewrite rule. *)		   
   val map : t -> Fun.t option
 
+  (** Merge two occurrences. *)
+  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
+  
   (** Creare a new reaction rule. *)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
 
@@ -107,11 +112,16 @@ module Make (R : R) : sig
   
 end
 
+(** Merge isomorphic occurrences *)
+val filter_iso :
+  (Big.t * 'a -> Big.t * 'a -> Big.t * 'a) ->
+  (Big.t * 'a) list -> (Big.t * 'a) list
+  
 (** Generic step function *)
 val gen_step :
   Big.t ->
   'a list ->
-  merge_occ:((Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b)) ->
+  ((Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b)) ->
   lhs:('a -> Big.t) ->
   rhs:('a -> Big.t) ->
   label:('a -> 'b) ->
