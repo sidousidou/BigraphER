@@ -321,9 +321,9 @@ let to_string l =
 
 let pp out l =
   let open Format in
-  pp_open_vbox out 2;
-  Lg.iter (fun e -> pp_edge out e) l;
-  pp_close_box out ()
+  let aux out l =
+    Lg.iter (fun e -> pp_edge out e; pp_print_cut out ()) l in
+  fprintf out "@[<v>%a@]" aux l
 
 let of_string s =
   Str.split (Str.regexp_string "\n") s
