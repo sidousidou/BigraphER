@@ -69,8 +69,7 @@ let gen_step s rules
          (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r)))
     @ acc in
   List.fold_left aux2 [] rules
-  |> filter_iso merge_occ
-  |> fun l -> (l, List.length l)
+  |> fun l -> (filter_iso merge_occ l, List.length l)
 
 module Make (R : R) = struct
 

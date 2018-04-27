@@ -43,7 +43,7 @@ struct
       | (P_rclass rr) :: classes ->
         (let (b', i) = R.fix b rr in
          if i = 0
-         then _rewrite b' (m + i) classes
+         then _rewrite b' m classes
          else _rewrite b' (m + i) const_pri) in
     _rewrite b 0 const_pri
 
