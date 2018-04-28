@@ -43,6 +43,9 @@ val of_list : (int * int) list -> t
     ["\{(1, 1), (2, 3), (5, 2)\}"]. *)
 val to_string : t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+
 (** Equality between isomorphisms. *)		       
 val equal : t -> t -> bool
 

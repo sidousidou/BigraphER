@@ -37,6 +37,15 @@ let of_list =
 
 let parse l = of_list (List.mapi (fun i j -> (i, j)) l)
 
+let pp =
+  M_int.pp
+    ~open_b:Format.pp_open_hbox
+    ~first:(fun out -> Format.pp_print_string out "{")
+    ~last:(fun out -> Format.pp_print_string out "}")
+    ~sep:(fun out -> Format.pp_print_string out ",";
+           Format.pp_print_space out ())
+    Format.pp_print_int
+
 let to_string f =
   "{"
   ^ (to_list f

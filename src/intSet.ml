@@ -1,11 +1,22 @@
 open Base
 
-module S = S_opt (Set.Make (struct
-                    type t = int
-                    let compare =int_compare
-                  end))
+module S =
+  S_opt (Set.Make (struct
+           type t = int
+           let compare =int_compare
+         end))
+    (struct
+      type t = int
+      let pp = Format.pp_print_int
+    end)
 
 type t = S.t
+
+let pp = S.pp
+    ~open_b:Format.pp_open_hbox
+    ~first:(fun out -> Format.pp_print_string out "{")
+    ~last:(fun out -> Format.pp_print_string out "}")
+    ~sep:(fun out -> Format.pp_print_string out ",") 
 
 let to_string s =
   "{"

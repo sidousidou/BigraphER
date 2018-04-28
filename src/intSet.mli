@@ -38,6 +38,9 @@ val union : t -> t -> t
 (** Return the string representation of a set. Example: ["\{1,4,7\}"]. *)
 val to_string : t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+
 (** Return a set containing the elements of a list. *)
 val of_list : int list -> t
 

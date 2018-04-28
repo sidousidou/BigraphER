@@ -37,6 +37,9 @@ val of_list : (int * int list) list -> t
     ["\{(1, \{1, 2, 3\}), (2, \{3, 4\})\}"]. *)
 val to_string : t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+  
 (** [add i set r] adds [set] to the values associated to [i] in relation [r]. *)
 val add : int -> IntSet.t -> t -> t
 

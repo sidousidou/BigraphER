@@ -120,9 +120,9 @@ module Lg : sig
   val partition : (elt -> bool) -> t -> t * t
   val cardinal : t -> int
   val elements : t -> elt list
-  val min_elt : t -> elt
-  val max_elt : t -> elt
-  val choose : t -> elt
+  val min_elt : t -> elt option
+  val max_elt : t -> elt option
+  val choose : t -> elt option
   val split : elt -> t -> t * bool * t
 end
 

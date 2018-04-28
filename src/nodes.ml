@@ -32,6 +32,17 @@ let fold f s =
 let iter f s =
   M_int.iter f s.ctrl  
 
+let pp out s =
+    M_int.pp
+    ~open_b:Format.pp_open_hbox
+    ~first:(fun out -> Format.pp_print_string out "{")
+    ~last:(fun out -> Format.pp_print_string out "}")
+    ~sep:(fun out -> Format.pp_print_string out ",";
+           Format.pp_print_space out ())
+    (fun out c -> Format.pp_print_string out (Ctrl.to_string c))
+    out
+    s.ctrl
+
 let to_string s =
   "{"
   ^ (fold (fun i c acc ->

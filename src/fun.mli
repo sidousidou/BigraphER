@@ -48,6 +48,9 @@ val parse : int list -> t
     ["\{(1, 2), (2, 3), (3, 3)\}"]. *)
 val to_string : t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+
 (** [apply f x] returns [f(x)]. *)				  
 val apply : t -> int -> int option
 

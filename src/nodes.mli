@@ -59,6 +59,9 @@ val tens : t -> t -> t
     ["\{(2, Ready:0),(0, A(1,4):1),(3, Fun:0),(1, Snd:2)\}"]. *)
 val to_string : t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+  
 (** [to_dot ns] returns a string expressing node shapes in dot format. *)
 val to_dot: t -> string
 

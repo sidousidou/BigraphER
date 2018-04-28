@@ -54,7 +54,7 @@ let pp out m =
     Array.iter (fun i -> pp_print_string out i) a; 
     pp_close_box out () in
   pp_open_vbox out 2;
-  Array.iter (fun r -> pp_ints out r) buff;
+  Array.iter (fun r -> pp_ints out r; pp_print_cut out ()) buff;
   pp_close_box out ()
 
 let add_m i j m =

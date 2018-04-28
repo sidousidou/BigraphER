@@ -45,6 +45,17 @@ let to_list (i, _) =
 let of_list =
   List.fold_left (fun acc (i, j) -> add i j acc) empty
 
+let pp out (i, _) =
+  M_int.pp
+    ~open_b:Format.pp_open_hbox
+    ~first:(fun out -> Format.pp_print_string out "{")
+    ~last:(fun out -> Format.pp_print_string out "}")
+    ~sep:(fun out -> Format.pp_print_string out ",";
+           Format.pp_print_space out ())
+    Format.pp_print_int
+    out
+    i
+    
 let to_string (i, _) =
   "{"
   ^ (M_int.bindings i

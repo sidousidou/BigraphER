@@ -38,6 +38,15 @@ let apply r i =
 let add i js r =
   M_int.add i (IntSet.union (apply r i) js) r
 
+let pp =
+  M_int.pp
+    ~open_b:Format.pp_open_hbox
+    ~first:(fun out -> Format.pp_print_string out "{")
+    ~last:(fun out -> Format.pp_print_string out "}")
+    ~sep:(fun out -> Format.pp_print_string out ",";
+           Format.pp_print_space out ())
+    IntSet.pp
+
 let to_string r =
   "{"
   ^ (M_int.bindings r

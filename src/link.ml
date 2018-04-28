@@ -4,12 +4,17 @@ open Printf
 (* ide strings no capital letter or number at the start *)
 type name = Name of string
 
-module Face = S_opt (Set.Make (struct
-                       type t = name
-                       let compare =
-                         fun (Name s0) (Name s1) ->
-                           String.compare s0 s1
-                     end))
+module Face =
+  S_opt (Set.Make (struct
+           type t = name
+           let compare =
+             fun (Name s0) (Name s1) ->
+               String.compare s0 s1
+         end))
+    (struct
+      type t = name
+      let pp out (Name s) = Format.pp_print_string out s
+    end)
 
 (* Module used to compute equivalence classes *)
 module Face_set = Set.Make (struct
@@ -57,33 +62,14 @@ module Ports = struct
        |> String.concat ", ")
     ^ "}"
 
-  let pp out ps =
-    let open Format in
-    let pp_ints out a b =
-      pp_open_hbox out ();     
-      pp_print_string out "(";
-      pp_print_int out a;
-      pp_print_string out ",";
-      pp_print_space out ();
-      pp_print_int out b;
-      pp_print_string out ")";
-      pp_close_box out () in
-    pp_open_hbox out ();
-    pp_print_string out "{";
-    (match M_int.max_binding ps with
-     | None -> ()
-     | Some (a, b) -> 
-       begin
-         let ps' = M_int.remove a ps in
-         M_int.iter (fun a b ->
-             pp_ints out a b;
-             pp_print_string out ",";
-             pp_print_space out ())
-           ps';
-         pp_ints out a b
-       end);
-    pp_print_string out "}";
-    pp_close_box out ()
+  let pp =
+    M_int.pp
+      ~open_b:Format.pp_open_hbox
+      ~first:(fun out -> Format.pp_print_string out "{")
+      ~last:(fun out -> Format.pp_print_string out "}")
+      ~sep:(fun out -> Format.pp_print_string out ",";
+             Format.pp_print_space out ())
+      Format.pp_print_int
 
   let of_string s =
     try
@@ -205,6 +191,35 @@ module Ports = struct
 
 end
 
+let string_of_name (Name s) = s
+
+let parse_face =
+  List.fold_left (fun acc x ->
+      Face.add (Name x) acc)
+    Face.empty
+
+let string_of_face f =
+  "{"
+  ^ (Face.elements f
+     |> List.map string_of_name
+     |> String.concat ", ")
+  ^ "}"
+
+let pp_face =
+  Face.pp
+    ~open_b:Format.pp_open_hbox
+    ~first:(fun out -> Format.pp_print_string out "{")
+    ~last:(fun out -> Format.pp_print_string out "}")
+    ~sep:(fun out -> Format.pp_print_string out ",";
+           Format.pp_print_space out ())
+
+let face_of_string s =
+  try
+    Str.(split (regexp_string ", ")) s
+    |> parse_face
+  with
+  | _ -> invalid_arg "Not a valid string representation of a face"
+
 (* (in, out, ports) *)
 type edg = { i: Face.t; o: Face.t; p: Ports.t }
 
@@ -221,67 +236,6 @@ let edg_compare (h : edg) (k : edg) =
 
 let edg_is_empty e =
   Face.is_empty e.i && Face.is_empty e.o && Ports.is_empty e.p
-
-module Lg =
-struct
-
-  include Set.Make (struct
-      type t = edg
-      let compare = edg_compare
-    end)
-
-  let add e l =
-    if edg_is_empty e then l else add e l
-
-  let singleton e =
-    if edg_is_empty e then empty else singleton e
-
-end
-
-(* tensor product fails (inner common names, outer common names)*)
-exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
-
-(* Composition fails *)
-exception FACES_MISMATCH of (Face.t * Face.t)
-
-let string_of_name (Name s) = s
-
-let parse_face =
-  List.fold_left (fun acc x ->
-      Face.add (Name x) acc)
-    Face.empty
-
-let string_of_face f =
-  "{"
-  ^ (Face.elements f
-     |> List.map string_of_name
-     |> String.concat ", ")
-  ^ "}"
-
-let pp_face out f =
-  let open Format in
-  pp_open_hbox out ();
-  pp_print_string out "{";
-  (match Face.max_elt f with
-   | None -> ()
-   | Some ((Name s) as max) -> 
-     begin
-       let f' = Face.remove max f in
-       Face.iter (fun (Name s) ->
-           pp_print_string out (s ^ ",");
-           pp_print_space out ())
-         f';
-       pp_print_string out s
-     end);
-  pp_print_string out "}";
-  pp_close_box out ()
-    
-let face_of_string s =
-  try
-    Str.(split (regexp_string ", ")) s
-    |> parse_face
-  with
-  | _ -> invalid_arg "Not a valid string representation of a face"
 
 let string_of_edge e =
   "("
@@ -314,16 +268,43 @@ let edge_of_string s =
   with
   | _ -> invalid_arg "Not a valid string representation of an edge"
 
+module Lg =
+struct
+
+  include S_opt (Set.Make (struct
+                   type t = edg
+                   let compare = edg_compare
+                 end))
+      (struct
+        type t = edg
+        let pp = pp_edge 
+      end)
+
+  let add e l =
+    if edg_is_empty e then l else add e l
+
+  let singleton e =
+    if edg_is_empty e then empty else singleton e
+
+end
+
+(* tensor product fails (inner common names, outer common names)*)
+exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
+
+(* Composition fails *)
+exception FACES_MISMATCH of (Face.t * Face.t)
+
 let to_string l =
   Lg.elements l
   |> List.map string_of_edge
   |> String.concat "\n"
 
-let pp out l =
-  let open Format in
-  let aux out l =
-    Lg.iter (fun e -> pp_edge out e; pp_print_cut out ()) l in
-  fprintf out "@[<v>%a@]" aux l
+let pp =
+  Lg.pp
+    ~open_b:(fun out () -> Format.pp_open_vbox out 0)
+    ~first:(fun _ -> ())
+    ~last:(fun _ -> ())
+    ~sep:(fun out -> Format.pp_print_cut out ()) 
 
 let of_string s =
   Str.split (Str.regexp_string "\n") s
@@ -459,13 +440,17 @@ let merge_out lg cls =
       Lg.add (merge (Lg.filter (fun e ->
           not (Face.is_empty (Face.inter f e.o))) lg)) acc) cls Lg.empty
 
-(* Fuse two link graphs on common names *)
+(* Fuse two link graphs on common names. Note, mediating interfaces are assumed
+   equal. *)
 let fuse a b =
   Lg.fold (fun e acc ->
       let h =
-        Lg.choose (Lg.filter (fun h -> Face.equal h.o e.i) b) in
+        Lg.filter (fun h -> Face.equal h.o e.i) b
+        |> Lg.choose
+        |> safe in
       let new_e = {i = h.i; o = e.o; p = Ports.sum e.p h.p} in
-      Lg.add new_e acc) a Lg.empty
+      Lg.add new_e acc)
+    a Lg.empty
 
 (* Composition A o B. [n] is the number of nodes in A. *)
 let comp a b n =

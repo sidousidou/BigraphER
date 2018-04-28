@@ -4,7 +4,7 @@ module type P = sig
   val f_r_val : t -> bool
 end
 
-module Make (R :RrType.T)
+module Make (R : RrType.T)
     (P : P with type t = R.t list) =
 struct
 

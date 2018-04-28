@@ -2,9 +2,24 @@ let int_equal (a : int) (b : int) = a = b
 
 let int_compare a b = a - b
 
+module type Pp = sig
+  type t
+  val pp : Format.formatter -> t -> unit
+end
+
+let pp_print_pair ~open_b ~first ~last ~sep a b out p =
+  open_b out ();     
+  first out;
+  a out (fst p);
+  sep out;
+  b out (snd p);
+  last out;
+  Format.pp_close_box out ()
+
 (* Functor overriding values in module Map. Required to be compatible with
     OCaml < 4.05 *)
-module M_opt (M_lib : Map.S) = struct
+module M_opt (M_lib : Map.S)
+    (P : Pp with type t = M_lib.key) = struct
 
   include M_lib
 
@@ -24,9 +39,37 @@ module M_opt (M_lib : Map.S) = struct
     try Some (max_binding m) with
     | Not_found -> None
 
+  let pp ~open_b ~first ~last ~sep pp_b out m =
+    let open Format in
+    let pp_binding out a b =
+      pp_print_pair
+        ~open_b:pp_open_hbox
+        ~first:(fun out -> pp_print_string out "(")
+        ~last:(fun out -> pp_print_string out ")")
+        ~sep:(fun out -> pp_print_string out ","; pp_print_space out ())
+        P.pp
+        pp_b
+        out
+        (a, b) in
+    open_b out ();
+    first out;
+    (match min_binding m with
+     | None -> ()
+     | Some (a, b) -> 
+       begin
+         let m' = remove a m in
+         pp_binding out a b;
+         iter (fun a b ->
+             sep out; pp_binding out a b)
+           m'         
+       end);
+    last out;
+    pp_close_box out ()
+
 end
 
-module S_opt (S_lib : Set.S) = struct
+module S_opt (S_lib : Set.S)
+    (P : Pp with type t = S_lib.elt) = struct
 
   include S_lib
 
@@ -45,21 +88,51 @@ module S_opt (S_lib : Set.S) = struct
   let choose s =
     try Some (choose s) with
     | Not_found -> None
+      
+  let pp ~open_b ~first ~last ~sep out s =
+    let open Format in
+    open_b out ();
+    first out;
+    (match min_elt s with
+     | None -> ()
+     | Some min -> 
+       begin
+         let s' = remove min s in
+         P.pp out min;
+         iter (fun x -> sep out; P.pp out x) s'         
+       end);
+    last out;
+    pp_close_box out ()
 
 end
 
-module M_int = M_opt (Map.Make (struct
-                        type t = int
-                        let compare = int_compare
-                      end))
+module M_int =
+  M_opt (Map.Make (struct
+           type t = int
+           let compare = int_compare
+         end))
+    (struct
+      type t = int
+      let pp = Format.pp_print_int
+    end)
 
-module M_string = M_opt (Map.Make (String))
+module M_string =
+  M_opt (Map.Make (String))
+    (struct
+      type t = String.t
+      let pp = Format.pp_print_string
+    end)
 
-module S_string = S_opt (Set.Make (String))
+module S_string =
+  S_opt (Set.Make (String))
+    (struct
+      type t = String.t
+      let pp = Format.pp_print_string
+    end)
 
 module H_int = struct
 
-  include  Hashtbl.Make(struct
+  include Hashtbl.Make(struct
       type t = int
       let equal = int_equal
       let hash = Hashtbl.hash
@@ -113,7 +186,7 @@ let list_equal f a b =
     | ([], []) -> true
     | ([], _)
     | (_, []) -> false
-    | (x::xs, y::ys) -> (f x y) && (aux (xs, ys))
+    | (x :: xs, y :: ys) -> (f x y) && (aux (xs, ys))
   in aux (a, b)
 
 (* "\n12\n4\n678\n" -> ["12"; "4"; "678"]
@@ -127,3 +200,11 @@ let remove_block_delims s =
   if String.length s >= 2 then
     String.(sub s 1 (length s - 2))
   else invalid_arg "String \"" ^ s ^ "\" has no block delimiters"
+
+(** List pretty printer *)
+let pp_list (out:Format.formatter) open_b pp_x sep l =
+  let rec pp = function
+    | [] -> ()
+    | [x] -> pp_x out x
+    | x :: xs -> pp_x out x; sep out (); pp xs in
+  open_b out; pp l; Format.pp_close_box out ()
