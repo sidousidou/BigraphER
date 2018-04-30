@@ -34,7 +34,7 @@ let string_of_inter (Inter (n, f)) =
   "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
 let pp_inter out (Inter (n, f)) =
-  Format.fprintf out "@[<%d,@ %a>@]" n Link.pp_face f
+  Format.fprintf out "@[%c%d,@ %a%c@]" '<' n Link.pp_face f '>'
 
 let to_string b =
   List.filter (fun x -> (String.compare "" x) <> 0)
