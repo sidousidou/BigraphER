@@ -53,8 +53,11 @@ let pp out m =
     pp_open_hbox out ();
     Array.iter (fun i -> pp_print_string out i) a; 
     pp_close_box out () in
-  pp_open_vbox out 2;
-  Array.iter (fun r -> pp_ints out r; pp_print_cut out ()) buff;
+  pp_open_vbox out 0;
+  Array.iteri (fun i r ->
+      if i = (m.r - 1) then pp_ints out r
+      else (pp_ints out r; pp_print_cut out ()))
+    buff;
   pp_close_box out ()
 
 let add_m i j m =

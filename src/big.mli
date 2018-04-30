@@ -67,6 +67,9 @@ val face_of_inter : inter -> Link.Face.t
  ({}, {}, {(0, 2), (1, 1)})"] *)
 val to_string: t -> string
 
+(** Pretty printer. *)
+val pp : Format.formatter -> t -> unit
+
 (** Parse a string produced by {!val:Big.to_string} to a value of type
     {!type:Big.t}.
 

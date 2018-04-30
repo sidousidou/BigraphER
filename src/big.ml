@@ -34,8 +34,7 @@ let string_of_inter (Inter (n, f)) =
   "<" ^ (string_of_int n) ^ ", " ^ (Link.string_of_face f) ^ ">"
 
 let pp_inter out (Inter (n, f)) =
-  let open Format in
-  fprintf out "@[<%d, %a>@]" n Link.pp_face f
+  Format.fprintf out "@[<%d,@ %a>@]" n Link.pp_face f
 
 let to_string b =
   List.filter (fun x -> (String.compare "" x) <> 0)
@@ -43,6 +42,12 @@ let to_string b =
       Place.to_string b.p;
       Link.to_string b.l ]
   |> String.concat "\n"
+
+let pp out b =
+  Format.fprintf out "@[<v>%a@,%a" Nodes.pp b.n Place.pp b.p;
+  if (Link.Lg.is_empty b.l) then Format.pp_close_box out ()
+  else Format.fprintf out "@,%a@]"
+      Link.pp b.l
 
 let size b =
   (Nodes.size b.n) + (Link.Lg.cardinal b.l)

@@ -387,8 +387,9 @@ let elementary_id f =
   Face.fold (fun n acc ->
       Lg.union (Lg.singleton { i = Face.singleton n;
                                o = Face.singleton n;
-                               p = Ports.empty;
-                             }) acc) f Lg.empty
+                               p = Ports.empty; })
+        acc)
+    f Lg.empty
 
 let id_empty = elementary_id Face.empty
 
