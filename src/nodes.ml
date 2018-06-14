@@ -152,7 +152,7 @@ let not_sub a b =
         if M_int.exists (fun _ c' ->
             Ctrl.equal c c') b.ctrl
         then res
-        else raise Exit)
+        else raise_notrace Exit)
       set_ctrl_a false
   with
   | Exit -> true

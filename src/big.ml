@@ -692,30 +692,30 @@ let occurrence ~target:t ~pattern:p t_trans =
 
 (* compute non-trivial automorphisms of b *)
 let auto b =
-  if Nodes.size b.n = 0 then raise NODE_FREE
-  else begin
-    let b_trans = Place.trans b.p
-    and rem_id res =
-      List.filter (fun (i, e) ->
-          not ((Iso.is_id i) && (Iso.is_id e))
-        ) res in
-    rem_id (try
-              let (s, vars) = aux_match b b b_trans in
-              let rec loop_occur res =
-                add_blocking s vars.iso_nodes vars.iso_edges;
-                try
-                  ignore (filter_loop s b b vars b_trans);
-                  loop_occur (
-                    ((get_iso s vars.iso_nodes),
-                     (get_iso s vars.iso_edges) (* matrix indices *)
-                    ) :: res)
-                with
-                | NO_MATCH -> res in
-              loop_occur [(get_iso s vars.iso_nodes,
-                           get_iso s vars.iso_edges)] (* matrix indices *)
-            with
-            | NO_MATCH -> [])
-  end
+  (* if Nodes.size b.n = 0 then raise NODE_FREE
+   * else begin *)
+  let b_trans = Place.trans b.p
+  and rem_id res =
+    List.filter (fun (i, e) ->
+        not ((Iso.is_id i) && (Iso.is_id e)))
+      res in
+  rem_id (try
+            let (s, vars) = aux_match b b b_trans in
+            let rec loop_occur res =
+              add_blocking s vars.iso_nodes vars.iso_edges;
+              try
+                ignore (filter_loop s b b vars b_trans);
+                loop_occur (
+                  ((get_iso s vars.iso_nodes),
+                   (get_iso s vars.iso_edges) (* matrix indices *)
+                  ) :: res)
+              with
+              | NO_MATCH -> res in
+            loop_occur [(get_iso s vars.iso_nodes,
+                         get_iso s vars.iso_edges)] (* matrix indices *)
+          with
+          | NO_MATCH -> [])
+(* end *)
 
 let clause_of_iso iso m =
   snd

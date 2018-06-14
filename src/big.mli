@@ -344,10 +344,10 @@ val occurrence : target:t -> pattern:t -> Sparse.t -> occ option
     @raise NODE_FREE when [p] has an empty node set. *)
 val occurrences : target:t -> pattern:t -> occ list
 
-(** [auto b] computes the non-trivial automorphisms of bigraph [b]. 
-
-    @raise NODE_FREE when [p] has an empty node set. *)
-val auto : t -> (Iso.t * Iso.t) list
+(* (\** [auto b] computes the non-trivial automorphisms of bigraph [b]. 
+ * 
+ *     @raise NODE_FREE when [p] has an empty node set. *\)
+ * val auto : t -> (Iso.t * Iso.t) list *)
 
 (** [rewrite o s r0 r1 eta] computes a bigraph obtained by replacing the
     occurrence of [r0] (specified by occurrence [o]) in [s] with [eta r1], where
