@@ -52,7 +52,7 @@ module type RS = sig
   val random_step : Big.t -> react list -> (Big.t * label) option * int
   val apply : Big.t -> react list -> Big.t option
   val fix : Big.t -> react list -> Big.t * int
-  val rewrite : Big.t -> p_class list -> Big.t * int  
+  val rewrite : Big.t -> p_class list -> Big.t * int
   exception MAX of graph * Stats.t
   val bfs :
     s0:Big.t ->
@@ -60,7 +60,7 @@ module type RS = sig
     predicates:(Base.H_string.key * Big.t) list ->
     max:int -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
   exception DEADLOCK of graph * Stats.t * limit
-  exception LIMIT of graph * Stats.t  
+  exception LIMIT of graph * Stats.t
   val sim :
     s0:Big.t ->
     priorities:p_class list ->
@@ -104,11 +104,11 @@ module Make (R : RrType.T)
   type p_class = P.p_class =
     | P_class of R.t list
     | P_rclass of R.t list
-  
+
   type limit = L.t
 
   type label = R.label
-                 
+
   type react_error = R.react_error
 
   exception MAX of t * Stats.t
@@ -120,21 +120,21 @@ module Make (R : RrType.T)
   exception NOT_VALID of react_error
 
   val typ : Rs.t
-  
+
   val string_of_react : R.t -> string
 
   val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> R.t
 
   val parse_react : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> R.t option
-  
+
   val lhs : R.t -> Big.t
 
   val rhs : R.t -> Big.t
 
   val map : R.t -> Fun.t option
- 
+
   val string_of_limit : limit -> string
-  
+
   val is_valid_react : R.t -> bool
 
   val is_valid_react_exn : R.t -> bool
@@ -150,7 +150,7 @@ module Make (R : RrType.T)
   val random_step : Big.t -> R.t list -> (Big.t * R.label) option * int
 
   val apply : Big.t -> R.t list -> Big.t option
-                                    
+
   val is_valid_priority : p_class -> bool
 
   val is_valid_priority_list : p_class list -> bool

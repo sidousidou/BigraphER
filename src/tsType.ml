@@ -45,20 +45,21 @@ module MakeE (G : G) = struct
 
   let to_dot g ~name =
     let rank = "{ rank=source; 0 };\n" in
+    let (preds, preds_to_states) = G.label g in
     let states =
       Base.H_int.fold (fun _ (i, _) buff ->
-          if i = 0 then
-            Printf.sprintf
-              "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-               id=\"s%d\", fontname=\"monospace\", fixedsize=true, width=.60, \
-               height=.30, style=\"bold\" ];\n"
-              buff i i i i
-          else
-            Printf.sprintf
-              "%s%d [ label=\"%d\", URL=\"./%d.svg\", fontsize=9.0, \
-               id=\"s%d\", fontname=\"monospace\", fixedsize=true, width=.60, \
-               height=.30 ];\n"
-              buff i i i i)
+          let bolding = if i = 0 then ", style=\"bold\"" else "" in
+          let relevant_preds = Base.S_string.filter (fun pred ->
+              let states_satisfying_pred = Base.H_string.find_all
+                  preds_to_states pred in
+              List.mem i states_satisfying_pred
+            ) preds in
+          let label = Base.S_string.elements relevant_preds
+                      |> String.concat ", " in
+          Printf.sprintf
+            "%s%d [ label=\"%s\", URL=\"./%d.svg\", fontsize=9.0, \
+             id=\"s%d\", fontname=\"monospace\", width=.60, height=.30%s ];\n"
+            buff i label i i bolding)
         (G.states g) ""
     and edges =
       Base.H_int.fold (fun v u buff ->
@@ -82,7 +83,7 @@ module MakeE (G : G) = struct
                     |> fun s -> s ::  acc) preds []
     |> List.rev
     |> String.concat ";\n"
-  
+
   let iter_states f g =
     Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
 
@@ -196,7 +197,7 @@ module Make (R : RrType.T)
   let string_of_react = R.to_string
 
   let parse_react_unsafe = R.parse
-  
+
   let parse_react ~lhs ~rhs l f =
     let r = R.parse ~lhs ~rhs l f in
     if R.is_valid r then
@@ -212,7 +213,7 @@ module Make (R : RrType.T)
     | R.NOT_VALID e -> raise (NOT_VALID e)
 
   let equal_react = R.equal
-  
+
   let string_of_react_err = R.string_of_react_err
 
   let lhs = R.lhs
@@ -222,7 +223,7 @@ module Make (R : RrType.T)
   let map = R.map
 
   let apply = R.apply
-                
+
   let fix = R.fix
 
   let step = R.step
@@ -270,7 +271,7 @@ module Make (R : RrType.T)
   (* NUmber of edges in a graph. *)
   let size_t g =
     Base.H_int.length (G.edges g)
-  
+
   let rec _bfs g q i m t0 priorities predicates max iter_f =
     if not (Queue.is_empty q) then
       if i > max then
