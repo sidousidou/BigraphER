@@ -5,7 +5,7 @@ module type G = sig
   val init : int -> String.t list -> t
   val states : t -> (int * Big.t) Base.H_int.t
   val label : t -> (Base.S_string.t * int Base.H_string.t)
-  val edges : t -> (int * l) Base.H_int.t
+  val edges : t -> (int * l * string) Base.H_int.t
   val string_of_l : l -> string
 end
 

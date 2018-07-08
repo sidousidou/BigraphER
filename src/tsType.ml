@@ -4,7 +4,7 @@ module type G = sig
   val init : int -> String.t list -> t
   val states : t -> (int * Big.t) Base.H_int.t
   val label : t -> (Base.S_string.t * int Base.H_string.t)
-  val edges : t -> (int * l) Base.H_int.t
+  val edges : t -> (int * l * string) Base.H_int.t
   val string_of_l : l -> string
 end
 
@@ -30,14 +30,14 @@ module MakeE (G : G) = struct
     and edges =
       Base.H_int.fold (fun v u acc ->
           (v, u) :: acc) (G.edges g) [] in
-    List.fast_sort (fun (v, u) (v', u') ->
-        Base.ints_compare (v, fst u) (v', fst u'))
+    List.fast_sort (fun (v, (u, _, _)) (v', (u', _, _)) ->
+        Base.ints_compare (v, u) (v', u'))
       edges
-    |> List.map (fun (v, u) ->
+    |> List.map (fun (v, (u1, u2, _)) ->
         (string_of_int v)
         ^ " "
-        ^ (string_of_int (fst u))
-        ^ (match G.string_of_l (snd u) with
+        ^ (string_of_int u1)
+        ^ (match G.string_of_l u2 with
             | "" -> ""
             | s -> " " ^ s))
     |> List.append [ (string_of_int s) ^ " " ^ (string_of_int e) ]
@@ -62,11 +62,11 @@ module MakeE (G : G) = struct
             buff i label i i bolding)
         (G.states g) ""
     and edges =
-      Base.H_int.fold (fun v u buff ->
+      Base.H_int.fold (fun v (u1, u2, _) buff ->
           Printf.sprintf
             "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
              arrowhead=\"vee\", arrowsize=0.5 ];\n"
-            buff v (fst u) (G.string_of_l (snd u)))
+            buff v u1 (G.string_of_l u2))
         (G.edges g) "" in
     Printf.sprintf "digraph \"%s\" {\n\
                     stylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
@@ -91,10 +91,10 @@ module MakeE (G : G) = struct
     Base.H_int.fold (fun _ (i, b) acc -> f i b acc) (G.states g)
 
   let iter_edges f g =
-    Base.H_int.iter (fun v (u, l) -> f v u l) (G.edges g)
+    Base.H_int.iter (fun v (u, l, _) -> f v u l) (G.edges g)
 
   let fold_edges f g =
-    Base.H_int.fold (fun v (u, l) acc -> f v u l acc) (G.edges g)
+    Base.H_int.fold (fun v (u, l, _) acc -> f v u l acc) (G.edges g)
 
 end
 
@@ -274,6 +274,9 @@ module Make (R : RrType.T)
   let size_t g =
     Base.H_int.length (G.edges g)
 
+  let string_of_reaction_rules r =
+    List.map string_of_react r |> String.concat " | "
+
   let rec _bfs g q i m t0 priorities predicates max iter_f =
     if not (Queue.is_empty q) then
       if i > max then
@@ -293,7 +296,7 @@ module Make (R : RrType.T)
             (* Add new states to v *)
             Base.H_int.add (G.states g) (Big.key b) (i, b);
             (* Add edges from v to new states *)
-            Base.H_int.add (G.edges g) v (i, l);
+            Base.H_int.add (G.edges g) v (i, l, string_of_reaction_rules r);
             (* Add labels for new states *)
             check (i, b) (G.label g) predicates;
             (* Add new states to q *)
@@ -301,7 +304,7 @@ module Make (R : RrType.T)
           new_s;
         (* Add edges from v to old states *)
         List.iter (fun (a, b, c) ->
-            Base.H_int.add (G.edges g) v (a, b))
+            Base.H_int.add (G.edges g) v (a, b, string_of_reaction_rules c))
           old_s;
         (* recursive call *)
         _bfs g q i' (m + m') t0 priorities predicates max iter_f end
@@ -348,7 +351,8 @@ module Make (R : RrType.T)
           iter_f (i + 1) s';
           Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
           check (i + 1, s') (G.label trace) predicates;
-          Base.H_int.add (G.edges trace) i (i + 1, l);
+          Base.H_int.add (G.edges trace) i (i + 1, l,
+                                            string_of_reaction_rules r);
           _sim trace s' (i + 1) (L.increment t_sim l) (m + m')
             t0 priorities predicates t_max iter_f)
 

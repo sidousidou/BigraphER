@@ -93,7 +93,7 @@ module H_string = Base.H_string
 module S_string = Base.S_string
 
 type graph = { v : (int * Big.t) H_int.t;
-               e : (int * R.label) H_int.t;
+               e : (int * R.label * string) H_int.t;
                l : int H_string.t;
                preds : S_string.t; }
 
