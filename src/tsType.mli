@@ -48,8 +48,9 @@ module type RS = sig
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
-  val step : Big.t -> react list -> (Big.t * label) list * int
-  val random_step : Big.t -> react list -> (Big.t * label) option * int
+  val step : Big.t -> react list -> (Big.t * label * react list) list * int
+  val random_step : Big.t -> react list ->
+    (Big.t * label * react list) option * int
   val apply : Big.t -> react list -> Big.t option
   val fix : Big.t -> react list -> Big.t * int
   val rewrite : Big.t -> p_class list -> Big.t * int
@@ -87,13 +88,15 @@ module Make (R : RrType.T)
        val cardinal : p_class list -> int
        val rewrite : Big.t -> p_class list -> Big.t * int
        val scan : Big.t * int ->
-         part_f:((Big.t * R.label) list ->
-                 ((int * (Big.t * R.label)) list * (int * R.label) list * int)) ->
+         part_f:((Big.t * R.label * R.t list) list ->
+                 ((int * (Big.t * R.label * R.t list)) list
+                  * (int * R.label * R.t list) list * int)) ->
          const_pri:p_class list -> p_class list ->
-         ((int * (Big.t * R.label)) list * (int * R.label) list * int) * int
+         ((int * (Big.t * R.label * R.t list)) list *
+          (int * R.label * R.t list) list * int) * int
        val scan_sim : Big.t ->
          const_pri:p_class list -> p_class list ->
-         (Big.t * R.label) option * int
+         (Big.t * R.label * R.t list) option * int
      end)
     (L : L with type l = R.label)
     (G : G with type l = R.label)
@@ -145,9 +148,10 @@ module Make (R : RrType.T)
 
   val fix : Big.t -> R.t list -> Big.t * int
 
-  val step : Big.t -> R.t list -> (Big.t * R.label) list * int
+  val step : Big.t -> R.t list -> (Big.t * R.label * R.t list) list * int
 
-  val random_step : Big.t -> R.t list -> (Big.t * R.label) option * int
+  val random_step : Big.t -> R.t list ->
+    (Big.t * R.label * R.t list) option * int
 
   val apply : Big.t -> R.t list -> Big.t option
 

@@ -1,6 +1,6 @@
 (** Type-dependent interface of rewrite rules. *)
 module type R =
-sig    
+sig
   type t
   type label
   val lhs : t -> Big.t
@@ -8,13 +8,14 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
-  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
+  val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list) ->
+    (Big.t * label * t list)
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label -> string
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-  val step : Big.t -> t list -> (Big.t * label) list * int
-  val random_step : Big.t -> t list -> (Big.t * label) option * int
+  val step : Big.t -> t list -> (Big.t * label * t list) list * int
+  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
 
 module type T =
@@ -28,17 +29,18 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
-  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
+  val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list)
+    -> (Big.t * label * t list)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
-  val is_valid_exn : t -> bool			  
+  val is_valid_exn : t -> bool
   val string_of_react_err : react_error -> string
   val is_enabled : Big.t -> t -> bool
   val apply : Big.t -> t list -> Big.t option
   val fix : Big.t -> t list -> Big.t * int
-  val step : Big.t -> t list -> (Big.t * label) list * int
-  val random_step : Big.t -> t list -> (Big.t * label) option * int
+  val step : Big.t -> t list -> (Big.t * label * t list) list * int
+  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
 
 (** Module for the concrete implementation of basic operations on rewrite
@@ -64,13 +66,14 @@ module Make (R : R) : sig
 
   (** Eqaulity for reaction rules *)
   val equal : t -> t -> bool
-  
-  (** Return the instantition map of a rewrite rule. *)		   
+
+  (** Return the instantition map of a rewrite rule. *)
   val map : t -> Fun.t option
 
   (** Merge two occurrences. *)
-  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
-  
+  val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list) ->
+    (Big.t * label * t list)
+
   (** Creare a new reaction rule. *)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
 
@@ -96,7 +99,7 @@ module Make (R : R) : sig
   (** Apply a list of reaction rules in sequence. Non-enabled rules are
       ignored. *)
   val apply : Big.t -> t list -> Big.t option
-                                    
+
   (** [fix b r_list] applies the rewrite rules in list [r_list] to bigraph [b]
       until a fixed point [b'] is reached. The result is fixed point [b'] and
       the number of rewriting steps performed. Note, [b] is returned when no
@@ -105,27 +108,28 @@ module Make (R : R) : sig
 
   (** All the possible evolutions in one step. Total number of occurrences also
       returned. *)
-  val step : Big.t -> t list -> (Big.t * label) list * int
+  val step : Big.t -> t list -> (Big.t * label * t list) list * int
 
   (** Random step. *)
-  val random_step : Big.t -> t list -> (Big.t * label) option * int
-  
+  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
+
 end
 
 (** Merge isomorphic occurrences *)
 val filter_iso :
-  (Big.t * 'a -> Big.t * 'a -> Big.t * 'a) ->
-  (Big.t * 'a) list -> (Big.t * 'a) list
-  
+  (Big.t * 'a * 'b list -> Big.t * 'a * 'b list -> Big.t * 'a * 'b list) ->
+  (Big.t * 'a * 'b list) list -> (Big.t * 'a * 'b list) list
+
 (** Generic step function *)
 val gen_step :
   Big.t ->
   'a list ->
-  ((Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b)) ->
+  ((Big.t * 'b * 'a list) -> (Big.t * 'b * 'a list) ->
+   (Big.t * 'b * 'a list)) ->
   lhs:('a -> Big.t) ->
   rhs:('a -> Big.t) ->
   label:('a -> 'b) ->
   map:('a -> Fun.t option) ->
-  (Big.t * 'b) list * int
-                                                                    
+  (Big.t * 'b * 'a list) list * int
+
 (**/**)

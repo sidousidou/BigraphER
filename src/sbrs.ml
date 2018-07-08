@@ -22,10 +22,10 @@ module RT = struct
     && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
     && r.rate = r'.rate
-    
+
   let map r = r.eta
 
-  let merge_occ (b, rho) (_, rho') = (b, rho +. rho')
+  let merge_occ (b, rho, r) (_, rho', r') = (b, rho +. rho', r @ r')
 
   let val_chk r = r.rate > 0.0
 
@@ -38,28 +38,28 @@ module RT = struct
       rct = rhs;
       eta = eta;
       rate = r; }
-    
+
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
-      
+
   let random_step b rules =
     (* Sort transitions by rate *)
     let (ss, m) = step b rules in
     let ss_sorted =
-      List.fast_sort (fun a b ->
-          compare (snd a) (snd b))
+      List.fast_sort (fun (_, a, _) (_, b, _) ->
+          compare a b)
         ss in
     (* Compute exit rate *)
     let a0 =
-      List.fold_left (fun acc (_, rho) -> acc +. rho) 0.0 ss in
+      List.fold_left (fun acc (_, rho, _) -> acc +. rho) 0.0 ss in
     let r = (Random.float 1.0) *. a0 in
     let rec aux acc = function
-      | (s, rho) :: ss ->
+      | (s, rho, reaction_rules) :: ss ->
         let acc' = acc +. rho in
         if acc' > r then begin
           let tau =
             (1. /. a0) *. (log (1. /. (Random.float 1.0))) in
-          (Some (s, tau), m) end
+          (Some (s, tau, reaction_rules), m) end
         else aux acc' ss
       | [] -> (None, m) in
     aux 0.0 ss_sorted

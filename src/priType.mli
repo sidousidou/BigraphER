@@ -12,14 +12,16 @@ module Make (R : RrType.T)
   val is_valid : p_class -> bool
   val is_valid_list : p_class list -> bool
   val is_reducible : p_class -> bool
-  val cardinal : p_class list -> int				    
+  val cardinal : p_class list -> int
   val rewrite : Big.t -> p_class list -> Big.t * int
   val scan : Big.t * int ->
-    part_f:  ((Big.t * R.label) list ->
-              ((int * (Big.t * R.label)) list * (int * R.label) list * int)) ->
+    part_f:  ((Big.t * R.label * R.t list) list ->
+              ((int * (Big.t * R.label * R.t list)) list *
+               (int * R.label * R.t list) list * int)) ->
     const_pri:p_class list -> p_class list ->
-    ((int * (Big.t * R.label)) list * (int * R.label) list * int) * int
+    ((int * (Big.t * R.label * R.t list)) list *
+     (int * R.label * R.t list) list * int) * int
   val scan_sim : Big.t ->
     const_pri:p_class list -> p_class list ->
-    (Big.t * R.label) option * int
+    (Big.t * R.label * R.t list) option * int
 end

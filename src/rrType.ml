@@ -7,13 +7,14 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
-  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
+  val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list) ->
+    (Big.t * label * t list)
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label -> string
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
-  val step : Big.t -> t list -> (Big.t * label) list * int
-  val random_step : Big.t -> t list -> (Big.t * label) option * int
+  val step : Big.t -> t list -> (Big.t * label * t list) list * int
+  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
 
 module type T =
@@ -27,7 +28,8 @@ sig
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
-  val merge_occ : (Big.t * label) -> (Big.t * label) -> (Big.t * label)
+  val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list) ->
+    (Big.t * label * t list)
   val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
@@ -36,8 +38,8 @@ sig
   val is_enabled : Big.t -> t -> bool
   val apply : Big.t -> t list -> Big.t option
   val fix : Big.t -> t list -> Big.t * int
-  val step : Big.t -> t list -> (Big.t * label) list * int
-  val random_step : Big.t -> t list -> (Big.t * label) option * int
+  val step : Big.t -> t list -> (Big.t * label * t list) list * int
+  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
 
 (* Merge isomorphic occurrences *)
@@ -48,25 +50,26 @@ let filter_iso merge_occ l =
     | [] -> (None, acc)
     | x :: l -> if pred x then (Some x, l @ acc)
       else extract pred (x :: acc) l in
-  let aux1 acc o =
+  let aux1 acc (a, b, c) =
     let (iso, non_iso) =
-      extract (fun o' ->
-          Big.equal (fst o) (fst o'))
+      extract (fun (a', b', c') ->
+          Big.equal a a')
         [] acc in
     match iso with
-    | None -> o :: acc
-    | Some iso_o -> (merge_occ o iso_o) :: non_iso in
+    | None -> (a, b, c) :: acc
+    | Some iso_o -> (merge_occ (a, b, c) iso_o) :: non_iso in
   List.fold_left aux1 [] l
 
 (* Generic step function *)
 let gen_step s rules
-    (merge_occ:(Big.t * 'b) -> (Big.t * 'b) -> (Big.t * 'b))
+    (merge_occ:(Big.t * 'b * 'c list) -> (Big.t * 'b * 'c list) ->
+     (Big.t * 'b * 'c list))
     ~lhs ~rhs ~label ~map  =
   let aux2 acc r =
     (Big.occurrences ~target:s ~pattern:(lhs r)
      (* Parmap.parmap *)
      |> List.map (fun o ->
-         (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r)))
+         (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r, [r])))
     @ acc in
   List.fold_left aux2 [] rules
   |> fun l -> (filter_iso merge_occ l, List.length l)
@@ -103,7 +106,7 @@ module Make (R : R) = struct
     ^ (match map r with
         | None -> ""
         | Some eta -> "\n@ " ^ (Fun.to_string eta))
-  
+
   let is_valid r =
     let lhs = lhs r
     and rhs = rhs r in
@@ -145,9 +148,9 @@ module Make (R : R) = struct
 
   let is_enabled b r =
     Big.occurs ~target:b ~pattern:(lhs r)
-  
+
   let apply b reacts =
-    let apply_rule b r = 
+    let apply_rule b r =
       match Big.occurrence
               ~target:b
               ~pattern:(lhs r)
@@ -163,7 +166,7 @@ module Make (R : R) = struct
     |> (fun (b, n) ->
         if n = 0 then None
         else Some b)
-  
+
   (* Reduce a reducible class to the fixed point. Return the input state if no
      rewriting is performed. *)
   let fix b = function
@@ -182,5 +185,5 @@ module Make (R : R) = struct
         | Some b ->  _fix b rules (i + 1)
         | None -> (s, i) in
       _fix b rules 0
-        
+
 end

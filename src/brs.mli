@@ -88,12 +88,13 @@ val apply : Big.t -> react list -> Big.t option
 
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged. The total number of occurrences is also returned. *)
-val step : Big.t -> react list -> (Big.t * label) list * int
+val step : Big.t -> react list -> (Big.t * label * react list) list * int
 
 (** Compute a random state reachable in one step. State selection is performed
     according to a uniform distribution over all the possible states reachable
     in one step. The total number of occurrences is also returned. *)
-val random_step : Big.t -> react list -> (Big.t * label) option * int
+val random_step : Big.t -> react list ->
+  (Big.t * label * react list) option * int
 
 (** Reduce a reducible class to the fixed point. The number of rewriting steps
     is also returned. *)

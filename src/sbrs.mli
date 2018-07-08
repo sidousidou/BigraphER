@@ -93,11 +93,12 @@ val apply : Big.t -> react list -> Big.t option
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a transition rate. The total
     number of occurrences is also returned. *)
-val step : Big.t -> react list -> (Big.t * label) list * int
+val step : Big.t -> react list -> (Big.t * label * react list) list * int
 
 (** Select step of {{: https://en.wikipedia.org/wiki/Gillespie_algorithm}
     Gillespie SSA}. The total number of occurrences is also returned. *)
-val random_step : Big.t -> react list -> (Big.t * label) option * int
+val random_step : Big.t -> react list ->
+  (Big.t * label * react list) option * int
 
 (** Same as {!val:Brs.fix} for probabilistic reaction rules. Note that
     stochastic rates are ignored. *)

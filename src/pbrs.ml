@@ -10,7 +10,7 @@ module RT = struct
   type t = react
 
   type label = float
-  
+
   let lhs r = r.rdx
 
   let rhs r = r.rct
@@ -22,11 +22,11 @@ module RT = struct
     && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
     && r.p = r'.p
-      
+
   let map r = r.eta
 
-  let merge_occ (b, p) (_, p') = (b, p +. p')
-                                 
+  let merge_occ (b, p, r) (_, p', r') = (b, p +. p', r @ r')
+
   let val_chk r = r.p > 0.0 && r.p <= 1.0
 
   let val_chk_error_msg = "Not a probability"
@@ -41,13 +41,13 @@ module RT = struct
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
-    let sum = List.fold_left (fun acc (_, p) -> acc +. p) 0.0 l in
-    (List.map (fun (b, p) -> (b, p /. sum)) l, n)
+    let sum = List.fold_left (fun acc (_, p, _) -> acc +. p) 0.0 l in
+    (List.map (fun (b, p, r) -> (b, p /. sum, r)) l, n)
 
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
     |> norm
-    
+
   let random_step b rules =
     let (ss, m) = step b rules in
     match ss with
@@ -56,15 +56,15 @@ module RT = struct
       begin
         (* Sort transitions by probability *)
         let ss_sort =
-          List.fast_sort (fun a b -> compare (snd a) (snd b))
+          List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
         (* Compute cumulative probability *)
         and cumulative =
-          List.fold_left (fun (out, cum_p) (b, p) ->
+          List.fold_left (fun (out, cum_p) (b, p, r) ->
               let cum_p' = cum_p +. p in
-              ((b, cum_p') :: out, cum_p'))
+              ((b, cum_p', r) :: out, cum_p'))
             ([], 0.0)
         and pick =
-          List.find (fun (_, p) -> p > (Random.float 1.0)) in
+          List.find (fun (_, p, _) -> p > (Random.float 1.0)) in
         ss_sort ss
         |> cumulative
         |> fst
@@ -127,4 +127,4 @@ end
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
 let prob r = r.p
-  
+

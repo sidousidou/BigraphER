@@ -14,7 +14,7 @@ and e3 = e 3
 
 let check (a, r, b) =
   try Brs.step a [r]
-      |> (fun (s', _) -> List.hd s' |> fst)
+      |> (fun (s', _) -> List.hd s' |> fun (f, _, _) -> f)
       |> Big.equal b
   with
   | Big.COMP_ERROR (_, _) -> false

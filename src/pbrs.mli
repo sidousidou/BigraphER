@@ -93,12 +93,13 @@ val apply : Big.t -> react list -> Big.t option
 (** Compute the set of reachable states in one step. Note that isomorphic states
     are merged and each state is associated to a probability rate. The total
     number of occurrences is also returned. *)
-val step : Big.t -> react list -> (Big.t * label) list * int
+val step : Big.t -> react list -> (Big.t * label * react list) list * int
 
 (** Compute a random state reachable in one step. The probability of reaching a
     given state depends on the probability associated to the reaction rule
     generating it. The total number of occurrences is also returned. *)
-val random_step : Big.t -> react list -> (Big.t * label) option * int
+val random_step : Big.t -> react list ->
+  (Big.t * label * react list) option * int
 
 (** Same as {!val:Brs.fix} for probabilistic reaction rules. Note that
     probabilities are ignored. *)

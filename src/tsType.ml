@@ -121,8 +121,9 @@ module type RS = sig
   val is_valid_priority : p_class -> bool
   val is_valid_priority_list : p_class list -> bool
   val cardinal : p_class list -> int
-  val step : Big.t -> react list -> (Big.t * label) list * int
-  val random_step : Big.t -> react list -> (Big.t * label) option * int
+  val step : Big.t -> react list -> (Big.t * label * react list) list * int
+  val random_step : Big.t -> react list ->
+    (Big.t * label * react list) option * int
   val apply : Big.t -> react list -> Big.t option
   val fix : Big.t -> react list -> Big.t * int
   val rewrite : Big.t -> p_class list -> Big.t * int
@@ -160,14 +161,16 @@ module Make (R : RrType.T)
        val is_valid_list : p_class list -> bool
        val rewrite : Big.t -> p_class list -> Big.t * int
        val cardinal : p_class list -> int
-         val scan : Big.t * int ->
-         part_f:((Big.t * R.label) list ->
-                 ((int * (Big.t * R.label)) list * (int * R.label) list * int)) ->
+       val scan : Big.t * int ->
+         part_f:((Big.t * R.label * R.t list) list ->
+                 ((int * (Big.t * R.label * R.t list)) list
+                  * (int * R.label * R.t list) list * int)) ->
          const_pri:p_class list -> p_class list ->
-         ((int * (Big.t * R.label)) list * (int * R.label) list * int) * int
+         ((int * (Big.t * R.label * R.t list)) list
+          * (int * R.label * R.t list) list * int) * int
        val scan_sim : Big.t ->
          const_pri:p_class list -> p_class list ->
-         (Big.t * R.label) option * int
+         (Big.t * R.label * R.t list) option * int
      end)
     (L : L with type l = R.label)
     (G : G with type l = R.label)
@@ -248,14 +251,13 @@ module Make (R : RrType.T)
 
   (* Partition a list of occurrences into new and old states *)
   let partition g i f_iter =
-    List.fold_left (fun (new_acc, old_acc, i) o ->
-        let b = fst o in
+    List.fold_left (fun (new_acc, old_acc, i) (b, c, d) ->
         match is_new b (G.states g) with
         | None ->
           (let i' = i + 1 in (* Stop here when i > max *)
            f_iter i' b;
-           ((i', o) :: new_acc, old_acc, i'))
-        | Some x -> (new_acc, (x, snd o) :: old_acc, i))
+           ((i', (b, c, d)) :: new_acc, old_acc, i'))
+        | Some x -> (new_acc, (x, c, d) :: old_acc, i))
       ([], [], i)
 
   (* Add labels for predicates *)
@@ -287,7 +289,7 @@ module Make (R : RrType.T)
           P.scan (curr, i)
             ~part_f:(partition g i iter_f)
             ~const_pri:priorities priorities in
-        List.iter (fun (i, (b, l)) ->
+        List.iter (fun (i, (b, l, r)) ->
             (* Add new states to v *)
             Base.H_int.add (G.states g) (Big.key b) (i, b);
             (* Add edges from v to new states *)
@@ -298,8 +300,8 @@ module Make (R : RrType.T)
             Queue.push (i, b) q)
           new_s;
         (* Add edges from v to old states *)
-        List.iter (fun e ->
-            Base.H_int.add (G.edges g) v e)
+        List.iter (fun (a, b, c) ->
+            Base.H_int.add (G.edges g) v (a, b))
           old_s;
         (* recursive call *)
         _bfs g q i' (m + m') t0 priorities predicates max iter_f end
@@ -341,14 +343,14 @@ module Make (R : RrType.T)
                            ~trans:(size_t trace)
                            ~occs:(m + m'),
                          t_sim))
-      | (Some (s', l), m') ->
+      | (Some (s', l, r), m') ->
         ((*let s' = R.big_of_occ o in*)
-         iter_f (i + 1) s';
-         Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
-         check (i + 1, s') (G.label trace) predicates;
-         Base.H_int.add (G.edges trace) i (i + 1, l);
-         _sim trace s' (i + 1) (L.increment t_sim l) (m + m')
-           t0 priorities predicates t_max iter_f)
+          iter_f (i + 1) s';
+          Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
+          check (i + 1, s') (G.label trace) predicates;
+          Base.H_int.add (G.edges trace) i (i + 1, l);
+          _sim trace s' (i + 1) (L.increment t_sim l) (m + m')
+            t0 priorities predicates t_max iter_f)
 
   let sim ~s0 ~priorities ~predicates ~init_size ~stop ~iter_f =
     Random.self_init ();

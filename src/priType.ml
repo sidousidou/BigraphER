@@ -59,10 +59,10 @@ struct
             (* Apply rewriting - instantaneous *)
             let (ss', l') =
               (* Parmap.parfold *)
-              List.fold_left (fun (ss,  l) o ->
+              List.fold_left (fun (ss,  l) (a, b, c) ->
                   let (s', l') =
-                    rewrite (fst o) const_pri in
-                  ((s', snd o) :: ss, l + l'))
+                    rewrite a const_pri in
+                  ((s', b, c) :: ss, l + l'))
                 ([], l) ss
               (* Merge isomorphic states *)
               |> (fun (ss, l) ->
@@ -80,9 +80,9 @@ struct
         (match R.random_step b rr with
          | (None, m') -> (* Skip *)
            _scan_sim b (m + m') ~const_pri cs
-         | (Some o, m') ->
-           (let (b', m'') = rewrite (fst o) const_pri in
-            (Some (b', snd o), m + m' + m'')))
+         | (Some (a, b, c), m') ->
+           (let (b', m'') = rewrite a const_pri in
+            (Some (b', b, c), m + m' + m'')))
       | (P_rclass _) :: cs -> (* Skip *)
         _scan_sim b m ~const_pri cs in
     _scan_sim b 0 ~const_pri

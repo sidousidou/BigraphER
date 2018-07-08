@@ -10,7 +10,7 @@ module RT = struct
   type t = react
 
   type label = unit
-  
+
   let lhs r = r.rdx
 
   let rhs r = r.rct
@@ -19,19 +19,19 @@ module RT = struct
 
   let map r = r.eta
 
-  let merge_occ (b, _) _ = (b, ())
-  
+  let merge_occ (b, _, r) (_, _, r') = (b, (), r @ r')
+
   let equal r r' =
     Big.equal r.rdx r'.rdx
     && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
-  
+
   let val_chk _ = true
 
   let val_chk_error_msg = ""
 
   let string_of_label _ = ""
-    
+
   let parse ~lhs ~rhs _ eta =
     { rdx = lhs;
       rct = rhs;
@@ -39,7 +39,7 @@ module RT = struct
 
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
-  
+
   let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function
@@ -54,7 +54,8 @@ module RT = struct
            aux (Random.int (List.length rs)) 0 [] rs in
          match Big.occurrence ~target:s ~pattern:(lhs r) t with
          | Some o ->
-           (Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), ()), m + 1)
+           (Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), (), [r]),
+            m + 1)
          | None -> _random_step s (m + 1) rs') in
     _random_step b 0 rules
 
