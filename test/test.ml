@@ -66,6 +66,9 @@ let input b rs t f =
   "{\"state\": " ^ (big_to_json ~minify:false b) ^ ",\n\""
   ^ t ^ "\": [" ^ rs_j ^ "\n]\n}"
 
+let drop_third_element =
+  List.map (fun (a, b, _) -> (a, b))
+
 let () =
   print_endline "ENCODING";
   print_endline "Testing big_to_json:\n";
@@ -82,7 +85,8 @@ let () =
   print_newline ();
   print_endline "Testing s_occs_to_json:\n";
   print_endline
-  @@ s_occs_to_json ~minify:false @@ fst @@ Sbrs.step big_test [ sr_test ];
+  @@ s_occs_to_json ~minify:false @@ drop_third_element
+    (fst @@ Sbrs.step big_test [ sr_test ]);
   print_newline ();
   print_endline "Testing matches_to_json:\n";
   print_endline

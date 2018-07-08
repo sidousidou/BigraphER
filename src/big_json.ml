@@ -537,13 +537,16 @@ let check_validity = function
   | `S reacts -> check_aux Sbrs.is_valid_react_exn reacts
 
 let aux_step minify (b, reacts) =
+  let wrapper func lst =
+    List.map (fun (a, b, c) -> (a, b)) lst |> func
+  in
   let aux s_f j_f b rs =
     Ok (s_f b rs) >>= fun (occs, _) -> Ok (j_f occs) in
   check_validity reacts
   >>= fun _ -> (match reacts with
-      | `B rs -> aux Brs.step (occs_to_json ~minify) b rs
-      | `P rs -> aux Pbrs.step (p_occs_to_json ~minify) b rs
-      | `S rs -> aux Sbrs.step (s_occs_to_json ~minify) b rs)
+      | `B rs -> aux Brs.step (wrapper (occs_to_json ~minify)) b rs
+      | `P rs -> aux Pbrs.step (wrapper (p_occs_to_json ~minify)) b rs
+      | `S rs -> aux Sbrs.step (wrapper (s_occs_to_json ~minify)) b rs)
     
 let aux_string minify = function
   | Ok s -> s
