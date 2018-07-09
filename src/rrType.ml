@@ -2,7 +2,7 @@ module type R =
 sig
   type t
   type label
-  val name : string
+  val name : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -13,7 +13,8 @@ sig
   val val_chk : t -> bool
   val val_chk_error_msg : string
   val string_of_label : label -> string
-  val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+  val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
+    label -> Fun.t option -> t
   val step : Big.t -> t list -> (Big.t * label * t list) list * int
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
@@ -24,7 +25,7 @@ sig
   type label
   type react_error
   exception NOT_VALID of react_error
-  val name : string
+  val name : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -32,7 +33,8 @@ sig
   val map : t -> Fun.t option
   val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list) ->
     (Big.t * label * t list)
-  val parse : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+  val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
+    label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
   val is_valid_exn : t -> bool

@@ -1,7 +1,8 @@
 type react =
-  { rdx : Big.t;                  (* Redex   --- lhs   *)
-    rct : Big.t;                  (* Reactum --- rhs   *)
-    eta : Fun.t option;            (* Instantiation map *)
+  { name : string;
+    rdx  : Big.t;                  (* Redex   --- lhs   *)
+    rct  : Big.t;                  (* Reactum --- rhs   *)
+    eta  : Fun.t option;           (* Instantiation map *)
     rate : float                   (* Reaction rate     *)
   }
 
@@ -11,7 +12,7 @@ module RT = struct
 
   type label = float
 
-  let name = ""
+  let name r = r.name
 
   let lhs r = r.rdx
 
@@ -35,10 +36,11 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~lhs ~rhs r eta =
-    { rdx = lhs;
-      rct = rhs;
-      eta = eta;
+  let parse ~name ~lhs ~rhs r eta =
+    { name = name;
+      rdx  = lhs;
+      rct  = rhs;
+      eta  = eta;
       rate = r; }
 
   let step b rules =

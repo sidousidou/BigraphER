@@ -23,13 +23,13 @@ let g =
       comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("A", [], 1))) one ]
 
 let reacts =
-  [ Brs.P_class [ Brs.parse_react_unsafe ~lhs:r ~rhs:r_p None;
-                  Brs.parse_react_unsafe ~lhs:g ~rhs:r None ] ]
+  [ Brs.P_class [ Brs.parse_react_unsafe ~name:"" ~lhs:r ~rhs:r_p None;
+                  Brs.parse_react_unsafe ~name:"" ~lhs:g ~rhs:r None ] ]
 
 let sreacts =
   [ Sbrs.P_class
-      [ Sbrs.parse_react_unsafe ~lhs:r ~rhs:r_p 2.0 None;
-        Sbrs.parse_react_unsafe ~lhs:g ~rhs:r 4.0 None ] ]
+      [ Sbrs.parse_react_unsafe ~name:"" ~lhs:r ~rhs:r_p 2.0 None;
+        Sbrs.parse_react_unsafe ~name:"" ~lhs:g ~rhs:r 4.0 None ] ]
 
 let () =
   let iter_f _ _ = ()

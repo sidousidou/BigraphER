@@ -28,10 +28,14 @@ val typ : Rs.t
 val string_of_react : react -> string
 
 (** Same as {!val:Brs.parse_react_unsafe} for stochastic reaction rules. *)
-val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> react
+val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
+  float -> Fun.t option -> react
 
 (** Same as {!val:Brs.parse_react} for stochastic reaction rules. *)
-val parse_react : lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> react option
+val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
+  float -> Fun.t option -> react option
+
+val name : react -> string
 
 (** The left-hand side (redex) of a stochastic reaction rule. **)
 val lhs : react -> Big.t

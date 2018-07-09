@@ -1,8 +1,9 @@
 type react =
-  { rdx : Big.t;                  (* Redex   --- lhs   *)
-    rct : Big.t;                  (* Reactum --- rhs   *)
-    eta : Fun.t option;            (* Instantiation map *)
-    p : float                      (* Probability       *)
+  { name : string;
+    rdx  : Big.t;                  (* Redex   --- lhs   *)
+    rct  : Big.t;                  (* Reactum --- rhs   *)
+    eta  : Fun.t option;           (* Instantiation map *)
+    p    : float                   (* Probability       *)
   }
 
 module RT = struct
@@ -11,7 +12,7 @@ module RT = struct
 
   type label = float
 
-  let name = ""
+  let name r = r.name
 
   let lhs r = r.rdx
 
@@ -35,11 +36,12 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~lhs ~rhs p eta =
-    { rdx = lhs;
-      rct = rhs;
-      eta = eta;
-      p = p; }
+  let parse ~name ~lhs ~rhs p eta =
+    { name = name;
+      rdx  = lhs;
+      rct  = rhs;
+      eta  = eta;
+      p    = p; }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =

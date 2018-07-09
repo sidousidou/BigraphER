@@ -1,8 +1,9 @@
 (* Reaction rules *)
 type react =
-  { rdx : Big.t;                  (* Redex   --- lhs   *)
-    rct : Big.t;                  (* Reactum --- rhs   *)
-    eta : Fun.t option             (* Instantiation map *)
+  { name : string;
+    rdx  : Big.t;                  (* Redex   --- lhs   *)
+    rct  : Big.t;                  (* Reactum --- rhs   *)
+    eta  : Fun.t option            (* Instantiation map *)
   }
 
 module RT = struct
@@ -11,7 +12,7 @@ module RT = struct
 
   type label = unit
 
-  let name = ""
+  let name r = r.name
 
   let lhs r = r.rdx
 
@@ -34,10 +35,11 @@ module RT = struct
 
   let string_of_label _ = ""
 
-  let parse ~lhs ~rhs _ eta =
-    { rdx = lhs;
-      rct = rhs;
-      eta = eta; }
+  let parse ~name ~lhs ~rhs _ eta =
+    { name = name;
+      rdx  = lhs;
+      rct  = rhs;
+      eta  = eta; }
 
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
@@ -112,8 +114,8 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
-let parse_react_unsafe ~lhs ~rhs eta =
-  parse_react_unsafe ~lhs ~rhs () eta (* Label is ignored *)
+let parse_react_unsafe ~name ~lhs ~rhs eta =
+  parse_react_unsafe ~name ~lhs ~rhs () eta (* Label is ignored *)
 
-let parse_react ~lhs ~rhs eta =
-  parse_react ~lhs ~rhs () eta (* Label is ignored *)
+let parse_react ~name ~lhs ~rhs eta =
+  parse_react ~name ~lhs ~rhs () eta (* Label is ignored *)

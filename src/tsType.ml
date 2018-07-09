@@ -109,6 +109,7 @@ module type RS = sig
   type react_error
   val typ : Rs.t
   val string_of_react : react -> string
+  val name : react -> string
   val lhs : react -> Big.t
   val rhs : react -> Big.t
   val map : react -> Fun.t option
@@ -148,8 +149,10 @@ module type RS = sig
   val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
   val iter_edges : (int -> int -> label -> unit) -> graph -> unit
   val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
-  val parse_react_unsafe : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react
-  val parse_react : lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react option
+  val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
+    label -> Fun.t option -> react
+  val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
+    label -> Fun.t option -> react option
 end
 
 module Make (R : RrType.T)
@@ -201,8 +204,8 @@ module Make (R : RrType.T)
 
   let parse_react_unsafe = R.parse
 
-  let parse_react ~lhs ~rhs l f =
-    let r = R.parse ~lhs ~rhs l f in
+  let parse_react ~name ~lhs ~rhs l f =
+    let r = R.parse ~name ~lhs ~rhs l f in
     if R.is_valid r then
       Some r
     else None
@@ -218,6 +221,8 @@ module Make (R : RrType.T)
   let equal_react = R.equal
 
   let string_of_react_err = R.string_of_react_err
+
+  let name = R.name
 
   let lhs = R.lhs
 

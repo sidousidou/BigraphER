@@ -28,7 +28,7 @@ and b1' = Big.par_of_list [ Big.nest a e1;
 and r1 = Big.par_of_list [ a; b; c ]
 and r1' = Big.par_of_list [ a; c ]
 and eta1 = Some (Fun.parse [ 0; 2 ])
-let rr1 = Brs.parse_react_unsafe ~lhs:r1 ~rhs:r1' eta1
+let rr1 = Brs.parse_react_unsafe ~name:"" ~lhs:r1 ~rhs:r1' eta1
 
 (* Test 2 *)
 let b2 = Big.par_of_list [ Big.nest a e1;
@@ -38,7 +38,7 @@ and b2' = Big.par_of_list [ Big.nest a e2;
 and r2 = Big.par_of_list [ a; b ]
 let r2' = r2
 and eta2 = Some (Fun.parse [ 1; 0 ])
-let rr2 = Brs.parse_react_unsafe ~lhs:r2 ~rhs:r2' eta2
+let rr2 = Brs.parse_react_unsafe ~name:"" ~lhs:r2 ~rhs:r2' eta2
 
 (* Test 3 *)
 let b3 = Big.par_of_list [ Big.nest a e1;
@@ -48,7 +48,7 @@ and b3' = Big.par_of_list [ Big.nest a Big.one;
 and r3 = Big.par_of_list [ a; b ]
 let r3' = b3'
 and eta3 = Some (Fun.parse [ ])
-let rr3 = Brs.parse_react_unsafe ~lhs:r3 ~rhs:r3' eta3
+let rr3 = Brs.parse_react_unsafe ~name:"" ~lhs:r3 ~rhs:r3' eta3
 
 (* Tests *)
 let test = [ (b1, rr1, b1');
