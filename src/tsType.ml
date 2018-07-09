@@ -44,6 +44,11 @@ module MakeE (G : G) = struct
     |> String.concat "\n"
 
   let to_dot g ~name =
+    let construct_edge_label label reaction_rules =
+      let label_string = G.string_of_l label in
+      let first_part = if label_string = "" then "" else label_string ^ ", " in
+      first_part ^ reaction_rules
+    in
     let rank = "{ rank=source; 0 };\n" in
     let (preds, preds_to_states) = G.label g in
     let states =
@@ -66,7 +71,7 @@ module MakeE (G : G) = struct
           Printf.sprintf
             "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
              arrowhead=\"vee\", arrowsize=0.5 ];\n"
-            buff v u1 (G.string_of_l u2 ^ ", " ^ u3))
+            buff v u1 (construct_edge_label u2 u3))
         (G.edges g) "" in
     Printf.sprintf "digraph \"%s\" {\n\
                     stylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
@@ -279,8 +284,10 @@ module Make (R : RrType.T)
   let size_t g =
     Base.H_int.length (G.edges g)
 
+  (* Turns a list of reaction rules into a string of names, sorting
+     lexicographically and removing duplicates. *)
   let string_of_reaction_rules r =
-    List.map string_of_react r |> String.concat " | "
+    List.map name r |> List.sort_uniq compare |> String.concat " | "
 
   let rec _bfs g q i m t0 priorities predicates max iter_f =
     if not (Queue.is_empty q) then
