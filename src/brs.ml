@@ -11,6 +11,8 @@ module RT = struct
 
   type label = unit
 
+  let name = ""
+
   let lhs r = r.rdx
 
   let rhs r = r.rct

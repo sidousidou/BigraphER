@@ -3,6 +3,7 @@ module type R =
 sig
   type t
   type label
+  val name : string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -24,6 +25,7 @@ sig
   type label
   type react_error
   exception NOT_VALID of react_error
+  val name : string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -54,6 +56,8 @@ module Make (R : R) : sig
   type react_error
 
   exception NOT_VALID of react_error
+
+  val name : string
 
   (** Return the left-hand side of a rewrite rule. *)
   val lhs : t -> Big.t

@@ -62,11 +62,11 @@ module MakeE (G : G) = struct
             buff i label i i bolding)
         (G.states g) ""
     and edges =
-      Base.H_int.fold (fun v (u1, u2, _) buff ->
+      Base.H_int.fold (fun v (u1, u2, u3) buff ->
           Printf.sprintf
             "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
              arrowhead=\"vee\", arrowsize=0.5 ];\n"
-            buff v u1 (G.string_of_l u2))
+            buff v u1 (G.string_of_l u2 ^ ", " ^ u3))
         (G.edges g) "" in
     Printf.sprintf "digraph \"%s\" {\n\
                     stylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
