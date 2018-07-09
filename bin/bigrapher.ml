@@ -245,7 +245,8 @@ module Run
        val stop : T.limit
      end)
     (P: sig
-       val parse_react : Big.t -> Big.t -> [ `E of unit | `F of float ]
+       val parse_react : string -> Big.t -> Big.t ->
+         [ `E of unit | `F of float ]
          -> Fun.t option -> T.react option
     end)
     (J: sig
@@ -502,19 +503,19 @@ let () =
 
                  include Brs
 
-                 let parse_react_unsafe ~lhs ~rhs (label:label) eta =
-                   parse_react_unsafe ~lhs ~rhs eta
+                 let parse_react_unsafe ~name ~lhs ~rhs (label:label) eta =
+                   parse_react_unsafe ~name ~lhs ~rhs eta
                 
-                 let parse_react ~lhs ~rhs (label:label) eta =
-                   parse_react ~lhs ~rhs eta
+                 let parse_react ~name ~lhs ~rhs (label:label) eta =
+                   parse_react ~name ~lhs ~rhs eta
                    
                end)
                (struct
                  let stop = Cmd.(defaults.steps)
                end)
                (struct
-                 let parse_react lhs rhs _ eta =
-                   Brs.parse_react ~lhs ~rhs eta
+                 let parse_react name lhs rhs _ eta =
+                   Brs.parse_react ~name ~lhs ~rhs eta
                end)
                (struct
                   let f = Big_json.ts_to_json
@@ -530,9 +531,9 @@ let () =
                  let stop = Cmd.(defaults.steps)
                end)
                (struct
-                 let parse_react lhs rhs l eta =
+                 let parse_react name lhs rhs l eta =
                    match l with
-                   | `F f -> Pbrs.parse_react ~lhs ~rhs f eta
+                   | `F f -> Pbrs.parse_react ~name ~lhs ~rhs f eta
                    | _ -> assert false  (*BISECT-IGNORE*)
                end)
                (struct
@@ -549,9 +550,9 @@ let () =
                  let stop = Cmd.(defaults.time)
                end)
                (struct
-                 let parse_react lhs rhs l eta =
+                 let parse_react name lhs rhs l eta =
                    match l with
-                   | `F f -> Sbrs.parse_react ~lhs ~rhs f eta
+                   | `F f -> Sbrs.parse_react ~name ~lhs ~rhs f eta
                    |  _ -> assert false  (*BISECT-IGNORE*)
                end)
                (struct
