@@ -32,6 +32,14 @@ let triple e (n0, f0, v0) (n1, f1, v1) (n2, f2, v2) =
   field e n2 f2 v2;
   lexeme e `Oe
 
+let quadruple e (n0, f0, v0) (n1, f1, v1) (n2, f2, v2) (n3, f3, v3) =
+  lexeme e `Os;
+  field e n0 f0 v0;
+  field e n1 f1 v1;
+  field e n2 f2 v2;
+  field e n3 f3 v3;
+  lexeme e `Oe
+
 let ctrl e (Ctrl.C (n, ps, a)) =
   triple e
     ("ctrl_name", string e, n)
@@ -117,13 +125,15 @@ let iso e i =
   lexeme e `Ae
 
 let react e r =
-  triple e
+  quadruple e
+    ("brs_name", string e, Brs.name r)
     ("brs_lhs", big e, Brs.lhs r)
     ("brs_rhs", big e, Brs.rhs r)
     ("brs_eta", option e eta, Brs.map r)
 
 let sreact e r =
   lexeme e `Os;
+  field e "sbrs_name" (string e) (Sbrs.name r);
   field e "sbrs_lhs" (big e) (Sbrs.lhs r);
   field e "sbrs_rhs" (big e) (Sbrs.rhs r);
   field e "sbrs_rate" (float e) (Sbrs.rate r);
@@ -132,6 +142,7 @@ let sreact e r =
 
 let preact e r =
   lexeme e `Os;
+  field e "pbrs_name" (string e) (Pbrs.name r);
   field e "pbrs_lhs" (big e) (Pbrs.lhs r);
   field e "pbrs_rhs" (big e) (Pbrs.rhs r);
   field e "pbrs_p" (float e) (Pbrs.prob r);
@@ -347,6 +358,20 @@ let exp_quadruple (n0, f0) (n1, f1) (n2, f2) (n3, f3) = function
      else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n''); (n3, n''') ]))
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t -> Error (t, "4-tuple")
 
+let exp_quintuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) = function
+  | `O [ (n, v); (n', v'); (n'', v''); (n''', v'''); (n'''', v'''') ] as t ->
+    (if n0 = n && n1 = n' && n2 = n'' && n3 = n''' && n4 = n''''
+     then f0 v
+       >>= fun v0 -> f1 v'
+       >>= fun v1 -> f2 v''
+       >>= fun v2 -> f3 v'''
+       >>= fun v3 -> f4 v''''
+       >>= fun v4 -> Ok (v0, v1, v2, v3, v4)
+     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n'');
+                              (n3, n'''); (n4, n'''') ]))
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
+    Error (t, "5-tuple")
+
 let rec conv j msgs = function
   | [] -> Error (j, disj_type_err msgs)
   | f :: fs ->
@@ -457,30 +482,35 @@ let exp_eta (j:json) =
   >>= fun l -> Ok (Fun.of_list l)
 
 let exp_react (j:json) =
-  exp_triple
+  exp_quadruple
+    ("brs_name", exp_string)
     ("brs_lhs", exp_big)
     ("brs_rhs", exp_big)
     ("brs_eta", exp_option exp_eta)
     j
-  >>= fun (lhs, rhs, e) -> Ok (Brs.parse_react_unsafe ~lhs ~rhs e)
+  >>= fun (name, lhs, rhs, e) -> Ok (Brs.parse_react_unsafe ~name ~lhs ~rhs e)
 
 let exp_sreact (j:json) =
-  exp_quadruple
+  exp_quintuple
+    ("sbrs_name", exp_string)
     ("sbrs_lhs", exp_big)
     ("sbrs_rhs", exp_big)
     ("sbrs_rate", exp_float)
     ("sbrs_eta", exp_option exp_eta)
     j
-  >>= fun (lhs, rhs, r, e) -> Ok (Sbrs.parse_react_unsafe ~lhs ~rhs r e)
+  >>= fun (name, lhs, rhs, r, e) ->
+  Ok (Sbrs.parse_react_unsafe ~name ~lhs ~rhs r e)
 
 let exp_preact (j:json) =
-  exp_quadruple
+  exp_quintuple
+    ("pbrs_name", exp_string)
     ("pbrs_lhs", exp_big)
     ("pbrs_rhs", exp_big)
     ("pbrs_p", exp_float)
     ("pbrs_eta", exp_option exp_eta)
     j
-  >>= fun (lhs, rhs, p, e) -> Ok (Pbrs.parse_react_unsafe ~lhs ~rhs p e)
+  >>= fun (name, lhs, rhs, p, e) ->
+  Ok (Pbrs.parse_react_unsafe ~name ~lhs ~rhs p e)
 
 let parse_err = function
   | Ok _ as v -> v

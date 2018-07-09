@@ -44,14 +44,14 @@ let big_test =
       l = link_test }
 
 let r_test =
-  Brs.parse_react_unsafe ~lhs:big_test ~rhs:big_test None
+  Brs.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test None
 
 let pr_test =
-  Pbrs.parse_react_unsafe ~lhs:big_test ~rhs:big_test 0.476 None
+  Pbrs.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test 0.476 None
 
 let sr_test =
   let eta = (Fun.of_list [ (0, 1); (1, 1) ]) in
-  Sbrs.parse_react_unsafe ~lhs:big_test ~rhs:big_test 8.031 (Some eta)
+  Sbrs.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test 8.031 (Some eta)
 
 let test v e d eq f =
   match d @@ e v with
