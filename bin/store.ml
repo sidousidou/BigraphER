@@ -5,7 +5,7 @@ open Bigraph
 
 module Make (T: TsType.RS)
     (P: sig
-       val parse_react : string -> Big.t -> Big.t -> [ `E of unit | `F of float ]
+       val parse_react : Big.t -> Big.t -> [ `E of unit | `F of float ]
          -> Fun.t option -> T.react option
      end) = struct
 
@@ -626,7 +626,7 @@ module Make (T: TsType.RS)
     let (lhs_v, rhs_v, env_t') =
       eval_react_aux lhs rhs scope env env_t in
     match
-      P.parse_react "" lhs_v rhs_v
+      P.parse_react lhs_v rhs_v
         (match l with
          | Some f_exp -> `F (eval_float f_exp scope env)
          | None -> `E ())
