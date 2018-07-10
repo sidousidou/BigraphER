@@ -59,8 +59,9 @@ module MakeE (G : G) = struct
                   preds_to_states pred in
               List.mem i states_satisfying_pred
             ) preds in
-          let label = Base.S_string.elements relevant_preds
-                      |> String.concat ", " in
+          let label = if Base.S_string.is_empty relevant_preds
+            then string_of_int i
+            else Base.S_string.elements relevant_preds |> String.concat ", " in
           Printf.sprintf
             "%s%d [ label=\"%s\", URL=\"./%d.svg\", fontsize=9.0, \
              id=\"s%d\", fontname=\"monospace\", width=.60, height=.30%s ];\n"
