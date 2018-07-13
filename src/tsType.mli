@@ -69,7 +69,7 @@ module type RS = sig
     predicates:(Base.H_string.key * Big.t) list ->
     init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
   val to_prism : graph -> string
-  val to_dot : graph -> name:string -> string
+  val to_dot : graph -> path:string -> name:string -> string
   val to_lab : graph -> string
   val iter_states : (int -> Big.t -> unit) -> graph -> unit
   val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
@@ -185,7 +185,7 @@ module Make (R : RrType.T)
 
   val to_prism : t -> string
 
-  val to_dot : t -> name: string -> string
+  val to_dot : t -> path:string -> name:string -> string
 
   val to_lab : t -> string
 

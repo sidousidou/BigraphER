@@ -43,7 +43,7 @@ module MakeE (G : G) = struct
     |> List.append [ (string_of_int s) ^ " " ^ (string_of_int e) ]
     |> String.concat "\n"
 
-  let to_dot g ~name =
+  let to_dot g ~path ~name =
     let construct_edge_label label reaction_rules =
       let label_string = G.string_of_l label in
       let first_part = if label_string = "" then "" else label_string ^ ", " in
@@ -62,10 +62,11 @@ module MakeE (G : G) = struct
           let label = if Base.S_string.is_empty relevant_preds
             then string_of_int i
             else Base.S_string.elements relevant_preds |> String.concat ", " in
+          let filename = Printf.sprintf "%d.svg" i |> Filename.concat path in
           Printf.sprintf
-            "%s%d [ label=\"%s\", URL=\"./%d.svg\", fontsize=9.0, \
+            "%s%d [ label=\"%s\", URL=\"%s\", fontsize=9.0, \
              id=\"s%d\", fontname=\"monospace\", width=.60, height=.30%s ];\n"
-            buff i label i i bolding)
+            buff i label filename i bolding)
         (G.states g) ""
     and edges =
       Base.H_int.fold (fun v (u1, u2, u3) buff ->
@@ -149,7 +150,7 @@ module type RS = sig
     -> init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit)
     -> graph * Stats.t
   val to_prism : graph -> string
-  val to_dot : graph -> name:string -> string
+  val to_dot : graph -> path:string -> name:string -> string
   val to_lab : graph -> string
   val iter_states : (int -> Big.t -> unit) -> graph -> unit
   val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a

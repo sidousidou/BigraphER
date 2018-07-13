@@ -167,7 +167,7 @@ val sim :
 val to_prism : graph -> string
 
 (** Compute the string representation in [dot] format of a CTMC. *)
-val to_dot : graph -> name:string -> string
+val to_dot : graph -> path:string -> name:string -> string
 
 (** Compute the string representation in PRISM [lab] format of the labelling
     function of a CTMC. *)
