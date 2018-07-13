@@ -37,6 +37,7 @@ val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
 val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
   Fun.t option -> react option
 
+(** The name of the reaction rule. *)
 val name : react -> string
 
 (** The left-hand side (redex) of a reaction rule. **)
