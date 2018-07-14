@@ -5,7 +5,7 @@ open Bigraph
 
 module Make (T: TsType.RS)
     (P: sig
-       val parse_react : string -> Big.t -> Big.t ->
+       val parse_react : string -> ?action:string -> Big.t -> Big.t ->
          [ `E of unit | `F of float ]
          -> Fun.t option -> T.react option
      end) = struct
