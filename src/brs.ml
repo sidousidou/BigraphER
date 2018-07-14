@@ -14,6 +14,8 @@ module RT = struct
 
   let name r = r.name
 
+  let action _ = ""
+
   let lhs r = r.rdx
 
   let rhs r = r.rct
@@ -35,7 +37,7 @@ module RT = struct
 
   let string_of_label _ = ""
 
-  let parse ~name ~lhs ~rhs _ eta =
+  let parse ~name ?(action="") ~lhs ~rhs _ eta =
     { name = name;
       rdx  = lhs;
       rct  = rhs;
@@ -114,8 +116,8 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
-let parse_react_unsafe ~name ~lhs ~rhs eta =
-  parse_react_unsafe ~name ~lhs ~rhs () eta (* Label is ignored *)
+let parse_react_unsafe ~name ?(action="") ~lhs ~rhs eta =
+  parse_react_unsafe ~name ~action ~lhs ~rhs () eta (* Label is ignored *)
 
-let parse_react ~name ~lhs ~rhs eta =
-  parse_react ~name ~lhs ~rhs () eta (* Label is ignored *)
+let parse_react ~name ?(action="") ~lhs ~rhs eta =
+  parse_react ~name ~action ~lhs ~rhs () eta (* Label is ignored *)

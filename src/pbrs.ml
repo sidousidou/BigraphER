@@ -14,6 +14,8 @@ module RT = struct
 
   let name r = r.name
 
+  let action _ = ""
+
   let lhs r = r.rdx
 
   let rhs r = r.rct
@@ -36,7 +38,7 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~name ~lhs ~rhs p eta =
+  let parse ~name ?(action="") ~lhs ~rhs p eta =
     { name = name;
       rdx  = lhs;
       rct  = rhs;

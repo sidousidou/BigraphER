@@ -1,9 +1,10 @@
 type react =
-  { name : string;
-    rdx  : Big.t;                  (* Redex   --- lhs   *)
-    rct  : Big.t;                  (* Reactum --- rhs   *)
-    eta  : Fun.t option;           (* Instantiation map *)
-    p    : float                   (* Probability       *)
+  { name   : string;
+    action : string;
+    rdx    : Big.t;                  (* Redex   --- lhs   *)
+    rct    : Big.t;                  (* Reactum --- rhs   *)
+    eta    : Fun.t option;           (* Instantiation map *)
+    p      : float                   (* Probability       *)
   }
 
 module RT = struct
@@ -14,6 +15,8 @@ module RT = struct
 
   let name r = r.name
 
+  let action r = r.action
+
   let lhs r = r.rdx
 
   let rhs r = r.rct
@@ -21,7 +24,8 @@ module RT = struct
   let l r = r.p
 
   let equal r r' =
-    Big.equal r.rdx r'.rdx
+    r.action = r'.action
+    && Big.equal r.rdx r'.rdx
     && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
     && r.p = r'.p
@@ -36,12 +40,13 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~name ~lhs ~rhs p eta =
-    { name = name;
-      rdx  = lhs;
-      rct  = rhs;
-      eta  = eta;
-      p    = p; }
+  let parse ~name ?(action = "") ~lhs ~rhs p eta =
+    { name   = name;
+      action = action;
+      rdx    = lhs;
+      rct    = rhs;
+      eta    = eta;
+      p      = p; }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
@@ -131,3 +136,5 @@ end
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
 let prob r = r.p
+
+let action r = r.action

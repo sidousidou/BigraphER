@@ -156,9 +156,9 @@ module type RS = sig
   val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
   val iter_edges : (int -> int -> label -> unit) -> graph -> unit
   val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
-  val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> react
-  val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
+  val parse_react_unsafe : name:string -> ?action:string -> lhs:Big.t ->
+    rhs:Big.t -> label -> Fun.t option -> react
+  val parse_react : name:string -> ?action:string -> lhs:Big.t -> rhs:Big.t ->
     label -> Fun.t option -> react option
 end
 
@@ -211,8 +211,8 @@ module Make (R : RrType.T)
 
   let parse_react_unsafe = R.parse
 
-  let parse_react ~name ~lhs ~rhs l f =
-    let r = R.parse ~name ~lhs ~rhs l f in
+  let parse_react ~name ?(action="") ~lhs ~rhs l f =
+    let r = R.parse ~name ~action ~lhs ~rhs l f in
     if R.is_valid r then
       Some r
     else None
