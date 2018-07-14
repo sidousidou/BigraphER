@@ -149,12 +149,30 @@ let preact e r =
   field e "pbrs_eta" (option e eta) (Pbrs.map r);
   lexeme e `Oe
 
+let nreact e r =
+  lexeme e `Os;
+  field e "nbrs_name" (string e) (Nbrs.name r);
+  field e "nbrs_lhs" (big e) (Nbrs.lhs r);
+  field e "nbrs_rhs" (big e) (Nbrs.rhs r);
+  field e "nbrs_p" (float e) (Nbrs.prob r);
+  field e "nbrs_eta" (option e eta) (Nbrs.map r);
+  lexeme e `Oe
+
 let occs e l =
   lexeme e `As;
   List.iter (fun (b, _) -> big e b) l;
   lexeme e `Ae
 
 let p_occs name e l =
+  lexeme e `As;
+  List.iter (fun (b, r) ->
+      pair e
+        ("state", big e, b)
+        (name, float e, r))
+    l;
+  lexeme e `Ae
+
+let n_occs name e l =
   lexeme e `As;
   List.iter (fun (b, r) ->
       pair e
@@ -185,25 +203,36 @@ let brs e rs =
     Brs.iter_edges
     (fun i j _ ->
        pair e
-        ("source", int e, i)
-        ("target", int e, j))
+         ("source", int e, i)
+         ("target", int e, j))
     e
     rs
-    
+
 let sbrs e rs =
   aux_graph "sbrs"
     Sbrs.iter_edges
     (fun i j l ->
-      triple e
-        ("source", int e, i)
-        ("target", int e, j)
-        ("rate", float e, l))
+       triple e
+         ("source", int e, i)
+         ("target", int e, j)
+         ("rate", float e, l))
     e
     rs
 
 let pbrs e rs =
   aux_graph "pbrs"
     Pbrs.iter_edges
+    (fun i j l ->
+       triple e
+         ("source", int e, i)
+         ("target", int e, j)
+         ("probability", float e, l))
+    e
+    rs
+
+let nbrs e rs =
+  aux_graph "nbrs"
+    Nbrs.iter_edges
     (fun i j l ->
        triple e
          ("source", int e, i)
@@ -233,6 +262,9 @@ let preact_to_json ?(minify=true) =
 let sreact_to_json ?(minify=true) =
   to_json ~minify sreact
 
+let nreact_to_json ?(minify=true) =
+  to_json ~minify nreact
+
 let occs_to_json ?(minify=true) =
   to_json ~minify occs
 
@@ -241,6 +273,9 @@ let p_occs_to_json ?(minify=true) =
 
 let s_occs_to_json ?(minify=true) =
   to_json ~minify (p_occs "rate")
+
+let n_occs_to_json ?(minify=true) =
+  to_json ~minify (n_occs "prob")
 
 let matches_to_json ?(minify=true) =
   to_json ~minify matches
@@ -253,6 +288,9 @@ let dtmc_to_json ?(minify=true) =
 
 let ctmc_to_json ?(minify=true) =
   to_json ~minify sbrs
+
+let mdp_to_json ?(minify=true) =
+  to_json ~minify nbrs
 
 (* Decoder *)
 
@@ -305,7 +343,7 @@ let json_of_src ?(encoding=`UTF_8) src =
   try `JSON (value (dec d) (fun v _ -> v) d) with
   | Escape (r, e) -> `Error (r, e)
 
- let exp_string = function
+let exp_string = function
   | `String s -> Ok s
   | (`A _ | `Bool _ | `Float _ | `Null | `O _) as j -> Error (j, "'string'")
 
@@ -471,7 +509,7 @@ let exp_big (j:json) =
     ("place_graph", exp_place)
     ("link_graph", exp_link)
     j
-    >>= fun (n, p, l) -> Ok (Big.{ p = p; l = l; n = n })
+  >>= fun (n, p, l) -> Ok (Big.{ p = p; l = l; n = n })
 
 let exp_eta (j:json) =
   exp_array
@@ -512,6 +550,17 @@ let exp_preact (j:json) =
   >>= fun (name, lhs, rhs, p, e) ->
   Ok (Pbrs.parse_react_unsafe ~name ~lhs ~rhs p e)
 
+let exp_nreact (j:json) =
+  exp_quintuple
+    ("nbrs_name", exp_string)
+    ("nbrs_lhs", exp_big)
+    ("nbrs_rhs", exp_big)
+    ("nbrs_p", exp_float)
+    ("nbrs_eta", exp_option exp_eta)
+    j
+  >>= fun (name, lhs, rhs, p, e) ->
+  Ok (Nbrs.parse_react_unsafe ~name ~lhs ~rhs p e)
+
 let parse_err = function
   | Ok _ as v -> v
   | Error (j, msg) -> Error (type_err j msg)
@@ -525,13 +574,16 @@ let big_of_json ?(encoding=`UTF_8) s =
   of_json encoding s exp_big
 
 let react_of_json ?(encoding=`UTF_8) s =
-   of_json encoding s exp_react
+  of_json encoding s exp_react
 
 let preact_of_json ?(encoding=`UTF_8) s =
-   of_json encoding s exp_preact
+  of_json encoding s exp_preact
 
 let sreact_of_json ?(encoding=`UTF_8) s =
-   of_json encoding s exp_sreact
+  of_json encoding s exp_sreact
+
+let nreact_of_json ?(encoding=`UTF_8) s =
+  of_json encoding s exp_nreact
 
 (* INTERFACE TO MATCHING ENGINE *)
 
@@ -549,8 +601,11 @@ let exp_step_input (j:json) =
     >>= fun (b, reacts) -> Ok (b, `P reacts)
   and aux_s (j:json) =
     aux "sreacts" (exp_array [ exp_sreact ]) j
-    >>= fun (b, reacts) -> Ok (b, `S reacts) in
-  conv j [] [ aux_r; aux_p; aux_s ]
+    >>= fun (b, reacts) -> Ok (b, `S reacts)
+  and aux_n (j:json) =
+    aux "nreacts" (exp_array [ exp_nreact ]) j
+    >>= fun (b, reacts) -> Ok (b, `N reacts) in
+  conv j [] [ aux_r; aux_p; aux_s; aux_n ]
 
 let check_aux f reacts =
   try
@@ -560,11 +615,13 @@ let check_aux f reacts =
   | Brs.NOT_VALID e -> Error (Brs.string_of_react_err e)
   | Pbrs.NOT_VALID e -> Error (Pbrs.string_of_react_err e)
   | Sbrs.NOT_VALID e -> Error (Sbrs.string_of_react_err e)
+  | Nbrs.NOT_VALID e -> Error (Nbrs.string_of_react_err e)
 
 let check_validity = function
   | `B reacts -> check_aux Brs.is_valid_react_exn reacts
   | `P reacts -> check_aux Pbrs.is_valid_react_exn reacts
   | `S reacts -> check_aux Sbrs.is_valid_react_exn reacts
+  | `N reacts -> check_aux Nbrs.is_valid_react_exn reacts
 
 let aux_step minify (b, reacts) =
   let wrapper func lst =
@@ -576,8 +633,9 @@ let aux_step minify (b, reacts) =
   >>= fun _ -> (match reacts with
       | `B rs -> aux Brs.step (wrapper (occs_to_json ~minify)) b rs
       | `P rs -> aux Pbrs.step (wrapper (p_occs_to_json ~minify)) b rs
-      | `S rs -> aux Sbrs.step (wrapper (s_occs_to_json ~minify)) b rs)
-    
+      | `S rs -> aux Sbrs.step (wrapper (s_occs_to_json ~minify)) b rs
+      | `N rs -> aux Nbrs.step (wrapper (n_occs_to_json ~minify)) b rs)
+
 let aux_string minify = function
   | Ok s -> s
   | Error s -> to_json ~minify (fun e -> singleton e "error" (string e)) s
@@ -588,8 +646,8 @@ let step ?(encoding=`UTF_8) ?(minify=true) s =
 
 let big_match ?(minify=true) in_ch out_ch =
   (match json_of_src (`Channel in_ch) with
-  | `Error (r, e) -> Error (dec_err r e)
-  | `JSON j -> parse_err @@ exp_step_input j)
+   | `Error (r, e) -> Error (dec_err r e)
+   | `JSON j -> parse_err @@ exp_step_input j)
   >>= aux_step minify
   |> aux_string minify
   |> (fun s -> output_string out_ch s)
