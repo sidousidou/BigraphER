@@ -1177,6 +1177,15 @@ module Make (T: TsType.RS)
                  ^ ")\n("
                  ^ (ml_of_eta eta)
                  ^ ")"
+    | Rs.NBRS -> "Nbrs.parse_react_unsafe\n~lhs:("
+                 ^ (ml_of_big lhs)
+                 ^ ")\n~rhs:("
+                 ^ (ml_of_big rhs)
+                 ^ ")\n("
+                 ^ (ml_of_float @@ Base.safe l)
+                 ^ ")\n("
+                 ^ (ml_of_eta eta)
+                 ^ ")"
                  
   let ml_of_pred = function
     | Pred_id (id, _) -> (id : string)

@@ -520,4 +520,6 @@ let check_sbrs_opt () =
       ""
       (string_of_opt "|" (Steps 0))
 
-let check_pbrs_opt  = check_brs_opt
+let check_pbrs_opt = check_brs_opt
+
+let check_nbrs_opt = check_brs_opt

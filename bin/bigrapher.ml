@@ -99,7 +99,7 @@ let print_max fmt =
        display = true; }]
 
 let print_max_sim fmt = function
-  | Rs.BRS | Rs. PBRS ->
+  | Rs.BRS | Rs.PBRS | Rs.NBRS ->
     print_table fmt
       [{ descr = ("Max sim steps:", `cyan);
          value = `i Cmd.(defaults.steps);
@@ -558,6 +558,25 @@ let () =
                (struct
                  let f = Big_json.ctmc_to_json
                 end) in
+           R.run fmt Cmd.(defaults.colors) m exec_type
+         end
+       | Rs.NBRS ->
+         begin
+           Cmd.check_nbrs_opt ();
+           let module R = Run
+               (Nbrs)
+               (struct
+                 let stop = Cmd.(defaults.steps)
+               end)
+               (struct
+                 let parse_react name lhs rhs l eta =
+                   match l with
+                   | `F f -> Nbrs.parse_react ~name ~lhs ~rhs f eta
+                   | _ -> assert false  (*BISECT-IGNORE*)
+               end)
+               (struct
+                 let f = Big_json.mdp_to_json
+               end) in
            R.run fmt Cmd.(defaults.colors) m exec_type
          end);
     with

@@ -27,6 +27,7 @@
        "end"
        "sbrs"
        "pbrs"
+       "nbrs"
        "begin"
        "init"
        "atomic"

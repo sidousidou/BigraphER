@@ -71,6 +71,7 @@ rule token =  parse
   | "brs"		    { BRS }
   | "sbrs"		    { SBRS }
   | "pbrs"                  { PBRS }
+  | "nbrs"                  { NBRS }
   | "end"		    { END }
   | "rules"		    { RULES }
   | "preds"                 { PREDS }

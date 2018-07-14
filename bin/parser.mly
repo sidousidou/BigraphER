@@ -30,6 +30,7 @@ open Bigraph
 %token            BRS
 %token            PBRS
 %token            SBRS
+%token            NBRS
 %token            END
 %token		  MERGE
 %token		  SPLIT
@@ -189,7 +190,8 @@ rs:
 rs_type:
   | BRS   { Rs.BRS }
   | PBRS  { Rs.PBRS }
-  | SBRS  { Rs.SBRS };
+  | SBRS  { Rs.SBRS }
+  | NBRS  { Rs.NBRS };
 
 preds:
   |					    { [ ] }
