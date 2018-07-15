@@ -50,8 +50,24 @@ module RT = struct
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
-    let sum = List.fold_left (fun acc (_, p, _) -> acc +. p) 0.0 l in
-    (List.map (fun (b, p, r) -> (b, p /. sum, r)) l, n)
+    let normalise (l, n) =
+      let sum = List.fold_left (fun acc (_, p, _) -> acc +. p) 0.0 l in
+      (List.map (fun (b, p, r) -> (b, p /. sum, r)) l, n)
+    in
+    let rec remove_duplicates = function
+      | [] -> []
+      | h :: t ->
+        let filtered = List.filter (fun x -> x <> h) t in
+        h :: remove_duplicates filtered
+    in
+    let different_actions = List.map (fun (_, _, r) -> action (List.hd r)) l
+                            |> remove_duplicates in
+    List.fold_left (fun acc act ->
+        let reaction_rules = List.filter
+            (fun (_, _, r) -> action (List.hd r) = act) l in
+        let (normalised, _) = normalise (reaction_rules, 0) in
+        normalised @ acc
+      ) [] different_actions, n
 
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
