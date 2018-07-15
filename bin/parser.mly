@@ -161,9 +161,13 @@ dec_big:
 
 dec_react:
   | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
-      { React_exp ($2, $4, $6, $5, $7, loc $startpos $endpos)           }
+      { React_exp ($2, "", $4, $6, $5, $7, loc $startpos $endpos)           }
+  | REACT IDE IDE EQUAL bexp arrow bexp eta_exp_opt 
+      { React_exp ($3, $2, $5, $7, $6, $8, loc $startpos $endpos)           }
   | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
-      { React_fun_exp ($3, $5, $8, $10, $9, $11, loc $startpos $endpos) };
+      { React_fun_exp ($3, "", $5, $8, $10, $9, $11, loc $startpos $endpos) }
+  | FUN REACT IDE IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
+      { React_fun_exp ($4, $3, $6, $9, $11, $10, $12, loc $startpos $endpos) };
 
 arrow:
   | ARR                   { None }

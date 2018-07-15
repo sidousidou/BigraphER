@@ -121,12 +121,12 @@ type dbig =
   | Big_fun_exp of Id.t * Id.t list * big_exp * Loc.t
 
 type dreact =
-  | React_exp of Id.t *
+  | React_exp of Id.t * Id.t *
                  big_exp * big_exp *
                  float_exp option *
                  eta_exp option *
                  Loc.t
-  | React_fun_exp of Id.t * Id.t list *
+  | React_fun_exp of Id.t * Id.t * Id.t list *
                      big_exp * big_exp *
                      float_exp option *
                      eta_exp option *
@@ -202,13 +202,13 @@ let id_of_dbig = function
   | Big_exp (d, _, _) | Big_fun_exp (d, _, _, _) -> d
 
 let id_of_dreact = function
-  | React_exp (d, _, _, _, _, _) | React_fun_exp (d, _, _, _, _, _, _) -> d
+  | React_exp (d, _, _, _, _, _, _) | React_fun_exp (d, _, _, _, _, _, _, _) -> d
 
 let loc_of_dbig = function
   | Big_exp (_, _, l) | Big_fun_exp (_, _, _, l) -> l
 
 let loc_of_dreact = function
-  | React_exp (_, _, _, _, _, l) | React_fun_exp (_, _, _, _, _, _, l) -> l
+  | React_exp (_, _, _, _, _, _, l) | React_fun_exp (_, _, _, _, _, _, _, l) -> l
 
 let id_of_ion_exp = function
   | Big_ion_exp (id, _, _) | Big_ion_fun_exp (id, _, _, _) -> id

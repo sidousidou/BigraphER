@@ -245,7 +245,7 @@ module Run
        val stop : T.limit
      end)
     (P: sig
-       val parse_react : string -> ?action:string -> Big.t -> Big.t ->
+       val parse_react : string -> string -> Big.t -> Big.t ->
          [ `E of unit | `F of float ]
          -> Fun.t option -> T.react option
     end)
@@ -514,7 +514,7 @@ let () =
                  let stop = Cmd.(defaults.steps)
                end)
                (struct
-                 let parse_react name ?(action="") lhs rhs _ eta =
+                 let parse_react name action lhs rhs _ eta =
                    Brs.parse_react ~name ~action ~lhs ~rhs eta
                end)
                (struct
@@ -531,7 +531,7 @@ let () =
                  let stop = Cmd.(defaults.steps)
                end)
                (struct
-                 let parse_react name ?(action="") lhs rhs l eta =
+                 let parse_react name action lhs rhs l eta =
                    match l with
                    | `F f -> Pbrs.parse_react ~name ~action ~lhs ~rhs f eta
                    | _ -> assert false  (*BISECT-IGNORE*)
@@ -550,7 +550,7 @@ let () =
                  let stop = Cmd.(defaults.time)
                end)
                (struct
-                 let parse_react name ?(action="") lhs rhs l eta =
+                 let parse_react name action lhs rhs l eta =
                    match l with
                    | `F f -> Sbrs.parse_react ~name ~action ~lhs ~rhs f eta
                    |  _ -> assert false  (*BISECT-IGNORE*)
@@ -569,7 +569,7 @@ let () =
                  let stop = Cmd.(defaults.steps)
                end)
                (struct
-                 let parse_react name ?(action="") lhs rhs l eta =
+                 let parse_react name action lhs rhs l eta =
                    match l with
                    | `F f -> Nbrs.parse_react ~name ~action ~lhs ~rhs f eta
                    | _ -> assert false  (*BISECT-IGNORE*)
