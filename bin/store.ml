@@ -1152,7 +1152,7 @@ module Make (T: TsType.RS)
     | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
     | None -> "None"
 
-  let ml_of_react lhs rhs l eta =
+  let ml_of_react action lhs rhs l eta =
     match T.typ with
     | Rs.BRS -> "Brs.parse_react_unsafe\n~lhs:("
                 ^ (ml_of_big lhs)
@@ -1179,7 +1179,9 @@ module Make (T: TsType.RS)
                  ^ ")\n("
                  ^ (ml_of_eta eta)
                  ^ ")"
-    | Rs.NBRS -> "Nbrs.parse_react_unsafe\n~lhs:("
+    | Rs.NBRS -> "Nbrs.parse_react_unsafe\n~action:("
+                 ^ action
+                 ^ ")\n~lhs:("
                  ^ (ml_of_big lhs)
                  ^ ")\n~rhs:("
                  ^ (ml_of_big rhs)
@@ -1230,10 +1232,10 @@ module Make (T: TsType.RS)
       ml_of_dec id [] (ml_of_big exp)
     | Dbig (Big_fun_exp (id, params, exp, _)) ->
       ml_of_dec id params (ml_of_big exp)
-    | Dreact (React_exp (id, _, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id [] (ml_of_react lhs rhs l eta)
-    | Dreact (React_fun_exp (id, _, params, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id params (ml_of_react lhs rhs l eta)
+    | Dreact (React_exp (id, action, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id [] (ml_of_react action lhs rhs l eta)
+    | Dreact (React_fun_exp (id, action, params, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id params (ml_of_react action lhs rhs l eta)
     | Dint exp ->
       ml_of_dec exp.dint_id [] ("Ctrl.I (" ^ (ml_of_int exp.dint_exp) ^ ")")
     | Dfloat exp  ->
