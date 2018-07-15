@@ -16,7 +16,7 @@ type graph
   
 (** The type of edge labels in Markov Decision Processes (MDP), {e i.e.},
     probabilities. *)
-type label = float
+type label = string * float
 
 (** Type of simulation limit {e i.e.}, number of execution steps. *)
 type limit = int
@@ -29,12 +29,12 @@ val string_of_react : react -> string
 
 (** Same as {!val:Brs.parse_react_unsafe} for nondeterministic reaction
     rules. *)
-val parse_react_unsafe : name:string -> ?action:string -> lhs:Big.t ->
-  rhs:Big.t -> float -> Fun.t option -> react
+val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
+  label -> Fun.t option -> react
 
 (** Same as {!val:Brs.parse_react} for nondeterministic reaction rules. *)
-val parse_react : name:string -> ?action:string -> lhs:Big.t -> rhs:Big.t ->
-  float -> Fun.t option -> react option
+val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
+  label -> Fun.t option -> react option
 
 (** The name of the reaction rule. *)
 val name : react -> string

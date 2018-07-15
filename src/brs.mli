@@ -29,12 +29,12 @@ val string_of_react : react -> string
 
 (** Create a new reaction rule. If [eta = None], the identity function is used
     as instantiation map. No validity check is performed. *)
-val parse_react_unsafe : name:string -> ?action:string -> lhs:Big.t ->
-  rhs:Big.t -> Fun.t option -> react
+val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
+  Fun.t option -> react
 
 (** Same as {!val:Brs.parse_react_unsafe} but returns [None] if it is impossible to
     parse a valid reaction. *)
-val parse_react : name:string -> ?action:string -> lhs:Big.t -> rhs:Big.t ->
+val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
   Fun.t option -> react option
 
 (** The name of the reaction rule. *)

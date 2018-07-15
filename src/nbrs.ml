@@ -11,7 +11,7 @@ module RT = struct
 
   type t = react
 
-  type label = float
+  type label = string * float
 
   let name r = r.name
 
@@ -21,7 +21,7 @@ module RT = struct
 
   let rhs r = r.rct
 
-  let l r = r.p
+  let l r = r.action, r.p
 
   let equal r r' =
     r.action = r'.action
@@ -32,15 +32,16 @@ module RT = struct
 
   let map r = r.eta
 
-  let merge_occ (b, p, r) (_, p', r') = (b, p +. p', r @ r')
+  let merge_occ (b, (a, p), r) (_, (_, p'), r') = (b, (a, p +. p'), r @ r')
 
   let val_chk r = r.p > 0.0 && r.p <= 1.0
 
   let val_chk_error_msg = "Not a probability"
 
-  let string_of_label = Printf.sprintf "%-3g"
+  let string_of_label (action, probability) =
+    Printf.sprintf "%s %-3g" action probability
 
-  let parse ~name ?(action = "") ~lhs ~rhs p eta =
+  let parse ~name ~lhs ~rhs (action, p) eta =
     { name   = name;
       action = action;
       rdx    = lhs;
@@ -51,8 +52,8 @@ module RT = struct
   (* Normalise a list of occurrences *)
   let norm (l, n) =
     let normalise (l, n) =
-      let sum = List.fold_left (fun acc (_, p, _) -> acc +. p) 0.0 l in
-      (List.map (fun (b, p, r) -> (b, p /. sum, r)) l, n)
+      let sum = List.fold_left (fun acc (_, (_, p), _) -> acc +. p) 0.0 l in
+      (List.map (fun (b, (a, p), r) -> (b, (a, p /. sum), r)) l, n)
     in
     let rec remove_duplicates = function
       | [] -> []
@@ -84,12 +85,12 @@ module RT = struct
           List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
         (* Compute cumulative probability *)
         and cumulative =
-          List.fold_left (fun (out, cum_p) (b, p, r) ->
+          List.fold_left (fun (out, cum_p) (b, (a, p), r) ->
               let cum_p' = cum_p +. p in
-              ((b, cum_p', r) :: out, cum_p'))
+              ((b, (a, cum_p'), r) :: out, cum_p'))
             ([], 0.0)
         and pick =
-          List.find (fun (_, p, _) -> p > (Random.float 1.0)) in
+          List.find (fun (_, (_, p), _) -> p > (Random.float 1.0)) in
         ss_sort ss
         |> cumulative
         |> fst
@@ -103,7 +104,7 @@ end
 module R = RrType.Make (RT)
 
 let is_determ r =
-  R.l r = 1.0
+  snd (R.l r) = 1.0
 
 module PT = struct
   type t = R.t list
@@ -133,7 +134,8 @@ module G = struct
   let states g = g.v
   let label g = (g.preds, g.l)
   let edges g = g.e
-  let string_of_l = Printf.sprintf "%.4g"
+  let string_of_l (action, probability) =
+    Printf.sprintf "%s %.4g" action probability
 end
 
 module L = struct
