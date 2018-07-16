@@ -568,7 +568,7 @@ let check_validity = function
 
 let aux_step minify (b, reacts) =
   let wrapper func lst =
-    List.map (fun (a, b, c) -> (a, b)) lst |> func
+    List.map (fun (a, b, _) -> (a, b)) lst |> func
   in
   let aux s_f j_f b rs =
     Ok (s_f b rs) >>= fun (occs, _) -> Ok (j_f occs) in
