@@ -1,3 +1,8 @@
+###1.3.0 (2018-07-16): ###
+
+* Vertices are now labelled with a comma-separated list of matching predicates
+* Edges are labelled with corresponding reaction rules names
+
 ###1.2.0 (2018-04-24): ###
 
 * Use `newrank` to fix dot generation
