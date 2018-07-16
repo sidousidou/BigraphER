@@ -2,10 +2,7 @@
  (name        bigraph)
  (public_name bigraph)
  (synopsis "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems")
- (libraries unix str minisat)
-)
+ (libraries unix str minisat))
 
 (documentation
- (package bigraph)
- (mld_files (:standard))
-)
+ (mld_files (:standard)))
