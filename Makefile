@@ -1,26 +1,23 @@
 .PHONY: build release install uninstall clean test doc dist
 
 build:
-	jbuilder build @install --dev
-
-release:
-	jbuilder build @install
+	dune build @install
 
 install:
-	jbuilder install
+	dune install
 
 uninstall:
-	jbuilder uninstall
+	dune uninstall
 
 clean:
-	jbuilder clean
+	dune clean
 	rm -f *.tar.gz
 
 test:
-	jbuilder runtest
+	dune runtest
 
 doc:
-	jbuilder build @doc
+	dune build @doc
 
 ARCH = big_json-0.2.0.tar.gz
 
