@@ -1,7 +1,14 @@
 ###1.3.0 (2018-07-16): ###
 
-* Vertices are now labelled with a comma-separated list of matching predicates
-* Edges are labelled with corresponding reaction rules names
+* Add support for state-labels as comma-separated list of matching predicates
+  and edge-labels as rules names in Graphviz output
+* Optimise `raise` to `raise_notrace`
+* Add custom toplevel `bigtop.ml`
+* Fix pretty printers
+* Fix computation of number of matches
+* Fix bug occurring when duplicate states are returned by scanning through
+  priorities
+
 
 ###1.2.0 (2018-04-24): ###
 
