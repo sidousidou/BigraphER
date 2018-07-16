@@ -14,6 +14,7 @@ uninstall:
 
 clean:
 	jbuilder clean
+	rm -f *.tar.gz
 
 test:
 	jbuilder runtest
@@ -21,7 +22,7 @@ test:
 doc:
 	jbuilder build @doc
 
-ARCH = big_json-0.1.0.tar.gz
+ARCH = big_json-0.2.0.tar.gz
 
 dist:
 	git archive --format=tar --prefix="bigraph/" HEAD | gzip -n > $(ARCH)
