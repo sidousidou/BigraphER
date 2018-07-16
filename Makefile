@@ -15,6 +15,7 @@ uninstall:
 clean:
 	jbuilder clean
 	rm -f shippable/testresults/*.xml
+	rm -f *.tar.gz
 
 test:
 	jbuilder runtest
