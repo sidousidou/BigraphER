@@ -1,8 +1,0 @@
-(jbuild_version 1)
-
-(library
- ((name        bigraph)
-  (public_name bigraph)
-  (synopsis "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems")
-  (libraries (unix str minisat))
-))
