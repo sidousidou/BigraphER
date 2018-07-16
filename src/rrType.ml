@@ -56,7 +56,7 @@ let filter_iso merge_occ l =
       else extract pred (x :: acc) l in
   let aux1 acc (a, b, c) =
     let (iso, non_iso) =
-      extract (fun (a', b', c') ->
+      extract (fun (a', _, _) ->
           Big.equal a a')
         [] acc in
     match iso with
