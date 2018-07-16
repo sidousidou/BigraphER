@@ -4,5 +4,4 @@
  (libraries bigraph jsonm))
 
 (documentation
- (package big_json)
  (mld_files (:standard)))
