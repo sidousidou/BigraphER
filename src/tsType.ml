@@ -24,23 +24,69 @@ end
 (* Export functions for graphs *)
 module MakeE (G : G) = struct
 
+  (* Convert a hash table of edges into a sorted list of tuples with action
+     names and edge labels. Also return whether there are any non-empty action
+     names (i.e. whether we should be building an MDP). *)
+  let generate_actions_and_labels g =
+    let mdp = ref false in
+    let edges = Base.H_int.fold (fun vertex1 (vertex2, edge_label, _) acc ->
+        let action, label = match G.string_of_l edge_label with
+          | "" -> "", ""
+          | s ->
+            if String.contains s ' ' then
+              begin
+                mdp := true ;
+                let substrings = String.split_on_char ' ' s in
+                List.hd substrings, List.nth substrings 1
+              end
+            else "", s
+        in
+        (vertex1, action, vertex2, label) :: acc)
+        (G.edges g) [] |> List.fast_sort compare in
+    edges, !mdp
+
+  (* Replace action names with strings of numbers. The first action of each
+     vertex gets number 0, and so on. The list is assumed to be sorted. Also
+     return the number of choices, i.e., the sum of the numbers of distinct
+     actions per vertex. *)
+  let ints_of_actions edges =
+    let previous_vertex = ref (-1) in
+    let previous_action = ref "!" in
+    let previous_number = ref (-1) in
+    let choices = ref 0 in
+    let edges = List.map (fun (vertex1, action, vertex2, label) ->
+        if vertex1 <> !previous_vertex then
+          begin
+            previous_vertex := vertex1;
+            previous_action := "!";
+            previous_number := (-1);
+          end ;
+        if action <> !previous_action then
+          begin
+            previous_action := action;
+            previous_number := !previous_number + 1;
+            choices := !choices + 1;
+          end ;
+        (vertex1, string_of_int !previous_number, vertex2, label)
+      ) edges in
+    edges, !choices
+
   let to_prism g =
-    let (s, e) =
-      (Base.H_int.length (G.states g), Base.H_int.length (G.edges g))
-    and edges =
-      Base.H_int.fold (fun v u acc ->
-          (v, u) :: acc) (G.edges g) [] in
-    List.fast_sort (fun (v, (u, _, _)) (v', (u', _, _)) ->
-        Base.ints_compare (v, u) (v', u'))
-      edges
-    |> List.map (fun (v, (u1, u2, _)) ->
-        (string_of_int v)
+    let states = Base.H_int.length (G.states g) in
+    let transitions = Base.H_int.length (G.edges g) in
+    let edges, mdp = generate_actions_and_labels g in
+    let edges, choices = if mdp then ints_of_actions edges else edges, 0 in
+    List.map (fun (vertex1, action, vertex2, label) ->
+        (string_of_int vertex1)
+        ^ (if action = "" then "" else " " ^ action)
         ^ " "
-        ^ (string_of_int u1)
-        ^ (match G.string_of_l u2 with
-            | "" -> ""
-            | s -> " " ^ s))
-    |> List.append [ (string_of_int s) ^ " " ^ (string_of_int e) ]
+        ^ (string_of_int vertex2)
+        ^ (if label = "" then "" else " " ^ label)
+      ) edges
+    |> List.append [ (string_of_int states)
+                     ^ (if mdp then " " ^ string_of_int choices else "")
+                     ^ " "
+                     ^ (string_of_int transitions) ]
     |> String.concat "\n"
 
   let to_dot g ~path ~name =
