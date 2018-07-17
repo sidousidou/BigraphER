@@ -59,14 +59,14 @@ module type RS = sig
   val bfs :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.H_string.key * Big.t * int) list ->
     max:int -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
   exception DEADLOCK of graph * Stats.t * limit
   exception LIMIT of graph * Stats.t
   val sim :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.H_string.key * Big.t * int) list ->
     init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
   val to_prism : graph -> string
   val to_dot : graph -> path:string -> name:string -> string
@@ -173,13 +173,13 @@ module Make (R : RrType.T)
   val bfs :
     s0:Big.t ->
     priorities:P.p_class list ->
-    predicates:(string * Big.t) list ->
+    predicates:(string * Big.t * int) list ->
     max:int -> iter_f:(int -> Big.t -> unit) -> t * Stats.t
 
   val sim :
     s0:Big.t ->
     priorities:P.p_class list ->
-    predicates:(string * Big.t) list ->
+    predicates:(string * Big.t * int) list ->
     init_size:int ->
     stop:limit -> iter_f:(int -> Big.t -> unit) -> t * Stats.t
 

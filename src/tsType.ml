@@ -228,14 +228,14 @@ module type RS = sig
   val bfs :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.H_string.key * Big.t * int) list ->
     max:int -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
   exception DEADLOCK of graph * Stats.t * limit
   exception LIMIT of graph * Stats.t
   val sim :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list
+    predicates:(Base.H_string.key * Big.t * int) list
     -> init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit)
     -> graph * Stats.t
   val to_prism : graph -> string
@@ -363,7 +363,7 @@ module Make (R : RrType.T)
 
   (* Add labels for predicates *)
   let check (i, s) (_, h) =
-    List.iter (fun (id, p) ->
+    List.iter (fun (id, p, _) ->
         if Big.occurs ~target:s ~pattern:p then
           Base.H_string.add h id i)
 
@@ -418,10 +418,8 @@ module Make (R : RrType.T)
     let q = Queue.create () in
     (* Apply rewriting to s0 *)
     let (s0', m) = P.rewrite s0 priorities
-    and g =
-      List.split predicates
-      |> fst
-      |> G.init max in
+    and g = List.map (fun (id, _, _) -> id) predicates
+            |> G.init max in
     Queue.push (0, s0') q;
     (* Add initial state *)
     iter_f 0 s0';
@@ -463,10 +461,8 @@ module Make (R : RrType.T)
     Random.self_init ();
     (* Apply rewriting to s0 *)
     let (s0', m) = P.rewrite s0 priorities
-    and trace =
-      List.split predicates
-      |> fst
-      |> G.init init_size in
+    and trace = List.map (fun (id, _, _) -> id) predicates
+                |> G.init init_size in
     (* Add initial state *)
     iter_f 0 s0';
     Base.H_int.add (G.states trace) (Big.key s0') (0, s0');
