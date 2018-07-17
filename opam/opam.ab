@@ -41,8 +41,7 @@ depends: [
   "menhir" {build}
   "ocamlbuild" {build}
   "conf-graphviz"
-  "bigraph" {>= "1.0.0"}
-  "big_json" {>= "0.1.0"}
+  "big_json" {>= "0.2.0"}
 ]
 
 available: [ ocaml-version >= "4.03.0" ]
