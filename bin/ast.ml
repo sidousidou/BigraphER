@@ -162,8 +162,8 @@ type rul_id =
   | Rul_id_fun of Id.t * num_exp list * Loc.t
 
 type pred_id =
-  | Pred_id of Id.t * Loc.t
-  | Pred_id_fun of Id.t * num_exp list * Loc.t
+  | Pred_id of Id.t * int_exp option * Loc.t
+  | Pred_id_fun of Id.t * num_exp list * int_exp option * Loc.t
 
 type pr_exp =
   | Pr_red of rul_id list * Loc.t

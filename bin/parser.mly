@@ -206,9 +206,13 @@ pred_list:
   l = separated_nonempty_list(COMMA, pred_ide)
                                             { l };
 
+reward:
+  |                                         { None    }
+  | LSBR int_exp RSBR                       { Some $2 };
+
 pred_ide:
-  | IDE                                     { Pred_id ($1, loc $startpos $endpos)         }
-  | IDE LPAR num_list RPAR                  { Pred_id_fun ($1, $3, loc $startpos $endpos) };
+  | IDE reward                              { Pred_id ($1, $2, loc $startpos $endpos)         }
+  | IDE LPAR num_list RPAR reward           { Pred_id_fun ($1, $3, $5, loc $startpos $endpos) };
 
 init:
   | INIT IDE SEMICOLON                      { Init ($2, loc $startpos $endpos)         }

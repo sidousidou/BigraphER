@@ -285,7 +285,7 @@ module Make (T: TsType.RS)
       | React_fun (_,_,_,_,_,_)
       | Int_param _
       | Float_param _ -> false
-        
+
   let get_big id p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
@@ -608,7 +608,7 @@ module Make (T: TsType.RS)
            env_t')
         | Merge_close_exp cs ->
           (let outer = Link.parse_face ["~0"] in    
-            Big.rename ~inner:(Link.parse_face cs.m_cl_names) ~outer b_v
+           Big.rename ~inner:(Link.parse_face cs.m_cl_names) ~outer b_v
            |> Big.close outer,
            env_t')
       end
@@ -799,10 +799,19 @@ module Make (T: TsType.RS)
                         p)))
       ([], env_t)
 
+  let eval_reward env = function
+    | None -> 0
+    | Some int_exp -> eval_int int_exp ScopeMap.empty env
+
   let eval_preds env env_t preds =
     let aux env_t = function
-      | Pred_id (id, p) -> ([id, get_big id p env], env_t)
-      | Pred_id_fun (id, args, p) -> eval_pred_fun_app id args env env_t p in
+      | Pred_id (id, reward, p) ->
+        ([id, get_big id p env, eval_reward env reward], env_t)
+      | Pred_id_fun (id, args, reward, p) ->
+        let reward = eval_reward env reward in
+        let (ps, env_t) = eval_pred_fun_app id args env env_t p in
+        List.map (fun (id, bigraph) -> id, bigraph, reward) ps, env_t
+    in
     let aux' (acc, env_t) id =
       let (ps, env_t') = aux env_t id in
       (acc @ ps, env_t') in
@@ -1042,7 +1051,7 @@ module Make (T: TsType.RS)
 
   let ml_of_ints =
     ml_of_list string_of_int
-  
+
   let rec ml_of_int = function
     | Int_val (v, _) -> string_of_int v
     | Int_var (id, _) -> "int_of_param " ^ (id : string)
@@ -1096,7 +1105,7 @@ module Make (T: TsType.RS)
     | [] -> "Link.Face.empty"
     | [n] -> "Link.Face.singleton (Link.Name \"" ^ n ^ "\")"
     | names -> "Link.parse_face " ^ (ml_of_ids names)
-  
+
   let rec ml_of_big = function
     | Big_var (id, _) -> (id : string)
     | Big_var_fun  (id, params, _) ->
@@ -1194,10 +1203,12 @@ module Make (T: TsType.RS)
                  ^ ")\n("
                  ^ (ml_of_eta eta)
                  ^ ")"
-                 
+
   let ml_of_pred = function
-    | Pred_id (id, _) -> (id : string)
-    | Pred_id_fun (id, params, _) -> (id : string) ^ " " ^ (ml_of_params params)
+    | Pred_id (id, _, _) -> (id : string)
+    | Pred_id_fun (id, params, _, _) -> (id : string)
+                                        ^ " "
+                                        ^ (ml_of_params params)
 
   let ml_of_init = function
     | Init (id, _) -> (id : string)
