@@ -89,25 +89,55 @@ module MakeE (G : G) = struct
                      ^ (string_of_int transitions) ]
     |> String.concat "\n"
 
-  let to_dot g ~path ~name =
-    let construct_edge_label label reaction_rules =
-      let label_string = G.string_of_l label in
-      let first_part = if label_string = "" then "" else label_string ^ ", " in
-      first_part ^ reaction_rules
-    in
-    let rank = "{ rank=source; 0 };\n" in
+  (* Check if there are any edges with action labels *)
+  let is_mdp g =
+    Base.H_int.fold (fun _ (_, label, _) answer ->
+        answer || String.contains (G.string_of_l label) ' '
+      ) (G.edges g) false
+
+  (* Return a DOT string of action nodes of an MDP as well as edges to them,
+     and a hash table mapping (vertex, action) pairs to the IDs of the
+     actions *)
+  let construct_action_nodes g =
+    let next_id = ref (Base.H_int.length (G.states g) - 1) in
+    let mapping = Hashtbl.create !next_id in
+    let nodes = Base.H_int.fold (fun vertex1 (_, label, _) acc ->
+        let action = G.string_of_l label
+                     |> String.split_on_char ' '
+                     |> List.hd in
+        if Hashtbl.mem mapping (vertex1, action) then acc
+        else
+          begin
+            next_id := !next_id + 1;
+            Hashtbl.add mapping (vertex1, action) !next_id ;
+            Printf.sprintf "%d [ label=\"%s\", fontsize=6.0, id=\"s%d_%s\", \
+                            fontname=\"monospace\", width=.40, height=.20, \
+                            style=\"filled\" fillcolor=\"grey75\" ];\
+                            \n%d -> %d [ fontname=\"monospace\", fontsize=7.0,\
+                            arrowhead=\"vee\", arrowsize=0.5 ];\n"
+              !next_id action vertex1 action vertex1 !next_id  :: acc
+          end
+      ) (G.edges g) [] in
+    String.concat "" nodes, mapping
+
+  let construct_edge_label label reaction_rules =
+    (if label = "" then "" else label ^ ", ") ^ reaction_rules
+
+  let construct_node_label g i =
     let (preds, preds_to_states) = G.label g in
+    let relevant_preds = Base.S_string.filter (fun pred ->
+        Base.H_string.find_all preds_to_states pred |> List.mem i) preds in
+    if Base.S_string.is_empty relevant_preds then string_of_int i
+    else Base.S_string.elements relevant_preds |> String.concat ", "
+
+  let to_dot g ~path ~name =
+    let rank = "{ rank=source; 0 };\n" in
+    let mdp = is_mdp g in
+    let actions, mapping = construct_action_nodes g in
     let states =
       Base.H_int.fold (fun _ (i, _) buff ->
           let bolding = if i = 0 then ", style=\"bold\"" else "" in
-          let relevant_preds = Base.S_string.filter (fun pred ->
-              let states_satisfying_pred = Base.H_string.find_all
-                  preds_to_states pred in
-              List.mem i states_satisfying_pred
-            ) preds in
-          let label = if Base.S_string.is_empty relevant_preds
-            then string_of_int i
-            else Base.S_string.elements relevant_preds |> String.concat ", " in
+          let label = construct_node_label g i in
           let filename = Printf.sprintf "%d.svg" i |> Filename.concat path in
           Printf.sprintf
             "%s%d [ label=\"%s\", URL=\"%s\", fontsize=9.0, \
@@ -115,15 +145,28 @@ module MakeE (G : G) = struct
             buff i label filename i bolding)
         (G.states g) ""
     and edges =
-      Base.H_int.fold (fun v (u1, u2, u3) buff ->
-          Printf.sprintf
-            "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
-             arrowhead=\"vee\", arrowsize=0.5 ];\n"
-            buff v u1 (construct_edge_label u2 u3))
-        (G.edges g) "" in
+      Base.H_int.fold (fun vertex1 (vertex2, label, reaction_rules) buff ->
+          let label_str = G.string_of_l label in
+          if mdp then
+            let substrings = String.split_on_char ' ' label_str in
+            let action = List.hd substrings in
+            let probability = List.nth substrings 1 in
+            let action_node = Hashtbl.find mapping (vertex1, action) in
+            let edge_label = construct_edge_label probability reaction_rules in
+            Printf.sprintf
+              "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
+               arrowhead=\"vee\", arrowsize=0.5 ];\n"
+              buff action_node vertex2 edge_label
+          else
+            let edge_label = construct_edge_label label_str reaction_rules in
+            Printf.sprintf
+              "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", fontsize=7.0,\
+               arrowhead=\"vee\", arrowsize=0.5 ];\n"
+              buff vertex1 vertex2 edge_label
+        ) (G.edges g) "" in
     Printf.sprintf "digraph \"%s\" {\n\
-                    stylesheet = \"style_sbrs.css\"\n%s%s\n%s}"
-      name rank states edges
+                    stylesheet = \"style_sbrs.css\"\n%s%s\n%s\n%s}"
+      name rank states (if mdp then actions else "") edges
 
   let to_lab g =
     let (preds, h) = G.label g in
