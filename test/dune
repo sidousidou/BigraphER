@@ -4,6 +4,6 @@
 
 (alias
  (name    runtest)
- (deps    test.exe)
- (action  (run ${<})))
+ (deps    (:x test.exe))
+ (action  (run %{x})))
 
