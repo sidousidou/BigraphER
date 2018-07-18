@@ -806,11 +806,11 @@ module Make (T: TsType.RS)
   let eval_preds env env_t preds =
     let aux env_t = function
       | Pred_id (id, reward, p) ->
-        ([id, get_big id p env, eval_reward env reward], env_t)
+        ([(id, eval_reward env reward), get_big id p env], env_t)
       | Pred_id_fun (id, args, reward, p) ->
         let reward = eval_reward env reward in
         let (ps, env_t) = eval_pred_fun_app id args env env_t p in
-        List.map (fun (id, bigraph) -> id, bigraph, reward) ps, env_t
+        List.map (fun (id, bigraph) -> (id, reward), bigraph) ps, env_t
     in
     let aux' (acc, env_t) id =
       let (ps, env_t') = aux env_t id in
