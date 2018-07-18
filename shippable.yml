@@ -15,7 +15,7 @@ build:
 
   ci:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install m4 pkg-config zlib1g-dev minisat
-    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y minisat dune && eval `opam config env`
+    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y minisat dune && eval $(opam env)
     - mkdir -p shippable/testresults
     - dune runtest
 
