@@ -88,7 +88,7 @@ module S_opt (S_lib : Set.S)
   let choose s =
     try Some (choose s) with
     | Not_found -> None
-      
+
   let pp ~open_b ~first ~last ~sep out s =
     let open Format in
     open_b out ();
@@ -104,6 +104,13 @@ module S_opt (S_lib : Set.S)
     last out;
     pp_close_box out ()
 
+end
+
+module Predicate = struct
+  type t = string * int
+  let compare = compare
+  let equal x y = x = y
+  let hash = Hashtbl.hash
 end
 
 module M_int =
@@ -129,6 +136,8 @@ module S_string =
       type t = String.t
       let pp = Format.pp_print_string
     end)
+
+module S_predicate = Set.Make (Predicate)
 
 module H_int = struct
 
@@ -156,6 +165,15 @@ module H_string = struct
     try Some (find h x) with
     | Not_found -> None
 
+end
+
+module H_predicate = struct
+
+  include Hashtbl.Make(Predicate)
+
+  let find h x =
+    try Some (find h x) with
+    | Not_found -> None
 end
 
 let safe = function

@@ -1,9 +1,9 @@
 module type G = sig
   type t
   type l
-  val init : int -> String.t list -> t
+  val init : int -> Base.Predicate.t list -> t
   val states : t -> (int * Big.t) Base.H_int.t
-  val label : t -> (Base.S_string.t * int Base.H_string.t)
+  val label : t -> (Base.S_predicate.t * int Base.H_predicate.t)
   val edges : t -> (int * l * string) Base.H_int.t
   val string_of_l : l -> string
 end
@@ -125,10 +125,13 @@ module MakeE (G : G) = struct
 
   let construct_node_label g i =
     let (preds, preds_to_states) = G.label g in
-    let relevant_preds = Base.S_string.filter (fun pred ->
-        Base.H_string.find_all preds_to_states pred |> List.mem i) preds in
-    if Base.S_string.is_empty relevant_preds then string_of_int i
-    else Base.S_string.elements relevant_preds |> String.concat ", "
+    let relevant_preds = Base.S_predicate.filter (fun pred ->
+        Base.H_predicate.find_all preds_to_states pred |> List.mem i) preds in
+    if Base.S_predicate.is_empty relevant_preds then string_of_int i
+    else Base.S_predicate.elements relevant_preds
+         |> List.split
+         |> fst
+         |> String.concat ", "
 
   let to_dot g ~path ~name =
     let rank = "{ rank=source; 0 };\n" in
@@ -170,8 +173,8 @@ module MakeE (G : G) = struct
 
   let to_lab g =
     let (preds, h) = G.label g in
-    Base.S_string.fold (fun p acc ->
-        (match Base.H_string.find_all h p with
+    Base.S_predicate.fold (fun (p, r) acc ->
+        (match Base.H_predicate.find_all h (p, r) with
          | [] -> "false"
          | xs -> (List.map (fun s -> "x = " ^ (string_of_int s)) xs
                   |> String.concat " | "))
@@ -228,14 +231,14 @@ module type RS = sig
   val bfs :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t * int) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     max:int -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
   exception DEADLOCK of graph * Stats.t * limit
   exception LIMIT of graph * Stats.t
   val sim :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t * int) list
+    predicates:(Base.Predicate.t * Big.t) list
     -> init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit)
     -> graph * Stats.t
   val to_prism : graph -> string
@@ -363,9 +366,9 @@ module Make (R : RrType.T)
 
   (* Add labels for predicates *)
   let check (i, s) (_, h) =
-    List.iter (fun (id, p, _) ->
+    List.iter (fun (id, p) ->
         if Big.occurs ~target:s ~pattern:p then
-          Base.H_string.add h id i)
+          Base.H_predicate.add h id i)
 
   (* Number of states in a graph *)
   let size_s g =
@@ -418,7 +421,7 @@ module Make (R : RrType.T)
     let q = Queue.create () in
     (* Apply rewriting to s0 *)
     let (s0', m) = P.rewrite s0 priorities
-    and g = List.map (fun (id, _, _) -> id) predicates
+    and g = List.map (fun (id, _) -> id) predicates
             |> G.init max in
     Queue.push (0, s0') q;
     (* Add initial state *)
@@ -461,7 +464,7 @@ module Make (R : RrType.T)
     Random.self_init ();
     (* Apply rewriting to s0 *)
     let (s0', m) = P.rewrite s0 priorities
-    and trace = List.map (fun (id, _, _) -> id) predicates
+    and trace = List.map (fun (id, _) -> id) predicates
                 |> G.init init_size in
     (* Add initial state *)
     iter_f 0 s0';

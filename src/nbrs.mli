@@ -15,7 +15,7 @@ type p_class =
 type graph
   
 (** The type of edge labels in Markov Decision Processes (MDP), {e i.e.},
-    probabilities. *)
+    actions and probabilities. *)
 type label = string * float
 
 (** Type of simulation limit {e i.e.}, number of execution steps. *)
@@ -137,7 +137,7 @@ exception MAX of graph * Stats.t
     @raise Nbrs.MAX when the maximum number of states is reached. *)
 val bfs : s0:Big.t ->
   priorities:p_class list ->
-  predicates:(string * Big.t * int) list ->
+  predicates:(Base.Predicate.t * Big.t) list ->
   max:int ->
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
@@ -161,7 +161,7 @@ exception LIMIT of graph * Stats.t
 val sim :
   s0:Big.t ->
   priorities:p_class list ->
-  predicates:(string * Big.t * int) list ->
+  predicates:(Base.Predicate.t * Big.t) list ->
   init_size:int ->
   stop:limit ->
   iter_f:(int -> Big.t -> unit) ->
