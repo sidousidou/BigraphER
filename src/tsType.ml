@@ -89,6 +89,23 @@ module MakeE (G : G) = struct
                      ^ (string_of_int transitions) ]
     |> String.concat "\n"
 
+  (* Calculate the total reward of a state *)
+  let total_reward g i =
+    let (preds, preds_to_states) = G.label g in
+    let relevant_preds = Base.S_predicate.filter (fun pred ->
+    Base.H_predicate.find_all preds_to_states pred |> List.mem i) preds in
+    Base.S_predicate.fold (fun (_, reward) sum -> reward + sum) relevant_preds 0
+
+  let to_state_rewards g =
+    let states = G.states g in
+    let rewards = Base.H_int.fold (fun _ (i, _) acc ->
+        let reward = total_reward g i in
+        if reward = 0 then acc else Printf.sprintf "%d %d" i reward :: acc
+      ) states [] |> List.fast_sort compare in
+    List.append [Printf.sprintf "%d %d" (Base.H_int.length states)
+                   (List.length rewards)] rewards
+    |> String.concat "\n"
+
   (* Check if there are any edges with action labels *)
   let is_mdp g =
     Base.H_int.fold (fun _ (_, label, _) answer ->
@@ -242,6 +259,7 @@ module type RS = sig
     -> init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit)
     -> graph * Stats.t
   val to_prism : graph -> string
+  val to_state_rewards : graph -> string
   val to_dot : graph -> path:string -> name:string -> string
   val to_lab : graph -> string
   val iter_states : (int -> Big.t -> unit) -> graph -> unit

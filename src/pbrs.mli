@@ -168,6 +168,10 @@ val sim :
 (** Compute the string representation in PRISM [tra] format of a DTMC. *)
 val to_prism : graph -> string
 
+(** Compute the string representation in PRISM [rews] format of state
+    rewards. *)
+val to_state_rewards : graph -> string
+
 (** Compute the string representation in [dot] format of a DTMC. *)
 val to_dot : graph -> path:string -> name:string -> string
 
