@@ -106,6 +106,10 @@ module T (S: Bigraph.TsType.RS)
     try write_string (S.to_prism g) ~name ~path with
     | ERROR e -> failwith @@ report_error e
 
+  let write_state_rewards g ~name ~path =
+    try write_string (S.to_state_rewards g) ~name ~path with
+    | ERROR e -> failwith @@ report_error e
+
   let write_lab g ~name ~path =
     try write_string (S.to_lab g) ~name ~path with
     | ERROR e -> failwith @@ report_error e

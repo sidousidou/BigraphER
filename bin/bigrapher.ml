@@ -151,8 +151,8 @@ let format_map = function
   | Cmd.Json -> (Export.B.write_json, ".json")
   | Cmd.Txt -> (Export.B.write_txt, ".txt")
 
-let export_prism fmt msg f =
-  match Cmd.(defaults.export_prism) with
+let export_prism argument fmt msg f =
+  match argument with
   | None -> ()
   | Some file ->
     (print_msg fmt `yellow (msg ^ file ^ " ...");
@@ -337,9 +337,14 @@ module Run
       ("Exporting " ^ (Rs.to_string T.typ) ^ " to ")
       (List.map format_map Cmd.(defaults.out_format));
     export_states fmt T.iter_states graph;
-    export_prism fmt
+    export_prism Cmd.(defaults.export_prism) fmt
       ("Exporting " ^ (Rs.to_string T.typ) ^ " in PRISM format to ")
       (E.write_prism graph);
+    export_prism Cmd.(defaults.export_state_rewards) fmt
+      ("Exporting the state rewards of "
+       ^ (Rs.to_string T.typ)
+       ^ " in PRISM format to ")
+      (E.write_state_rewards graph);
     export_csl fmt (E.write_lab graph);
     pp_print_flush err_formatter ();
     exit 0

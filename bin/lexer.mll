@@ -132,6 +132,8 @@ and cmd =  parse
     | "-l")                 { O_LABELS }
   | ("--export-prism"
     | "-p")                 { O_PRISM }
+  | ("--export-state-rewards"
+    | "-r")                 { O_STATE_REWARDS }
   | ("--export-ml"    
     | "-m")                 { O_ML } 
   | ("--max-states"

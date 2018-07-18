@@ -43,6 +43,7 @@ type opt =
   | Ml of file
   | Quiet
   | States of path option
+  | StateRewards of file
   | Steps of int
   | Time of float
   | Verb
@@ -57,6 +58,7 @@ type settings = {
   mutable export_ml : file option;
   mutable export_lab : file option;
   mutable export_prism : file option;
+  mutable export_state_rewards : file option;
   mutable export_states : path option;
   mutable export_states_flag : bool;
   mutable help : bool;
@@ -83,6 +85,7 @@ let defaults = {
   export_ml = None;
   export_lab = None;
   export_prism = None;
+  export_state_rewards = None;
   export_states = None;
   export_states_flag = false;
   help = false;
@@ -148,6 +151,11 @@ let string_of_opt sep ?(man = false) opt =
         ["-m " ^ s; "--export-ml " ^ s]
       else ["-m"; "--export-ml"])
    | Quiet -> ["-q"; "--quiet"]
+   | StateRewards _ ->
+     (if man then
+        let s = "<" ^ (colorise `underline "FILE") ^ ">" in
+        ["-r " ^ s; "--export-state-rewards " ^ s]
+      else ["-r"; "--export-state-rewards"])
    | States _ ->
      (if man then
         let s = "[" ^ (colorise `underline "DIR") ^ "]" in
@@ -264,6 +272,9 @@ let msg_opt fmt = function
   | Quiet -> fprintf fmt "@[<hov>Disable progress indicator.@ This is@ \
                           equivalent to@ setting@ $BIGQUIET@ to a@ non-empty@ \
                           value.@]"
+  | StateRewards _ -> fprintf fmt "@[<hov>Export the state rewards in@ PRISM@ \
+                                   rews@ format@ to@ %s.@]"
+                      (colorise `underline "FILE")
   | States _ -> fprintf fmt "@[<hov>Export each state@ to@ a file@ in %s.@ \
                              State@ indices@ are@ used@ as@ file@ names.@ \
                              When %s@ is@ omitted,@ it@ is@ inferred@ from@ \
@@ -374,6 +385,7 @@ let eval_help_full fmt () =
                    No_colors;
                    Prism "";
                    Quiet;
+                   StateRewards "";
                    States None;
                    Graph "";
                    Verb ] in
@@ -389,6 +401,7 @@ let eval_help_sim fmt () =
                    No_colors;
                    Prism "";
                    Quiet;
+                   StateRewards "";
                    States None;
                    Steps 0;
                    Graph "";
@@ -441,6 +454,9 @@ let eval_config fmt () =
        ("export_prism",
         fun fmt () ->
           fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_prism));
+       ("export_state_rewards",
+        fun fmt () ->
+          fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_state_rewards));
        ("export_states",
         fun fmt () ->
           fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_states));
