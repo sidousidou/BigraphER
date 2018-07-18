@@ -159,10 +159,18 @@ module MakeE (G : G) = struct
           let bolding = if i = 0 then ", style=\"bold\"" else "" in
           let label = construct_node_label g i in
           let filename = Printf.sprintf "%d.svg" i |> Filename.concat path in
+          let reward = total_reward g i in
+          let (color, sign) =
+            if reward > 0 then "darkgreen", "+" else "red", "" in
+          let reward_label =
+            if reward = 0 then ""
+            else Printf.sprintf "<br/><font color='%s'>%s%d</font>"
+                color sign reward
+          in
           Printf.sprintf
-            "%s%d [ label=\"%s\", URL=\"%s\", fontsize=9.0, \
+            "%s%d [ label=<%s%s>, URL=\"%s\", fontsize=9.0, \
              id=\"s%d\", fontname=\"monospace\", width=.60, height=.30%s ];\n"
-            buff i label filename i bolding)
+            buff i label reward_label filename i bolding)
         (G.states g) ""
     and edges =
       Base.H_int.fold (fun vertex1 (vertex2, label, reaction_rules) buff ->
