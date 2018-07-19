@@ -24,37 +24,38 @@ end
 (* Export functions for graphs *)
 module MakeE (G : G) = struct
 
+  (* Check if there are any edges with action labels *)
+  let is_mdp g =
+    Base.H_int.fold (fun _ (_, label, _) answer ->
+        answer || String.contains (G.string_of_l label) ' '
+      ) (G.edges g) false
+
   (* Convert a hash table of edges into a sorted list of tuples with action
-     names and edge labels. Also return whether there are any non-empty action
-     names (i.e. whether we should be building an MDP). *)
-  let generate_actions_and_labels g =
-    let mdp = ref false in
-    let edges = Base.H_int.fold (fun vertex1 (vertex2, edge_label, _) acc ->
+     names and edge labels (with an empty slot for action IDs) *)
+  let list_of_edges g =
+    Base.H_int.fold (fun vertex1 (vertex2, edge_label, _) acc ->
         let action, label = match G.string_of_l edge_label with
           | "" -> "", ""
           | s ->
             if String.contains s ' ' then
-              begin
-                mdp := true ;
-                let substrings = String.split_on_char ' ' s in
-                List.hd substrings, List.nth substrings 2
-              end
+              let substrings = String.split_on_char ' ' s in
+              List.hd substrings, List.nth substrings 2
             else "", s
         in
-        (vertex1, action, vertex2, label) :: acc)
-        (G.edges g) [] |> List.fast_sort compare in
-    edges, !mdp
+        (vertex1, vertex2, "", action, label) :: acc)
+      (G.edges g) []
+    |> List.fast_sort compare
 
-  (* Replace action names with strings of numbers. The first action of each
-     vertex gets number 0, and so on. The list is assumed to be sorted. Also
+  (* Add action IDs to the list of tuples. The first action of each
+     vertex gets ID 0, and so on. The list is assumed to be sorted. Also
      return the number of choices, i.e., the sum of the numbers of distinct
      actions per vertex. *)
-  let ints_of_actions edges =
+  let action_names_to_ints edges =
     let previous_vertex = ref (-1) in
     let previous_action = ref "!" in
     let previous_number = ref (-1) in
     let choices = ref 0 in
-    let edges = List.map (fun (vertex1, action, vertex2, label) ->
+    let edges = List.map (fun (vertex1, vertex2, _, action, label) ->
         if vertex1 <> !previous_vertex then
           begin
             previous_vertex := vertex1;
@@ -67,33 +68,36 @@ module MakeE (G : G) = struct
             previous_number := !previous_number + 1;
             choices := !choices + 1;
           end ;
-        (vertex1, string_of_int !previous_number, vertex2, label)
+        (vertex1, vertex2, string_of_int !previous_number, action, label)
       ) edges in
     edges, !choices
 
   let to_prism g =
-    let states = Base.H_int.length (G.states g) in
-    let transitions = Base.H_int.length (G.edges g) in
-    let edges, mdp = generate_actions_and_labels g in
-    let edges, choices = if mdp then ints_of_actions edges else edges, 0 in
-    List.map (fun (vertex1, action, vertex2, label) ->
+    let num_states = Base.H_int.length (G.states g) in
+    let num_transitions = Base.H_int.length (G.edges g) in
+    let mdp = is_mdp g in
+    let edges = list_of_edges g in
+    let edges, num_choices =
+      if mdp then action_names_to_ints edges else edges, 0 in
+    List.map (fun (vertex1, vertex2, action_id, action, label) ->
         (string_of_int vertex1)
-        ^ (if action = "" then "" else " " ^ action)
+        ^ (if action_id = "" then "" else " " ^ action_id)
         ^ " "
         ^ (string_of_int vertex2)
         ^ (if label = "" then "" else " " ^ label)
+        ^ (if action = "" then "" else " " ^ action)
       ) edges
-    |> List.append [ (string_of_int states)
-                     ^ (if mdp then " " ^ string_of_int choices else "")
+    |> List.append [ (string_of_int num_states)
+                     ^ (if mdp then " " ^ string_of_int num_choices else "")
                      ^ " "
-                     ^ (string_of_int transitions) ]
+                     ^ (string_of_int num_transitions) ]
     |> String.concat "\n"
 
   (* Calculate the total reward of a state *)
   let total_reward g i =
     let (preds, preds_to_states) = G.label g in
     let relevant_preds = Base.S_predicate.filter (fun pred ->
-    Base.H_predicate.find_all preds_to_states pred |> List.mem i) preds in
+        Base.H_predicate.find_all preds_to_states pred |> List.mem i) preds in
     Base.S_predicate.fold (fun (_, reward) sum -> reward + sum) relevant_preds 0
 
   let to_state_rewards g =
@@ -105,12 +109,6 @@ module MakeE (G : G) = struct
     List.append [Printf.sprintf "%d %d" (Base.H_int.length states)
                    (List.length rewards)] rewards
     |> String.concat "\n"
-
-  (* Check if there are any edges with action labels *)
-  let is_mdp g =
-    Base.H_int.fold (fun _ (_, label, _) answer ->
-        answer || String.contains (G.string_of_l label) ' '
-      ) (G.edges g) false
 
   let generate_reward_html reward =
     let (color, sign) = if reward > 0 then "darkgreen", "+" else "red", "" in
