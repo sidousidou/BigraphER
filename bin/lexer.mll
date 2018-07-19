@@ -67,6 +67,7 @@ rule token =  parse
   | "int"                   { INT }
   | "float"                 { FLOAT }       
   | "fun"                   { FUN }  
+  | "action"                { ACTION }
   | "begin"                 { BEGIN }
   | "brs"		    { BRS }
   | "sbrs"		    { SBRS }

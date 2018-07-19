@@ -841,8 +841,17 @@ module Make (T: TsType.RS)
     add_to_store fmt c env id (v, t, p);
     env_t'
 
+  let update_action action_id =
+    List.map (fun d ->
+        match d with
+        | React_exp (id, _, lhs, rhs, label, eta, p) ->
+          Dreact (React_exp (id, action_id, lhs, rhs, label, eta, p))
+        | React_fun_exp (id, _, forms, lhs, rhs, label, eta, p) ->
+          Dreact (React_exp (id, action_id, lhs, rhs, label, eta, p))
+      )
+
   let store_decs fmt c decs env env_t =
-    let aux env_t d =
+    let rec aux env_t d =
       let upd id v p =
         update fmt c id v p env env_t in
       match d with
@@ -874,7 +883,11 @@ module Make (T: TsType.RS)
              ScopeMap.empty env env_t p in
          update fmt c id (React r_v) p env env_t')
       | Dreact (React_fun_exp (id, action, forms, lhs, rhs, label, eta, p)) ->
-        upd id (React_fun (action, lhs, rhs, eval_eta eta, label, forms)) p in
+        upd id (React_fun (action, lhs, rhs, eval_eta eta, label, forms)) p
+      | Daction {action_id = action_id; action_rules = rules} ->
+        update_action action_id rules
+        |> List.fold_left aux env_t
+    in
     List.fold_left aux env_t decs
 
   let store_consts fmt c consts (env : store) =
@@ -986,7 +999,7 @@ module Make (T: TsType.RS)
       dummy_args args_t in
     let aux' eval_f id args p =
       eval_f id args env env_t p |> fst |> List.hd in
-    let write f_write ext = function
+    let rec write f_write ext = function
       | Dctrl _
       | Dint _
       | Dfloat _ -> ()
@@ -1005,7 +1018,11 @@ module Make (T: TsType.RS)
       | Dreact (React_fun_exp (id, _, _, _, _, _, _, p)) ->
         (let args = aux id in
          let r = aux' eval_react_fun_app id args p in
-         write_pair id (T.lhs r) (T.rhs r) (f_write, ext)) in
+         write_pair id (T.lhs r) (T.rhs r) (f_write, ext))
+      | Daction {action_id = action_id; action_rules = rules} ->
+        update_action action_id rules
+        |> List.iter (write f_write ext)
+    in
     List.iter (fun (f_write, ext) ->
         List.iter (fun d ->
             try write f_write ext d with
@@ -1255,6 +1272,7 @@ module Make (T: TsType.RS)
       ml_of_dec exp.dint_id [] ("Ctrl.I (" ^ (ml_of_int exp.dint_exp) ^ ")")
     | Dfloat exp  ->
       ml_of_dec exp.dfloat_id [] ("Ctrl.F (" ^ (ml_of_float exp.dfloat_exp) ^ ")")
+    | Daction _ -> ""
 
   let ml_of_model m file =
     let file_id = Filename.basename file

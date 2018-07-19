@@ -26,6 +26,7 @@ open Bigraph
 %token            INT
 %token            FLOAT
 %token            FUN
+%token            ACTION
 %token            BEGIN
 %token            BRS
 %token            PBRS
@@ -115,7 +116,8 @@ dec:
   | dec_float SEMICOLON                     { Dfloat $1  }
   | dec_ctrl SEMICOLON                      { Dctrl $1   }
   | dec_big SEMICOLON                       { Dbig $1    }
-  | dec_react SEMICOLON                     { Dreact $1  };
+  | dec_react SEMICOLON                     { Dreact $1  }
+  | dec_action                              { Daction $1 }
 
 dec_int:
   INT IDE EQUAL int_exp                     { { dint_id = $2;
@@ -130,6 +132,14 @@ dec_float:
 dec_ctrl:
   | ATOMIC ctrl_exp                         { Atomic ($2, loc $startpos $endpos)     }
   | ctrl_exp                                { Non_atomic ($1, loc $startpos $endpos) };
+
+dec_reacts:
+  | dec_react SEMICOLON                     { $1 }
+
+dec_action:
+  | ACTION IDE rules=nonempty_list(dec_reacts) END
+    { { action_id = $2;
+        action_rules = rules; } };
 
 ctrl_exp:
   | CTRL CIDE EQUAL CINT                    { Ctrl_exp ($2, $4, loc $startpos $endpos)         }
@@ -163,12 +173,8 @@ dec_big:
 dec_react:
   | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
       { React_exp ($2, "", $4, $6, $5, $7, loc $startpos $endpos)           }
-  | REACT IDE IDE EQUAL bexp arrow bexp eta_exp_opt 
-      { React_exp ($3, $2, $5, $7, $6, $8, loc $startpos $endpos)           }
-  | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
+ | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
       { React_fun_exp ($3, "", $5, $8, $10, $9, $11, loc $startpos $endpos) }
-  | FUN REACT IDE IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
-      { React_fun_exp ($4, $3, $6, $9, $11, $10, $12, loc $startpos $endpos) };
 
 arrow:
   | ARR                   { None }

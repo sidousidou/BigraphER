@@ -132,12 +132,18 @@ type dreact =
                      eta_exp option *
                      Loc.t
 
+type daction =
+  { action_id : Id.t;
+    action_rules : dreact list
+  }
+
 type dec =
   | Dctrl of dctrl
   | Dint of dint
   | Dfloat of dfloat
   | Dbig of dbig
   | Dreact of dreact
+  | Daction of daction
 
 type init_exp =
   | Init of Id.t * Loc.t
