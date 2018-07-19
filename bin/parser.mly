@@ -137,9 +137,8 @@ dec_reacts:
   | dec_react SEMICOLON                     { $1 }
 
 dec_action:
-  | ACTION IDE rules=nonempty_list(dec_reacts) END
-    { { action_id = $2;
-        action_rules = rules; } };
+  | ACTION IDE reward rules=nonempty_list(dec_reacts) END
+    { { action_id = $2; action_rules = rules; action_reward = $3 } };
 
 ctrl_exp:
   | CTRL CIDE EQUAL CINT                    { Ctrl_exp ($2, $4, loc $startpos $endpos)         }
@@ -172,9 +171,9 @@ dec_big:
 
 dec_react:
   | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
-      { React_exp ($2, "", $4, $6, $5, $7, loc $startpos $endpos)           }
+      { React_exp ($2, "", 0, $4, $6, $5, $7, loc $startpos $endpos)           }
  | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
-      { React_fun_exp ($3, "", $5, $8, $10, $9, $11, loc $startpos $endpos) }
+      { React_fun_exp ($3, "", 0, $5, $8, $10, $9, $11, loc $startpos $endpos) }
 
 arrow:
   | ARR                   { None }

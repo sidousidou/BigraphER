@@ -246,7 +246,7 @@ module Run
      end)
     (P: sig
        val parse_react : string -> Big.t -> Big.t ->
-         [ `E of unit | `F of float | `P of string * float ]
+         [ `E of unit | `F of float | `P of string * int * float ]
          -> Fun.t option -> T.react option
     end)
     (J: sig

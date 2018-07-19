@@ -6,7 +6,7 @@ open Bigraph
 module Make (T: TsType.RS)
     (P: sig
        val parse_react : string -> Big.t -> Big.t ->
-         [ `E of unit | `F of float | `P of string * float ]
+         [ `E of unit | `F of float | `P of string * int * float ]
          -> Fun.t option -> T.react option
      end) = struct
 
@@ -42,7 +42,7 @@ module Make (T: TsType.RS)
     | A_ctrl of Ctrl.t
     | A_ctrl_fun of int * Id.t list
     | React of T.react
-    | React_fun of string * big_exp * big_exp *
+    | React_fun of string * int * big_exp * big_exp *
                    Fun.t option * float_exp option * Id.t list
     | Int_param of int list
     | Float_param of float list
@@ -83,7 +83,7 @@ module Make (T: TsType.RS)
     | Ctrl_fun (arity, forms)
     | A_ctrl_fun (arity, forms) -> update forms (`ctrl arity)
     | React _ -> (`big_val `react, env_t)
-    | React_fun (_, _, _, _, _, forms) -> update forms `react
+    | React_fun (_, _, _, _, _, _, forms) -> update forms `react
     | Int_param _ -> (`param `int, env_t)
     | Float_param _ -> (`param `float, env_t)
 
@@ -190,7 +190,7 @@ module Make (T: TsType.RS)
       | (A_ctrl _,t,_)
       | (A_ctrl_fun (_,_),t,_)
       | (React _,t,_)
-      | (React_fun (_,_,_,_,_,_),t,_)
+      | (React_fun (_,_,_,_,_,_,_),t,_)
       | (Int_param _,t,_)
       | (Float_param _,t,_) ->
         raise (ERROR (Wrong_type (t, `num_val (`b `int)), p)) in
@@ -207,7 +207,7 @@ module Make (T: TsType.RS)
       | (A_ctrl _,t,_)
       | (A_ctrl_fun (_,_),t,_)
       | (React _,t,_)
-      | (React_fun (_,_,_,_,_,_),t,_)
+      | (React_fun (_,_,_,_,_,_,_),t,_)
       | (Int_param _,t,_)
       | (Float_param _,t,_) ->
         raise (ERROR (Wrong_type (t, `num_val (`b `float)), p)) in
@@ -224,7 +224,7 @@ module Make (T: TsType.RS)
       | (A_ctrl _,t,_)
       | (A_ctrl_fun (_,_),t,_)
       | (React _,t,_)
-      | (React_fun (_,_,_,_,_,_),t,_)
+      | (React_fun (_,_,_,_,_,_,_),t,_)
       | (Int_param _,t,_)
       | (Float_param _,t,_) ->
         raise (ERROR (Wrong_type (t, `num_val (`g int_or_float)), p)) in
@@ -245,7 +245,7 @@ module Make (T: TsType.RS)
     | Some (Ctrl_fun (_,_),t,_)
     | Some (A_ctrl_fun (_,_),t,_)
     | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_,_),t,_)
+    | Some (React_fun (_,_,_,_,_,_,_),t,_)
     | Some (Int_param _,t,_)
     | Some (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p))
@@ -264,7 +264,7 @@ module Make (T: TsType.RS)
     | Some (Ctrl _,t,_)
     | Some (A_ctrl _,t,_)
     | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_,_),t,_)
+    | Some (React_fun (_,_,_,_,_,_,_),t,_)
     | Some (Int_param _,t,_)
     | Some (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p))
@@ -282,7 +282,7 @@ module Make (T: TsType.RS)
       | Ctrl _
       | Ctrl_fun (_,_)
       | React _
-      | React_fun (_,_,_,_,_,_)
+      | React_fun (_,_,_,_,_,_,_)
       | Int_param _
       | Float_param _ -> false
 
@@ -298,7 +298,7 @@ module Make (T: TsType.RS)
     | Some (A_ctrl _,t,_)
     | Some (A_ctrl_fun (_,_),t,_)
     | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_,_),t,_)
+    | Some (React_fun (_,_,_,_,_,_,_),t,_)
     | Some (Int_param _,t,_)
     | Some (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `big_val `big), p))
@@ -315,7 +315,7 @@ module Make (T: TsType.RS)
     | Some (A_ctrl _,t,_)
     | Some (A_ctrl_fun (_,_),t,_)
     | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_,_),t,_)
+    | Some (React_fun (_,_,_,_,_,_,_),t,_)
     | Some (Int_param _,t,_)
     | Some (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p))
@@ -332,7 +332,7 @@ module Make (T: TsType.RS)
     | Some (Ctrl_fun (_,_),t,_)
     | Some (A_ctrl _,t,_)
     | Some (A_ctrl_fun (_,_),t,_)
-    | Some (React_fun (_,_,_,_,_,_),t,_)
+    | Some (React_fun (_,_,_,_,_,_,_),t,_)
     | Some (Int_param _,t,_)
     | Some (Float_param _,t,_) ->
       raise (ERROR (Wrong_type (t, `big_val `react), p))
@@ -340,8 +340,8 @@ module Make (T: TsType.RS)
   let get_react_fun id arg_types p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
-    | Some (React_fun (action, l, r, eta, label, forms), t, _) ->
-      (action, l, r, label, eta, forms, t)
+    | Some (React_fun (action, reward, l, r, eta, label, forms), t, _) ->
+      (action, reward, l, r, label, eta, forms, t)
     | Some (Int _,t,_)
     | Some (Float _,t,_)
     | Some (Big _,t,_)
@@ -422,7 +422,7 @@ module Make (T: TsType.RS)
       | (A_ctrl _,_)
       | (A_ctrl_fun (_,_),_)
       | (React _,_)
-      | (React_fun (_,_,_,_,_,_),_)
+      | (React_fun (_,_,_,_,_,_,_),_)
       | (Int_param _,_)
       | (Float_param _,_) -> assert false in (*BISECT-IGNORE*)
     match exp with
@@ -454,7 +454,7 @@ module Make (T: TsType.RS)
         | A_ctrl _
         | A_ctrl_fun (_,_)
         | React _
-        | React_fun (_,_,_,_,_,_)
+        | React_fun (_,_,_,_,_,_,_)
         | Int_param _
         | Float_param _ -> assert false (*BISECT-IGNORE*)
       ) exps
@@ -474,7 +474,7 @@ module Make (T: TsType.RS)
           | Float v -> Ctrl.F v
           | Int v -> Ctrl.I v
           | Big _ | Big_fun (_,_) | Ctrl _ | Ctrl_fun (_,_)
-          | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_,_)
+          | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_,_,_)
           | Int_param _ | Float_param _ -> assert false (*BISECT-IGNORE*))
         nums in
     Ctrl.C (id, params, arity)
@@ -617,13 +617,17 @@ module Make (T: TsType.RS)
     | Some (l, _) -> Some (Fun.parse l)
     | None -> None
 
+  let eval_reward env = function
+    | None -> 0
+    | Some int_exp -> eval_int int_exp ScopeMap.empty env
+
   (* Similar to binary eval *)
   let eval_react_aux lhs rhs scope env env_t =
     let (lhs_v, env_t') = eval_big lhs scope env env_t in
     let (rhs_v, env_t'') = eval_big rhs scope env env_t' in
     (lhs_v, rhs_v, env_t'')
 
-  let eval_react name action lhs rhs eta l scope env env_t p =
+  let eval_react name action reward lhs rhs eta l scope env env_t p =
     let (lhs_v, rhs_v, env_t') =
       eval_react_aux lhs rhs scope env env_t in
     match
@@ -633,7 +637,7 @@ module Make (T: TsType.RS)
            if action = "" then
              `F (eval_float f_exp scope env)
            else
-             `P (action, eval_float f_exp scope env)
+             `P (action, reward, eval_float f_exp scope env)
          | None -> `E ())
         eta with
     | None ->
@@ -668,7 +672,7 @@ module Make (T: TsType.RS)
     | (A_ctrl _,_,_)
     | (A_ctrl_fun (_,_),_,_)
     | (React _,_,_)
-    | (React_fun (_,_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
+    | (React_fun (_,_,_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
 
   let is_param id env p =
     match Base.H_string.find env id with
@@ -686,7 +690,7 @@ module Make (T: TsType.RS)
       | A_ctrl _
       | A_ctrl_fun (_,_)
       | React _
-      | React_fun (_,_,_,_,_,_) -> false
+      | React_fun (_,_,_,_,_,_,_) -> false
 
   module IdSet = Set.Make(struct
       type t = Id.t
@@ -727,13 +731,13 @@ module Make (T: TsType.RS)
     |> param_scopes env
     |> List.fold_left (fun (acc, env_t) scope ->
         let (nums, args_t) = eval_nums args scope env in
-        let (action, l, r, label, eta, forms, t) =
+        let (action, reward, l, r, label, eta, forms, t) =
           get_react_fun id args_t p env in
         try
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
           let scope' = extend_scope scope forms nums args_t p in
-          let (r, env_t'') = eval_react id action l r eta label scope' env
-              env_t' p in
+          let (r, env_t'') =
+            eval_react id action reward l r eta label scope' env env_t' p in
           (r :: acc, env_t'')
         with
         | UNIFICATION ->
@@ -799,10 +803,6 @@ module Make (T: TsType.RS)
                         p)))
       ([], env_t)
 
-  let eval_reward env = function
-    | None -> 0
-    | Some int_exp -> eval_int int_exp ScopeMap.empty env
-
   let eval_preds env env_t preds =
     let aux env_t = function
       | Pred_id (id, reward, p) ->
@@ -841,13 +841,16 @@ module Make (T: TsType.RS)
     add_to_store fmt c env id (v, t, p);
     env_t'
 
-  let update_action action_id =
+  (* Update a list of reaction rules with a new action and reward *)
+  let update_action env action reward =
     List.map (fun d ->
         match d with
-        | React_exp (id, _, lhs, rhs, label, eta, p) ->
-          Dreact (React_exp (id, action_id, lhs, rhs, label, eta, p))
-        | React_fun_exp (id, _, forms, lhs, rhs, label, eta, p) ->
-          Dreact (React_exp (id, action_id, lhs, rhs, label, eta, p))
+        | React_exp (id, _, _, lhs, rhs, label, eta, p) ->
+          Dreact (React_exp (id, action, eval_reward env reward, lhs, rhs,
+                             label, eta, p))
+        | React_fun_exp (id, _, _, forms, lhs, rhs, label, eta, p) ->
+          Dreact (React_fun_exp (id, action, eval_reward env reward, forms,
+                                 lhs, rhs, label, eta, p))
       )
 
   let store_decs fmt c decs env env_t =
@@ -877,15 +880,16 @@ module Make (T: TsType.RS)
          update fmt c id (Big b_v) p env env_t')
       | Dbig (Big_fun_exp (id, forms, exp, p)) ->
         upd id (Big_fun (exp, forms)) p
-      | Dreact (React_exp (id, action, lhs, rhs, label, eta, p)) ->
+      | Dreact (React_exp (id, action, reward, lhs, rhs, label, eta, p)) ->
         (let (r_v, env_t') =
-           eval_react id action lhs rhs (eval_eta eta) label
+           eval_react id action reward lhs rhs (eval_eta eta) label
              ScopeMap.empty env env_t p in
          update fmt c id (React r_v) p env env_t')
-      | Dreact (React_fun_exp (id, action, forms, lhs, rhs, label, eta, p)) ->
-        upd id (React_fun (action, lhs, rhs, eval_eta eta, label, forms)) p
-      | Daction {action_id = action_id; action_rules = rules} ->
-        update_action action_id rules
+      | Dreact (React_fun_exp (id, action, reward, forms, lhs, rhs, label, eta, p)) ->
+        upd id (React_fun (action, reward, lhs, rhs, eval_eta eta, label, forms)) p
+      | Daction {action_id = action_id; action_rules = rules;
+                 action_reward = reward} ->
+        update_action env action_id reward rules
         |> List.fold_left aux env_t
     in
     List.fold_left aux env_t decs
@@ -1012,15 +1016,16 @@ module Make (T: TsType.RS)
                         ScopeMap.empty env env_t) in
          f_write b ~name:(id ^ ext) ~path
          |> print_fun (concat (id ^ ext)))
-      | Dreact (React_exp (id, _, _, _, _, _, p)) ->
+      | Dreact (React_exp (id, _, _, _, _, _, _, p)) ->
         (let r = get_react id p env in
          write_pair id (T.lhs r) (T.rhs r) (f_write, ext))
-      | Dreact (React_fun_exp (id, _, _, _, _, _, _, p)) ->
+      | Dreact (React_fun_exp (id, _, _, _, _, _, _, _, p)) ->
         (let args = aux id in
          let r = aux' eval_react_fun_app id args p in
          write_pair id (T.lhs r) (T.rhs r) (f_write, ext))
-      | Daction {action_id = action_id; action_rules = rules} ->
-        update_action action_id rules
+      | Daction {action_id = action_id; action_rules = rules;
+                 action_reward = reward} ->
+        update_action env action_id reward rules
         |> List.iter (write f_write ext)
     in
     List.iter (fun (f_write, ext) ->
@@ -1182,7 +1187,7 @@ module Make (T: TsType.RS)
     | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
     | None -> "None"
 
-  let ml_of_react action lhs rhs l eta =
+  let ml_of_react action reward lhs rhs l eta =
     match T.typ with
     | Rs.BRS -> "Brs.parse_react_unsafe\n~lhs:("
                 ^ (ml_of_big lhs)
@@ -1211,6 +1216,8 @@ module Make (T: TsType.RS)
                  ^ ")"
     | Rs.NBRS -> "Nbrs.parse_react_unsafe\n~action:("
                  ^ action
+                 ^ ")\n~reward:("
+                 ^ string_of_int reward
                  ^ ")\n~lhs:("
                  ^ (ml_of_big lhs)
                  ^ ")\n~rhs:("
@@ -1264,10 +1271,10 @@ module Make (T: TsType.RS)
       ml_of_dec id [] (ml_of_big exp)
     | Dbig (Big_fun_exp (id, params, exp, _)) ->
       ml_of_dec id params (ml_of_big exp)
-    | Dreact (React_exp (id, action, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id [] (ml_of_react action lhs rhs l eta)
-    | Dreact (React_fun_exp (id, action, params, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id params (ml_of_react action lhs rhs l eta)
+    | Dreact (React_exp (id, action, reward, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id [] (ml_of_react action reward lhs rhs l eta)
+    | Dreact (React_fun_exp (id, action, reward, params, lhs, rhs, l, eta, _)) ->
+      ml_of_dec id params (ml_of_react action reward lhs rhs l eta)
     | Dint exp ->
       ml_of_dec exp.dint_id [] ("Ctrl.I (" ^ (ml_of_int exp.dint_exp) ^ ")")
     | Dfloat exp  ->
