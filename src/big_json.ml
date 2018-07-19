@@ -40,6 +40,16 @@ let quadruple e (n0, f0, v0) (n1, f1, v1) (n2, f2, v2) (n3, f3, v3) =
   field e n3 f3 v3;
   lexeme e `Oe
 
+let quintuple e (n0, f0, v0) (n1, f1, v1) (n2, f2, v2) (n3, f3, v3)
+    (n4, f4, v4) =
+  lexeme e `Os;
+  field e n0 f0 v0;
+  field e n1 f1 v1;
+  field e n2 f2 v2;
+  field e n3 f3 v3;
+  field e n4 f4 v4;
+  lexeme e `Oe
+
 let ctrl e (Ctrl.C (n, ps, a)) =
   triple e
     ("ctrl_name", string e, n)
@@ -173,13 +183,14 @@ let p_occs name e l =
     l;
   lexeme e `Ae
 
-let n_occs name1 name2 e l =
+let n_occs name1 name2 name3 e l =
   lexeme e `As;
-  List.iter (fun (b, (a, p)) ->
-      triple e
+  List.iter (fun (b, (a, r, p)) ->
+      quadruple e
         ("state", big e, b)
         (name1, string e, a)
-        (name2, float e, p))
+        (name2, int e, r)
+        (name3, float e, p))
     l;
   lexeme e `Ae
 
@@ -235,11 +246,12 @@ let pbrs e rs =
 let nbrs e rs =
   aux_graph "nbrs"
     Nbrs.iter_edges
-    (fun i j (a, p) ->
-       quadruple e
+    (fun i j (a, r, p) ->
+       quintuple e
          ("source", int e, i)
          ("target", int e, j)
          ("action", string e, a)
+         ("reward", int e, r)
          ("probability", float e, p))
     e
     rs
@@ -278,7 +290,7 @@ let s_occs_to_json ?(minify=true) =
   to_json ~minify (p_occs "rate")
 
 let n_occs_to_json ?(minify=true) =
-  to_json ~minify (n_occs "action" "prob")
+  to_json ~minify (n_occs "action" "reward" "prob")
 
 let matches_to_json ?(minify=true) =
   to_json ~minify matches
@@ -430,6 +442,26 @@ let exp_sextuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5) =
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
     Error (t, "6-tuple")
 
+let exp_septuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5)
+    (n6, f6) =
+  function
+  | `O [ (n, v); (n', v'); (n'', v''); (n''', v''');
+         (n'''', v''''); (n''''', v'''''); (n'''''', v'''''') ] as t ->
+    (if n0 = n && n1 = n' && n2 = n'' && n3 = n''' && n4 = n''''
+        && n5 = n''''' && n6 = n''''''
+     then f0 v
+       >>= fun v0 -> f1 v'
+       >>= fun v1 -> f2 v''
+       >>= fun v2 -> f3 v'''
+       >>= fun v3 -> f4 v''''
+       >>= fun v4 -> f5 v'''''
+       >>= fun v5 -> f6 v''''''
+       >>= fun v6 -> Ok (v0, v1, v2, v3, v4, v5, v6)
+     else Error (t, err_cmp [ (n0, n); (n1, n'); (n2, n''); (n3, n''');
+                              (n4, n''''); (n5, n'''''); (n6, n'''''') ]))
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
+    Error (t, "7-tuple")
+
 let rec conv j msgs = function
   | [] -> Error (j, disj_type_err msgs)
   | f :: fs ->
@@ -571,16 +603,17 @@ let exp_preact (j:json) =
   Ok (Pbrs.parse_react_unsafe ~name ~lhs ~rhs p e)
 
 let exp_nreact (j:json) =
-  exp_sextuple
+  exp_septuple
     ("nbrs_name", exp_string)
     ("nbrs_action", exp_string)
+    ("nbrs_reward", exp_int)
     ("nbrs_lhs", exp_big)
     ("nbrs_rhs", exp_big)
     ("nbrs_p", exp_float)
     ("nbrs_eta", exp_option exp_eta)
     j
-  >>= fun (name, action, lhs, rhs, p, e) ->
-  Ok (Nbrs.parse_react_unsafe ~name ~lhs ~rhs (action, p) e)
+  >>= fun (name, action, reward, lhs, rhs, p, e) ->
+  Ok (Nbrs.parse_react_unsafe ~name ~lhs ~rhs (action, reward, p) e)
 
 let parse_err = function
   | Ok _ as v -> v
