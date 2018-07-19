@@ -3,7 +3,6 @@ sig
   type t
   type label
   val name : t -> string
-  val action : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -27,7 +26,6 @@ sig
   type react_error
   exception NOT_VALID of react_error
   val name : t -> string
-  val action : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label

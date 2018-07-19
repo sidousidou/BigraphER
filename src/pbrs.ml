@@ -14,8 +14,6 @@ module RT = struct
 
   let name r = r.name
 
-  let action _ = ""
-
   let lhs r = r.rdx
 
   let rhs r = r.rct

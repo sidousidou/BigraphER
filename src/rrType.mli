@@ -4,7 +4,6 @@ sig
   type t
   type label
   val name : t -> string
-  val action : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -28,7 +27,6 @@ sig
   type react_error
   exception NOT_VALID of react_error
   val name : t -> string
-  val action : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
   val l : t -> label
@@ -63,9 +61,6 @@ module Make (R : R) : sig
 
   (** Returns the name of a rewrite rule. *)
   val name : t -> string
-
-  (** Returns the MDP action of a rewrite rule. *)
-  val action : t -> string
 
   (** Return the left-hand side of a rewrite rule. *)
   val lhs : t -> Big.t
