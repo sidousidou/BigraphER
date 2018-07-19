@@ -37,7 +37,7 @@ module MakeE (G : G) = struct
               begin
                 mdp := true ;
                 let substrings = String.split_on_char ' ' s in
-                List.hd substrings, List.nth substrings 1
+                List.hd substrings, List.nth substrings 2
               end
             else "", s
         in
@@ -112,6 +112,11 @@ module MakeE (G : G) = struct
         answer || String.contains (G.string_of_l label) ' '
       ) (G.edges g) false
 
+  let generate_reward_html reward =
+    let (color, sign) = if reward > 0 then "darkgreen", "+" else "red", "" in
+    if reward = 0 then ""
+    else Printf.sprintf "<br/><font color='%s'>%s%d</font>" color sign reward
+
   (* Return a DOT string of action nodes of an MDP as well as edges to them,
      and a hash table mapping (vertex, action) pairs to the IDs of the
      actions *)
@@ -119,20 +124,21 @@ module MakeE (G : G) = struct
     let next_id = ref (Base.H_int.length (G.states g) - 1) in
     let mapping = Hashtbl.create !next_id in
     let nodes = Base.H_int.fold (fun vertex1 (_, label, _) acc ->
-        let action = G.string_of_l label
-                     |> String.split_on_char ' '
-                     |> List.hd in
+        let substrings = G.string_of_l label |> String.split_on_char ' ' in
+        let action = List.hd substrings in
+        let reward = List.nth substrings 1 |> int_of_string in
         if Hashtbl.mem mapping (vertex1, action) then acc
         else
           begin
             next_id := !next_id + 1;
             Hashtbl.add mapping (vertex1, action) !next_id ;
-            Printf.sprintf "%d [ label=\"%s\", fontsize=6.0, id=\"s%d_%s\", \
+            Printf.sprintf "%d [ label=<%s%s>, fontsize=6.0, id=\"s%d_%s\", \
                             fontname=\"monospace\", width=.40, height=.20, \
                             style=\"filled\" fillcolor=\"grey75\" ];\
                             \n%d -> %d [ fontname=\"monospace\", fontsize=7.0,\
                             arrowhead=\"vee\", arrowsize=0.5 ];\n"
-              !next_id action vertex1 action vertex1 !next_id  :: acc
+              !next_id action (generate_reward_html reward) vertex1 action
+              vertex1 !next_id  :: acc
           end
       ) (G.edges g) [] in
     String.concat "" nodes, mapping
@@ -159,18 +165,11 @@ module MakeE (G : G) = struct
           let bolding = if i = 0 then ", style=\"bold\"" else "" in
           let label = construct_node_label g i in
           let filename = Printf.sprintf "%d.svg" i |> Filename.concat path in
-          let reward = total_reward g i in
-          let (color, sign) =
-            if reward > 0 then "darkgreen", "+" else "red", "" in
-          let reward_label =
-            if reward = 0 then ""
-            else Printf.sprintf "<br/><font color='%s'>%s%d</font>"
-                color sign reward
-          in
+          let reward = total_reward g i |> generate_reward_html in
           Printf.sprintf
             "%s%d [ label=<%s%s>, URL=\"%s\", fontsize=9.0, \
              id=\"s%d\", fontname=\"monospace\", width=.60, height=.30%s ];\n"
-            buff i label reward_label filename i bolding)
+            buff i label reward filename i bolding)
         (G.states g) ""
     and edges =
       Base.H_int.fold (fun vertex1 (vertex2, label, reaction_rules) buff ->

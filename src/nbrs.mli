@@ -15,8 +15,8 @@ type p_class =
 type graph
   
 (** The type of edge labels in Markov Decision Processes (MDP), {e i.e.},
-    actions and probabilities. *)
-type label = string * float
+    actions, rewards, and probabilities. *)
+type label = string * int * float
 
 (** Type of simulation limit {e i.e.}, number of execution steps. *)
 type limit = int
