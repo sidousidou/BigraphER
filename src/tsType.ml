@@ -132,28 +132,30 @@ module MakeE (G : G) = struct
   (* Return a DOT string of action nodes of an MDP as well as edges to them,
      and a hash table mapping (vertex, action) pairs to the IDs of the
      actions *)
-  let construct_action_nodes g =
+  let construct_action_nodes g mdp =
     let next_id = ref (Base.H_int.length (G.states g) - 1) in
     let mapping = Hashtbl.create !next_id in
-    let nodes = Base.H_int.fold (fun vertex1 (_, label, _) acc ->
-        let substrings = G.string_of_l label |> String.split_on_char ' ' in
-        let action = List.hd substrings in
-        let reward = List.nth substrings 1 |> int_of_string in
-        if Hashtbl.mem mapping (vertex1, action) then acc
-        else
-          begin
-            next_id := !next_id + 1;
-            Hashtbl.add mapping (vertex1, action) !next_id ;
-            Printf.sprintf "%d [ label=<%s%s>, fontsize=6.0, id=\"s%d_%s\", \
-                            fontname=\"monospace\", width=.40, height=.20, \
-                            style=\"filled\" fillcolor=\"grey75\" ];\
-                            \n%d -> %d [ fontname=\"monospace\", fontsize=7.0,\
-                            arrowhead=\"vee\", arrowsize=0.5 ];\n"
-              !next_id action (generate_reward_html reward) vertex1 action
-              vertex1 !next_id  :: acc
-          end
-      ) (G.edges g) [] in
-    String.concat "" nodes, mapping
+    if mdp then
+      let nodes = Base.H_int.fold (fun vertex1 (_, label, _) acc ->
+          let substrings = G.string_of_l label |> String.split_on_char ' ' in
+          let action = List.hd substrings in
+          let reward = List.nth substrings 1 |> int_of_string in
+          if Hashtbl.mem mapping (vertex1, action) then acc
+          else
+            begin
+              next_id := !next_id + 1;
+              Hashtbl.add mapping (vertex1, action) !next_id ;
+              Printf.sprintf "%d [ label=<%s%s>, fontsize=6.0, id=\"s%d_%s\", \
+                              fontname=\"monospace\", width=.40, height=.20, \
+                              style=\"filled\" fillcolor=\"grey75\" ]; \n%d \
+                              -> %d [ fontname=\"monospace\", fontsize=7.0, \
+                              arrowhead=\"vee\", arrowsize=0.5 ];\n"
+                !next_id action (generate_reward_html reward) vertex1 action
+                vertex1 !next_id  :: acc
+            end
+        ) (G.edges g) [] in
+      String.concat "" nodes, mapping
+    else "", mapping
 
   let construct_edge_label label reaction_rules =
     (if label = "" then "" else label ^ ", ") ^ reaction_rules
@@ -171,7 +173,7 @@ module MakeE (G : G) = struct
   let to_dot g ~path ~name =
     let rank = "{ rank=source; 0 };\n" in
     let mdp = is_mdp g in
-    let actions, mapping = construct_action_nodes g in
+    let actions, mapping = construct_action_nodes g mdp in
     let states =
       Base.H_int.fold (fun _ (i, _) buff ->
           let bolding = if i = 0 then ", style=\"bold\"" else "" in
@@ -189,7 +191,7 @@ module MakeE (G : G) = struct
           if mdp then
             let substrings = String.split_on_char ' ' label_str in
             let action = List.hd substrings in
-            let probability = List.nth substrings 1 in
+            let probability = List.nth substrings 2 in
             let action_node = Hashtbl.find mapping (vertex1, action) in
             let edge_label = construct_edge_label probability reaction_rules in
             Printf.sprintf

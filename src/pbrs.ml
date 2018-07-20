@@ -52,6 +52,16 @@ module RT = struct
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
     |> norm
 
+  (* Pick the first reaction rule with probability > limit, normalising its
+     probability by subtracting the probability of the previous rule. *)
+  let pick limit ((b, p, rr) as head :: tail) =
+    let rec _pick limit (b', p', rr') = function
+      | (b, p, rr) as element :: tail ->
+        if p > limit then (b, p -. p', rr) else _pick limit element tail
+      | [] -> (b', p', rr')
+    in
+    if p > limit then head else _pick limit head tail
+
   let random_step b rules =
     let (ss, m) = step b rules in
     match ss with
@@ -67,13 +77,12 @@ module RT = struct
               let cum_p' = cum_p +. p in
               ((b, cum_p', r) :: out, cum_p'))
             ([], 0.0)
-        and pick =
-          List.find (fun (_, p, _) -> p > (Random.float 1.0)) in
+        in
         ss_sort ss
         |> cumulative
         |> fst
         |> List.rev
-        |> pick
+        |> pick (Random.float 1.0)
         |> (fun x -> (Some x, m))
 
       end
