@@ -79,13 +79,16 @@ module RT = struct
 
   (* Pick the first reaction rule with probability > limit, normalising its
      probability by subtracting the probability of the previous rule. *)
-  let pick limit ((b, (a, r, p), rr) as head :: tail) =
+  let pick limit = function
+  | [] -> None
+  | (b, (a, r, p), rr) as head :: tail ->
     let rec _pick limit (b', (a', r', p'), rr') = function
       | (b, (a, r, p), rr) as element :: tail ->
-        if p > limit then (b, (a, r, p -. p'), rr) else _pick limit element tail
-      | [] -> (b', (a', r', p'), rr')
+        if p > limit then Some (b, (a, r, p -. p'), rr)
+        else _pick limit element tail
+      | [] -> Some (b', (a', r', p'), rr')
     in
-    if p > limit then head else _pick limit head tail
+    if p > limit then Some head else _pick limit head tail
 
   let random_step b rules =
    let (ss, m) = step b rules in
@@ -106,7 +109,7 @@ module RT = struct
         let reaction_rules, cum_p = ss_sort ss |> cumulative in
         List.rev reaction_rules
         |> pick (Random.float cum_p)
-        |> (fun x -> (Some x, m))
+        |> (fun x -> (x, m))
       end
 end
 
