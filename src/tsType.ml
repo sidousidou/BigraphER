@@ -34,15 +34,15 @@ module MakeE (G : G) = struct
      names and edge labels (with an empty slot for action IDs) *)
   let list_of_edges g =
     Base.H_int.fold (fun vertex1 (vertex2, edge_label, _) acc ->
-        let action, label = match G.string_of_l edge_label with
-          | "" -> "", ""
+        let action, reward, label = match G.string_of_l edge_label with
+          | "" -> "", "", ""
           | s ->
             if String.contains s ' ' then
               let substrings = String.split_on_char ' ' s in
-              List.hd substrings, List.nth substrings 2
-            else "", s
+              List.hd substrings, List.nth substrings 1, List.nth substrings 2
+            else "", "", s
         in
-        (vertex1, vertex2, "", action, label) :: acc)
+        (vertex1, vertex2, "", action, label, reward) :: acc)
       (G.edges g) []
     |> List.fast_sort compare
 
@@ -55,7 +55,7 @@ module MakeE (G : G) = struct
     let previous_action = ref "!" in
     let previous_number = ref (-1) in
     let choices = ref 0 in
-    let edges = List.map (fun (vertex1, vertex2, _, action, label) ->
+    let edges = List.map (fun (vertex1, vertex2, _, action, label, reward) ->
         if vertex1 <> !previous_vertex then
           begin
             previous_vertex := vertex1;
@@ -68,30 +68,42 @@ module MakeE (G : G) = struct
             previous_number := !previous_number + 1;
             choices := !choices + 1;
           end ;
-        (vertex1, vertex2, string_of_int !previous_number, action, label)
+        (vertex1, vertex2, string_of_int !previous_number,
+         action, label, reward)
       ) edges in
     edges, !choices
 
-  let to_prism g =
-    let num_states = Base.H_int.length (G.states g) in
-    let num_transitions = Base.H_int.length (G.edges g) in
+  (* A generalisation of to_prism and to_transition_rewards. print_rewards
+     switches between the two modes. *)
+  let generate_transitions g print_rewards =
     let mdp = is_mdp g in
+    let num_states = Base.H_int.length (G.states g) in
     let edges = list_of_edges g in
     let edges, num_choices =
       if mdp then action_names_to_ints edges else edges, 0 in
-    List.map (fun (vertex1, vertex2, action_id, action, label) ->
+    let edges = List.filter (fun (_, _, _, _, _, reward) ->
+        not print_rewards || reward <> "0") edges in
+    let num_rows = List.length edges in
+    List.map (fun (vertex1, vertex2, action_id, action, label, reward) ->
+        let last_columns =
+          if print_rewards then " " ^ reward
+          else
+            (if label = "" then "" else " " ^ label) ^
+            (if action = "" then "" else " " ^ action)
+        in
         (string_of_int vertex1)
         ^ (if action_id = "" then "" else " " ^ action_id)
         ^ " "
         ^ (string_of_int vertex2)
-        ^ (if label = "" then "" else " " ^ label)
-        ^ (if action = "" then "" else " " ^ action)
+        ^ last_columns
       ) edges
     |> List.append [ (string_of_int num_states)
                      ^ (if mdp then " " ^ string_of_int num_choices else "")
                      ^ " "
-                     ^ (string_of_int num_transitions) ]
+                     ^ (string_of_int num_rows) ]
     |> String.concat "\n"
+
+  let to_prism g = generate_transitions g false
 
   (* Calculate the total reward of a state *)
   let total_reward g i =
@@ -109,6 +121,8 @@ module MakeE (G : G) = struct
     List.append [Printf.sprintf "%d %d" (Base.H_int.length states)
                    (List.length rewards)] rewards
     |> String.concat "\n"
+
+  let to_transition_rewards g = generate_transitions g true
 
   let generate_reward_html reward =
     let (color, sign) = if reward > 0 then "darkgreen", "+" else "red", "" in
@@ -265,6 +279,7 @@ module type RS = sig
     -> graph * Stats.t
   val to_prism : graph -> string
   val to_state_rewards : graph -> string
+  val to_transition_rewards : graph -> string
   val to_dot : graph -> path:string -> name:string -> string
   val to_lab : graph -> string
   val iter_states : (int -> Big.t -> unit) -> graph -> unit

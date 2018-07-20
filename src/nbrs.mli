@@ -176,6 +176,10 @@ val to_prism : graph -> string
     rewards. *)
 val to_state_rewards : graph -> string
 
+(** Compute the string representation in PRISM [trew] format of transition
+    rewards. *)
+val to_transition_rewards : graph -> string
+
 (** Compute the string representation in [dot] format of an MDP. *)
 val to_dot : graph -> path:string -> name:string -> string
 
