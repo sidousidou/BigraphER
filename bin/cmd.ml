@@ -46,6 +46,7 @@ type opt =
   | StateRewards of file
   | Steps of int
   | Time of float
+  | TransitionRewards of file
   | Verb
   | No_colors
 
@@ -61,6 +62,7 @@ type settings = {
   mutable export_state_rewards : file option;
   mutable export_states : path option;
   mutable export_states_flag : bool;
+  mutable export_transition_rewards : file option;
   mutable help : bool;
   mutable max_states : int;
   mutable model : string option;
@@ -88,6 +90,7 @@ let defaults = {
   export_state_rewards = None;
   export_states = None;
   export_states_flag = false;
+  export_transition_rewards = None;
   help = false;
   max_states = 1000;
   model = None;
@@ -171,6 +174,11 @@ let string_of_opt sep ?(man = false) opt =
         let s = "[" ^ (colorise `underline "FLOAT") ^ "]" in
         ["-T " ^ s; "--simulation-time " ^ s]
       else  ["-T"; "--simulation-time"])
+   | TransitionRewards _ ->
+     (if man then
+        let s = "<" ^ (colorise `underline "FILE") ^ ">" in
+        ["-R " ^ s; "--export-transition-rewards " ^ s]
+      else ["-R"; "--export-transition-rewards"])
    | Verb -> ["-v"; "--verbose"]
    | No_colors -> ["-n"; "--no-colors"])
   |> String.concat sep
@@ -274,7 +282,7 @@ let msg_opt fmt = function
                           value.@]"
   | StateRewards _ -> fprintf fmt "@[<hov>Export the state rewards in@ PRISM@ \
                                    rews@ format@ to@ %s.@]"
-                      (colorise `underline "FILE")
+                        (colorise `underline "FILE")
   | States _ -> fprintf fmt "@[<hov>Export each state@ to@ a file@ in %s.@ \
                              State@ indices@ are@ used@ as@ file@ names.@ \
                              When %s@ is@ omitted,@ it@ is@ inferred@ from@ \
@@ -286,6 +294,9 @@ let msg_opt fmt = function
                             valid@ only@ for@ deterministic@ and@ probabilistic@ models.@]"
   | Time _ -> fprintf fmt "@[<hov>Set the maximum simulation time.@ This option@ is@ valid@ \
                            only@ for@ stochastic@ models.@]"
+  | TransitionRewards _ -> fprintf fmt "@[<hov>Export the transition rewards in@ PRISM@ \
+                                        trew@ format@ to@ %s.@]"
+                             (colorise `underline "FILE")
   | Verb -> fprintf fmt "@[<hov>Be more verbose.@ This is@ equivalent to@ setting@ \
                          $BIGVERBOSE@ to@ a@ non-empty@ value.@]"
 
@@ -387,6 +398,7 @@ let eval_help_full fmt () =
                    Quiet;
                    StateRewards "";
                    States None;
+                   TransitionRewards "";
                    Graph "";
                    Verb ] in
   help_fun fmt opt_full "full"
@@ -406,6 +418,7 @@ let eval_help_sim fmt () =
                    Steps 0;
                    Graph "";
                    Time 0.0;
+                   TransitionRewards "";
                    Verb ] in
   help_fun fmt opt_sim "sim"
 
@@ -463,6 +476,9 @@ let eval_config fmt () =
        ("export_states_flag",
         fun fmt () ->
           fprintf fmt "@[<hov>%b@]" defaults.export_states_flag);
+       ("export_transition_rewards",
+        fun fmt () ->
+          fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_transition_rewards));
        ("help",
         fun fmt () ->
           fprintf fmt "@[<hov>%b@]" defaults.help);

@@ -89,6 +89,7 @@ open Bigraph
 %token   O_LABELS
 %token   O_PRISM
 %token   O_STATE_REWARDS
+%token   O_TRANSITION_REWARDS
 %token   O_ML 
 %token   O_MAX
 %token   O_TIME
@@ -444,6 +445,8 @@ export_opt:
      { defaults.export_prism <- Some $2 }
   | O_STATE_REWARDS PATH
      { defaults.export_state_rewards <- Some $2 }
+  | O_TRANSITION_REWARDS PATH
+     { defaults.export_transition_rewards <- Some $2 }
   | common_export_opt
     { $1 };
 

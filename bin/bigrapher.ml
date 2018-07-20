@@ -345,6 +345,11 @@ module Run
        ^ (Rs.to_string T.typ)
        ^ " in PRISM format to ")
       (E.write_state_rewards graph);
+    export_prism Cmd.(defaults.export_transition_rewards) fmt
+      ("Exporting the transition rewards of "
+       ^ (Rs.to_string T.typ)
+       ^ " in PRISM format to ")
+      (E.write_transition_rewards graph);
     export_csl fmt (E.write_lab graph);
     pp_print_flush err_formatter ();
     exit 0
