@@ -32,7 +32,8 @@
        "init"
        "atomic"
        "preds"
-       "rules")))
+       "rules"
+       "action")))
   "BigraphER mode keywords.")
 
 (defconst big-exp
@@ -115,11 +116,11 @@
 	(save-excursion
 	  (while not-indented ; Iterate backwards until we find an indentation hint
 	    (forward-line -1)
-	    (if (looking-at "^[ \t]*\\(endbrs\\|)\\)") ; This hint indicates that we need to indent at the level of the end_ token
+	    (if (looking-at "^[ \t]*\\(end\\|)\\)") ; This hint indicates that we need to indent at the level of the end_ token
 		(progn
 		  (setq cur-indent (current-indentation))
 		  (setq not-indented nil))
-	      (if (looking-at "^[ \t]*\\(=\\|(\\|begin\\)") ; This hint indicates that we need to indent an extra level
+	      (if (looking-at "^[ \t]*\\(=\\|(\\|begin\\|action\\)") ; This hint indicates that we need to indent an extra level
 		  (progn
 		    (setq cur-indent (+ (current-indentation) 2)) ; Do the actual indenting
 		    (setq not-indented nil))

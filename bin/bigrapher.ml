@@ -513,10 +513,10 @@ let () =
 
                  include Brs
 
-                 let parse_react_unsafe ~name ~lhs ~rhs (label:label) eta =
+                 let parse_react_unsafe ~name ~lhs ~rhs _ eta =
                    parse_react_unsafe ~name ~lhs ~rhs eta
                 
-                 let parse_react ~name ~lhs ~rhs (label:label) eta =
+                 let parse_react ~name ~lhs ~rhs _ eta =
                    parse_react ~name ~lhs ~rhs eta
                    
                end)
