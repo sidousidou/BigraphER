@@ -99,7 +99,7 @@ module T (S: Bigraph.TsType.RS)
      end) = struct
 
   let write_svg g ~name ~path =
-    try write_svg (S.to_dot g ~name) ~name ~path with
+    try write_svg (S.to_dot g ~path ~name) ~name ~path with
     | ERROR e -> failwith @@ report_error e
 
   let write_prism g ~name ~path =
@@ -111,7 +111,7 @@ module T (S: Bigraph.TsType.RS)
     | ERROR e -> failwith @@ report_error e
 
   let write_dot g ~name ~path =
-    try write_string (S.to_dot g ~name) ~name ~path with
+    try write_string (S.to_dot g ~path ~name) ~name ~path with
     | ERROR e -> failwith @@ report_error e
 
   let write_json g ~name ~path =

@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "bigrapher"
-version: "1.7.0"
+version: "1.8.0"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
 authors: [ "Michele Sevegnani" ]
 license: "BSD-2-clause"
@@ -41,8 +41,7 @@ depends: [
   "menhir" {build}
   "ocamlbuild" {build}
   "conf-graphviz"
-  "bigraph" {>= "1.0.0"}
-  "big_json" {>= "0.1.0"}
+  "big_json" {>= "0.2.0"}
 ]
 
 available: [ ocaml-version >= "4.03.0" ]

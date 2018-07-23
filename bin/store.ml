@@ -5,7 +5,8 @@ open Bigraph
 
 module Make (T: TsType.RS)
     (P: sig
-       val parse_react : Big.t -> Big.t -> [ `E of unit | `F of float ]
+       val parse_react : string -> Big.t -> Big.t ->
+         [ `E of unit | `F of float ]
          -> Fun.t option -> T.react option
      end) = struct
 
@@ -622,11 +623,11 @@ module Make (T: TsType.RS)
     let (rhs_v, env_t'') = eval_big rhs scope env env_t' in
     (lhs_v, rhs_v, env_t'')
 
-  let eval_react lhs rhs eta l scope env env_t p =
+  let eval_react name lhs rhs eta l scope env env_t p =
     let (lhs_v, rhs_v, env_t') =
       eval_react_aux lhs rhs scope env env_t in
     match
-      P.parse_react lhs_v rhs_v
+      P.parse_react name lhs_v rhs_v
         (match l with
          | Some f_exp -> `F (eval_float f_exp scope env)
          | None -> `E ())
@@ -726,7 +727,7 @@ module Make (T: TsType.RS)
         try
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
           let scope' = extend_scope scope forms nums args_t p in
-          let (r, env_t'') = eval_react l r eta label scope' env env_t' p in
+          let (r, env_t'') = eval_react id l r eta label scope' env env_t' p in
           (r :: acc, env_t'')
         with
         | UNIFICATION ->
@@ -854,7 +855,8 @@ module Make (T: TsType.RS)
         upd id (Big_fun (exp, forms)) p
       | Dreact (React_exp (id, lhs, rhs, label, eta, p)) ->
         (let (r_v, env_t') =
-           eval_react lhs rhs (eval_eta eta) label ScopeMap.empty env env_t p in
+           eval_react id lhs rhs (eval_eta eta) label
+             ScopeMap.empty env env_t p in
          update fmt c id (React r_v) p env env_t')
       | Dreact (React_fun_exp (id, forms, lhs, rhs, label, eta, p)) ->
         upd id (React_fun (lhs, rhs, eval_eta eta, label, forms)) p in
