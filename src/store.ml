@@ -1203,10 +1203,10 @@ module Make (T: TsType.RS)
     | Param_int (ids, (Param_int_val (exp, _)), _) ->
       (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_int exp)) ids
        |> String.concat " in\n")
-    | Param_int (ids, (Param_int_range (start, step, stop, _)), _) -> ""
-    | Param_int (ids, (Param_int_set (exps, _)), _) -> ""
-    | Param_float (ids, (Param_float_val (exp, _)), _) -> ""
-    | Param_float (ids, (Param_float_range (start, step, stop, _)), _) -> ""
+    | Param_int (_, (Param_int_range (_, _, _, _)), _) -> ""
+    | Param_int (_, (Param_int_set (_, _)), _) -> ""
+    | Param_float (_, (Param_float_val (_, _)), _) -> ""
+    | Param_float (_, (Param_float_range (_, _, _, _)), _) -> ""
     | Param_float (ids, (Param_float_set (exps, _)), _) ->
       (List.map (fun (id : string) ->
            ml_of_dec id [] (ml_of_list ml_of_float exps)) ids

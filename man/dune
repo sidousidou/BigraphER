@@ -1,0 +1,6 @@
+(install
+  (section man)
+  (files  (bigrapher.1 as man1/bigrapher.1)
+          (bigrapher-validate.1 as man1/bigrapher-validate.1)
+          (bigrapher-full.1 as man1/bigrapher-full.1)
+          (bigrapher-sim.1 as man1/bigrapher-sim.1)))

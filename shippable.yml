@@ -15,18 +15,13 @@ build:
 
   ci:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install pkg-config m4 zlib1g-dev minisat graphviz
-    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y bigraph big_json conf-graphviz bisect_ppx oasis menhir && eval $(opam env)
+    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y big_json conf-graphviz menhir && eval $(opam env)
     - mkdir -p shippable/testresults
-    - mkdir -p shippable/codecoverage
     - mkdir -p shippable/svg
     - mkdir -p shippable/parser
-    - mkdir -p shippable/bisect/html
-    - mkdir -p shippable/api
     - mkdir -p shippable/man
-    - ./scripts/shippable-build.sh
-    - ./scripts/shippable-opam-lint.sh
-    - ./scripts/shippable-cover.sh
-
+    - dune runtest
+    
 integrations:
   notifications:
     - integrationName: email

@@ -1,1 +1,0 @@
-let version = "${pkg_version}"
