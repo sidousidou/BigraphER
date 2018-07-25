@@ -1,27 +1,9 @@
 # Ignore dirs
 _build
-*.docdir
-
-setup.data
-setup.log
 
 # Generated files
 shippable
-
-# OCaml 
-*/*.annot
-*/*.cmo
-*/*.cma
-*/*.cmi
-*/*.a
-*/*.o
-*/*.cmx
-*/*.cmxs
-*/*.cmxa
-*.byte
-*.native
-*/*.p.byte
-*/*.p.native
+*/*.merlin
 
 # profiler
 massif*

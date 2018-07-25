@@ -1,0 +1,7 @@
+(executables
+ (names test_parser)
+ (libraries bigraph unix utils))
+
+(alias
+ (name    runtest)
+ (action  (run %{exe:test_parser.exe} %{project_root}/tests/files/parser.in %{project_root}/shippable/testresults parser-junit.xml)))

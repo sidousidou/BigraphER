@@ -1,62 +1,38 @@
-# OASIS_START
-# DO NOT EDIT (digest: a3c674b4239234cbbe53afe090018954)
+.PHONY: build release uninstall clean test doc dist emacs-mode dist man
 
-SETUP = ocaml setup.ml
+build:
+	dune build @install
 
-build: setup.data
-	$(SETUP) -build $(BUILDFLAGS)
+install: emacs-mode man
+	dune install
 
-doc: setup.data build
-	$(SETUP) -doc $(DOCFLAGS)
-
-test: setup.data build
-	$(SETUP) -test $(TESTFLAGS)
-
-all:
-	$(SETUP) -all $(ALLFLAGS)
-
-install: setup.data
-	$(SETUP) -install $(INSTALLFLAGS)
-
-uninstall: setup.data
-	$(SETUP) -uninstall $(UNINSTALLFLAGS)
-
-reinstall: setup.data
-	$(SETUP) -reinstall $(REINSTALLFLAGS)
+uninstall:
+	dune uninstall
 
 clean:
-	$(SETUP) -clean $(CLEANFLAGS)
+	dune clean
+	rm -f shippable/testresults/*.xml
+	rm -f *.tar.gz
 
-distclean:
-	$(SETUP) -distclean $(DISTCLEANFLAGS)
+test:
+	mkdir -p shippable/testresults/
+	dune runtest
 
-setup.data:
-	$(SETUP) -configure $(CONFIGUREFLAGS)
+doc:
+	dune build @doc
 
-configure:
-	$(SETUP) -configure $(CONFIGUREFLAGS)
+ARCH = bigrapher-1.9.0.tar.gz
 
-.PHONY: build doc test all install uninstall reinstall clean distclean configure
-
-# OASIS_STOP
-
--include Makefile.config
+dist:
+	git archive --format=tar --prefix="bigrapher/" HEAD | gzip -n > $(ARCH)
 
 EMACS ?= emacs
 
 emacs-mode: big-mode/big-mode.el
 	$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
-ARCH = bigrapher-$(PKG_VERSION).tar.gz
-
-dist:
-	git archive --format=tar --prefix="bigrapher/" HEAD | gzip -n > $(ARCH)
-	./scripts/url.sh $(ARCH) > ./opam/url
-
 man: man/bigrapher.1 man/bigrapher-full.1 man/bigrapher-sim.1 man/bigrapher-validate.1
 	mandoc -mandoc -T html -O style=mandoc.css,man=%N.html man/bigrapher.1 > man/bigrapher.html
 	mandoc -mandoc -T html -O style=mandoc.css,man=%N.html man/bigrapher-full.1 > man/bigrapher-full.html
 	mandoc -mandoc -T html -O style=mandoc.css,man=%N.html man/bigrapher-sim.1 > man/bigrapher-sim.html
 	mandoc -mandoc -T html -O style=mandoc.css,man=%N.html man/bigrapher-validate.1 > man/bigrapher-validate.html
-
-.PHONY: emacs-mode dist man
