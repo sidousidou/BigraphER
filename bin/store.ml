@@ -377,6 +377,7 @@ module Make (T: TsType.RS)
     | Int_val (v, _) -> v
     | Int_var (ide, p) ->
       get_int ide p scope env
+    | Int_neg (v, _) -> -(eval_int v scope env)
     | Int_plus (l, r, _) ->
       (eval_int l scope env) + (eval_int r scope env)
     | Int_minus (l, r, _) ->
@@ -393,6 +394,7 @@ module Make (T: TsType.RS)
     | Float_val (v, _) -> v
     | Float_var (ide, p) ->
       get_float ide p scope env
+    | Float_neg (v, _) -> -.(eval_float v scope env)
     | Float_plus (l, r, _) ->
       (eval_float l scope env) +. (eval_float r scope env)
     | Float_minus (l, r, _) ->
@@ -409,6 +411,7 @@ module Make (T: TsType.RS)
       match (val0, val1) with
       | (Int v, Int v') -> Int (fun_int v v')
       | (Float v, Float v') -> Float (fun_float v v')
+      | (Int 0, Float v) -> Float (fun_float 0.0 v)
       | (Int _, Float _) ->
         raise (ERROR (Wrong_type (`num_val (`b `float), `num_val (`b `int)), p))
       | (Float _, Int _) ->
@@ -429,6 +432,7 @@ module Make (T: TsType.RS)
     | Num_int_val (v, _) -> Int v
     | Num_float_val (v, _) -> Float v
     | Num_var (id, p) -> get_num id p scope env
+    | Num_neg (v, p) -> aux (Int 0) (eval_num v scope env) (-) (-.) p
     | Num_plus (l, r, p) ->
       aux (eval_num l scope env) (eval_num r scope env) (+) (+.) p
     | Num_minus (l, r, p) ->
@@ -704,6 +708,7 @@ module Make (T: TsType.RS)
       | Num_float_val _ -> acc
       | Num_var (id, p) ->
         if is_param id env p then IdSet.add id acc else acc
+      | Num_neg (v, _) -> aux acc v
       | Num_plus (l, r, _)
       | Num_minus (l, r, _)
       | Num_prod (l, r, _)
@@ -1077,6 +1082,7 @@ module Make (T: TsType.RS)
   let rec ml_of_int = function
     | Int_val (v, _) -> string_of_int v
     | Int_var (id, _) -> "int_of_param " ^ (id : string)
+    | Int_neg (v, _) -> "-(" ^ (ml_of_int v) ^ ")"
     | Int_plus (l, r, _) ->
       "(" ^ (ml_of_int l) ^ ") + (" ^ (ml_of_int r) ^ ")"
     | Int_minus (l, r, _) ->
@@ -1092,6 +1098,7 @@ module Make (T: TsType.RS)
     | Float_val (v, _) ->
       if v = infinity then "infinity" else (string_of_float v)
     | Float_var (id, _) -> "float_of_param " ^ (id : string)
+    | Float_neg (v, _) -> "-.(" ^ (ml_of_float v) ^ ")"
     | Float_plus (l, r, _) ->
       "(" ^ (ml_of_float l) ^ ") +. (" ^ (ml_of_float r) ^ ")"
     | Float_minus (l, r, _) ->
@@ -1108,6 +1115,7 @@ module Make (T: TsType.RS)
     | Num_int_val (v, _) -> string_of_int v
     | Num_float_val (v, _) -> string_of_float v
     | Num_var (id, _) -> (id : string)
+    | Num_neg (v, _) -> "-(" ^ (ml_of_num v) ^ ")"
     | Num_plus (a, b, _) ->
       "(" ^ (ml_of_num a) ^ ") + (" ^ (ml_of_num b) ^ ")"
     | Num_minus (a, b, _) ->

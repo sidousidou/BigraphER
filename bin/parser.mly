@@ -150,6 +150,7 @@ int_exp:
   | CINT                                    { Int_val ($1, loc $startpos $endpos)       }
   | IDE                                     { Int_var ($1, loc $startpos $endpos)       } 
   | LPAR int_exp RPAR                       { $2                                        }
+  | MINUS int_exp                           { Int_neg ($2, loc $startpos $endpos)       }
   | int_exp PROD int_exp                    { Int_prod ($1, $3, loc $startpos $endpos)  }     
   | int_exp SLASH int_exp                   { Int_div ($1, $3, loc $startpos $endpos)   }     
   | int_exp PLUS int_exp                    { Int_plus ($1, $3, loc $startpos $endpos)  }     
@@ -159,6 +160,7 @@ float_exp:
   | CFLOAT                                  { Float_val ($1, loc $startpos $endpos)       }
   | IDE                                     { Float_var ($1, loc $startpos $endpos)       } 
   | LPAR float_exp RPAR                     { $2                                          }
+  | MINUS float_exp                         { Float_neg ($2, loc $startpos $endpos)       }
   | float_exp CARET float_exp               { Float_pow ($1, $3, loc $startpos $endpos)   }
   | float_exp PROD float_exp                { Float_prod ($1, $3, loc $startpos $endpos)  }     
   | float_exp SLASH float_exp               { Float_div ($1, $3, loc $startpos $endpos)   }     
@@ -233,6 +235,7 @@ num_exp:
   | CFLOAT                                  { Num_float_val ($1, loc $startpos $endpos) }
   | IDE                                     { Num_var ($1, loc $startpos $endpos)       } 
   | LPAR num_exp RPAR                       { $2                                        }
+  | MINUS num_exp                           { Num_neg ($2, loc $startpos $endpos)       }
   | num_exp CARET num_exp                   { Num_pow ($1, $3, loc $startpos $endpos)   }
   | num_exp PROD num_exp                    { Num_prod ($1, $3, loc $startpos $endpos)  }     
   | num_exp SLASH num_exp                   { Num_div ($1, $3, loc $startpos $endpos)   }     

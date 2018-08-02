@@ -8,6 +8,7 @@ end
 type int_exp =
   | Int_val of int * Loc.t
   | Int_var of Id.t * Loc.t
+  | Int_neg of int_exp * Loc.t
   | Int_plus of int_exp * int_exp * Loc.t
   | Int_minus of int_exp * int_exp * Loc.t
   | Int_prod of int_exp * int_exp * Loc.t
@@ -17,6 +18,7 @@ type int_exp =
 type float_exp =
   | Float_val of float * Loc.t
   | Float_var of Id.t * Loc.t
+  | Float_neg of float_exp * Loc.t
   | Float_plus of float_exp * float_exp * Loc.t
   | Float_minus of float_exp * float_exp * Loc.t
   | Float_prod of float_exp * float_exp * Loc.t
@@ -27,6 +29,7 @@ type num_exp =
   | Num_int_val of int * Loc.t
   | Num_float_val of float * Loc.t
   | Num_var of Id.t * Loc.t
+  | Num_neg of num_exp * Loc.t
   | Num_plus of num_exp * num_exp * Loc.t
   | Num_minus of num_exp * num_exp * Loc.t
   | Num_prod of num_exp * num_exp * Loc.t
