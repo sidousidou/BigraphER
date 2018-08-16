@@ -44,7 +44,14 @@ module MakeE (G : G) = struct
         in
         (vertex1, vertex2, "", action, label, reward) :: acc)
       (G.edges g) []
-    |> List.fast_sort compare
+    |> List.fast_sort (fun (v11, v12, _, a1, l1, r1)
+                        (v21, v22, _, a2, l2, r2) ->
+                        if v11 > v21 then 1 else
+                        if v11 < v21 then -1 else
+                        if a1 > a2 then 1 else
+                        if a1 < a2 then -1
+                        else v12 - v22
+                        )
 
   (* Add action IDs to the list of tuples. The first action of each
      vertex gets ID 0, and so on. The list is assumed to be sorted. Also
