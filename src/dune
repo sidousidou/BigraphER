@@ -1,0 +1,7 @@
+(library
+ (name        big_json)
+ (public_name big_json)
+ (libraries bigraph jsonm))
+
+(documentation
+ (mld_files (:standard)))

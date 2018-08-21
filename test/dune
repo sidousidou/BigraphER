@@ -1,0 +1,9 @@
+(executable
+ (name test)
+ (libraries bigraph big_json))
+
+(alias
+ (name    runtest)
+ (deps    (:x test.exe))
+ (action  (run %{x})))
+
