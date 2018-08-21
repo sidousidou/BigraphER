@@ -1,6 +1,6 @@
 # BigraphER - Bigraph Evaluator & Rewriting #
 
-Version 1.7.0
+Version 1.8.0
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele)
 

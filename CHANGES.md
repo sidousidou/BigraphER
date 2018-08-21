@@ -1,3 +1,9 @@
+###1.8.0 (2018-07-23): ###
+
+* Support new features in `bigraph 1.3.0`: edge and state labels in graphical
+  output
+
+
 ###1.7.0 (2018-01-26): ###
 
 * Depend on external library `bigraph`
