@@ -1,0 +1,11 @@
+atomic fun ctrl A(s) = 0;
+atomic ctrl B = 0;
+
+react id_ = B --> B;
+
+big s0 = A("StringExample") || B;
+
+begin brs
+  init s0;
+  rules = [ { id_ } ];
+end

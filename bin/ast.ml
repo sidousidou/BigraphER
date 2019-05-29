@@ -24,6 +24,7 @@ type float_exp =
   | Float_pow of float_exp * float_exp * Loc.t
 
 type num_exp =
+  | Num_str_val of string * Loc.t
   | Num_int_val of int * Loc.t
   | Num_float_val of float * Loc.t
   | Num_var of Id.t * Loc.t

@@ -14,7 +14,8 @@ open Bigraph
 %token <string>   CIDE
 %token <string>   IDE       
 %token <int>      CINT
-%token <float>    CFLOAT     
+%token <float>    CFLOAT
+%token <string>   CSTRING
 
 %token 	          CTRL 
 %token            ATOMIC
@@ -214,6 +215,7 @@ num_list:
 num_exp:
   | CINT                                    { Num_int_val ($1, loc $startpos $endpos)   }
   | CFLOAT                                  { Num_float_val ($1, loc $startpos $endpos) }
+  | CSTRING                                 { Num_str_val ($1, loc $startpos $endpos) }
   | IDE                                     { Num_var ($1, loc $startpos $endpos)       } 
   | LPAR num_exp RPAR                       { $2                                        }
   | num_exp CARET num_exp                   { Num_pow ($1, $3, loc $startpos $endpos)   }

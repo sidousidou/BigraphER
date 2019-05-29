@@ -3,7 +3,7 @@
 exception UNIFICATION
 
 type gen_type = string
-type base_type = [ `int | `float ]
+type base_type = [ `int | `float | `string ]
 type num_type = [ `g of gen_type | `b of base_type ]
 
 let current_alpha = ref (97, 0)
@@ -19,6 +19,7 @@ let next_gen () =
 let string_of_num_t = function
   | `b `int -> "int"
   | `b `float -> "float"
+  | `b `string -> "string"
   | `g  s -> s
 
 let int_or_float = "[ int | float ]"
@@ -54,6 +55,7 @@ let string_of_base_opt = function
   | None -> "nil"
   | Some `int -> "int"
   | Some `float -> "float"
+  | Some `string -> "string"
 
 let string_of_gamma set =
   "{" ^ (Gamma.elements set |> String.concat ", ") ^ "}"
@@ -70,8 +72,13 @@ let post_exn env (constr, t) =
         | (None, x) -> (Gamma.union acc set, x)
         | (Some _ as x, None) -> (Gamma.union acc set, x)
         | (Some `int as x, Some `int)
+        | (Some `string as x, Some `string)
         | (Some `float as x, Some `float) ->
           (Gamma.union acc set, x)
+        | (Some `string, Some `int)
+        | (Some `string, Some `float)
+        | (Some `int, Some `string)
+        | (Some `float, Some `string)
         | (Some `int, Some `float)
         | (Some `float, Some `int) -> raise UNIFICATION
       ) (Gamma.empty, None) in
@@ -91,7 +98,12 @@ let app_exn env (dom : num_type list) (args : num_type list) =
         | (`b t1, `g t0) ->
           post_exn env (Gamma.(empty |> add t0), Some t1)
         | (`b `int, `b `int)
+        | (`b `string, `b `string)
         | (`b `float, `b `float) -> env
+        | (`b `string, `b `int)
+        | (`b `int, `b `string)
+        | (`b `string, `b `float)
+        | (`b `float, `b `string)
         | (`b `int, `b `float)
         | (`b `float, `b `int) -> raise UNIFICATION
       ) env dom args

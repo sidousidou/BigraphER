@@ -22,6 +22,7 @@ module Make (T: TsType.RS)
     | `lambda t -> string_of_lambda t
     | `param `int -> "int param"
     | `param `float -> "float param"
+    | `param `string -> "string param"
 
   let dom_of_lambda = function
     | `num_val _ | `big_val _ | `param _ -> assert false (*BISECT-IGNORE*)
@@ -35,6 +36,7 @@ module Make (T: TsType.RS)
   type store_val =
     | Int of int
     | Float of float
+    | Str of string
     | Big of Big.t
     | Big_fun of big_exp * Id.t list
     | Ctrl of Ctrl.t
@@ -65,6 +67,7 @@ module Make (T: TsType.RS)
     | `g _ -> Num_int_val (0, Loc.dummy_loc)
     | `b `int -> Num_int_val (0, Loc.dummy_loc)
     | `b `float -> Num_float_val (0.0, Loc.dummy_loc)
+    | `b `string -> Num_str_val ("", Loc.dummy_loc)
 
   type typed_store_val = store_val * store_type * Loc.t
 
@@ -426,6 +429,7 @@ module Make (T: TsType.RS)
       | (Int_param _,_)
       | (Float_param _,_) -> assert false in (*BISECT-IGNORE*)
     match exp with
+    | Num_str_val (v, _) -> Str v
     | Num_int_val (v, _) -> Int v
     | Num_float_val (v, _) -> Float v
     | Num_var (id, p) -> get_num id p scope env
@@ -447,6 +451,7 @@ module Make (T: TsType.RS)
         match eval_num e scope env with
         | Int _ as v -> (v, `b `int)
         | Float _ as v -> (v, `b `float)
+        | Str _ as s -> (s, `b `string)
         | Big _
         | Big_fun (_,_)
         | Ctrl _
@@ -473,6 +478,7 @@ module Make (T: TsType.RS)
         (function
           | Float v -> Ctrl.F v
           | Int v -> Ctrl.I v
+          | Str s -> Ctrl.S s
           | Big _ | Big_fun (_,_) | Ctrl _ | Ctrl_fun (_,_)
           | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_)
           | Int_param _ | Float_param _ -> assert false (*BISECT-IGNORE*))
@@ -1069,6 +1075,7 @@ module Make (T: TsType.RS)
   (* TO BE FIXED *)
   let rec ml_of_num = function
     | Num_int_val (v, _) -> string_of_int v
+    | Num_str_val (s, _) -> s
     | Num_float_val (v, _) -> string_of_float v
     | Num_var (id, _) -> (id : string)
     | Num_plus (a, b, _) ->

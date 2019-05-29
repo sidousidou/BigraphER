@@ -38,7 +38,8 @@ let float_literal =
   )
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
-let comment = '#' [^'\r' '\n']* (newline | eof)  
+let comment = '#' [^'\r' '\n']* (newline | eof)
+let string_literal = '\"' ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']* '\"'
 
 let argv_sep = "\n"
 let const = ("--const" | "-c") argv_sep
@@ -53,6 +54,7 @@ rule token =  parse
   | (newline | comment)     { Lexing.new_line lexbuf; token lexbuf }
   | int_literal             { read_int lexbuf }
   | float_literal           { read_float lexbuf }
+  | string_literal          { CSTRING (Lexing.lexeme lexbuf) }
   | "["                     { LSBR }
   | "]"                     { RSBR }
   | "{"                     { LCBR }
