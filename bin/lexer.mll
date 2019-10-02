@@ -40,7 +40,7 @@ let float_literal =
 let ctrl_identifier = ['A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let identifier = ['a'-'z'] ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']*
 let comment = '#' [^'\r' '\n']* (newline | eof)
-let string_literal = '\"' ['a'-'z' 'A'-'Z' '0'-'9' '_' '\'']* '\"'
+let string_literal = '\"' ['a'-'z' 'A'-'Z' '0'-'9' '-' '_' '\'']* '\"'
 
 let argv_sep = "\n"
 let const = ("--const" | "-c") argv_sep
