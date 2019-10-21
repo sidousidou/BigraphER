@@ -109,6 +109,7 @@ and cmd =  parse
   | "validate"              { C_CHECK }
   | "full"                  { C_FULL }
   | "sim"                   { C_SIM }
+  | "interactive"           { C_INTERACTIVE }
   (* STAND-ALONE OPTIONS *)			    
   | ("--config" | "-C")     { O_CONF }
   | ("--version" | "-V")    { O_VERS }

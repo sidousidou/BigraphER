@@ -74,6 +74,7 @@ open Bigraph
 %token   C_CHECK
 %token   C_FULL
 %token   C_SIM
+%token   C_INTERACTIVE
 %token   O_CONF
 %token   O_COLORS
 %token   O_VERS
@@ -463,12 +464,18 @@ opt_sim:
     { defaults.steps <- $2;
       defaults.steps_flag <- true };
 
+opt_interactive:
+  | common_opt
+    { $1 }
+
 sub_cmd:
   | C_CHECK O_HELP
       { eval_help_check Format.std_formatter () }
   | C_FULL O_HELP
       { eval_help_full Format.std_formatter () }
   | C_SIM O_HELP
+      { eval_help_interactive Format.std_formatter () }
+  | C_INTERACTIVE O_HELP
       { eval_help_sim Format.std_formatter () }
   | C_CHECK list(opt_chk) input_file
       { List.iter (fun x-> x) $2;
@@ -487,7 +494,13 @@ sub_cmd:
         check_dot ();
 	check_states ();      
 	defaults.model <- $3;
-        `sim };
+        `sim }
+  | C_INTERACTIVE list(opt_interactive) input_file
+      { List.iter (fun x -> x) $2;
+        check_dot ();
+        check_states ();
+        defaults.model <- $3;
+        `interactive };
 
 input_file:
   | { None }

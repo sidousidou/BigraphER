@@ -182,15 +182,17 @@ type t =
   | Check
   | Full
   | Sim
+  | Interactive
   | StandAloneOpt of stand_alone_opt
 
 type cmd_t =
-  [ `check | `full | `sim ]
+  [ `check | `full | `sim | `interactive ]
 
 let string_of_t = function
   | Check -> "validate"
   | Full -> "full"
   | Sim -> "sim"
+  | Interactive -> "interactive"
   | StandAloneOpt x -> string_of_stand_alone_opt x
 
 (* Update defaults with environment variables *)
@@ -282,6 +284,7 @@ let msg_cmd fmt = function
   | Check -> fprintf fmt "@[<hov>Parse a model and check its validity.@]"
   | Full -> fprintf fmt "@[<hov>Compute the transition system of a model.@]"
   | Sim -> fprintf fmt "@[<hov>Simulate a model.@]"
+  | Interactive -> fprintf fmt "@[<hov>Interactively explore a model@]"
   | StandAloneOpt x -> msg_so_opt fmt x
 
 let usage_str fmt () =
@@ -317,7 +320,7 @@ let print_table fmt rows ?(offset = 0) f_l f_r =
 
 let eval_help_top fmt () =
   let commands fmt () =
-    print_table fmt [ Full; Sim; Check ]
+    print_table fmt [ Full; Sim; Check; Interactive ]
       ~offset:(-3)
       string_of_t
       msg_cmd
@@ -395,6 +398,17 @@ let eval_help_sim fmt () =
                    Time 0.0;
                    Verb ] in
   help_fun fmt opt_sim "sim"
+
+let eval_help_interactive fmt () =
+  let opt_chk = [ Const [];
+                  Decs "";
+                  Ext [];
+                  Help;
+                  Ml "";
+                  No_colors;
+                  Quiet;
+                  Verb ] in
+  help_fun fmt opt_chk "interactive"
 
 let eval_version fmt () =
   fprintf fmt "@[%s@]@." Version.version

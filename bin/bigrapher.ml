@@ -367,6 +367,83 @@ module Run
       ~iter_f:print_loop
     |> after fmt close_progress_bar
 
+  let interactive fmt s0 priorities preds =
+    print_msg fmt `yellow "Interactive mode started";
+    let cmds = [
+        ("help" , "Display help");
+        ("rules" , "List applicable rules");
+        ("apply <rname>" , "Apply a rule (applies to first occurrence only)");
+        ("preds" , "Display predicates met by the current bigraph");
+        ("print" , "Export the current bigraph to 'interactive.svg'");
+        ("exit" , "End interactive mode");
+      ] in
+    let all_reacts = List.fold_left
+                       (fun acc p -> match p with | T.P_class rs -> rs :: acc | _ -> acc)
+                       [] priorities
+                     |> List.concat in
+    let rec loop b =
+      let i = read_line () in
+      match String.split_on_char ' ' i with
+      | ["rules"] ->
+        begin
+          print_msg fmt `yellow "Applicable rules:";
+          List.map
+            (fun rr -> (T.name rr, Big.occurs ~target:b ~pattern:(T.lhs rr)))
+            all_reacts
+          |> List.filter (fun (n,a) -> a)
+          |> List.iter (fun (n,a) -> print_msg fmt `yellow n);
+          loop b
+        end
+      | "apply" :: [rname] ->
+        begin
+          let rr =
+            List.map
+              (fun rr -> (rr, T.name rr, Big.occurs ~target:b ~pattern:(T.lhs rr)))
+              all_reacts
+            |> List.filter (fun (_, n,a) -> (String.equal n rname) && a)
+            |> List.map (fun (r, _, _) -> r)
+          in
+          match List.length rr with
+          | 1 -> let mb = T.apply b rr in
+                (match mb with
+                 | Some b'' -> loop b''
+                 | None -> loop b)
+          | _ -> print_msg fmt `yellow ("No applicable rule of name: " ^ rname);
+                loop b
+        end
+      | ["preds"] ->
+        begin
+          let matches =
+            List.filter (fun (name, p) -> Big.occurs ~target:b ~pattern:p) preds in
+          if List.length matches > 0 then
+            List.iter (fun (name, p) -> print_msg fmt `yellow name) matches
+          else
+            print_msg fmt `yellow "no matching predicates";
+          loop b
+        end
+      | ["print"] ->
+        begin
+          (* TODO support exporting to multiple files *)
+          let _ = Export.B.write_svg b ~name:"interactive.svg" ~path:"." in
+          print_msg fmt `yellow "Bigraph outputted to interactive.svg";
+          loop b
+        end
+      | ["exit"] -> ()
+      | ["help"] ->
+        begin
+          print_msg fmt `yellow "Available commands";
+          List.iter
+            (fun (cmd,desc) -> print_msg fmt `white (cmd ^ ": " ^ desc))
+            cmds;
+          loop b
+        end
+      | _ ->
+        begin
+          print_msg fmt `yellow "Unknown command";
+          loop b
+        end
+    in loop s0
+
   let set_trap fmt  =
     Sys.set_signal Sys.sigint
       (Sys.Signal_handle (fun _ ->
@@ -408,6 +485,11 @@ module Run
                print_msg fmt `yellow
                  "Maximum number of states reached.")
             (graph, stats)
+      end
+    | `interactive ->
+      begin
+        set_trap fmt;
+        interactive fmt s0 priorities preds
       end
     | `check -> check fmt
 
