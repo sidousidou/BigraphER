@@ -3,5 +3,12 @@
  (libraries bigraph unix utils))
 
 (alias
- (name    runtest)
- (action  (run %{exe:test_parser.exe} %{project_root}/tests/files/parser.in %{project_root}/shippable/testresults parser-junit.xml)))
+ (name runtest)
+ (deps
+     (glob_files ../examples/*.big)
+     (glob_files files/*.reference)
+     )
+ (action (run %{exe:test_parser.exe}
+              %{bin:bigrapher}
+              %{dep:files/parser.in}
+               shippable/testresults parser-junit.xml)))
