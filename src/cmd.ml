@@ -186,7 +186,7 @@ type t =
   | StandAloneOpt of stand_alone_opt
 
 type cmd_t =
-  [ `check | `full | `sim ]
+  [ `check | `full | `sim | `exit ]
 
 let string_of_t = function
   | Check -> "validate"
@@ -721,11 +721,20 @@ let full_cmd =
   Term.(const run_full $ copts_t $ full_opts_t $ mdl_file),
   Term.info "full" ~doc ~exits:Term.default_exits ~man:[]
 
+let run_default cfg =
+  match cfg with
+  | true -> eval_config Format.std_formatter (); `Ok `exit
+  | false -> `Help (`Pager, None)
+
 let default_cmd =
+  let cfg =
+    let doc = "Print a summary of your configuration" in
+    Arg.(value & flag & info ["C";"config"] ~doc)
+  in
   let doc = "An implementation of Bigraphical Reactive System (BRS)
              that supports bigraphs with sharing, stochastic reaction rules,
              rule priorities and functional rules." in
-   Term.(ret (const (`Help (`Pager, None)))),
+   Term.(ret (const run_default $ cfg)),
    Term.info "bigrapher" ~version:"1.9.0" ~doc ~exits:Term.default_exits ~man:[]
 
 let cmds = [check_cmd; sim_cmd; full_cmd]

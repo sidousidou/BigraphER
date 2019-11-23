@@ -410,6 +410,7 @@ module Run
             (graph, stats)
       end
     | `check -> check fmt
+    | `exit -> ()
 
   let run fmt c m exec_type =
     try
@@ -481,7 +482,10 @@ let set_output_ch () =
 
 let () =
   let exec_type = Cmd.parse_cmds in
-  (* Printexc.record_backtrace true; *) (* Disabled for releases *)
+  (* Allow early exit, e.g. when the config is to be printed *)
+  match exec_type with
+  | `exit -> exit 1
+  | _ -> ();
   try
     let fmt = set_output_ch () in
     print_header fmt ();
