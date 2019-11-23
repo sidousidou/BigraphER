@@ -1,5 +1,6 @@
 open Format
 open Utils
+open Cmdliner
 
 type error =
   | Malformed_env of string
@@ -521,3 +522,181 @@ let check_sbrs_opt () =
       (string_of_opt "|" (Steps 0))
 
 let check_pbrs_opt  = check_brs_opt
+
+let fconv =
+  let parse (s : string) =
+    match s with
+    | "dot" -> Ok Dot
+    | "svg" -> Ok Svg
+    | "txt" -> Ok Txt
+    | "json" -> Ok Json
+    | _ -> Error (`Msg "Could not parse format string")
+  in
+  let print_format pf = function
+    | Dot -> pp_print_string pf "dot"
+    | Svg -> pp_print_string pf "svg"
+    | Txt -> pp_print_string pf "txt"
+    | Json -> pp_print_string pf "json"
+  in parse, print_format
+
+(* Option parsing *)
+let opt_if = function
+  | Some _ -> true
+  | None -> false
+
+let copts debug decs ext graph lbls prism
+          ml quiet states verbose nocols =
+   defaults.debug              <- debug;
+   defaults.export_decs        <- decs;
+   defaults.out_format         <- ext;
+   defaults.export_graph       <- graph;
+   defaults.export_lab         <- lbls;
+   defaults.export_prism       <- prism;
+   defaults.export_ml          <- ml;
+   defaults.quiet              <- quiet;
+   defaults.export_states      <- states;
+   defaults.export_states_flag <- opt_if states;
+   defaults.verb               <- verbose;
+   defaults.colors             <- not nocols
+
+let copts_t =
+  let opt_str = Arg.opt (Arg.some Arg.string) None in
+  let debug   = Arg.(value & flag & info ["debug"]) in
+  let ext     =
+    let doc =
+    "A comma-separated list of output formats.
+    Supported formats are `dot', `json', `svg' and `txt'.
+    This is equivalent to setting the env variable BIGFORMAT to $(docv)."
+    in
+    Arg.(value & opt (list (conv fconv)) [Dot]
+               & info ["f";"format"] ~docv:"FORMAT" ~doc)
+  in
+  let decs    =
+    let doc = "Export each declaration in the model (bigraphs and reaction rules)
+               to a distinct file in $(docv).
+               Dummy values are used to instantiate functional values."
+    in
+    Arg.(value & opt_str & info ["d";"export-decs"] ~docv:"DIR" ~doc)
+  in
+  let graph   =
+   let doc = "Export the transition system to $(docv)." in
+   Arg.(value & opt_str & info ["t";"export-ts"] ~docv:"FILE" ~doc)
+  in
+  let lbls    =
+    let doc = "Export the labelling function in PRISM csl format to $(docv)." in
+    Arg.(value & opt_str & info ["l";"export-labels"] ~docv:"FILE" ~doc)
+  in
+  let prism   =
+    let doc = "Export the transition system in PRISM tra format to $(docv)." in
+    Arg.(value & opt_str & info ["p";"export-prism"] ~docv:"FILE" ~doc)
+  in
+  let ml      =
+    let doc = "Export the model in OCaml format to $(docv)" in
+    Arg.(value & opt_str & info ["m";"export-ml"] ~docv:"FILE" ~doc)
+  in
+  let quiet   =
+    let doc = "Disable progress indicator.
+               This is equivalent to setting BIGQUIET to a non-empty value." in
+    Arg.(value & flag & info ["q";"quiet"] ~doc)
+  in
+  let states  =
+    let doc = "Export each state to a file in $(docv).
+               State indices are used as file names.
+               When $(docv) is omitted, it is inferred from
+               option \"export-ts\"." in
+    Arg.(value & opt_str & info ["s";"export-states"] ~docv:"DIR" ~doc)
+  in
+  let verbose =
+    let doc = "Be more verbose.This is equivalent to setting
+               BIGVERBOSE to a non-empty value." in
+    Arg.(value & flag & info ["v";"verbose"] ~doc)
+  in
+  let nocols  =
+    let doc = "Disable colored output.This is equivalent to setting
+               BIGNOCOLORS to a non-empty value." in
+    Arg.(value & flag & info ["n";"no-colors"] ~doc)
+  in
+  Term.(const copts $ debug $ decs $ ext $ graph $ lbls $ prism
+                    $ ml $ quiet $ states $ verbose $ nocols)
+
+(* Sim options *)
+let sim_opts time steps =
+  match time with
+    | Some t -> (
+        defaults.time_flag <- true;
+        defaults.time <- t)
+    | None -> ();
+  match steps with
+    | Some s -> (
+        defaults.steps_flag <- true;
+        defaults.steps <- s)
+    | None -> ()
+
+let sim_opts_t =
+  let time =
+    let doc = "Set the maximum simulation time.
+               This option is only valid for stochastic models" in
+    Arg.(value & opt (some float) None
+               & info ["T"; "simulation-time"] ~docv:"FLOAT" ~doc)
+  in
+  let steps =
+    let doc = "Set the maximum number of simulation steps.This option is valid
+               only for deterministic and probabilistic models." in
+    Arg.(value & opt (some int) None
+               & info ["S"; "simulation-steps"] ~docv:"INT" ~doc)
+  in
+  Term.(const sim_opts $ time $ steps)
+
+(* Full options *)
+let full_opts states =
+  defaults.max_states <- states
+
+let full_opts_t =
+  let states =
+    let doc = "Set the maximum number of states" in
+    Arg.(value & opt int 1000 & info ["M"; "max-states"] ~docv:"INT" ~doc)
+  in
+  Term.(const full_opts $ states)
+
+(* Commandline *)
+let run f typ =
+  eval_env ();
+  defaults.model <- f;
+  typ
+
+let run_sim _copts _sopts f = run f `sim
+let run_check _copts f = run f `check
+let run_full _copts _fopts f = run f `full
+
+let mdl_file =
+  Arg.(value & pos 0 (some file) None & info [] ~docv:"FILE")
+
+let sim_cmd =
+  let doc = "Simulate a model" in
+  Term.(const run_sim $ copts_t $ sim_opts_t $ mdl_file),
+  Term.info "sim" ~doc ~exits:Term.default_exits ~man:[]
+
+let check_cmd =
+  let doc = "Parse a model and check its validity" in
+  Term.(const run_check $ copts_t $ mdl_file),
+  Term.info "validate" ~doc ~exits:Term.default_exits ~man:[]
+
+let full_cmd =
+  let doc = "Compute the transition system of a model" in
+  Term.(const run_full $ copts_t $ full_opts_t $ mdl_file),
+  Term.info "full" ~doc ~exits:Term.default_exits ~man:[]
+
+let default_cmd =
+  let doc = "An implementation of Bigraphical Reactive System (BRS)
+             that supports bigraphs with sharing, stochastic reaction rules,
+             rule priorities and functional rules." in
+   Term.(ret (const (`Help (`Pager, None)))),
+   Term.info "bigrapher" ~version:"1.9.0" ~doc ~exits:Term.default_exits ~man:[]
+
+let cmds = [check_cmd; sim_cmd; full_cmd]
+
+let parse_cmds =
+   let res = Term.(eval_choice default_cmd cmds) in
+   match res with
+   | `Ok e -> e
+   | _ -> Term.exit res; `check (* This check is never reached *)
