@@ -523,6 +523,34 @@ let check_sbrs_opt () =
 
 let check_pbrs_opt  = check_brs_opt
 
+let const_conv =
+  let lexer = Genlex.make_lexer [ "=" ] in
+  let parse (s : string) =
+    let toks = lexer (Stream.of_string s) in
+    let varid = Stream.next toks in
+    let _eq = Stream.next toks in
+    let v = Stream.next toks in
+    match varid with
+    | Ident i ->
+      begin
+      match v with
+      | Int v -> Ok (Ast.Cint { dint_id = i;
+                               dint_exp = Int_val (v, Loc.dummy_loc);
+                               dint_loc = Loc.dummy_loc
+                             })
+      | Float v -> Ok (Ast.Cfloat { dfloat_id = i;
+                                   dfloat_exp = Float_val (v, Loc.dummy_loc);
+                                   dfloat_loc = Loc.dummy_loc
+                                 })
+      | _ -> Error (`Msg "Could not parse assignment")
+      end
+    | _ -> Error (`Msg "Could not parse assignment")
+  in
+  let print_format pf = function
+    | Ast.Cint i -> pp_print_string pf (i.dint_id ^ "=<exp>")
+    | Ast.Cfloat f -> pp_print_string pf (f.dfloat_id ^ "=<exp>")
+  in parse, print_format
+
 let fconv =
   let parse (s : string) =
     match s with
@@ -530,7 +558,7 @@ let fconv =
     | "svg" -> Ok Svg
     | "txt" -> Ok Txt
     | "json" -> Ok Json
-    | _ -> Error (`Msg "Could not parse format string")
+    | _ -> Error (`Msg "Could not parse format")
   in
   let print_format pf = function
     | Dot -> pp_print_string pf "dot"
@@ -544,8 +572,9 @@ let opt_if = function
   | Some _ -> true
   | None -> false
 
-let copts debug decs ext graph lbls prism
+let copts consts debug decs ext graph lbls prism
           ml quiet states verbose nocols =
+   defaults.consts             <- consts;
    defaults.debug              <- debug;
    defaults.export_decs        <- decs;
    defaults.out_format         <- ext;
@@ -562,6 +591,12 @@ let copts debug decs ext graph lbls prism
 let copts_t =
   let opt_str = Arg.opt (Arg.some Arg.string) None in
   let debug   = Arg.(value & flag & info ["debug"]) in
+  let consts  =
+    let doc = "Specify a comma-separated list of variable assignments.
+               Example: `x=4,t=.56'." in
+    Arg.(value & opt (list (conv const_conv)) []
+               & info ["c";"const"] ~docv:"ASSIGNMENT" ~doc)
+  in
   let ext     =
     let doc =
     "A comma-separated list of output formats.
@@ -616,7 +651,7 @@ let copts_t =
                BIGNOCOLORS to a non-empty value." in
     Arg.(value & flag & info ["n";"no-colors"] ~doc)
   in
-  Term.(const copts $ debug $ decs $ ext $ graph $ lbls $ prism
+  Term.(const copts $ consts $ debug $ decs $ ext $ graph $ lbls $ prism
                     $ ml $ quiet $ states $ verbose $ nocols)
 
 (* Sim options *)
