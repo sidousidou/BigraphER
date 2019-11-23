@@ -18,6 +18,7 @@ depends: [
   "menhir" {build}
   "conf-graphviz"
   "big_json" {>= "0.2.0"}
+  "cmdliner" {>= "1.0.4"}
 ]
 
 build: [ "dune" "build" "-p" name "-j" jobs ]

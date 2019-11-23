@@ -480,9 +480,9 @@ let set_output_ch () =
     std_formatter
 
 let () =
+  let exec_type = Cmd.parse_cmds in
   (* Printexc.record_backtrace true; *) (* Disabled for releases *)
   try
-    let exec_type = parse_cmd Sys.argv in
     let fmt = set_output_ch () in
     print_header fmt ();
     print_msg fmt `yellow ("Parsing model file "
