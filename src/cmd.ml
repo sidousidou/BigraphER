@@ -194,34 +194,6 @@ let string_of_t = function
   | Sim -> "sim"
   | StandAloneOpt x -> string_of_stand_alone_opt x
 
-(* Update defaults with environment variables *)
-let eval_env () =
-  let parse_format s =
-    Str.split (Str.regexp_string ",") s
-    |> List.map (function
-        | "svg" -> Svg
-        | "dot" -> Dot
-        (*   | "json" -> Json *)
-        | "txt" -> Txt
-        | s -> raise (ERROR (Malformed_env s))) in
-  (try
-     defaults.verb <- (ignore (Sys.getenv "BIGVERBOSE"); true);
-   with
-   | Not_found -> ());
-  (try
-     defaults.quiet <- (ignore (Sys.getenv "BIGQUIET"); true);
-   with
-   | Not_found -> ());
-  (try
-     defaults.colors <- (ignore (Sys.getenv "BIGNOCOLORS"); false);
-   with
-   | Not_found -> ());
-  (try
-     defaults.out_format <-
-       parse_format (Sys.getenv "BIGFORMAT")
-   with
-   | Not_found -> ())
-
 (* Stand alone options *)
 let msg_so_opt fmt = function
   | Config -> fprintf fmt "@[<hov>Print a summary of your configuration.@]"
@@ -608,11 +580,10 @@ let copts_t =
   let ext     =
     let doc =
     "A comma-separated list of output formats.
-    Supported formats are `dot', `json', `svg' and `txt'.
-    This is equivalent to setting the env variable BIGFORMAT to $(docv)."
-    in
+    Supported formats are `dot', `json', `svg' and `txt'." in
+    let env = Arg.env_var "BIGFORMAT" ~doc in
     Arg.(value & opt (list (conv fconv)) [Dot]
-               & info ["f";"format"] ~docv:"FORMAT" ~doc)
+               & info ["f";"format"] ~docv:"FORMAT" ~doc ~env)
   in
   let decs    =
     let doc = "Export each declaration in the model (bigraphs and reaction rules)
@@ -638,9 +609,9 @@ let copts_t =
     Arg.(value & opt_str & info ["m";"export-ml"] ~docv:"FILE" ~doc)
   in
   let quiet   =
-    let doc = "Disable progress indicator.
-               This is equivalent to setting BIGQUIET to a non-empty value." in
-    Arg.(value & flag & info ["q";"quiet"] ~doc)
+    let doc = "Disable progress indicator." in
+    let env = Arg.env_var "BIGQUIET" ~doc in
+    Arg.(value & flag & info ["q";"quiet"] ~doc ~env)
   in
   let states  =
     let doc = "Export each state to a file in $(docv).
@@ -650,14 +621,14 @@ let copts_t =
     Arg.(value & vopt_str & info ["s";"export-states"] ~docv:"DIR" ~doc)
   in
   let verbose =
-    let doc = "Be more verbose.This is equivalent to setting
-               BIGVERBOSE to a non-empty value." in
-    Arg.(value & flag & info ["v";"verbose"] ~doc)
+    let doc = "Be more verbose." in
+    let env = Arg.env_var "BIGVERBOSE" ~doc in
+    Arg.(value & flag & info ["v";"verbose"] ~doc ~env)
   in
   let nocols  =
-    let doc = "Disable colored output.This is equivalent to setting
-               BIGNOCOLORS to a non-empty value." in
-    Arg.(value & flag & info ["n";"no-colors"] ~doc)
+    let doc = "Disable colored output." in
+    let env = Arg.env_var "BIGNOCOLORS" ~doc in
+    Arg.(value & flag & info ["n";"no-colors"] ~doc ~env)
   in
   Term.(const copts $ consts $ debug $ decs $ ext $ graph $ lbls $ prism
                     $ ml $ quiet $ states $ verbose $ nocols)
@@ -703,7 +674,6 @@ let full_opts_t =
 
 (* Commandline *)
 let run f typ =
-  eval_env ();
   check_states ();
   check_dot ();
   defaults.model <- f;
