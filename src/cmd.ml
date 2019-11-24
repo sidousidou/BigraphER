@@ -572,6 +572,11 @@ let opt_if = function
   | Some _ -> true
   | None -> false
 
+let empty_to_none = function
+  | Some "" -> None
+  | Some _  as s -> s
+  | None -> None
+
 let copts consts debug decs ext graph lbls prism
           ml quiet states verbose nocols =
    defaults.consts             <- consts;
@@ -583,13 +588,16 @@ let copts consts debug decs ext graph lbls prism
    defaults.export_prism       <- prism;
    defaults.export_ml          <- ml;
    defaults.quiet              <- quiet;
-   defaults.export_states      <- states;
+   (* States have extra handling to ensure that the directory is inferred
+    * from export-ts if required *)
+   defaults.export_states      <- empty_to_none states;
    defaults.export_states_flag <- opt_if states;
    defaults.verb               <- verbose;
    defaults.colors             <- not nocols
 
 let copts_t =
   let opt_str = Arg.opt (Arg.some Arg.string) None in
+  let vopt_str = Arg.opt ~vopt:(Some "") (Arg.some Arg.string) None in
   let debug   = Arg.(value & flag & info ["debug"]) in
   let consts  =
     let doc = "Specify a comma-separated list of variable assignments.
@@ -639,7 +647,7 @@ let copts_t =
                State indices are used as file names.
                When $(docv) is omitted, it is inferred from
                option \"export-ts\"." in
-    Arg.(value & opt_str & info ["s";"export-states"] ~docv:"DIR" ~doc)
+    Arg.(value & vopt_str & info ["s";"export-states"] ~docv:"DIR" ~doc)
   in
   let verbose =
     let doc = "Be more verbose.This is equivalent to setting
@@ -696,6 +704,8 @@ let full_opts_t =
 (* Commandline *)
 let run f typ =
   eval_env ();
+  check_states ();
+  check_dot ();
   defaults.model <- f;
   typ
 
