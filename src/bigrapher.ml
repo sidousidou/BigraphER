@@ -447,32 +447,6 @@ let open_lex model =
       Lexing.pos_cnum = 0; };
   (lexbuf, file)
   
-let parse_cmd argv =
-  let lexbuf = Array.to_list argv
-               |> List.tl
-               |> String.concat "\n"
-               |> Lexing.from_string in
-  (* Check environment variables *)
-  Cmd.eval_env ();
-  try
-    Parser.cmd Lexer.cmd lexbuf
-  with
-  | Cmd.ERROR e ->
-    (Cmd.report_error err_formatter e;
-     Cmd.eval_help_top err_formatter ();
-     exit 1)
-  | Parser.Error ->
-    (Cmd.report_error err_formatter (Cmd.Parse (Lexing.lexeme lexbuf));
-     Cmd.eval_help_top err_formatter ();
-     exit 1)
-  | Lexer.ERROR (e, _) ->
-    (Lexer.report_error err_formatter
-       (Utils.err_opt Cmd.(defaults.colors))
-       e;
-     pp_print_newline err_formatter ();
-     Cmd.eval_help_top err_formatter ();
-     exit 1)
-
 let set_output_ch () =
   if Cmd.(defaults.quiet) then begin
     Cmd.(defaults.verb <- false); (* Ignore verbose flag *)
@@ -501,7 +475,6 @@ let () =
       (match m.model_rs.dbrs_type with
        | Rs.BRS ->
          begin
-           Cmd.check_brs_opt ();
            let module R = Run
                (struct
 
@@ -528,7 +501,6 @@ let () =
          end
        | Rs.PBRS ->
          begin
-           Cmd.check_pbrs_opt ();
            let module R = Run
                (Pbrs)
                (struct
@@ -547,7 +519,6 @@ let () =
          end
        | Rs.SBRS ->
          begin
-           Cmd.check_sbrs_opt ();
            let module R = Run
                (Sbrs)
                (struct
