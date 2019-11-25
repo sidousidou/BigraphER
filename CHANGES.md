@@ -1,3 +1,8 @@
+###1.9.0 (2019-11-25): ###
+
+* Migrate builds to dune
+* Use `Cmdliner` package to handle commandline and environment variable handling
+
 ###1.8.0 (2018-07-23): ###
 
 * Support new features in `bigraph 1.3.0`: edge and state labels in graphical
