@@ -2,7 +2,6 @@
 
 open Loc 
 open Ast
-open Cmd
 open Bigraph
 
 %}
@@ -60,43 +59,8 @@ open Bigraph
 %left  PROD SLASH
 %right CARET
 
-(* CMD *)
-
-%token <string> BIG_FILE
-%token <string> PATH
-%token <Ast.const list> O_CONST
-%token <Cmd.format_op list> O_FORMAT
-
-%token   F_SVG
-%token   F_DOT
-%token   F_TXT
-%token 	 F_JSON
-%token   C_CHECK
-%token   C_FULL
-%token   C_SIM
-%token   O_CONF
-%token   O_COLORS
-%token   O_VERS
-%token   O_HELP
-%token   O_VERB
-%token   O_QUIET
-%token   O_DEBUG
-%token   O_DECS
-%token   O_TS
-%token   O_STATES
-%token   O_LABELS
-%token   O_PRISM
-%token   O_ML 
-%token   O_MAX
-%token   O_TIME
-%token   O_STEPS
-   
-%start model cmd consts format
+%start model
 %type <Ast.model> model
-%type <Cmd.cmd_t> cmd
-%type <Ast.const list> consts
-%type <Cmd.format_op list> format
-(* %type <Ast.predicates> pred_list *)
 
 %%
 
@@ -365,133 +329,3 @@ closures:
 closure:
   | SLASH IDE                               { { cl_name = $2; 
 					        cl_loc = loc $startpos $endpos; } };
-		
-(* COMMAND LINE *)
-
-cmd:
-  | sub_cmd EOF                             { $1 }
-  | stand_alone_opt EOF                     { $1; exit 0 }
-
-stand_alone_opt:
-  | O_CONF
-      { eval_config Format.std_formatter () }
-  | O_VERS
-      { eval_version Format.std_formatter () }
-  | O_HELP
-      { eval_help_top Format.std_formatter () };
-
-const:
-  | IDE EQUAL CINT
-    { Cint { dint_id = $1;
-      dint_exp = Int_val ($3, loc $startpos $endpos);
-      dint_loc = loc $startpos $endpos; } }
-  | IDE EQUAL CFLOAT
-    { Cfloat { dfloat_id = $1;
-      dfloat_exp = Float_val ($3, loc $startpos $endpos);
-      dfloat_loc = loc $startpos $endpos; } };
-
-consts:
-  | l=separated_nonempty_list(COMMA, const) EOF
-    { l };
-
-common_opt:
-  | O_COLORS
-      { defaults.colors <- false}
-  | O_VERB
-      { defaults.verb <- true }
-  | O_QUIET
-      { defaults.quiet <- true }
-  | O_DEBUG
-      { defaults.debug <- true }
-  | O_CONST 
-      { defaults.consts <- $1 };
-
-format:
-  | l=separated_nonempty_list(COMMA, ext) EOF
-    { l };
-
-ext:
-  | F_SVG  { Svg }
-  | F_JSON { Json }
-  | F_DOT  { Dot }
-  | F_TXT  { Txt };
-
-export_opt:
-  | O_TS PATH
-     { defaults.export_graph <- Some $2 } 
-  | O_LABELS PATH
-     { defaults.export_lab <- Some $2 } 
-  | O_STATES option(PATH)
-     {  defaults.export_states_flag <- true;
-     	defaults.export_states <- $2 }
-  | O_PRISM PATH
-     { defaults.export_prism <- Some $2 }
-  | common_export_opt
-    { $1 };
-
-common_export_opt:   
-  | O_DECS PATH
-     { defaults.export_decs <- Some $2 }
-  | O_ML PATH
-     { defaults.export_ml <- Some $2 }
-  | O_FORMAT
-     { defaults.out_format <- $1 };
-
-opt_chk:
-  | common_opt
-    { $1 }
-  | common_export_opt
-    { $1 };
-  
-opt_full:
-  | common_opt
-    { $1 }
-  | export_opt
-    { $1 }
-  | O_MAX CINT
-    { defaults.max_states <- $2 };
-
-opt_sim:
-  | common_opt
-    { $1 }
-  | export_opt
-    { $1 }
-  | O_TIME CFLOAT
-    { defaults.time <- $2;
-      defaults.time_flag <- true }
-  | O_STEPS CINT
-    { defaults.steps <- $2;
-      defaults.steps_flag <- true };
-
-sub_cmd:
-  | C_CHECK O_HELP
-      { eval_help_check Format.std_formatter () }
-  | C_FULL O_HELP
-      { eval_help_full Format.std_formatter () }
-  | C_SIM O_HELP
-      { eval_help_sim Format.std_formatter () }
-  | C_CHECK list(opt_chk) input_file
-      { List.iter (fun x-> x) $2;
-        check_dot ();
-	check_states ();
-	defaults.model <- $3;
-        `check }
-  | C_FULL list(opt_full) input_file
-      { List.iter (fun x-> x) $2;
-        check_dot ();
-	check_states ();      
-	defaults.model <- $3;
-        `full }
-  | C_SIM list(opt_sim) input_file
-      { List.iter (fun x-> x) $2;
-        check_dot ();
-	check_states ();      
-	defaults.model <- $3;
-        `sim };
-
-input_file:
-  | { None }
-(*  | MINUS { None } *)
-  | BIG_FILE { Some $1 };
-%%
-
