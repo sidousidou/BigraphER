@@ -2,7 +2,7 @@
 
 Version 1.9.0
 
-Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele)
+Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
 [![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
 
@@ -66,7 +66,7 @@ available in PDF format as [CAV 2016 tool paper][tech].
 
 ### Copyright and license
 
-Copyright 2012-2018 Michele Sevegnani
+Copyright 2012-2019 Michele Sevegnani
 
 All rights reserved. BigraphER is distributed under the terms of the Simplified
 BSD License that can be found in the [LICENSE file](LICENSE.md).
