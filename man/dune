@@ -1,16 +1,20 @@
 (rule
+  (mode promote)
   (target bigrapher.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} --help=groff))))
 
 (rule
+  (mode promote)
   (target bigrapher-sim.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} sim --help=groff))))
 
 (rule
+  (mode promote)
   (target bigrapher-full.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} full --help=groff))))
 
 (rule
+  (mode promote)
   (target bigrapher-validate.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} validate --help=groff))))
 
