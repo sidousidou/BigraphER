@@ -380,3 +380,37 @@ let aux_eq m js =
 
 let row_eq m = aux_eq m.r_major
 let col_eq m = aux_eq m.c_major
+
+(* Symmetric closure (for square matrices) *)
+let sym m =
+  assert (m.r = m.c);
+  edges m
+  |> List.map (fun (v, u) -> (u, v))
+  |> add_list m
+             
+let descendants m i =
+  assert (i >= 0);
+  assert (i < m.r);
+  let rec dfs stack visited =
+    match stack with
+    | [] -> visited
+    | i :: stack ->
+       begin
+         let js = chl m i in
+         dfs ((IntSet.elements js) @ stack) (IntSet.union visited js)
+       end in
+  dfs [i] (IntSet.of_int i)
+                    
+(* Connected components for (undirected graphs) *)
+let connected_comps m =
+  assert (m.r = m.c);
+  let rec aux v res =
+    match IntSet.min_elt v with
+    | None -> res
+    | Some i ->
+       begin
+         let v' = descendants m i in
+         aux (IntSet.diff v v') (v' :: res)
+       end in
+  aux (IntSet.of_int m.r) []
+|> List.rev
