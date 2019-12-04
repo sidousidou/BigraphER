@@ -51,6 +51,7 @@ let () =
     |> List.filter (fun (_, b) -> b.Big.p.Place.s = 0) in
   let testcases = do_tests bgs in
   print_endline "OK";
+  Io.mkdir Sys.argv.(2);
   write_xml (testsuite "test_decomp" testcases) Sys.argv.(2) Sys.argv.(3);
   print_endline "Done!";
   exit 0
