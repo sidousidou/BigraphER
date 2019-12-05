@@ -218,21 +218,26 @@ let const_conv =
     | Ident i ->
       begin
       match v with
-      | Int v -> Ok (Ast.Cint { dint_id = i;
-                               dint_exp = Int_val (v, Loc.dummy_loc);
-                               dint_loc = Loc.dummy_loc
+      | Int v -> Ok (Ast.Cint { d_id = i;
+                               d_exp = ENum (Num_int_val (v, Loc.dummy_loc));
+                               d_loc = Loc.dummy_loc
                              })
-      | Float v -> Ok (Ast.Cfloat { dfloat_id = i;
-                                   dfloat_exp = Float_val (v, Loc.dummy_loc);
-                                   dfloat_loc = Loc.dummy_loc
+      | Float v -> Ok (Ast.Cfloat { d_id = i;
+                                   d_exp = ENum (Num_float_val (v, Loc.dummy_loc));
+                                   d_loc = Loc.dummy_loc
+                                 })
+      | String v -> Ok (Ast.Cstr { d_id = i;
+                                   d_exp = EStr (Str_val (v, Loc.dummy_loc));
+                                   d_loc = Loc.dummy_loc
                                  })
       | _ -> Error (`Msg "Could not parse assignment")
       end
     | _ -> Error (`Msg "Could not parse assignment")
   in
   let print_format pf = function
-    | Ast.Cint i -> pp_print_string pf (i.dint_id ^ "=<exp>")
-    | Ast.Cfloat f -> pp_print_string pf (f.dfloat_id ^ "=<exp>")
+    | Ast.Cint i -> pp_print_string pf (i.d_id ^ "=<exp>")
+    | Ast.Cfloat f -> pp_print_string pf (f.d_id ^ "=<exp>")
+    | Ast.Cstr s -> pp_print_string pf (s.d_id ^ "=<exp>")
   in parse, print_format
 
 let fconv =

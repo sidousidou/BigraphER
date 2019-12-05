@@ -11,13 +11,13 @@ module Make (T: TsType.RS)
      end) = struct
 
   type store_type =
-    [ `num_val of num_type
+    [ `core_val of core_type
     | `big_val of fun_type
     | `lambda of lambda
     | `param of base_type ]
 
   let string_of_store_t = function
-    | `num_val t -> string_of_num_t t
+    | `core_val t -> string_of_core_t t
     | `big_val t -> string_of_fun_t t
     | `lambda t -> string_of_lambda t
     | `param `int -> "int param"
@@ -25,11 +25,11 @@ module Make (T: TsType.RS)
     | `param `string -> "string param"
 
   let dom_of_lambda = function
-    | `num_val _ | `big_val _ | `param _ -> assert false (*BISECT-IGNORE*)
+    | `core_val _ | `big_val _ | `param _ -> assert false (*BISECT-IGNORE*)
     | `lambda t -> fst t
 
   let resolve_t (env : store_t) = function
-    | `num_val t ->  `num_val (resolve_type env t)
+    | `core_val t ->  `core_val (resolve_type env t)
     | `lambda (t, t') -> `lambda (resolve_types env t, t')
     | t -> t
 
@@ -45,13 +45,15 @@ module Make (T: TsType.RS)
     | A_ctrl_fun of int * Id.t list
     | React of T.react
     | React_fun of big_exp * big_exp *
-                   Fun.t option * float_exp option * Id.t list
+                   Fun.t option * exp option * Id.t list
     | Int_param of int list
     | Float_param of float list
+    | Str_param of string list
 
   let string_of_store_val = function
     | Int x -> string_of_int x
     | Float x -> string_of_float x
+    | Str s -> s
     | Big x -> Big.to_string x
     | Big_fun _ -> "<fun big>"
     | A_ctrl c | Ctrl c -> Ctrl.to_string c
@@ -62,12 +64,14 @@ module Make (T: TsType.RS)
       "(" ^ (String.concat "," (List.map string_of_int p)) ^ ")"
     | Float_param p ->
       "(" ^ (String.concat "," (List.map string_of_float p)) ^ ")"
+    | Str_param p ->
+      "(" ^ (String.concat "," p) ^ ")"
 
   let def_val = function
-    | `g _ -> Num_int_val (0, Loc.dummy_loc)
-    | `b `int -> Num_int_val (0, Loc.dummy_loc)
-    | `b `float -> Num_float_val (0.0, Loc.dummy_loc)
-    | `b `string -> Num_str_val ("", Loc.dummy_loc)
+    | `g _ -> ENum (Num_int_val (0, Loc.dummy_loc))
+    | `b `int -> ENum (Num_int_val (0, Loc.dummy_loc))
+    | `b `float -> ENum (Num_float_val (0.0, Loc.dummy_loc))
+    | `b `string -> EStr (Str_val ("", Loc.dummy_loc))
 
   type typed_store_val = store_val * store_type * Loc.t
 
@@ -78,8 +82,9 @@ module Make (T: TsType.RS)
       let fresh_t = assign_type_forms forms in
       (`lambda (box_gen_types fresh_t, t), add_types fresh_t env_t) in
     match v with
-    | Int _ -> (`num_val (`b `int), env_t)
-    | Float _ -> (`num_val (`b `float), env_t)
+    | Int _ -> (`core_val (`b `int), env_t)
+    | Float _ -> (`core_val (`b `float), env_t)
+    | Str _ -> (`core_val (`b `string), env_t)
     | Big _ -> (`big_val `big, env_t)
     | Big_fun (_, forms) -> update forms `big
     | Ctrl c | A_ctrl c -> (`big_val (`ctrl (Ctrl.arity c)), env_t)
@@ -89,6 +94,7 @@ module Make (T: TsType.RS)
     | React_fun (_, _, _, _, forms) -> update forms `react
     | Int_param _ -> (`param `int, env_t)
     | Float_param _ -> (`param `float, env_t)
+    | Str_param _ -> (`param `string, env_t)
 
   type store = typed_store_val Base.H_string.t
 
@@ -182,10 +188,10 @@ module Make (T: TsType.RS)
       | Some v -> aux v
       | None -> raise (ERROR (Unbound_variable id, p))
 
-  let get_int id p scope env =
-    let aux = function
-      | (Int v, _, _) -> v
+  let store_val_type = function
+      | (Int _, t, _)
       | (Float _,t,_)
+      | (Str _,t,_)
       | (Big _,t,_)
       | (Big_fun (_,_),t,_)
       | (Ctrl _,t,_)
@@ -195,42 +201,44 @@ module Make (T: TsType.RS)
       | (React _,t,_)
       | (React_fun (_,_,_,_,_),t,_)
       | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `num_val (`b `int)), p)) in
+      | (Str_param _,t,_)
+      | (Float_param _,t,_) -> t
+
+  let get_int id p scope env =
+    let aux = function
+      | (Int v, _, _) -> v
+      | x ->
+        raise (ERROR (Wrong_type (store_val_type x, `core_val (`b `int)), p)) in
     fetch id p aux scope env
 
   let get_float id p scope env =
     let aux = function
       | (Float v, _, _) -> v
-      | (Int _,t,_)
-      | (Big _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl _,t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl _,t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `num_val (`b `float)), p)) in
+      | x ->
+        raise (ERROR (Wrong_type (store_val_type x, `core_val (`b `float)), p)) in
+    fetch id p aux scope env
+
+  let get_var id p scope env =
+    let aux = function
+      | (Float _ as v, _, _)
+      | (Int _ as v, _, _)
+      | (Str _ as v, _, _) -> v
+      | x -> raise (ERROR (Wrong_type (store_val_type x, `core_val (`g core_type_str)), p)) in
     fetch id p aux scope env
 
   let get_num id p scope env =
     let aux = function
       | (Float _ as v, _, _)
       | (Int _ as v, _, _) -> v
-      | (Big _,t,_)
-      | (Big_fun (_,_),t,_)
-      | (Ctrl _,t,_)
-      | (Ctrl_fun (_,_),t,_)
-      | (A_ctrl _,t,_)
-      | (A_ctrl_fun (_,_),t,_)
-      | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
-      | (Int_param _,t,_)
-      | (Float_param _,t,_) ->
-        raise (ERROR (Wrong_type (t, `num_val (`g int_or_float)), p)) in
+      | x ->
+        raise (ERROR (Wrong_type (store_val_type x, `core_val (`g int_or_float)), p)) in
+    fetch id p aux scope env
+
+  let get_str id p scope env =
+    let aux = function
+      | (Str s, _, _) -> s
+      | x ->
+        raise (ERROR (Wrong_type (store_val_type x, `core_val (`b `string)), p)) in
     fetch id p aux scope env
 
   let get_ctrl id arity p env =
@@ -241,17 +249,8 @@ module Make (T: TsType.RS)
       (let a = Ctrl.arity c in
        if a = arity then c
        else raise (ERROR (Arity (id, a, arity), p)))
-    | Some (Int _,t,_)
-    | Some (Float _,t,_)
-    | Some (Big _,t,_)
-    | Some (Big_fun (_,_),t,_)
-    | Some (Ctrl_fun (_,_),t,_)
-    | Some (A_ctrl_fun (_,_),t,_)
-    | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_),t,_)
-    | Some (Int_param _,t,_)
-    | Some (Float_param _,t,_) ->
-      raise (ERROR (Wrong_type (t, `big_val (`ctrl arity)), p))
+    | Some x ->
+      raise (ERROR (Wrong_type (store_val_type x, `big_val (`ctrl arity)), p))
 
   let get_ctrl_fun id arity act_types p env =
     match Base.H_string.find env id with
@@ -260,17 +259,8 @@ module Make (T: TsType.RS)
     | Some (Ctrl_fun (a, forms), t, _) ->
       (if a = arity then (a, forms, t)
        else raise (ERROR (Arity (id, a, arity), p)))
-    | Some (Int _,t,_)
-    | Some (Float _,t,_)
-    | Some (Big _,t,_)
-    | Some (Big_fun (_,_),t,_)
-    | Some (Ctrl _,t,_)
-    | Some (A_ctrl _,t,_)
-    | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_),t,_)
-    | Some (Int_param _,t,_)
-    | Some (Float_param _,t,_) ->
-      raise (ERROR (Wrong_type (t, `lambda (act_types, `ctrl arity)), p))
+    | Some x ->
+      raise (ERROR (Wrong_type (store_val_type x, `lambda (act_types, `ctrl arity)), p))
 
   let is_atomic id p env =
     match Base.H_string.find env id with
@@ -280,6 +270,7 @@ module Make (T: TsType.RS)
       | A_ctrl _ |  A_ctrl_fun _ -> true
       | Int _
       | Float _
+      | Str _
       | Big _
       | Big_fun (_,_)
       | Ctrl _
@@ -287,76 +278,37 @@ module Make (T: TsType.RS)
       | React _
       | React_fun (_,_,_,_,_)
       | Int_param _
+      | Str_param _
       | Float_param _ -> false
         
   let get_big id p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (Big b, _, _) -> b
-    | Some (Int _,t,_)
-    | Some (Float _,t,_)
-    | Some (Big_fun (_,_),t,_)
-    | Some (Ctrl _,t,_)
-    | Some (Ctrl_fun (_,_),t,_)
-    | Some (A_ctrl _,t,_)
-    | Some (A_ctrl_fun (_,_),t,_)
-    | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_),t,_)
-    | Some (Int_param _,t,_)
-    | Some (Float_param _,t,_) ->
-      raise (ERROR (Wrong_type (t, `big_val `big), p))
+    | Some x ->
+      raise (ERROR (Wrong_type (store_val_type x, `big_val `big), p))
 
   let get_big_fun id arg_types p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (Big_fun (exp, forms), t, _) -> (exp, forms, t)
-    | Some (Int _,t,_)
-    | Some (Float _,t,_)
-    | Some (Big _,t,_)
-    | Some (Ctrl _,t,_)
-    | Some (Ctrl_fun (_,_),t,_)
-    | Some (A_ctrl _,t,_)
-    | Some (A_ctrl_fun (_,_),t,_)
-    | Some (React _,t,_)
-    | Some (React_fun (_,_,_,_,_),t,_)
-    | Some (Int_param _,t,_)
-    | Some (Float_param _,t,_) ->
-      raise (ERROR (Wrong_type (t, `lambda (arg_types, `big)), p))
+    | Some x ->
+      raise (ERROR (Wrong_type (store_val_type x, `lambda (arg_types, `big)), p))
 
   let get_react id p (env : store) =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (React r, _, _) -> r
-    | Some (Int _,t,_)
-    | Some (Float _,t,_)
-    | Some (Big _,t,_)
-    | Some (Big_fun (_,_),t,_)
-    | Some (Ctrl _,t,_)
-    | Some (Ctrl_fun (_,_),t,_)
-    | Some (A_ctrl _,t,_)
-    | Some (A_ctrl_fun (_,_),t,_)
-    | Some (React_fun (_,_,_,_,_),t,_)
-    | Some (Int_param _,t,_)
-    | Some (Float_param _,t,_) ->
-      raise (ERROR (Wrong_type (t, `big_val `react), p))
+    | Some x ->
+      raise (ERROR (Wrong_type (store_val_type x, `big_val `react), p))
 
   let get_react_fun id arg_types p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (React_fun (l, r, eta, label, forms), t, _) ->
       (l, r, label, eta, forms, t)
-    | Some (Int _,t,_)
-    | Some (Float _,t,_)
-    | Some (Big _,t,_)
-    | Some (Big_fun (_,_),t,_)
-    | Some (Ctrl _,t,_)
-    | Some (Ctrl_fun (_,_),t,_)
-    | Some (A_ctrl _,t,_)
-    | Some (A_ctrl_fun (_,_),t,_)
-    | Some (React _,t,_)
-    | Some (Int_param _,t,_)
-    | Some (Float_param _,t,_) ->
-      raise (ERROR (Wrong_type (t, `lambda (arg_types, `react)), p))
+    | Some x ->
+      raise (ERROR (Wrong_type (store_val_type x, `lambda (arg_types, `react)), p))
 
   (******** EVAL FUNCTIONS *********)
 
@@ -372,83 +324,132 @@ module Make (T: TsType.RS)
 
   let pow_int b e p =
     if e < 0 then
-      raise (ERROR (Wrong_type (`num_val (`b `float), `num_val (`b `int)), p))
+      raise (ERROR (Wrong_type (`core_val (`b `float), `core_val (`b `int)), p))
     else pow_int_aux b e 1
 
-  let rec eval_int (exp : int_exp) (scope : scope) (env : store) =
+  let eval_str (exp : str_exp) (_scope : scope) (_env : store) =
     match exp with
-    | Int_val (v, _) -> v
-    | Int_var (ide, p) ->
-      get_int ide p scope env
-    | Int_plus (l, r, _) ->
-      (eval_int l scope env) + (eval_int r scope env)
-    | Int_minus (l, r, _) ->
-      (eval_int l scope env) - (eval_int r scope env)
-    | Int_prod (l, r, _) ->
-      (eval_int l scope env) * (eval_int r scope env)
-    | Int_div (l, r, p) ->
-      div_int (eval_int r scope env) (eval_int l scope env) p
-    | Int_pow (l, r, p) ->
-      pow_int (eval_int l scope env) (eval_int r scope env) p
+    | Str_val (v, _) -> Str v
 
-  let rec eval_float (exp : float_exp) (scope : scope) env =
+  let eval_num (exp : num_exp) (_scope : scope) (_env : store) =
     match exp with
-    | Float_val (v, _) -> v
-    | Float_var (ide, p) ->
-      get_float ide p scope env
-    | Float_plus (l, r, _) ->
-      (eval_float l scope env) +. (eval_float r scope env)
-    | Float_minus (l, r, _) ->
-      (eval_float l scope env) -. (eval_float r scope env)
-    | Float_prod (l, r, _) ->
-      (eval_float l scope env) *. (eval_float r scope env)
-    | Float_div (l, r, _) ->
-      (eval_float l scope env) /. (eval_float r scope env)
-    | Float_pow (l, r, _) ->
-      (eval_float l scope env) ** (eval_float r scope env)
-
-  let rec eval_num (exp : num_exp) (scope : scope) (env : store) =
-    let aux val0 val1 fun_int fun_float p =
-      match (val0, val1) with
-      | (Int v, Int v') -> Int (fun_int v v')
-      | (Float v, Float v') -> Float (fun_float v v')
-      | (Int _, Float _) ->
-        raise (ERROR (Wrong_type (`num_val (`b `float), `num_val (`b `int)), p))
-      | (Float _, Int _) ->
-        raise (ERROR (Wrong_type (`num_val (`b `int), `num_val (`b `float)), p))
-      | (Int _,_)
-      | (Float _,_)
-      | (Big _,_)
-      | (Big_fun (_,_),_)
-      | (Ctrl _,_)
-      | (Ctrl_fun (_,_),_)
-      | (A_ctrl _,_)
-      | (A_ctrl_fun (_,_),_)
-      | (React _,_)
-      | (React_fun (_,_,_,_,_),_)
-      | (Int_param _,_)
-      | (Float_param _,_) -> assert false in (*BISECT-IGNORE*)
-    match exp with
-    | Num_str_val (v, _) -> Str v
     | Num_int_val (v, _) -> Int v
     | Num_float_val (v, _) -> Float v
-    | Num_var (id, p) -> get_num id p scope env
-    | Num_plus (l, r, p) ->
-      aux (eval_num l scope env) (eval_num r scope env) (+) (+.) p
-    | Num_minus (l, r, p) ->
-      aux (eval_num l scope env) (eval_num r scope env) (-) (-.) p
-    | Num_prod (l, r, p) ->
-      aux (eval_num l scope env) (eval_num r scope env) ( * ) ( *. ) p
-    | Num_div (l, r, p) ->
-      (let f_int l r = div_int l r p in
-       aux (eval_num l scope env) (eval_num r scope env) f_int (/.) p)
-    | Num_pow (l, r, p) ->
-      (let f_int l r = pow_int l r p in
-       aux (eval_num l scope env) (eval_num r scope env) f_int ( ** ) p)
 
-  let eval_nums exps (scope : scope) (env : store) =
+  let eval_var (exp : var_exp) (scope : scope) (env : store) =
+    match exp with
+    | Var (id, p) -> get_var id p scope env
+
+  let eval_plus (a : store_val) (b : store_val) p =
+      match a, b with
+    | Float f, Float g -> Float (f +. g)
+    | Int f, Float g -> Float ((float f) +. g)
+    | Float f, Int g -> Float (f +. (float g))
+    | Int f, Int g -> Int (f + g)
+    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _ -> assert false (*BISECT-IGNORE*)
+
+  let eval_minus (a : store_val) (b : store_val) p =
+      match a, b with
+    | Float f, Float g -> Float (f -. g)
+    | Int f, Float g -> Float ((float f) -. g)
+    | Float f, Int g -> Float (f -. (float g))
+    | Int f, Int g -> Int (f - g)
+    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _ -> assert false (*BISECT-IGNORE*)
+
+  let eval_prod (a : store_val) (b : store_val) p =
+      match a, b with
+    | Float f, Float g -> Float (f *. g)
+    | Int f, Float g -> Float ((float f) *. g)
+    | Float f, Int g -> Float (f *. (float g))
+    | Int f, Int g -> Int (f * g)
+    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _ -> assert false (*BISECT-IGNORE*)
+
+  let eval_div (a : store_val) (b : store_val) p =
+      match a, b with
+    | Float f, Float g -> Float (f /. g)
+    | Int f, Float g -> Float ((float f) /. g)
+    | Float f, Int g -> Float (f /. (float g))
+    | Int f, Int g -> Int (div_int f g p)
+    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _ -> assert false (*BISECT-IGNORE*)
+
+  let eval_pow(a : store_val) (b : store_val) p =
+      match a, b with
+    | Float f, Float g -> Float (f ** g)
+    | Int f, Float g -> Float ((float f) ** g)
+    | Float f, Int g -> Float (f ** (float g))
+    | Int f, Int g -> Int (pow_int f g p)
+    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _ -> assert false (*BISECT-IGNORE*)
+
+  let rec eval_bin_op (exp : binary_op) (scope : scope) (env : store) =
+    match exp with
+    | Plus (e1, e2, loc) -> eval_plus (eval_exp e1 scope env) (eval_exp e2 scope env) loc
+    | Minus (e1, e2, loc) -> eval_minus (eval_exp e1 scope env) (eval_exp e2 scope env) loc
+    | Prod (e1, e2, loc) -> eval_prod (eval_exp e1 scope env) (eval_exp e2 scope env) loc
+    | Div (e1, e2, loc) -> eval_prod (eval_exp e1 scope env) (eval_exp e2 scope env) loc
+    | Pow (e1, e2, loc) -> eval_prod (eval_exp e1 scope env) (eval_exp e2 scope env) loc
+
+  and eval_exp (exp : exp) (scope : scope) (env : store) =
+    match exp with
+    | ENum ne -> eval_num ne scope env
+    | EStr se -> eval_str se scope env
+    | EVar ve -> eval_var ve scope env
+    | EOp op -> eval_bin_op op scope env
+
+  let as_int (e : store_val) p =
+     match e with
+     | Int v -> v
+     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `int)), p))
+
+  let as_float (e : store_val) p =
+     match e with
+     | Float v -> v
+     | Int v -> float v
+     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `float)), p))
+
+  let as_str (e : store_val) p =
+     match e with
+     | Str v -> v
+     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `string)), p))
+
+  let cast_int (e : store_val) p =
+     match e with
+     | Int _ as v -> v
+     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `int)), p))
+
+  let cast_float (e : store_val) p =
+     match e with
+     | Float _ as v -> v
+     | Int v -> Float (float v)
+     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `float)), p))
+
+  let cast_str (e : store_val) p =
+     match e with
+     | Str _ as v -> v
+     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `string)), p))
+
+  let eval_exps exps (scope : scope) (env : store) =
     List.map (fun e ->
-        match eval_num e scope env with
+        match eval_exp e scope env with
         | Int _ as v -> (v, `b `int)
         | Float _ as v -> (v, `b `float)
         | Str _ as s -> (s, `b `string)
@@ -461,16 +462,17 @@ module Make (T: TsType.RS)
         | React _
         | React_fun (_,_,_,_,_)
         | Int_param _
+        | Str_param _
         | Float_param _ -> assert false (*BISECT-IGNORE*)
       ) exps
     |> List.split
 
   let extend_scope (scope: scope) (forms : Id.t list) (nums : store_val list)
-      (args_t : num_type list) (p : Loc.t) =
+      (args_t : core_type list) (p : Loc.t) =
     let aux id v t = ScopeMap.add id (v, t, p) in
     List.combine forms (List.combine nums args_t)
     |> List.fold_left (fun s (id, (v, t)) ->
-        aux id v (`num_val t) s) scope
+        aux id v (`core_val t) s) scope
 
   let eval_ctrl_fun id nums arity =
     let params =
@@ -481,7 +483,8 @@ module Make (T: TsType.RS)
           | Str s -> Ctrl.S s
           | Big _ | Big_fun (_,_) | Ctrl _ | Ctrl_fun (_,_)
           | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_)
-          | Int_param _ | Float_param _ -> assert false (*BISECT-IGNORE*))
+          | Int_param _ | Float_param _ | Str_param _
+            -> assert false (*BISECT-IGNORE*))
         nums in
     Ctrl.C (id, params, arity)
 
@@ -508,13 +511,13 @@ module Make (T: TsType.RS)
        (check_atomic id p env face c flag, env_t))
     | Big_ion_fun_exp (id, args, names, p) ->
       begin
-        let (nums, args_t) = eval_nums args scope env
+        let (exps, args_t) = eval_exps args scope env
         and face = parse_face names p in
         let (a, _, t) =
           get_ctrl_fun id (List.length names) args_t p env in
         try
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
-          let c = eval_ctrl_fun id nums a in
+          let c = eval_ctrl_fun id exps a in
           (check_atomic id p env face c flag, env_t')
         with
         | UNIFICATION ->
@@ -534,9 +537,9 @@ module Make (T: TsType.RS)
     | Big_var_fun (id, args, p) ->
       (* fun b(x,y) = 1; fun big a(x,y) = b(x + y, 5); a(3, 2 + 3.4); *)
       begin
-        let (nums, args_t) =
+        let (exps, args_t) =
           (* id = a --> ([Int 3; Float 5], [`b `int; `b `float]) *)
-          eval_nums args scope env in
+          eval_exps args scope env in
         (* (exp, [x; y], [`g 0; `g 1]) *)
         let (exp, forms, t) =
           get_big_fun id args_t p env in
@@ -544,7 +547,7 @@ module Make (T: TsType.RS)
           (* Unification: `g 0 -> `b `int ; `g 1 -> `b `float *)
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
           (* Extend scope:  x -> Int 3 y -> Float 5 *)
-          let scope' = extend_scope scope forms nums args_t p in
+          let scope' = extend_scope scope forms exps args_t p in
           eval_big exp scope' env env_t'
         with
         | UNIFICATION ->
@@ -635,7 +638,7 @@ module Make (T: TsType.RS)
     match
       P.parse_react name lhs_v rhs_v
         (match l with
-         | Some f_exp -> `F (eval_float f_exp scope env)
+         | Some f_exp -> `F (as_float (eval_exp f_exp scope env) p)
          | None -> `E ())
         eta with
     | None ->
@@ -658,11 +661,14 @@ module Make (T: TsType.RS)
 
   let param_to_vals = function
     | (Int_param vals, _, p) ->
-      List.map (fun v -> (Int v, `num_val (`b `int), p)) vals
+      List.map (fun v -> (Int v, `core_val (`b `int), p)) vals
     | (Float_param vals, _, p) ->
-      List.map (fun v -> (Float v, `num_val (`b `float), p)) vals
+      List.map (fun v -> (Float v, `core_val (`b `float), p)) vals
+    | (Str_param vals, _, p) ->
+      List.map (fun v -> (Str v, `core_val (`b `string), p)) vals
     | (Int _, _, _)
     | (Float _, _, _)
+    | (Str _, _, _)
     | (Big _, _, _)
     | (Big_fun (_, _), _, _)
     | (Ctrl _, _, _)
@@ -678,9 +684,11 @@ module Make (T: TsType.RS)
     | Some v ->
       match get_val v with
       | Int_param _
+      | Str_param _
       | Float_param _ -> true
       | Int _
       | Float _
+      | Str _
       | Big _
       | Big_fun (_,_)
       | Ctrl _
@@ -697,16 +705,13 @@ module Make (T: TsType.RS)
 
   (* [a + 3.0; c] -> [a , c] *)
   let scan_for_params env args =
-    let rec aux acc = function
-      | Num_int_val _
-      | Num_float_val _ -> acc
-      | Num_var (id, p) ->
-        if is_param id env p then IdSet.add id acc else acc
-      | Num_plus (l, r, _)
-      | Num_minus (l, r, _)
-      | Num_prod (l, r, _)
-      | Num_div (l, r, _)
-      | Num_pow (l, r, _) -> aux (aux acc l) r in
+    let auxV acc = function
+      | Var (id, p) ->
+        if is_param id env p then IdSet.add id acc else acc in
+    let aux acc = function
+      | EVar v -> auxV acc v
+      | _ -> acc
+    in
     List.fold_left aux IdSet.empty args
     |> IdSet.elements
 
@@ -728,11 +733,11 @@ module Make (T: TsType.RS)
     scan_for_params env args
     |> param_scopes env
     |> List.fold_left (fun (acc, env_t) scope ->
-        let (nums, args_t) = eval_nums args scope env in
+        let (exps, args_t) = eval_exps args scope env in
         let (l, r, label, eta, forms, t) = get_react_fun id args_t p env in
         try
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
-          let scope' = extend_scope scope forms nums args_t p in
+          let scope' = extend_scope scope forms exps args_t p in
           let (r, env_t'') = eval_react id l r eta label scope' env env_t' p in
           (r :: acc, env_t'')
         with
@@ -775,23 +780,23 @@ module Make (T: TsType.RS)
     eval_p_list eval_pr (fun x -> T.is_valid_priority_list (fst x))
 
   let eval_pred_fun_app id args env env_t p =
-    let print_id id nums =
-      let nums_s =
+    let print_id id exps =
+      let exp_s =
         List.map (function
-            | Int _ | Float _ as v -> string_of_store_val v
+            | Int _ | Float _ | Str _ as v -> string_of_store_val v
             | _ -> assert false) (*BISECT-IGNORE*)
-          nums in
-      id ^ "(" ^ (String.concat "," nums_s) ^ ")" in
+          exps in
+      id ^ "(" ^ (String.concat "," exp_s) ^ ")" in
     scan_for_params env args
     |> param_scopes env
     |> List.fold_left (fun (acc, env_t) scope ->
-        let (nums, args_t) = eval_nums args scope env in
+        let (exps, args_t) = eval_exps args scope env in
         let (exp, forms, t) = get_big_fun id args_t p env in
         try
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
-          let scope' = extend_scope scope forms nums args_t p in
+          let scope' = extend_scope scope forms exps args_t p in
           let (b, env_t'') = eval_big exp scope' env env_t' in
-          ((print_id id nums, b) :: acc, env_t'')
+          ((print_id id exps, b) :: acc, env_t'')
         with
         | UNIFICATION ->
           raise (ERROR (Wrong_type (`lambda (args_t, `big),
@@ -846,13 +851,17 @@ module Make (T: TsType.RS)
       | Dctrl (Non_atomic (Ctrl_fun_exp (id, forms, ar, _), p)) ->
         upd id (Ctrl_fun (ar, forms)) p
       | Dint d ->
-        upd d.dint_id
-          (Int (eval_int d.dint_exp ScopeMap.empty env))
-          d.dint_loc
+        upd d.d_id
+          (cast_int (eval_exp d.d_exp ScopeMap.empty env) d.d_loc)
+          d.d_loc
       | Dfloat d ->
-        upd d.dfloat_id
-          (Float (eval_float d.dfloat_exp ScopeMap.empty env))
-          d.dfloat_loc
+        upd d.d_id
+          (cast_float (eval_exp d.d_exp ScopeMap.empty env) d.d_loc)
+          d.d_loc
+      | Dstr d ->
+        upd d.d_id
+          (cast_str (eval_exp d.d_exp ScopeMap.empty env) d.d_loc)
+          d.d_loc
       | Dbig (Big_exp (id, exp, p)) ->
         (let (b_v, env_t') =
            eval_big exp ScopeMap.empty env env_t in
@@ -871,11 +880,14 @@ module Make (T: TsType.RS)
   let store_consts fmt c consts (env : store) =
     let aux = function
       | Cint d ->
-        let v = Int (eval_int d.dint_exp ScopeMap.empty env) in
-        ignore (update fmt c d.dint_id v d.dint_loc env [])
+        let v = cast_int (eval_exp d.d_exp ScopeMap.empty env) d.d_loc in
+        ignore (update fmt c d.d_id v d.d_loc env [])
       | Cfloat d ->
-        let v = Float (eval_float d.dfloat_exp ScopeMap.empty env) in
-        ignore (update fmt c d.dfloat_id v d.dfloat_loc env []) in
+        let v = cast_float (eval_exp d.d_exp ScopeMap.empty env) d.d_loc in
+        ignore (update fmt c d.d_id v d.d_loc env [])
+      | Cstr s ->
+        let v = cast_str (eval_exp s.d_exp ScopeMap.empty env) s.d_loc in
+        ignore (update fmt c s.d_id v s.d_loc env []) in
     List.iter aux consts
 
   (* Store simple Ints or Floats when the list of values has only one element *)
@@ -899,42 +911,47 @@ module Make (T: TsType.RS)
     (*   | ERROR (Wrong_type _, _) -> get_int_param  *)
     let aux  = function
       | Param_int (ids, Param_int_val (exp, _), p) ->
-        let v = Int (eval_int exp ScopeMap.empty env) in
+        let v = cast_int (eval_exp exp ScopeMap.empty env) p in
         List.iter (fun id ->
             add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_int (ids, Param_int_range (start, incr, stop, _), p) ->
-        (let s = eval_int start ScopeMap.empty env in
+        (let s = as_int (eval_exp start ScopeMap.empty env) p in
          let v = flatten_int
-             (eval_int_range s (eval_int incr ScopeMap.empty env)
-                (eval_int stop ScopeMap.empty env) [s]) in
+             (eval_int_range s
+                (as_int (eval_exp incr ScopeMap.empty env) p)
+                (as_int (eval_exp stop ScopeMap.empty env) p) [s]) in
          List.iter (fun id ->
              add_to_store fmt c env id (v, fst (assign_type v []), p)) ids)
       | Param_int (ids, Param_int_set (exps, _), p) ->
         let v =
-          List.map (fun e -> eval_int e ScopeMap.empty env) exps
+          List.map (fun e -> (as_int (eval_exp e ScopeMap.empty env) p)) exps
           |> List.sort_uniq (fun a b -> a - b)
           |> flatten_int in
         List.iter (fun id ->
             add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_float (ids, Param_float_val (exp, _), p) ->
-        let v = Float (eval_float exp ScopeMap.empty env) in
+        let v = cast_float (eval_exp exp ScopeMap.empty env) p in
         List.iter (fun id ->
             add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_float (ids, Param_float_range (start, incr, stop, _), p) ->
-        let s = eval_float start ScopeMap.empty env in
+        let s = as_float (eval_exp start ScopeMap.empty env) p in
         let v = flatten_float
-            (eval_float_range s (eval_float incr ScopeMap.empty env)
-               (eval_float stop ScopeMap.empty env)
+            (eval_float_range s (as_float (eval_exp incr ScopeMap.empty env) p)
+               (as_float (eval_exp stop ScopeMap.empty env) p)
                [s]) in
         List.iter (fun id ->
             add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
       | Param_float (ids, Param_float_set (exps, _), p) ->
         let v =
-          List.map (fun e -> eval_float e ScopeMap.empty env) exps
+          List.map (fun e -> as_float (eval_exp e ScopeMap.empty env) p) exps
           |> List.sort_uniq compare
           |> flatten_float in
         List.iter (fun id ->
-            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids in
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
+      | Param_str (ids, Param_str_val (exp, _), p) ->
+        let s = cast_str (eval_exp exp ScopeMap.empty env) p in
+        List.iter (fun id ->
+            add_to_store fmt c env id (s, fst (assign_type s []), p)) ids in
     List.iter aux params
 
   (******** INSTANTIATE REACTIVE SYSTEM *********)
@@ -966,7 +983,7 @@ module Make (T: TsType.RS)
       |> print_fun (concat lhs_n);
       f rhs ~name:rhs_n ~path
       |> print_fun (concat rhs_n) in
-    let dummy_args (args_t : num_type list) =
+    let dummy_args (args_t : core_type list) =
       resolve_types env_t args_t
       |> List.map def_val in
     let aux id =
@@ -980,6 +997,7 @@ module Make (T: TsType.RS)
     let write f_write ext = function
       | Dctrl _
       | Dint _
+      | Dstr _
       | Dfloat _ -> ()
       | Dbig (Big_exp (id, _, p)) ->
         (f_write (get_big id p env) ~name:(id ^ ext) ~path
@@ -1043,55 +1061,38 @@ module Make (T: TsType.RS)
   let ml_of_ints =
     ml_of_list string_of_int
   
-  let rec ml_of_int = function
-    | Int_val (v, _) -> string_of_int v
-    | Int_var (id, _) -> "int_of_param " ^ (id : string)
-    | Int_plus (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ ") + (" ^ (ml_of_int r) ^ ")"
-    | Int_minus (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ ") - (" ^ (ml_of_int r) ^ ")"
-    | Int_prod (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ ") * (" ^ (ml_of_int r) ^ ")"
-    | Int_div (l, r, _) ->
-      "(" ^ (ml_of_int l) ^ ") / (" ^ (ml_of_int r) ^ ")"
-    | Int_pow (l, r, _) ->
-      "pow_int (" ^ (ml_of_int l) ^ ") (" ^ (ml_of_int r) ^ ")"
+  let ml_of_var = function
+    | Var (id, _) -> id
 
-  let rec ml_of_float =  function
-    | Float_val (v, _) ->
-      if v = infinity then "infinity" else (string_of_float v)
-    | Float_var (id, _) -> "float_of_param " ^ (id : string)
-    | Float_plus (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ ") +. (" ^ (ml_of_float r) ^ ")"
-    | Float_minus (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ ") -. (" ^ (ml_of_float r) ^ ")"
-    | Float_prod (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ ") *. (" ^ (ml_of_float r) ^ ")"
-    | Float_div (l, r, _) ->
-      "(" ^ (ml_of_float l) ^ ") /. (" ^ (ml_of_float r) ^ ")"
-    | Float_pow (l, r, _) ->
-      "pow_float (" ^ (ml_of_float l) ^ ") (" ^ (ml_of_float r) ^ ")"
+  let ml_of_str =  function
+    | Str_val (v, _) -> v
 
   (* TO BE FIXED *)
-  let rec ml_of_num = function
+  let ml_of_num = function
     | Num_int_val (v, _) -> string_of_int v
-    | Num_str_val (s, _) -> s
     | Num_float_val (v, _) -> string_of_float v
-    | Num_var (id, _) -> (id : string)
-    | Num_plus (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ ") + (" ^ (ml_of_num b) ^ ")"
-    | Num_minus (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ ") - (" ^ (ml_of_num b) ^ ")"
-    | Num_prod (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ ") * (" ^ (ml_of_num b) ^ ")"
-    | Num_div (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ ") / (" ^ (ml_of_num b) ^ ")"
-    | Num_pow (a, b, _) ->
-      "(" ^ (ml_of_num a) ^ ") ^^ (" ^ (ml_of_num b) ^ ")"
+
+  let ml_of_op = function
+    | Plus (_, _, _) -> " + "
+    | Minus (_, _, _) -> " - "
+    | Prod (_, _, _) -> " * "
+    | Div  (_, _, _) -> " / "
+    | Pow  (_, _, _) -> " ^ "
 
   let ml_of_params p =
-    List.map ml_of_num p
+    List.map (fun e -> match e with
+                    | ENum n -> ml_of_num n
+                    | EStr s -> ml_of_str s
+                    | EVar v -> ml_of_var v
+                    | EOp op -> ml_of_op op
+                    ) p
     |> String.concat " "
+
+  let ml_of_exp = function
+    | ENum n -> ml_of_num n
+    | EStr s -> ml_of_str s
+    | EVar v -> ml_of_var v
+    | EOp op -> ml_of_op op
 
   let ml_of_face = function
     | [] -> "Link.Face.empty"
@@ -1171,7 +1172,7 @@ module Make (T: TsType.RS)
                  ^ ")\n~rhs:("
                  ^ (ml_of_big rhs)
                  ^ ")\n("
-                 ^ (ml_of_float @@ Base.safe l)
+                 ^ (ml_of_exp @@ Base.safe l)
                  ^ ")\n("
                  ^ (ml_of_eta eta)
                  ^ ")"
@@ -1180,7 +1181,7 @@ module Make (T: TsType.RS)
                  ^ ")\n~rhs:("
                  ^ (ml_of_big rhs)
                  ^ ")\n("
-                 ^ (ml_of_float @@ Base.safe l)
+                 ^ (ml_of_exp @@ Base.safe l)
                  ^ ")\n("
                  ^ (ml_of_eta eta)
                  ^ ")"
@@ -1208,7 +1209,7 @@ module Make (T: TsType.RS)
   (* TO BE FIXED *)
   let ml_of_param = function
     | Param_int (ids, (Param_int_val (exp, _)), _) ->
-      (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_int exp)) ids
+      (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
        |> String.concat " in\n")
     | Param_int (_, (Param_int_range (_, _, _, _)), _) -> ""
     | Param_int (_, (Param_int_set (_, _)), _) -> ""
@@ -1216,7 +1217,10 @@ module Make (T: TsType.RS)
     | Param_float (_, (Param_float_range (_, _, _, _)), _) -> ""
     | Param_float (ids, (Param_float_set (exps, _)), _) ->
       (List.map (fun (id : string) ->
-           ml_of_dec id [] (ml_of_list ml_of_float exps)) ids
+           ml_of_dec id [] (ml_of_list ml_of_exp exps)) ids
+       |> String.concat " in\n")
+    | Param_str (ids, (Param_str_val (exp, _)), _) ->
+      (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
        |> String.concat " in\n")
 
   let ml_of_dec = function
@@ -1231,9 +1235,11 @@ module Make (T: TsType.RS)
     | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
       ml_of_dec id params (ml_of_react lhs rhs l eta)
     | Dint exp ->
-      ml_of_dec exp.dint_id [] ("Ctrl.I (" ^ (ml_of_int exp.dint_exp) ^ ")")
+      ml_of_dec exp.d_id [] ("Ctrl.I (" ^ (ml_of_exp exp.d_exp) ^ ")")
     | Dfloat exp  ->
-      ml_of_dec exp.dfloat_id [] ("Ctrl.F (" ^ (ml_of_float exp.dfloat_exp) ^ ")")
+      ml_of_dec exp.d_id [] ("Ctrl.F (" ^ (ml_of_exp exp.d_exp) ^ ")")
+    | Dstr exp  ->
+      ml_of_dec exp.d_id [] ("Ctrl.S (" ^ (ml_of_exp exp.d_exp) ^ ")")
 
   let ml_of_model m file =
     let file_id = Filename.basename file

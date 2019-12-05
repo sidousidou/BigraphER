@@ -5,34 +5,28 @@ module Id = struct
   let compare = String.compare
 end
 
-type int_exp =
-  | Int_val of int * Loc.t
-  | Int_var of Id.t * Loc.t
-  | Int_plus of int_exp * int_exp * Loc.t
-  | Int_minus of int_exp * int_exp * Loc.t
-  | Int_prod of int_exp * int_exp * Loc.t
-  | Int_div of int_exp * int_exp * Loc.t
-  | Int_pow of int_exp * int_exp * Loc.t
-
-type float_exp =
-  | Float_val of float * Loc.t
-  | Float_var of Id.t * Loc.t
-  | Float_plus of float_exp * float_exp * Loc.t
-  | Float_minus of float_exp * float_exp * Loc.t
-  | Float_prod of float_exp * float_exp * Loc.t
-  | Float_div of float_exp * float_exp * Loc.t
-  | Float_pow of float_exp * float_exp * Loc.t
+type str_exp =
+  | Str_val of string * Loc.t
 
 type num_exp =
-  | Num_str_val of string * Loc.t
   | Num_int_val of int * Loc.t
   | Num_float_val of float * Loc.t
-  | Num_var of Id.t * Loc.t
-  | Num_plus of num_exp * num_exp * Loc.t
-  | Num_minus of num_exp * num_exp * Loc.t
-  | Num_prod of num_exp * num_exp * Loc.t
-  | Num_div of num_exp * num_exp * Loc.t
-  | Num_pow of num_exp * num_exp * Loc.t
+
+type var_exp =
+  | Var of Id.t * Loc.t
+
+type exp =
+  | ENum of num_exp
+  | EStr of str_exp
+  | EVar of var_exp
+  | EOp  of binary_op
+
+and binary_op =
+  | Plus of exp * exp * Loc.t
+  | Minus of exp * exp * Loc.t
+  | Prod of exp * exp * Loc.t
+  | Div  of exp * exp * Loc.t
+  | Pow of exp * exp * Loc.t
 
 type ctrl_exp =
   | Ctrl_exp of Id.t * int * Loc.t
@@ -42,16 +36,10 @@ type dctrl =
   | Atomic of ctrl_exp * Loc.t
   | Non_atomic of ctrl_exp * Loc.t
 
-type dint =
-  { dint_id : Id.t;
-    dint_exp: int_exp;
-    dint_loc: Loc.t;
-  }
-
-type dfloat =
-  { dfloat_id : Id.t;
-    dfloat_exp: float_exp;
-    dfloat_loc: Loc.t;
+type dexp =
+  { d_id : Id.t;
+    d_exp: exp;
+    d_loc: Loc.t;
   }
 
 type id_exp =
@@ -65,7 +53,7 @@ type ion_exp =
   (* K{f, g} *)
   | Big_ion_exp of Id.t * Id.t list * Loc.t
   (* K(2.46, 1){f, g} *)
-  | Big_ion_fun_exp of Id.t * num_exp list * Id.t list * Loc.t
+  | Big_ion_fun_exp of Id.t * exp list * Id.t list * Loc.t
 
 (* ({{0,2,3}, {}}, 5) *)
 type place_exp =
@@ -97,7 +85,7 @@ type wire_exp =
 type big_exp =
   (* b *)
   | Big_var of Id.t * Loc.t
-  | Big_var_fun of Id.t * num_exp list * Loc.t        (* b(1, 5.67) *)
+  | Big_var_fun of Id.t * exp list * Loc.t        (* b(1, 5.67) *)
   | Big_new_name of Id.t * Loc.t                      (* {n} *)
   | Big_comp of big_exp * big_exp * Loc.t             (* A * B *)
   | Big_tens of big_exp * big_exp * Loc.t             (* A + B *)
@@ -124,47 +112,52 @@ type dbig =
 type dreact =
   | React_exp of Id.t *
                  big_exp * big_exp *
-                 float_exp option *
+                 exp option *
                  eta_exp option *
                  Loc.t
   | React_fun_exp of Id.t * Id.t list *
                      big_exp * big_exp *
-                     float_exp option *
+                     exp option *
                      eta_exp option *
                      Loc.t
 
 type dec =
   | Dctrl of dctrl
-  | Dint of dint
-  | Dfloat of dfloat
+  | Dint of dexp
+  | Dfloat of dexp
+  | Dstr of dexp
   | Dbig of dbig
   | Dreact of dreact
 
 type init_exp =
   | Init of Id.t * Loc.t
-  | Init_fun of Id.t * num_exp list * Loc.t
+  | Init_fun of Id.t * exp list * Loc.t
 
 type param_int_exp =
-  | Param_int_val of int_exp * Loc.t
-  | Param_int_range of int_exp * int_exp * int_exp * Loc.t
-  | Param_int_set of int_exp list * Loc.t
+  | Param_int_val of exp * Loc.t
+  | Param_int_range of exp * exp * exp * Loc.t
+  | Param_int_set of exp list * Loc.t
 
 type param_float_exp =
-  | Param_float_val of float_exp * Loc.t
-  | Param_float_range of float_exp * float_exp * float_exp * Loc.t
-  | Param_float_set of float_exp list * Loc.t
+  | Param_float_val of exp * Loc.t
+  | Param_float_range of exp * exp * exp * Loc.t
+  | Param_float_set of exp list * Loc.t
+
+type param_str_exp =
+  | Param_str_val of exp * Loc.t
 
 type param_exp =
   | Param_int of Id.t list * param_int_exp * Loc.t
   | Param_float of Id.t list * param_float_exp * Loc.t
+  | Param_str of Id.t list * param_str_exp * Loc.t
 
 type rul_id =
   | Rul_id of Id.t * Loc.t
-  | Rul_id_fun of Id.t * num_exp list * Loc.t
+  | Rul_id_fun of Id.t * exp list * Loc.t
 
 type pred_id =
   | Pred_id of Id.t * Loc.t
-  | Pred_id_fun of Id.t * num_exp list * Loc.t
+  | Pred_id_fun of Id.t * exp list * Loc.t
 
 type pr_exp =
   | Pr_red of rul_id list * Loc.t
@@ -185,8 +178,9 @@ type model =
   }
 
 type const =
-  | Cint of dint
-  | Cfloat of dfloat
+  | Cint of dexp
+  | Cfloat of dexp
+  | Cstr of dexp
 
 type consts = const list
 
@@ -264,6 +258,8 @@ let rul_id_to_rul_call = function
 
 let string_of_consts l =
   List.map (function
-      | Cint x ->  x.dint_id ^ "=<exp>" (*x.dint_exp*)
-      | Cfloat x -> x.dfloat_id ^ "=<exp>" (*x.dfloat_exp)*)) l
+      | Cint x ->  x.d_id ^ "=<exp>"
+      | Cfloat x -> x.d_id ^ "=<exp>"
+      | Cstr x -> x.d_id ^ "=<exp>"
+      ) l
   |> String.concat ","

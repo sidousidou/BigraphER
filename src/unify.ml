@@ -4,7 +4,7 @@ exception UNIFICATION
 
 type gen_type = string
 type base_type = [ `int | `float | `string ]
-type num_type = [ `g of gen_type | `b of base_type ]
+type core_type = [ `g of gen_type | `b of base_type ]
 
 let current_alpha = ref (97, 0)
 
@@ -16,16 +16,17 @@ let next_gen () =
   | (n, 0) -> "'" ^ (String.make 1 (char_of_int n))
   | (n, i) -> "'" ^ (String.make 1 (char_of_int n)) ^ (string_of_int i)
 
-let string_of_num_t = function
+let string_of_core_t = function
   | `b `int -> "int"
   | `b `float -> "float"
   | `b `string -> "string"
   | `g  s -> s
 
-let int_or_float = "[ int | float ]"
+let int_or_float  = "[ int | float ]"
+let core_type_str = "[ int | float | string ]"
 
-let string_of_num_t_list l =
-  "[" ^ (String.concat "," (List.map string_of_num_t l)) ^ "]"
+let string_of_core_t_list l =
+  "[" ^ (String.concat "," (List.map string_of_core_t l)) ^ "]"
 
 type fun_type = [ `big | `ctrl of int | `react | `sreact ]
 
@@ -35,13 +36,13 @@ let string_of_fun_t = function
   | `react -> "react"
   | `sreact -> "sreact"
 
-type lambda = num_type list * fun_type            (* [`int; `float] -> `ctrl *)
+type lambda = core_type list * fun_type            (* [`int; `float] -> `ctrl *)
 
 let string_of_lambda (l, r) =
-  (string_of_num_t_list l) ^ " -> " ^ (string_of_fun_t r)
+  (string_of_core_t_list l) ^ " -> " ^ (string_of_fun_t r)
 
 let string_of_app l r =
-  "(" ^ (string_of_lambda l) ^ ") " ^ (string_of_num_t_list r)
+  "(" ^ (string_of_lambda l) ^ ") " ^ (string_of_core_t_list r)
 
 (* Naive union-find for type-equivalence classes *)
 module Gamma = Set.Make(struct
@@ -88,7 +89,7 @@ let post_exn env (constr, t) =
    N(type0, type1) = [ type0; type1] -> `ctrl 0                dom, codom
    N(3, 4.8) = ([ type0; type1] -> `ctrl 0) [`int; `float]     args
    type0 = `int type1 = `float *)
-let app_exn env (dom : num_type list) (args : num_type list) =
+let app_exn env (dom : core_type list) (args : core_type list) =
   try
     List.fold_left2 (fun env d a ->
         match (d, a) with

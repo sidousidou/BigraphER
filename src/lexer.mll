@@ -68,7 +68,8 @@ rule token =  parse
   | "react"                 { REACT }
   | "init"                  { INIT }
   | "int"                   { INT }
-  | "float"                 { FLOAT }       
+  | "float"                 { FLOAT }
+  | "string"                { STRING }
   | "fun"                   { FUN }  
   | "begin"                 { BEGIN }
   | "brs"		    { BRS }

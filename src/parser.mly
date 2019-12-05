@@ -25,6 +25,7 @@ open Bigraph
 %token		  PREDS
 %token            INT
 %token            FLOAT
+%token            STRING
 %token            FUN
 %token            BEGIN
 %token            BRS
@@ -76,19 +77,24 @@ dec_list:
 dec:
   | dec_int SEMICOLON                       { Dint $1    }
   | dec_float SEMICOLON                     { Dfloat $1  }
+  | dec_str SEMICOLON                       { Dstr $1  }
   | dec_ctrl SEMICOLON                      { Dctrl $1   }
   | dec_big SEMICOLON                       { Dbig $1    }
   | dec_react SEMICOLON                     { Dreact $1  };
 
+dec_gen:
+  IDE EQUAL exp                          { { d_id = $1;
+                                             d_exp = $3;
+						                                 d_loc = loc $startpos $endpos;} };
+
 dec_int:
-  INT IDE EQUAL int_exp                     { { dint_id = $2;
-						dint_exp = $4;
-						dint_loc = loc $startpos $endpos;} };
+  INT dec_gen { $2 };
 
 dec_float:
-  FLOAT IDE EQUAL float_exp                 { { dfloat_id = $2;
-						dfloat_exp = $4;
-						dfloat_loc = loc $startpos $endpos;} };
+  FLOAT dec_gen { $2 };
+
+dec_str:
+  STRING dec_gen { $2 };
 
 dec_ctrl:
   | ATOMIC ctrl_exp                         { Atomic ($2, loc $startpos $endpos)     }
@@ -98,25 +104,6 @@ ctrl_exp:
   | CTRL CIDE EQUAL CINT                    { Ctrl_exp ($2, $4, loc $startpos $endpos)         }
   | FUN CTRL CIDE LPAR ide_list_nonempty RPAR EQUAL CINT
                                             { Ctrl_fun_exp ($3, $5, $8, loc $startpos $endpos) };
-
-int_exp:
-  | CINT                                    { Int_val ($1, loc $startpos $endpos)       }
-  | IDE                                     { Int_var ($1, loc $startpos $endpos)       } 
-  | LPAR int_exp RPAR                       { $2                                        }
-  | int_exp PROD int_exp                    { Int_prod ($1, $3, loc $startpos $endpos)  }     
-  | int_exp SLASH int_exp                   { Int_div ($1, $3, loc $startpos $endpos)   }     
-  | int_exp PLUS int_exp                    { Int_plus ($1, $3, loc $startpos $endpos)  }     
-  | int_exp MINUS int_exp                   { Int_minus ($1, $3, loc $startpos $endpos) };     
-
-float_exp:
-  | CFLOAT                                  { Float_val ($1, loc $startpos $endpos)       }
-  | IDE                                     { Float_var ($1, loc $startpos $endpos)       } 
-  | LPAR float_exp RPAR                     { $2                                          }
-  | float_exp CARET float_exp               { Float_pow ($1, $3, loc $startpos $endpos)   }
-  | float_exp PROD float_exp                { Float_prod ($1, $3, loc $startpos $endpos)  }     
-  | float_exp SLASH float_exp               { Float_div ($1, $3, loc $startpos $endpos)   }     
-  | float_exp PLUS float_exp                { Float_plus ($1, $3, loc $startpos $endpos)  }     
-  | float_exp MINUS float_exp               { Float_minus ($1, $3, loc $startpos $endpos) };
 
 dec_big:
   | BIG IDE EQUAL bexp                      { Big_exp ($2, $4, loc $startpos $endpos)         }
@@ -131,7 +118,7 @@ dec_react:
 
 arrow:
   | ARR                   { None }
-  | LARR float_exp RARR   { Some $2 }
+  | LARR exp RARR         { Some $2 }
 
 eta_exp_opt:
   eta = option(eta_exp)                     { eta };
@@ -167,26 +154,38 @@ pred_list:
 
 pred_ide:
   | IDE                                     { Pred_id ($1, loc $startpos $endpos)         }
-  | IDE LPAR num_list RPAR                  { Pred_id_fun ($1, $3, loc $startpos $endpos) };
+  | IDE LPAR exp_list RPAR                  { Pred_id_fun ($1, $3, loc $startpos $endpos) };
 
 init:
   | INIT IDE SEMICOLON                      { Init ($2, loc $startpos $endpos)         }
-  | INIT IDE LPAR num_list RPAR SEMICOLON   { Init_fun ($2, $4, loc $startpos $endpos) };
+  | INIT IDE LPAR exp_list RPAR SEMICOLON   { Init_fun ($2, $4, loc $startpos $endpos) };
 
-num_list:
-  nums = separated_nonempty_list(COMMA, num_exp)	    { nums };
+exp_list:
+  exps = separated_nonempty_list(COMMA, exp)	        { exps };
+
+exp:
+  | num_exp { ENum $1 }
+  | str_exp { EStr $1 }
+  | var_exp { EVar $1 }
+  | op_exp  { EOp $1 }
+  | LPAR exp RPAR { $2 };
 
 num_exp:
   | CINT                                    { Num_int_val ($1, loc $startpos $endpos)   }
-  | CFLOAT                                  { Num_float_val ($1, loc $startpos $endpos) }
-  | CSTRING                                 { Num_str_val ($1, loc $startpos $endpos) }
-  | IDE                                     { Num_var ($1, loc $startpos $endpos)       } 
-  | LPAR num_exp RPAR                       { $2                                        }
-  | num_exp CARET num_exp                   { Num_pow ($1, $3, loc $startpos $endpos)   }
-  | num_exp PROD num_exp                    { Num_prod ($1, $3, loc $startpos $endpos)  }     
-  | num_exp SLASH num_exp                   { Num_div ($1, $3, loc $startpos $endpos)   }     
-  | num_exp PLUS num_exp                    { Num_plus ($1, $3, loc $startpos $endpos)  }     
-  | num_exp MINUS num_exp                   { Num_minus ($1, $3, loc $startpos $endpos) };
+  | CFLOAT                                  { Num_float_val ($1, loc $startpos $endpos) };
+
+var_exp:
+  | IDE                                     { Var ($1, loc $startpos $endpos) };
+
+str_exp:
+  | CSTRING                                 { Str_val ($1, loc $startpos $endpos) };
+
+op_exp:
+  | exp PLUS exp                            { Plus ($1, $3, loc $startpos $endpos)  }
+  | exp MINUS exp                           { Minus ($1, $3, loc $startpos $endpos) }
+  | exp PROD exp                            { Prod ($1, $3, loc $startpos $endpos)  }
+  | exp SLASH exp                           { Div ($1, $3, loc $startpos $endpos)   }
+  | exp CARET exp                           { Pow ($1, $3, loc $startpos $endpos)   };
 
 params:
   p = list(param)                           { p };
@@ -196,25 +195,22 @@ ide_list_nonempty:
 
 param:
   | INT ide_list_nonempty EQUAL param_int_exp SEMICOLON     { Param_int ($2, $4, loc $startpos $endpos)   }
-  | FLOAT ide_list_nonempty EQUAL param_float_exp SEMICOLON { Param_float ($2, $4, loc $startpos $endpos) };
-
-int_exp_list:
-  l = separated_nonempty_list(COMMA, int_exp)               { l };
-
-float_exp_list:
-  l = separated_nonempty_list(COMMA, float_exp)             { l };
+  | FLOAT ide_list_nonempty EQUAL param_float_exp SEMICOLON { Param_float ($2, $4, loc $startpos $endpos) }
+  | STRING ide_list_nonempty EQUAL param_str_exp SEMICOLON  { Param_str ($2, $4, loc $startpos $endpos) };
 
 param_int_exp:
-  | int_exp                                 { Param_int_val ($1, loc $startpos $endpos)           }
-  | LCBR int_exp_list RCBR                  { Param_int_set ($2, loc $startpos $endpos)           }
-  | LSBR int_exp COLON int_exp COLON int_exp RSBR		
+  | exp                                 { Param_int_val ($1, loc $startpos $endpos)           }
+  | LCBR exp_list RCBR                  { Param_int_set ($2, loc $startpos $endpos)           }
+  | LSBR exp COLON exp COLON exp RSBR
                                             { Param_int_range ($2, $4, $6, loc $startpos $endpos) };
 
- param_float_exp:
-  | float_exp                               { Param_float_val ($1, loc $startpos $endpos)           }
-  | LCBR float_exp_list RCBR                { Param_float_set ($2, loc $startpos $endpos)           }
-  | LSBR float_exp COLON float_exp COLON float_exp RSBR		
-                                            { Param_float_range ($2, $4, $6, loc $startpos $endpos) };
+param_float_exp:
+  | exp                               { Param_float_val ($1, loc $startpos $endpos)           }
+  | LCBR exp_list RCBR                { Param_float_set ($2, loc $startpos $endpos)           }
+  | LSBR exp COLON exp COLON exp RSBR { Param_float_range ($2, $4, $6, loc $startpos $endpos) };
+
+param_str_exp:
+  | exp                                 { Param_str_val ($1, loc $startpos $endpos)           }
 
 priority_list:
   l = separated_nonempty_list(COMMA, priority_class)        { l };
@@ -231,7 +227,7 @@ rule_ide_list:
 
 rule_ide:
   | IDE                                     { Rul_id ($1, loc $startpos $endpos)         }
-  | IDE LPAR num_list RPAR                  { Rul_id_fun ($1, $3, loc $startpos $endpos) };
+  | IDE LPAR exp_list RPAR                  { Rul_id_fun ($1, $3, loc $startpos $endpos) };
 
 bexp:
   | wire_exp LPAR bexp RPAR                 { Big_wire ($1, $3, loc $startpos $endpos)                   }
@@ -240,7 +236,7 @@ bexp:
 							    loc $startpos $endpos)                       }
   | wire_exp IDE                            { Big_wire ($1, Big_var ($2, loc $startpos $endpos),
                                                             loc $startpos $endpos)                       }
-  | wire_exp IDE LPAR num_list RPAR         { Big_wire ($1, Big_var_fun ($2, $4,
+  | wire_exp IDE LPAR exp_list RPAR         { Big_wire ($1, Big_var_fun ($2, $4,
                                                                              loc $startpos $endpos),
                                                             loc $startpos $endpos)                       }
   | simple_bexp                             { $1                                                         }
@@ -266,7 +262,7 @@ simple_bexp:
   | CINT                                    { Big_num ($1, loc $startpos $endpos)         }
   | place_exp                               { Big_plc $1                                  }
   | IDE                                     { Big_var ($1, loc $startpos $endpos)         }
-  | IDE LPAR num_list RPAR                  { Big_var_fun ($1, $3, loc $startpos $endpos) }
+  | IDE LPAR exp_list RPAR                  { Big_var_fun ($1, $3, loc $startpos $endpos) }
   | ion_exp                                 { Big_ion $1                                  }
   | ion_exp DOT simple_bexp                 { Big_nest ($1, $3, loc $startpos $endpos)    };
 
@@ -300,8 +296,8 @@ o_delim_int_2:
 ion_exp:
   | CIDE                                    { Big_ion_exp ($1, [], loc $startpos $endpos)         }
   | CIDE LCBR ide_list_nonempty RCBR        { Big_ion_exp ($1, $3, loc $startpos $endpos)         }
-  | CIDE LPAR num_list RPAR                 { Big_ion_fun_exp ($1, $3, [], loc $startpos $endpos) }
-  | CIDE LPAR num_list RPAR LCBR ide_list_nonempty RCBR  
+  | CIDE LPAR exp_list RPAR                 { Big_ion_fun_exp ($1, $3, [], loc $startpos $endpos) }
+  | CIDE LPAR exp_list RPAR LCBR ide_list_nonempty RCBR
                                             { Big_ion_fun_exp ($1, $3, $6, loc $startpos $endpos) };
 
 place_exp:
