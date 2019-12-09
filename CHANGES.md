@@ -1,3 +1,8 @@
+###1.9.1 (2019-12-09): ###
+
+* Add support for string expressions in declarations, control parameters, and
+  BRS parameters
+
 ###1.9.0 (2019-11-25): ###
 
 * Migrate builds to dune
