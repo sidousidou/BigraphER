@@ -1,7 +1,7 @@
 opam-version: "1.2"
 maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
-version: "1.9.0"
-authors: [ "Michele Sevegnani" ]
+version: "1.9.1"
+authors: [ "Michele Sevegnani" "Blair Archibald" ]
 license: "BSD-2-clause"
 homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
 dev-repo: "https://bitbucket.org/mseve/bigrapher.git"
