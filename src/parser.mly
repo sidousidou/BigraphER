@@ -210,7 +210,8 @@ param_float_exp:
   | LSBR exp COLON exp COLON exp RSBR { Param_float_range ($2, $4, $6, loc $startpos $endpos) };
 
 param_str_exp:
-  | exp                                 { Param_str_val ($1, loc $startpos $endpos)           }
+  | exp                              { Param_str_val ($1, loc $startpos $endpos)           }
+  | LCBR exp_list RCBR               { Param_str_set ($2, loc $startpos $endpos)           };
 
 priority_list:
   l = separated_nonempty_list(COMMA, priority_class)        { l };

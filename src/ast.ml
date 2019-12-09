@@ -145,6 +145,7 @@ type param_float_exp =
 
 type param_str_exp =
   | Param_str_val of exp * Loc.t
+  | Param_str_set of exp list * Loc.t
 
 type param_exp =
   | Param_int of Id.t list * param_int_exp * Loc.t

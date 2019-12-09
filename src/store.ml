@@ -905,7 +905,10 @@ module Make (T: TsType.RS)
       | v -> Int_param v
     and flatten_float = function
       | [v] -> Float v
-      | v -> Float_param v in
+      | v -> Float_param v
+    and flatten_str = function
+      | [v] -> Str v
+      | v -> Str_param v in
     (* let eval_int_param exp = *)
     (*   try Int (eval_int exp ScopeMap.empty env) with *)
     (*   | ERROR (Wrong_type _, _) -> get_int_param  *)
@@ -951,7 +954,15 @@ module Make (T: TsType.RS)
       | Param_str (ids, Param_str_val (exp, _), p) ->
         let s = cast_str (eval_exp exp ScopeMap.empty env) p in
         List.iter (fun id ->
-            add_to_store fmt c env id (s, fst (assign_type s []), p)) ids in
+            add_to_store fmt c env id (s, fst (assign_type s []), p)) ids
+      | Param_str (ids, Param_str_set (exps, _), p) ->
+        let v =
+          List.map (fun e -> (as_str (eval_exp e ScopeMap.empty env) p)) exps
+          |> List.sort_uniq String.compare
+          |> flatten_str in
+        List.iter (fun id ->
+            add_to_store fmt c env id (v, fst (assign_type v []), p)) ids
+    in
     List.iter aux params
 
   (******** INSTANTIATE REACTIVE SYSTEM *********)
@@ -1222,6 +1233,7 @@ module Make (T: TsType.RS)
     | Param_str (ids, (Param_str_val (exp, _)), _) ->
       (List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
        |> String.concat " in\n")
+    | Param_str (_, (Param_str_set (_, _)), _) -> ""
 
   let ml_of_dec = function
     | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) ->
