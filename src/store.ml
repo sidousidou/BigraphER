@@ -431,21 +431,9 @@ module Make (T: TsType.RS)
      | Str v -> v
      | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `string)), p))
 
-  let cast_int (e : store_val) p =
-     match e with
-     | Int _ as v -> v
-     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `int)), p))
-
-  let cast_float (e : store_val) p =
-     match e with
-     | Float _ as v -> v
-     | Int v -> Float (float v)
-     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `float)), p))
-
-  let cast_str (e : store_val) p =
-     match e with
-     | Str _ as v -> v
-     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `string)), p))
+  let cast_int (e : store_val) p = Int (as_int e p)
+  let cast_float (e : store_val) p = Float (as_float e p)
+  let cast_str (e : store_val) p = Str (as_str e p)
 
   let eval_exps exps (scope : scope) (env : store) =
     List.map (fun e ->
