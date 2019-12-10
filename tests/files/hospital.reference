@@ -2,6 +2,6 @@ Type:          BRS
 Bindings:      33      
 # of rules:    10      
 Max # states:  140     
-States:        151     
-Transitions:   316     
-Occurrences:   496     
+States:        142
+Transitions:   251
+Occurrences:   345
