@@ -207,15 +207,15 @@ module Make (T: TsType.RS)
   let get_int id p scope env =
     let aux = function
       | (Int v, _, _) -> v
-      | x ->
-        raise (ERROR (Wrong_type (store_val_type x, `core_val (`b `int)), p)) in
+      | x -> raise (ERROR
+         (Wrong_type (store_val_type x, `core_val (`b `int)), p)) in
     fetch id p aux scope env
 
   let get_float id p scope env =
     let aux = function
       | (Float v, _, _) -> v
-      | x ->
-        raise (ERROR (Wrong_type (store_val_type x, `core_val (`b `float)), p)) in
+      | x -> raise (ERROR
+         (Wrong_type (store_val_type x, `core_val (`b `float)), p)) in
     fetch id p aux scope env
 
   let get_var id p scope env =
@@ -223,22 +223,23 @@ module Make (T: TsType.RS)
       | (Float _ as v, _, _)
       | (Int _ as v, _, _)
       | (Str _ as v, _, _) -> v
-      | x -> raise (ERROR (Wrong_type (store_val_type x, `core_val (`g core_type_str)), p)) in
+      | x -> raise (ERROR
+         (Wrong_type (store_val_type x, `core_val (`g core_type_str)), p)) in
     fetch id p aux scope env
 
   let get_num id p scope env =
     let aux = function
       | (Float _ as v, _, _)
       | (Int _ as v, _, _) -> v
-      | x ->
-        raise (ERROR (Wrong_type (store_val_type x, `core_val (`g int_or_float)), p)) in
+      | x -> raise (ERROR
+         (Wrong_type (store_val_type x, `core_val (`g int_or_float)), p)) in
     fetch id p aux scope env
 
   let get_str id p scope env =
     let aux = function
       | (Str s, _, _) -> s
-      | x ->
-        raise (ERROR (Wrong_type (store_val_type x, `core_val (`b `string)), p)) in
+      | x -> raise (ERROR
+         (Wrong_type (store_val_type x, `core_val (`b `string)), p)) in
     fetch id p aux scope env
 
   let get_ctrl id arity p env =
@@ -249,8 +250,8 @@ module Make (T: TsType.RS)
       (let a = Ctrl.arity c in
        if a = arity then c
        else raise (ERROR (Arity (id, a, arity), p)))
-    | Some x ->
-      raise (ERROR (Wrong_type (store_val_type x, `big_val (`ctrl arity)), p))
+    | Some x -> raise (ERROR
+       (Wrong_type (store_val_type x, `big_val (`ctrl arity)), p))
 
   let get_ctrl_fun id arity act_types p env =
     match Base.H_string.find env id with
@@ -259,8 +260,8 @@ module Make (T: TsType.RS)
     | Some (Ctrl_fun (a, forms), t, _) ->
       (if a = arity then (a, forms, t)
        else raise (ERROR (Arity (id, a, arity), p)))
-    | Some x ->
-      raise (ERROR (Wrong_type (store_val_type x, `lambda (act_types, `ctrl arity)), p))
+    | Some x -> raise (ERROR
+       (Wrong_type (store_val_type x, `lambda (act_types, `ctrl arity)), p))
 
   let is_atomic id p env =
     match Base.H_string.find env id with
@@ -285,30 +286,30 @@ module Make (T: TsType.RS)
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (Big b, _, _) -> b
-    | Some x ->
-      raise (ERROR (Wrong_type (store_val_type x, `big_val `big), p))
+    | Some x -> raise (ERROR
+       (Wrong_type (store_val_type x, `big_val `big), p))
 
   let get_big_fun id arg_types p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (Big_fun (exp, forms), t, _) -> (exp, forms, t)
-    | Some x ->
-      raise (ERROR (Wrong_type (store_val_type x, `lambda (arg_types, `big)), p))
+    | Some x -> raise (ERROR
+       (Wrong_type (store_val_type x, `lambda (arg_types, `big)), p))
 
   let get_react id p (env : store) =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (React r, _, _) -> r
-    | Some x ->
-      raise (ERROR (Wrong_type (store_val_type x, `big_val `react), p))
+    | Some x -> raise (ERROR
+       (Wrong_type (store_val_type x, `big_val `react), p))
 
   let get_react_fun id arg_types p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
     | Some (React_fun (l, r, eta, label, forms), t, _) ->
       (l, r, label, eta, forms, t)
-    | Some x ->
-      raise (ERROR (Wrong_type (store_val_type x, `lambda (arg_types, `react)), p))
+    | Some x -> raise (ERROR
+       (Wrong_type (store_val_type x, `lambda (arg_types, `react)), p))
 
   (******** EVAL FUNCTIONS *********)
 
@@ -346,10 +347,14 @@ module Make (T: TsType.RS)
     | Int f, Float g -> Float ((float f) +. g)
     | Float f, Int g -> Float (f +. (float g))
     | Int f, Int g -> Int (f + g)
-    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
-    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
-    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
-    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _, Float _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
   let eval_minus (a : store_val) (b : store_val) p =
@@ -358,10 +363,14 @@ module Make (T: TsType.RS)
     | Int f, Float g -> Float ((float f) -. g)
     | Float f, Int g -> Float (f -. (float g))
     | Int f, Int g -> Int (f - g)
-    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
-    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
-    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
-    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _, Float _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise
+      (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
   let eval_prod (a : store_val) (b : store_val) p =
@@ -370,10 +379,14 @@ module Make (T: TsType.RS)
     | Int f, Float g -> Float ((float f) *. g)
     | Float f, Int g -> Float (f *. (float g))
     | Int f, Int g -> Int (f * g)
-    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
-    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
-    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
-    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _, Float _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
   let eval_div (a : store_val) (b : store_val) p =
@@ -382,10 +395,14 @@ module Make (T: TsType.RS)
     | Int f, Float g -> Float ((float f) /. g)
     | Float f, Int g -> Float (f /. (float g))
     | Int f, Int g -> Int (div_int f g p)
-    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
-    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
-    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
-    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _, Float _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
   let eval_pow(a : store_val) (b : store_val) p =
@@ -394,19 +411,24 @@ module Make (T: TsType.RS)
     | Int f, Float g -> Float ((float f) ** g)
     | Float f, Int g -> Float (f ** (float g))
     | Int f, Int g -> Int (pow_int f g p)
-    | _, Float _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
-    | Float _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
-    | _, Int _ -> raise (ERROR (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
-    | Int _, _ -> raise (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
+    | _, Float _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `float)), p))
+    | Float _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `float)), p))
+    | _, Int _ -> raise (ERROR
+      (Wrong_type (fst (assign_type a []), `core_val (`b `int)), p))
+    | Int _, _ -> raise (ERROR
+      (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
   let rec eval_bin_op (exp : binary_op) (scope : scope) (env : store) =
+    let eval' e = eval_exp e scope env in
     match exp with
-    | Plus (e1, e2, loc) -> eval_plus (eval_exp e1 scope env) (eval_exp e2 scope env) loc
-    | Minus (e1, e2, loc) -> eval_minus (eval_exp e1 scope env) (eval_exp e2 scope env) loc
-    | Prod (e1, e2, loc) -> eval_prod (eval_exp e1 scope env) (eval_exp e2 scope env) loc
-    | Div (e1, e2, loc) -> eval_prod (eval_exp e1 scope env) (eval_exp e2 scope env) loc
-    | Pow (e1, e2, loc) -> eval_prod (eval_exp e1 scope env) (eval_exp e2 scope env) loc
+    | Plus (e1, e2, loc) -> eval_plus (eval' e1) (eval' e2) loc
+    | Minus (e1, e2, loc) -> eval_minus (eval' e1) (eval' e2) loc
+    | Prod (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
+    | Div (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
+    | Pow (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
 
   and eval_exp (exp : exp) (scope : scope) (env : store) =
     match exp with
@@ -418,18 +440,21 @@ module Make (T: TsType.RS)
   let as_int (e : store_val) p =
      match e with
      | Int v -> v
-     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `int)), p))
+     | _ -> raise (ERROR
+        (Wrong_type (fst (assign_type e []), `core_val (`b `int)), p))
 
   let as_float (e : store_val) p =
      match e with
      | Float v -> v
      | Int v -> float v
-     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `float)), p))
+     | _ -> raise (ERROR
+        (Wrong_type (fst (assign_type e []), `core_val (`b `float)), p))
 
   let as_str (e : store_val) p =
      match e with
      | Str v -> v
-     | _ -> raise (ERROR (Wrong_type (fst (assign_type e []), `core_val (`b `string)), p))
+     | _ -> raise (ERROR
+        (Wrong_type (fst (assign_type e []), `core_val (`b `string)), p))
 
   let cast_int (e : store_val) p = Int (as_int e p)
   let cast_float (e : store_val) p = Float (as_float e p)
@@ -1136,14 +1161,16 @@ module Make (T: TsType.RS)
     | Big_ion (Big_ion_exp (id, names, _)) ->
       "Big.ion (" ^ (ml_of_face names) ^ ") ctrl_" ^ id
     | Big_ion (Big_ion_fun_exp (id, params, names, _)) ->
-      "Big.ion (" ^ (ml_of_face names) ^ ") (ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"
+        "Big.ion (" ^ (ml_of_face names) ^ ") "
+      ^ "(ctrl_" ^ id ^ " " ^ (ml_of_params params) ^ ")"
     | Big_nest (i, b, _) ->
       "Big.nest\n(" ^  (ml_of_big (Big_ion i)) ^ ")\n(" ^ (ml_of_big b) ^ ")"
     | Big_wire (c, b, _) ->
       begin
         match c with
         | Close_exp cs ->
-          "Big.close\n(" ^ (ml_of_face (names_of_closures cs)) ^ ")\n(" ^ (ml_of_big b) ^ ")"
+             "Big.close\n(" ^ (ml_of_face (names_of_closures cs)) ^ ")\n("
+           ^ (ml_of_big b) ^ ")"
         | Sub_exp s ->
           "Big.rename ~inner:(" ^ (ml_of_face s.in_names) ^ ") ~outer:("
           ^ (ml_of_face [s.out_name]) ^ ") (" ^ (ml_of_big b) ^ ")"
@@ -1202,8 +1229,10 @@ module Make (T: TsType.RS)
     |> String.concat "; "
 
   let ml_of_pri = function
-    | Pr_red (ids, _) -> (Rs.module_id T.typ) ^ ".P_rclass [" ^ (ml_of_rules ids) ^ "]"
-    | Pr (ids, _) -> (Rs.module_id T.typ) ^ ".P_class [" ^ (ml_of_rules ids) ^ "]"
+    | Pr_red (ids, _) -> (Rs.module_id T.typ)
+                      ^ ".P_rclass [" ^ (ml_of_rules ids) ^ "]"
+    | Pr (ids, _) -> (Rs.module_id T.typ)
+                      ^ ".P_class [" ^ (ml_of_rules ids) ^ "]"
 
   (* TO BE FIXED *)
   let ml_of_param = function
