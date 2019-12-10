@@ -1,26 +1,19 @@
 (rule
-  (mode promote)
   (target bigrapher.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} --help=groff))))
 
 (rule
-  (mode promote)
   (target bigrapher-sim.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} sim --help=groff))))
 
 (rule
-  (mode promote)
   (target bigrapher-full.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} full --help=groff))))
 
 (rule
-  (mode promote)
   (target bigrapher-validate.1)
   (action (with-stdout-to %{target} (run %{bin:bigrapher} validate --help=groff))))
 
 (install
   (section man)
-  (files  (bigrapher.1 as man1/bigrapher.1)
-          (bigrapher-validate.1 as man1/bigrapher-validate.1)
-          (bigrapher-full.1 as man1/bigrapher-full.1)
-          (bigrapher-sim.1 as man1/bigrapher-sim.1)))
+  (files bigrapher.1 bigrapher-validate.1 bigrapher-full.1 bigrapher-sim.1))
