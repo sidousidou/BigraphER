@@ -2,12 +2,11 @@
  (names test_parser)
  (libraries bigraph unix utils))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (deps
      (glob_files ../examples/*.big)
-     (glob_files files/*.reference)
-     )
+     (glob_files files/*.reference))
  (action (run %{exe:test_parser.exe}
               %{bin:bigrapher}
               %{dep:files/parser.in}

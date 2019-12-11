@@ -428,7 +428,7 @@ let default_cmd =
              that supports bigraphs with sharing, stochastic reaction rules,
              rule priorities and functional rules." in
    Term.(ret (const run_default $ cfg)),
-   Term.info "bigrapher" ~version:"1.9.0" ~doc ~exits:Term.default_exits ~man:[]
+   Term.info "bigrapher" ~version:Version.version ~doc ~exits:Term.default_exits ~man:[]
 
 let cmds = [check_cmd; sim_cmd; full_cmd]
 

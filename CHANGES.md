@@ -1,3 +1,7 @@
+###1.9.1 (2019-12-11): ###
+
+* Migrate builds to dune 2.0.0
+
 ###1.9.0 (2019-11-25): ###
 
 * Migrate builds to dune
