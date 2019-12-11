@@ -18,3 +18,17 @@ let parse_all dir f_filter =
       ((Filename.chop_extension x),
        (parse (Filename.concat dir x)
         |> String.concat "\n")))
+
+let safe_mkdir dir =
+  if not (Sys.file_exists dir) then
+    try
+      Unix.mkdir dir 0o755
+    with
+      Unix.Unix_error(Unix.EEXIST,_,_) -> ()
+
+let mkdir dir =
+  let rec aux dir =
+    if not (Sys.file_exists dir) then begin
+      aux (Filename.dirname dir);
+      safe_mkdir dir; end in
+  aux dir

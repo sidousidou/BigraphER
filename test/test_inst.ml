@@ -77,6 +77,7 @@ let () =
            [ xml_block "failure" [ ("message", "Wrong rewriting") ] [ ] ]))
       test in
   print_endline "OK";
+  Io.mkdir Sys.argv.(1);
   write_xml (testsuite "test_inst" testcases) Sys.argv.(1) Sys.argv.(2);
   print_endline "Done!";
   exit 0
