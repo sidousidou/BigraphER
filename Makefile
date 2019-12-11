@@ -20,7 +20,7 @@ test:
 doc:
 	dune build @doc
 
-ARCH = bigraph-1.3.0.tar.gz
+ARCH = bigraph-1.3.1.tar.gz
 
 dist:
 	git archive --format=tar --prefix="bigraph/" HEAD | gzip -n > $(ARCH)
