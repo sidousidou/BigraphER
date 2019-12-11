@@ -72,7 +72,7 @@ val blocking_pairs : (int * int) list -> clause list
             variables, and a conjunction of binary clauses: ["(!Z1 or X1) and
             (!Z1 or Y1) and ... (!Zn or Xn) and (!Zn or Yn)"].  Note, the
             encoding is not applied ({e i.e.} the result is in the form
-            {!const:Cnf.tseitin_clause.Conj}) if the input list has length less
+            {!constructor:Cnf.tseitin_clause.Conj}) if the input list has length less
             than three. *)
 val tseitin : (lit * lit) list -> tseitin_clause
 
