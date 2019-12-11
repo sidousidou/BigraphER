@@ -20,5 +20,4 @@
     (minisat (>= 0.5.3))
     (odoc :with-doc))
   (conflicts
-    (bigrapher (<= 1.6.1))))  
-
+    (bigrapher (<= 1.6.1))))
