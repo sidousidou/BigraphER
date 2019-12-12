@@ -4,6 +4,7 @@ _build
 # Generated files
 shippable
 */*.merlin
+bigrapher.opam
 
 # profiler
 massif*
