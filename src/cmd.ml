@@ -267,7 +267,7 @@ let empty_to_none = function
   | None -> None
 
 let copts consts debug decs ext graph lbls prism
-          ml quiet states verbose nocols =
+      (*ml*) quiet states verbose nocols =
    defaults.consts             <- consts;
    defaults.debug              <- debug;
    defaults.export_decs        <- decs;
@@ -275,7 +275,7 @@ let copts consts debug decs ext graph lbls prism
    defaults.export_graph       <- graph;
    defaults.export_lab         <- lbls;
    defaults.export_prism       <- prism;
-   defaults.export_ml          <- ml;
+   (* defaults.export_ml          <- ml; *)
    defaults.quiet              <- quiet;
    (* States have extra handling to ensure that the directory is inferred
     * from export-ts if required *)
@@ -321,10 +321,10 @@ let copts_t =
     let doc = "Export the transition system in PRISM tra format to $(docv)." in
     Arg.(value & opt_str & info ["p";"export-prism"] ~docv:"FILE" ~doc)
   in
-  let ml      =
-    let doc = "Export the model in OCaml format to $(docv)" in
-    Arg.(value & opt_str & info ["m";"export-ml"] ~docv:"FILE" ~doc)
-  in
+  (* let ml      =
+   *   let doc = "Export the model in OCaml format to $(docv)" in
+   *   Arg.(value & opt_str & info ["m";"export-ml"] ~docv:"FILE" ~doc)
+   * in *)
   let quiet   =
     let doc = "Disable progress indicator." in
     let env = Arg.env_var "BIGQUIET" ~doc in
@@ -348,7 +348,7 @@ let copts_t =
     Arg.(value & flag & info ["n";"no-colors"] ~doc ~env)
   in
   Term.(const copts $ consts $ debug $ decs $ ext $ graph $ lbls $ prism
-                    $ ml $ quiet $ states $ verbose $ nocols)
+        (* $ ml *)  $ quiet $ states $ verbose $ nocols)
 
 (* Sim options *)
 let sim_opts time steps =

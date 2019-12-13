@@ -1,7 +1,8 @@
-###1.9.1 (2019-12-09): ###
+###1.9.1 (2019-12-13): ###
 
 * Add support for string expressions in declarations, control parameters, and
   BRS parameters
+* Disabled support for ml export due to missing/incorrect results being produced
 
 ###1.9.0 (2019-11-25): ###
 
