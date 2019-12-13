@@ -21,7 +21,7 @@ test:
 doc:
 	dune build @doc
 
-ARCH = bigrapher-1.9.0.tar.gz
+ARCH = bigrapher-1.9.1.tar.gz
 
 dist:
 	git archive --format=tar --prefix="bigrapher/" HEAD | gzip -n > $(ARCH)

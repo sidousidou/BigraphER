@@ -1,5 +1,6 @@
 ###1.9.1 (2019-12-13): ###
 
+* Migrate builds to dune 2.0.0
 * Add support for string expressions in declarations, control parameters, and
   BRS parameters
 * Disabled support for ml export due to missing/incorrect results being produced
