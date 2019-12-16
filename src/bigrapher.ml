@@ -1,4 +1,3 @@
-open Format
 open Ast
 open Bigraph
 
@@ -16,77 +15,78 @@ type val_type = [ `s of string | `i of int | `f of float ]
 type row =
   { descr:   string * Utils.text_style;
     value:   val_type;
-    pp_val:  formatter -> val_type -> unit;
+    pp_val:  Format.formatter -> val_type -> unit;
     display: bool; }
 
 let print_msg fmt c msg =
   if not Cmd.(defaults.debug) then
-    fprintf fmt "@?@[%s@]@." (colorise c msg)
+    Format.fprintf fmt "@?@[%s@]@." (colorise c msg)
 
 let print_descr fmt (d, c) =
-  fprintf fmt "%s" (colorise c d)
+  Format.fprintf fmt "%s" (colorise c d)
 
-let print_float unit fmt = function
-  | `f f  -> fprintf fmt "@[<h>%-3g%s@]" f unit
+let pp_float unit fmt = function
+  | `f f  -> Format.fprintf fmt "@[<h>%-3g%s@]" f unit
   | `i _
   | `s _ -> assert false (*BISECT-IGNORE*)
 
-let print_string fmt = function
-  | `s s -> fprintf fmt "@[<h>%s@]" s
+let pp_string fmt = function
+  | `s s -> Format.fprintf fmt "@[<h>%s@]" s
   | `i _
   | `f _ -> assert false (*BISECT-IGNORE*)
 
-let print_int fmt = function
-  | `i i -> fprintf fmt "@[<h>%-8d@]" i
+let pp_int fmt = function
+  | `i i -> Format.fprintf fmt "@[<h>%-8d@]" i
   | `f _
   | `s _ -> assert false (*BISECT-IGNORE*)
 
 let print_table fmt (rows : row list) =
   let pp_row fmt r =
-    pp_print_tab fmt ();
-    fprintf fmt "%a" print_descr r.descr;
-    pp_print_tab fmt ();
-    fprintf fmt "%a" r.pp_val r.value in
+    Format.(
+        pp_print_tab fmt ();
+        fprintf fmt "%a" print_descr r.descr;
+        pp_print_tab fmt ();
+        fprintf fmt "%a" r.pp_val r.value) in
   match List.filter (fun r -> r.display) rows with
   |  r :: rows ->
-    (pp_open_tbox fmt ();
-     (* First row *)
-     pp_set_tab fmt ();
-     fprintf fmt "@[<h>%s" (colorise (snd r.descr) (fst r.descr));
-     pp_print_break fmt (15 - (String.length (fst r.descr))) 0;
-     fprintf fmt "@]";
-     pp_set_tab fmt ();
-     fprintf fmt "%a" r.pp_val r.value;
-     List.iter (pp_row fmt) rows;
-     pp_close_tbox fmt ();
-     Format.pp_print_newline fmt ())
+      Format.(pp_open_tbox fmt ();
+              (* First row *)
+              pp_set_tab fmt ();
+              fprintf fmt "@[<h>%s" (colorise (snd r.descr) (fst r.descr));
+              pp_print_break fmt (15 - (String.length (fst r.descr))) 0;
+              fprintf fmt "@]";
+              pp_set_tab fmt ();
+              fprintf fmt "%a" r.pp_val r.value;
+              List.iter (pp_row fmt) rows;
+              pp_close_tbox fmt ();
+              pp_print_newline fmt ())
   | _ -> assert false (*BISECT-IGNORE*)
 
 let print_header fmt () =
   if not Cmd.(defaults.debug) then
     begin
-      fprintf fmt "@[<v>@,%s@,%s@,"
+      Format.fprintf fmt "@[<v>@,%s@,%s@,"
         (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
         "========================================";
       [{ descr = ("Version:", `blue);
          value = `s (String.trim Version.version);
-         pp_val = print_string;
+         pp_val = pp_string;
          display = true; };
        { descr = ("Date:", `blue);
          value = `s (Utils.format_time ());
-         pp_val = print_string;
+         pp_val = pp_string;
          display = true; };
        { descr = ("Hostname:", `blue);
          value = `s (Unix.gethostname ());
-         pp_val = print_string;
+         pp_val = pp_string;
          display = true; };
        { descr = ("OS type:", `blue);
          value = `s Sys.os_type;
-         pp_val = print_string;
+         pp_val = pp_string;
          display = true; };
        { descr = ("Command line:", `blue);
          value = `s (String.concat " " (Array.to_list Sys.argv));
-         pp_val = print_string;
+         pp_val = pp_string;
          display = true; }]
       |> print_table fmt
     end
@@ -95,7 +95,7 @@ let print_max fmt =
   print_table fmt
     [{ descr = ("Max # states:", `cyan);
        value = `i Cmd.(defaults.max_states);
-       pp_val = print_int;
+       pp_val = pp_int;
        display = true; }]
 
 let print_max_sim fmt = function
@@ -103,18 +103,18 @@ let print_max_sim fmt = function
     print_table fmt
       [{ descr = ("Max sim steps:", `cyan);
          value = `i Cmd.(defaults.steps);
-         pp_val = print_int;
+         pp_val = pp_int;
          display = true; }]
   | Rs.SBRS ->
     print_table fmt
       [{ descr = ("Max sim time:", `cyan);
          value = `f Cmd.(defaults.time);
-         pp_val = print_float "";
+         pp_val = pp_float "";
          display = true; }]
 
 let open_progress_bar () =
   if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
-    Pervasives.print_string "\n["
+    print_string "\n["
 
 let print_loop i _ =
   if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
@@ -124,20 +124,20 @@ let print_loop i _ =
           Cmd.(defaults.max_states) / 1000
         else 1 in
       match (i + 1) mod (max_width * m) with
-      | 0 -> (Pervasives.print_char '.';
-              Pervasives.print_string "  ";
-              Pervasives.print_int (i + 1);
-              Pervasives.print_newline ();
-              Pervasives.print_char ' ';
-              Pervasives.flush stdout)
-      | i when i mod m = 0 -> (Pervasives.print_char '.';
-                               Pervasives.flush stdout)
+      | 0 -> (print_char '.';
+              print_string "  ";
+              print_int (i + 1);
+              print_newline ();
+              print_char ' ';
+              flush stdout)
+      | i when i mod m = 0 -> (print_char '.';
+                               flush stdout)
       | _ -> ()
     end
 
 let close_progress_bar () =
   if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
-    Pervasives.print_string "]\n\n"
+    print_string "]\n\n"
 
 (******** EXPORT FUNCTIONS *********)
 
@@ -162,10 +162,10 @@ let export_prism fmt msg f =
        |> print_fun fmt `white Cmd.(defaults.verb) file
      with
      | Rs.EXPORT_ERROR e ->
-       (pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>@[%s: %s@]@."
-          (Utils.err_opt Cmd.(defaults.colors))
-          e))
+       Format.(pp_print_flush fmt ();
+               fprintf err_formatter "@[<v>@[%s: %s@]@."
+                 (Utils.err_opt Cmd.(defaults.colors))
+                 e))
 
 let export_csl fmt f =
   match Cmd.(defaults.export_lab) with
@@ -177,10 +177,10 @@ let export_csl fmt f =
        |> print_fun fmt `white Cmd.(defaults.verb) file
      with
      | Rs.EXPORT_ERROR e ->
-       (pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>@[%s: %s@]@."
-          (Utils.err_opt Cmd.(defaults.colors))
-          e))
+       Format.(pp_print_flush fmt ();
+               fprintf err_formatter "@[<v>@[%s: %s@]@."
+                 (Utils.err_opt Cmd.(defaults.colors))
+                 e))
 
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
@@ -200,10 +200,10 @@ let export_states fmt f g =
                    (Filename.concat path fname)
                with
                | Failure msg ->
-                 (pp_print_flush fmt ();
-                  fprintf err_formatter "@[<v>@[%s: %s@]@."
-                    (Utils.err_opt Cmd.(defaults.colors))
-                    msg) in
+                 Format.(pp_print_flush fmt ();
+                         fprintf err_formatter "@[<v>@[%s: %s@]@."
+                           (Utils.err_opt Cmd.(defaults.colors))
+                           msg) in
              Cmd.(defaults.out_format)
              |> List.map format_map
              |> List.iter (fun (f, ext) ->  aux i s f ext))
@@ -228,15 +228,15 @@ let export_ts fmt msg formats =
            |> print_fun fmt `white Cmd.(defaults.verb) file
          with
          | Rs.EXPORT_ERROR e ->
-           (pp_print_flush fmt ();
-            fprintf err_formatter "@[<v>@[%s: %s@]@."
-              (Utils.err_opt Cmd.(defaults.colors))
-              e))
+            Format.(pp_print_flush fmt ();
+                    fprintf err_formatter "@[<v>@[%s: %s@]@."
+                      (Utils.err_opt Cmd.(defaults.colors))
+                      e))
        formats)
 
 let check fmt =
   print_msg fmt `yellow "Model file parsed correctly";
-  pp_print_flush err_formatter ();
+  Format.(pp_print_flush err_formatter ());
   exit 0
 
 module Run
@@ -286,10 +286,10 @@ module Run
         path
     with
     | Export.ERROR e ->
-      (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>@[%s: %s@]@."
-         (Utils.err_opt Cmd.(defaults.colors))
-         (Export.report_error e))
+      Format.(pp_print_flush fmt ();
+              fprintf err_formatter "@[<v>@[%s: %s@]@."
+                (Utils.err_opt Cmd.(defaults.colors))
+                (Export.report_error e))
 
   let export_model fmt m env env_t =
     (* DECLARATIONS *)
@@ -304,15 +304,15 @@ module Run
   let print_stats_store fmt env priorities =
     [{ descr = ("Type:", `cyan);
        value = `s (Rs.to_string T.typ);
-       pp_val = print_string;
+       pp_val = pp_string;
        display = true; };
      { descr = ("Bindings:", `cyan);
        value = `i (Base.H_string.length env);
-       pp_val = print_int;
+       pp_val = pp_int;
        display = true; };
      { descr = ("# of rules:", `cyan);
        value = `i (T.cardinal priorities);
-       pp_val = print_int;
+       pp_val = pp_int;
        display = true; }]
     |> print_table fmt
 
@@ -321,7 +321,7 @@ module Run
     |> List.map (fun (descr, value, flag) ->
         { descr = (descr, `green);
           value = `s value;
-          pp_val = print_string;
+          pp_val = pp_string;
           display =  (not Cmd.(defaults.debug) || not flag); })
     |> print_table fmt
 
@@ -341,7 +341,7 @@ module Run
       ("Exporting " ^ (Rs.to_string T.typ) ^ " in PRISM format to ")
       (E.write_prism graph);
     export_csl fmt (E.write_lab graph);
-    pp_print_flush err_formatter ();
+    Format.(pp_print_flush err_formatter ());
     exit 0
 
   let sim fmt s0 priorities preds =
@@ -372,7 +372,7 @@ module Run
       (Sys.Signal_handle (fun _ ->
            close_progress_bar ();
            print_msg fmt `yellow "Execution interrupted by the user.";
-           pp_print_flush err_formatter ();
+           Format.(pp_print_flush err_formatter ());
            exit 0))
 
   let run_aux fmt s0 priorities preds = function
@@ -423,12 +423,12 @@ module Run
       run_aux fmt s0 pri preds exec_type
     with
     | S.ERROR (e, p) ->
-      (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>";
-       Loc.print_loc err_formatter p;
-       S.report_error err_formatter c e;
-       pp_print_flush err_formatter ();
-       exit 1)
+       Format.(pp_print_flush fmt ();
+               fprintf err_formatter "@[<v>";
+               Loc.print_loc err_formatter p;
+               S.report_error err_formatter c e;
+               pp_print_flush err_formatter ();
+               exit 1)
 
 end
 
@@ -450,9 +450,9 @@ let open_lex model =
 let set_output_ch () =
   if Cmd.(defaults.quiet) then begin
     Cmd.(defaults.verb <- false); (* Ignore verbose flag *)
-    str_formatter
+    Format.str_formatter
   end else
-    std_formatter
+    Format.std_formatter
 
 let () =
   let exec_type = Cmd.parse_cmds in
@@ -538,38 +538,38 @@ let () =
     with
     | Place.NOT_PRIME ->
       (close_progress_bar ();
-       fprintf
-         err_formatter
-         "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
-         (Utils.err_opt Cmd.(defaults.colors));
+       Format.(fprintf
+                 err_formatter
+                 "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
+                 (Utils.err_opt Cmd.(defaults.colors)));
        exit 1)
     | Parser.Error ->
-      (pp_print_flush fmt ();
-       fprintf err_formatter "@[<v>";
-       Loc.print_loc err_formatter
-         Loc.{lstart = Lexing.(lexbuf.lex_start_p);
-              lend = Lexing.(lexbuf.lex_curr_p)};
-       fprintf
-         err_formatter
-         "@[%s: Syntax error near token `%s'@]@."
-         (Utils.err_opt Cmd.(defaults.colors))
-         (Lexing.lexeme lexbuf);
-       exit 1)
+       Format.(pp_print_flush fmt ();
+               fprintf err_formatter "@[<v>";
+               Loc.print_loc err_formatter
+                 Loc.{lstart = Lexing.(lexbuf.lex_start_p);
+                      lend = Lexing.(lexbuf.lex_curr_p)};
+               fprintf
+                 err_formatter
+                 "@[%s: Syntax error near token `%s'@]@."
+                 (Utils.err_opt Cmd.(defaults.colors))
+                 (Lexing.lexeme lexbuf);
+               exit 1)
   with
   | Lexer.ERROR (e, p) ->
-    (fprintf err_formatter "@[<v>";
-     Loc.print_loc err_formatter p;
-     Lexer.report_error err_formatter
-       (Utils.err_opt Cmd.(defaults.colors))
-       e;
-     pp_print_newline err_formatter ();
-     exit 1)
+     Format.(fprintf err_formatter "@[<v>";
+             Loc.print_loc err_formatter p;
+             Lexer.report_error err_formatter
+               (Utils.err_opt Cmd.(defaults.colors))
+               e;
+             pp_print_newline err_formatter ();
+             exit 1)
   | Sys_error s ->
-    (fprintf err_formatter "@[%s: %s@]@."
-       (Utils.err_opt Cmd.(defaults.colors))
-       s;
-     exit 1)
+     Format.(fprintf err_formatter "@[%s: %s@]@."
+               (Utils.err_opt Cmd.(defaults.colors))
+               s;
+             exit 1)
   | e ->
-    (fprintf err_formatter "@[%s@,%s@]@."
-       (Printexc.to_string e) (Printexc.get_backtrace ());
-     exit 1)
+     Format.(fprintf err_formatter "@[%s@,%s@]@."
+               (Printexc.to_string e) (Printexc.get_backtrace ());
+             exit 1)
