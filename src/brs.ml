@@ -3,7 +3,8 @@ type react =
   { name : string;
     rdx  : Big.t;                  (* Redex   --- lhs   *)
     rct  : Big.t;                  (* Reactum --- rhs   *)
-    eta  : Fun.t option            (* Instantiation map *)
+    eta  : Fun.t option;           (* Instantiation map *)
+    conds : AppCond.t list         (* Application conditions *)
   }
 
 module RT = struct
@@ -17,6 +18,8 @@ module RT = struct
   let lhs r = r.rdx
 
   let rhs r = r.rct
+
+  let conds r = r.conds
 
   let l _ = ()
 
@@ -35,15 +38,17 @@ module RT = struct
 
   let string_of_label _ = ""
 
-  let parse ~name ~lhs ~rhs _ eta =
+  let parse ~name ~lhs ~rhs ?conds:(c=[]) _ eta =
     { name = name;
       rdx  = lhs;
       rct  = rhs;
-      eta  = eta; }
+      eta  = eta;
+      conds = c; }
 
   let step b rules =
-    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
 
+  (* TODO: Why does this do the rewrite but the pbrs just calls the gen_step? PBRS does all steps then filters? *)
   let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function
@@ -114,8 +119,8 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
-let parse_react_unsafe ~name ~lhs ~rhs eta =
-  parse_react_unsafe ~name ~lhs ~rhs () eta (* Label is ignored *)
+let parse_react_unsafe ~name ~lhs ~rhs ?conds eta =
+  parse_react_unsafe ~name ~lhs ~rhs ?conds () eta (* Label is ignored *)
 
-let parse_react ~name ~lhs ~rhs eta =
-  parse_react ~name ~lhs ~rhs () eta (* Label is ignored *)
+let parse_react ~name ~lhs ~rhs ?conds eta =
+  parse_react ~name ~lhs ~rhs ?conds () eta (* Label is ignored *)

@@ -39,6 +39,7 @@ module type RS = sig
   val name : react -> string
   val lhs : react -> Big.t
   val rhs : react -> Big.t
+  val conds : react -> AppCond.t list
   val map : react -> Fun.t option
   val string_of_limit : limit -> string
   val is_valid_react : react -> bool
@@ -76,9 +77,9 @@ module type RS = sig
   val iter_edges : (int -> int -> label -> unit) -> graph -> unit
   val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
   val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> react
+    ?conds:AppCond.t list -> label -> Fun.t option -> react
   val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> react option
+    ?conds:AppCond.t list -> label -> Fun.t option -> react option
 end
 
 module Make (R : RrType.T)
@@ -130,16 +131,18 @@ module Make (R : RrType.T)
   val string_of_react : R.t -> string
 
   val parse_react_unsafe : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> R.t
+    ?conds:AppCond.t list -> label -> Fun.t option -> R.t
 
   val parse_react : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> R.t option
+    ?conds:AppCond.t list -> label -> Fun.t option -> R.t option
 
   val name : R.t -> string
 
   val lhs : R.t -> Big.t
 
   val rhs : R.t -> Big.t
+
+  val conds : R.t -> AppCond.t list
 
   val map : R.t -> Fun.t option
 

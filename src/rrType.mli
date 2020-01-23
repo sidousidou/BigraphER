@@ -6,6 +6,7 @@ sig
   val name : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
+  val conds : t -> AppCond.t list
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
@@ -15,7 +16,7 @@ sig
   val val_chk_error_msg : string
   val string_of_label : label -> string
   val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> t
+    ?conds:AppCond.t list -> label -> Fun.t option -> t
   val step : Big.t -> t list -> (Big.t * label * t list) list * int
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
@@ -29,13 +30,14 @@ sig
   val name : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
+  val conds : t -> AppCond.t list
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
   val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list)
     -> (Big.t * label * t list)
   val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> t
+    ?conds:AppCond.t list -> label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
   val is_valid_exn : t -> bool
@@ -67,6 +69,9 @@ module Make (R : R) : sig
   (** Return the right-hand side of a rewrite rule. *)
   val rhs : t -> Big.t
 
+  (** Return application conditions for a rewrite rule. *)
+  val conds: t -> AppCond.t list
+
   (** Return the label of a rewrite rule. *)
   val l : t -> label
 
@@ -82,7 +87,7 @@ module Make (R : R) : sig
 
   (** Creare a new reaction rule. *)
   val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> t
+    ?conds:AppCond.t list -> label -> Fun.t option -> t
 
   (** String representation of a rewrite rule. *)
   val to_string : t -> string
@@ -137,6 +142,7 @@ val gen_step :
   rhs:('a -> Big.t) ->
   label:('a -> 'b) ->
   map:('a -> Fun.t option) ->
+  conds:('a -> AppCond.t list) ->
   (Big.t * 'b * 'a list) list * int
 
 (**/**)

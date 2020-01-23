@@ -3,7 +3,8 @@ type react =
     rdx  : Big.t;                  (* Redex   --- lhs   *)
     rct  : Big.t;                  (* Reactum --- rhs   *)
     eta  : Fun.t option;           (* Instantiation map *)
-    rate : float                   (* Reaction rate     *)
+    rate : float;                  (* Reaction rate     *)
+    conds : AppCond.t list         (* Application conditions *)
   }
 
 module RT = struct
@@ -17,6 +18,8 @@ module RT = struct
   let lhs r = r.rdx
 
   let rhs r = r.rct
+
+  let conds r = r.conds
 
   let l r = r.rate
 
@@ -36,15 +39,16 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~name ~lhs ~rhs r eta =
+  let parse ~name ~lhs ~rhs ?conds:(c=[]) r eta =
     { name = name;
       rdx  = lhs;
       rct  = rhs;
       eta  = eta;
-      rate = r; }
+      rate = r;
+      conds =  c; }
 
   let step b rules =
-    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
 
   let random_step b rules =
     (* Sort transitions by rate *)

@@ -5,6 +5,7 @@ sig
   val name : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
+  val conds : t -> AppCond.t list
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
@@ -14,7 +15,7 @@ sig
   val val_chk_error_msg : string
   val string_of_label : label -> string
   val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> t
+    ?conds:AppCond.t list -> label -> Fun.t option -> t
   val step : Big.t -> t list -> (Big.t * label * t list) list * int
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
@@ -28,13 +29,14 @@ sig
   val name : t -> string
   val lhs : t -> Big.t
   val rhs : t -> Big.t
+  val conds : t -> AppCond.t list
   val l : t -> label
   val equal : t -> t -> bool
   val map : t -> Fun.t option
   val merge_occ : (Big.t * label * t list) -> (Big.t * label * t list) ->
     (Big.t * label * t list)
   val parse : name:string -> lhs:Big.t -> rhs:Big.t ->
-    label -> Fun.t option -> t
+    ?conds:AppCond.t list -> label -> Fun.t option -> t
   val to_string : t -> string
   val is_valid : t -> bool
   val is_valid_exn : t -> bool
@@ -68,9 +70,27 @@ let filter_iso merge_occ l =
 let gen_step s rules
     (merge_occ:(Big.t * 'b * 'c list) -> (Big.t * 'b * 'c list) ->
      (Big.t * 'b * 'c list))
-    ~lhs ~rhs ~label ~map  =
+    ~lhs ~rhs ~label ~map ~conds =
+  let check_cond (cnd:AppCond.t) ctx param =
+    match cnd.where with
+    | Ctx ->
+      begin
+        let found = Big.occurs ~target:ctx ~pattern:cnd.pred in
+        if cnd.neg then not found else found
+      end
+    | Param ->
+      begin
+        let found = Big.occurs ~target:param ~pattern:cnd.pred in
+        if cnd.neg then not found else found
+      end
+  in
+  let filter_conds r (i_n, i_e, f) =
+    let (ctx, _, prm) = Big.decomp ~target:s ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e f in
+    List.for_all (fun cnd -> check_cond cnd ctx prm) (conds r)
+  in
   let aux2 acc r =
     (Big.occurrences ~target:s ~pattern:(lhs r)
+     |> List.filter (filter_conds r)
      (* Parmap.parmap *)
      |> List.map (fun o ->
          (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r, [r])))
