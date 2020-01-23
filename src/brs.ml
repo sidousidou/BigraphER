@@ -48,26 +48,18 @@ module RT = struct
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
 
-  (* TODO: Why does this do the rewrite but the pbrs just calls the gen_step? PBRS does all steps then filters? *)
   let random_step b rules =
     (* Remove element with index i *)
     let rec aux i i' acc = function
       | [] -> assert false (*BISECT-IGNORE*)
       | x :: l -> if i = i' then (x, l @ acc)
         else aux i (i' + 1) (x :: acc) l in
-    let t = Place.trans b.Big.p in
-    let rec _random_step s m = function
-      | [] -> (None, m)
-      | rs ->
-        (let (r, rs') =
-           aux (Random.int (List.length rs)) 0 [] rs in
-         match Big.occurrence ~target:s ~pattern:(lhs r) t with
-         | Some o ->
-           (Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), (), [r]),
-            m + 1)
-         | None -> _random_step s (m + 1) rs') in
-    _random_step b 0 rules
-
+    let (ss, m) = step b rules in
+    match ss with
+    | [] -> (None, m)
+    | _ -> let (s, _) =
+            aux (Random.int (List.length ss)) 0 [] ss
+          in (Some s, m)
 end
 
 module R = RrType.Make (RT)
