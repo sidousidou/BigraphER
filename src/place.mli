@@ -153,7 +153,7 @@ val is_guard : t -> bool
     and node isomorphism [i] from [p] to [t]. Pattern [p] is assumed epi and
     mono. The result tuple [(c, id, d, iso_c, iso_d)] is formed by context [c],
     identity [id], parameter [d], and nodes in [c] and [d] expressed as rows of
-    [t]. *)
+    [t]. The decomposition is with respect to the minimal parameter *)
 val decomp : target:t -> pattern:t -> Iso.t -> t * t * t * Iso.t * Iso.t
 
 (** Raised when a place graph cannot be decomposed into prime components. The

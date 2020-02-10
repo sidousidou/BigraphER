@@ -1,3 +1,8 @@
+###1.3.2 (2020-02-10): ###
+
+* Add support for application conditions
+* `Big.decomp` now returns a minimal paramter decomposition
+
 ###1.3.1 (2019-11-11): ###
 
 * Migrate build system to `dune 2.0.0`
