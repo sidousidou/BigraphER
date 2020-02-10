@@ -71,22 +71,10 @@ let gen_step s rules
     (merge_occ:(Big.t * 'b * 'c list) -> (Big.t * 'b * 'c list) ->
      (Big.t * 'b * 'c list))
     ~lhs ~rhs ~label ~map ~conds =
-  let check_cond (cnd:AppCond.t) ctx param =
-    match cnd.where with
-    | Ctx ->
-      begin
-        let found = Big.occurs ~target:ctx ~pattern:cnd.pred in
-        if cnd.neg then not found else found
-      end
-    | Param ->
-      begin
-        let found = Big.occurs ~target:param ~pattern:cnd.pred in
-        if cnd.neg then not found else found
-      end
-  in
   let filter_conds r (i_n, i_e, f) =
-    let (ctx, _, prm) = Big.decomp ~target:s ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e f in
-    List.for_all (fun cnd -> check_cond cnd ctx prm) (conds r)
+    let (ctx, prm, _id) =
+      Big.decomp ~target:s ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e f in
+    List.for_all (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
   in
   let aux2 acc r =
     (Big.occurrences ~target:s ~pattern:(lhs r)
@@ -171,7 +159,14 @@ module Make (R : R) = struct
     else raise (NOT_VALID (Inter_eq_o (i, i')))
 
   let is_enabled b r =
-    Big.occurs ~target:b ~pattern:(lhs r)
+    let conds_valid (i_n, i_e, i_h)=
+     let (ctx, prm, _) =
+        Big.decomp ~target:b ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e i_h in
+       List.for_all (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
+    in
+      match Big.occurrence ~target:b ~pattern:(lhs r) (Place.trans b.Big.p) with
+      | Some o -> conds_valid o
+      | None -> false
 
   let apply b reacts =
     let apply_rule b r =
@@ -179,8 +174,17 @@ module Make (R : R) = struct
               ~target:b
               ~pattern:(lhs r)
               (Place.trans b.Big.p) with
-      | Some o ->
-        Some (Big.rewrite o ~s:b ~r0:(lhs r) ~r1:(rhs r) (map r))
+      | Some (i_n, i_e, i_h) ->
+          begin
+          let (ctx, prm, _id) =
+               Big.decomp ~target:b ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e i_h in
+              if List.for_all
+                  (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
+              then
+                Some (Big.rewrite (i_n, i_e, i_h) ~s:b
+                                  ~r0:(lhs r) ~r1:(rhs r) (map r))
+              else None
+          end
       | None -> None in
     List.fold_left (fun (s, n) r ->
         match apply_rule s r with
@@ -201,9 +205,18 @@ module Make (R : R) = struct
         | [] -> None
         | r :: rs ->
           (match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
-           | Some o ->
-             Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r))
-           | None -> _step s rs) in
+            | Some (i_n, i_e, i_h) ->
+              begin
+              let (ctx, prm, _id) =
+                  Big.decomp ~target:b ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e i_h in
+                  if List.for_all
+                      (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
+                  then
+                    Some (Big.rewrite (i_n, i_e, i_h) ~s:b
+                                      ~r0:(lhs r) ~r1:(rhs r) (map r))
+                  else None
+              end
+            | None -> _step s rs) in
       let rec _fix s rules i =
         match _step s rules with
         | Some b ->  _fix b rules (i + 1)
