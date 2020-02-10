@@ -6,8 +6,9 @@ open Bigraph
 module Make (T: TsType.RS)
     (P: sig
        val parse_react : string -> Big.t -> Big.t ->
-         [ `E of unit | `F of float ]
-         -> Fun.t option -> T.react option
+         ?conds:AppCond.t list ->
+         [ `E of unit | `F of float ] ->
+          Fun.t option -> T.react option
      end) = struct
 
   type store_type =
@@ -45,7 +46,10 @@ module Make (T: TsType.RS)
     | A_ctrl_fun of int * Id.t list
     | React of T.react
     | React_fun of big_exp * big_exp *
-                   Fun.t option * exp option * Id.t list
+                   Fun.t option *
+                   cond_exp list *
+                   exp option *
+                   Id.t list
     | Int_param of int list
     | Float_param of float list
     | Str_param of string list
@@ -91,7 +95,7 @@ module Make (T: TsType.RS)
     | Ctrl_fun (arity, forms)
     | A_ctrl_fun (arity, forms) -> update forms (`ctrl arity)
     | React _ -> (`big_val `react, env_t)
-    | React_fun (_, _, _, _, forms) -> update forms `react
+    | React_fun (_, _, _, _, _, forms) -> update forms `react
     | Int_param _ -> (`param `int, env_t)
     | Float_param _ -> (`param `float, env_t)
     | Str_param _ -> (`param `string, env_t)
@@ -199,7 +203,7 @@ module Make (T: TsType.RS)
       | (A_ctrl _,t,_)
       | (A_ctrl_fun (_,_),t,_)
       | (React _,t,_)
-      | (React_fun (_,_,_,_,_),t,_)
+      | (React_fun (_,_,_,_,_,_),t,_)
       | (Int_param _,t,_)
       | (Str_param _,t,_)
       | (Float_param _,t,_) -> t
@@ -277,7 +281,7 @@ module Make (T: TsType.RS)
       | Ctrl _
       | Ctrl_fun (_,_)
       | React _
-      | React_fun (_,_,_,_,_)
+      | React_fun (_,_,_,_,_,_)
       | Int_param _
       | Str_param _
       | Float_param _ -> false
@@ -306,8 +310,8 @@ module Make (T: TsType.RS)
   let get_react_fun id arg_types p env =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
-    | Some (React_fun (l, r, eta, label, forms), t, _) ->
-      (l, r, label, eta, forms, t)
+    | Some (React_fun (l, r, eta, conds, label, forms), t, _) ->
+      (l, r, label, eta, conds, forms, t)
     | Some x -> raise (ERROR
        (Wrong_type (store_val_type x, `lambda (arg_types, `react)), p))
 
@@ -473,7 +477,7 @@ module Make (T: TsType.RS)
         | A_ctrl _
         | A_ctrl_fun (_,_)
         | React _
-        | React_fun (_,_,_,_,_)
+        | React_fun (_,_,_,_,_,_)
         | Int_param _
         | Str_param _
         | Float_param _ -> assert false (*BISECT-IGNORE*)
@@ -495,7 +499,7 @@ module Make (T: TsType.RS)
           | Int v -> Ctrl.I v
           | Str s -> Ctrl.S s
           | Big _ | Big_fun (_,_) | Ctrl _ | Ctrl_fun (_,_)
-          | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_)
+          | A_ctrl _ | A_ctrl_fun (_,_) | React _ | React_fun (_,_,_,_,_,_)
           | Int_param _ | Float_param _ | Str_param _
             -> assert false (*BISECT-IGNORE*))
         nums in
@@ -639,17 +643,36 @@ module Make (T: TsType.RS)
     | Some (l, _) -> Some (Fun.parse l)
     | None -> None
 
+  let is_some = function
+    | Some _ -> true
+    | None -> false
+
+  let eval_conds conds scope env env_t =
+    let eval_cond (acc, e) c =
+      (* TODO need to accumulate env_t? *)
+      let (p, e') = eval_big c.pred scope env e in
+      let n = is_some c.neg in
+      let w = match c.place with
+        | Cond_Ctx -> AppCond.Ctx
+        | Cond_Param -> AppCond.Param
+      in
+      ( { AppCond.neg = n; AppCond.pred = p; AppCond.where = w } :: acc, e')
+    in
+    List.fold_left eval_cond ([], env_t) conds
+
   (* Similar to binary eval *)
-  let eval_react_aux lhs rhs scope env env_t =
+  let eval_react_aux lhs rhs conds scope env env_t =
     let (lhs_v, env_t') = eval_big lhs scope env env_t in
     let (rhs_v, env_t'') = eval_big rhs scope env env_t' in
-    (lhs_v, rhs_v, env_t'')
+    let (conds', env_t''') = eval_conds conds scope env env_t''
+    in
+    (lhs_v, rhs_v, conds', env_t''')
 
-  let eval_react name lhs rhs eta l scope env env_t p =
-    let (lhs_v, rhs_v, env_t') =
-      eval_react_aux lhs rhs scope env env_t in
+  let eval_react name lhs rhs eta conds l scope env env_t p =
+    let (lhs_v, rhs_v, conds', env_t') =
+      eval_react_aux lhs rhs conds scope env env_t in
     match
-      P.parse_react name lhs_v rhs_v
+      P.parse_react name lhs_v rhs_v ~conds:conds'
         (match l with
          | Some f_exp -> `F (as_float (eval_exp f_exp scope env) p)
          | None -> `E ())
@@ -689,7 +712,7 @@ module Make (T: TsType.RS)
     | (A_ctrl _,_,_)
     | (A_ctrl_fun (_,_),_,_)
     | (React _,_,_)
-    | (React_fun (_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
+    | (React_fun (_,_,_,_,_,_),_,_) -> assert false (*BISECT-IGNORE*)
 
   let is_param id env p =
     match Base.H_string.find env id with
@@ -709,7 +732,7 @@ module Make (T: TsType.RS)
       | A_ctrl _
       | A_ctrl_fun (_,_)
       | React _
-      | React_fun (_,_,_,_,_) -> false
+      | React_fun (_,_,_,_,_,_) -> false
 
   module IdSet = Set.Make(struct
       type t = Id.t
@@ -747,11 +770,11 @@ module Make (T: TsType.RS)
     |> param_scopes env
     |> List.fold_left (fun (acc, env_t) scope ->
         let (exps, args_t) = eval_exps args scope env in
-        let (l, r, label, eta, forms, t) = get_react_fun id args_t p env in
+        let (l, r, label, eta, conds, forms, t) = get_react_fun id args_t p env in
         try
           let env_t' = app_exn env_t (dom_of_lambda t) args_t in
           let scope' = extend_scope scope forms exps args_t p in
-          let (r, env_t'') = eval_react id l r eta label scope' env env_t' p in
+          let (r, env_t'') = eval_react id l r eta conds label scope' env env_t' p in
           (r :: acc, env_t'')
         with
         | UNIFICATION ->
@@ -852,6 +875,10 @@ module Make (T: TsType.RS)
 
   let store_decs fmt c decs env env_t =
     let aux env_t d =
+      let unpack_cnds = function
+        | Some cnds -> cnds
+        | None -> []
+      in
       let upd id v p =
         update fmt c id v p env env_t in
       match d with
@@ -881,13 +908,13 @@ module Make (T: TsType.RS)
          update fmt c id (Big b_v) p env env_t')
       | Dbig (Big_fun_exp (id, forms, exp, p)) ->
         upd id (Big_fun (exp, forms)) p
-      | Dreact (React_exp (id, lhs, rhs, label, eta, p)) ->
+      | Dreact (React_exp (id, lhs, rhs, label, eta, conds, p)) ->
         (let (r_v, env_t') =
-           eval_react id lhs rhs (eval_eta eta) label
+           eval_react id lhs rhs (eval_eta eta) (unpack_cnds conds) label
              ScopeMap.empty env env_t p in
          update fmt c id (React r_v) p env env_t')
-      | Dreact (React_fun_exp (id, forms, lhs, rhs, label, eta, p)) ->
-        upd id (React_fun (lhs, rhs, eval_eta eta, label, forms)) p in
+      | Dreact (React_fun_exp (id, forms, lhs, rhs, label, eta, conds, p)) ->
+        upd id (React_fun (lhs, rhs, eval_eta eta, unpack_cnds conds, label, forms)) p in
     List.fold_left aux env_t decs
 
   let store_consts fmt c consts (env : store) =
@@ -1032,10 +1059,10 @@ module Make (T: TsType.RS)
                         ScopeMap.empty env env_t) in
          f_write b ~name:(id ^ ext) ~path
          |> print_fun (concat (id ^ ext)))
-      | Dreact (React_exp (id, _, _, _, _, p)) ->
+      | Dreact (React_exp (id, _, _, _, _, _, p)) ->
         (let r = get_react id p env in
          write_pair id (T.lhs r) (T.rhs r) (f_write, ext))
-      | Dreact (React_fun_exp (id, _, _, _, _, _, p)) ->
+      | Dreact (React_fun_exp (id, _, _, _, _, _, _, p)) ->
         (let args = aux id in
          let r = aux' eval_react_fun_app id args p in
          write_pair id (T.lhs r) (T.rhs r) (f_write, ext)) in
@@ -1184,7 +1211,7 @@ module Make (T: TsType.RS)
     | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
     | None -> "None"
 
-  let ml_of_react lhs rhs l eta =
+  let ml_of_react lhs rhs l eta _conds =
     match T.typ with
     | Rs.BRS -> "Brs.parse_react_unsafe\n~lhs:("
                 ^ (ml_of_big lhs)
@@ -1259,10 +1286,10 @@ module Make (T: TsType.RS)
       ml_of_dec id [] (ml_of_big exp)
     | Dbig (Big_fun_exp (id, params, exp, _)) ->
       ml_of_dec id params (ml_of_big exp)
-    | Dreact (React_exp (id, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id [] (ml_of_react lhs rhs l eta)
-    | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, _)) ->
-      ml_of_dec id params (ml_of_react lhs rhs l eta)
+    | Dreact (React_exp (id, lhs, rhs, l, eta, conds, _)) ->
+      ml_of_dec id [] (ml_of_react lhs rhs l eta conds)
+    | Dreact (React_fun_exp (id, params, lhs, rhs, l, eta, conds, _)) ->
+      ml_of_dec id params (ml_of_react lhs rhs l eta conds)
     | Dint exp ->
       ml_of_dec exp.d_id [] ("Ctrl.I (" ^ (ml_of_exp exp.d_exp) ^ ")")
     | Dfloat exp  ->

@@ -50,6 +50,11 @@ open Bigraph
 %token            SLASH
 %token            CARET
 
+%token            IF
+%token            CTX
+%token            PARAM
+%token            BANG
+
 %token            LSBR RSBR LCBR RCBR LPAR RPAR 
 %token            COLON SEMICOLON COMMA 
 
@@ -111,10 +116,10 @@ dec_big:
                                             { Big_fun_exp ($3, $5, $8, loc $startpos $endpos) };
 
 dec_react:
-  | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
-      { React_exp ($2, $4, $6, $5, $7, loc $startpos $endpos)           }
-  | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
-      { React_fun_exp ($3, $5, $8, $10, $9, $11, loc $startpos $endpos) };
+  | REACT IDE EQUAL bexp arrow bexp eta_exp_opt option(conds)
+      { React_exp ($2, $4, $6, $5, $7, $8, loc $startpos $endpos)           }
+  | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt option(conds)
+      { React_fun_exp ($3, $5, $8, $10, $9, $11, $12, loc $startpos $endpos) };
 
 arrow:
   | ARR                   { None }
@@ -122,6 +127,19 @@ arrow:
 
 eta_exp_opt:
   eta = option(eta_exp)                     { eta };
+
+conds:
+  IF; conds = separated_list(COMMA, cond)      { conds };
+
+cond:
+  option(is_bang) bexp IN place { { neg = $1; pred = $2; place = $4; loc = loc $startpos $endpos } };
+
+is_bang:
+  | BANG { true }
+
+place:
+  | PARAM { Cond_Param }
+  | CTX   { Cond_Ctx   }
 
 eta_exp:
   | AT LSBR int_list RSBR                   { ($3, loc $startpos $endpos) };

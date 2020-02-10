@@ -100,6 +100,10 @@ rule token =  parse
   | "*"                     { PROD }
   | "/"                     { SLASH }
   | "^"                     { CARET }
+  | "if"                    { IF }
+  | "ctx"                   { CTX }
+  | "param"                 { PARAM }
+  | "!"                     { BANG }
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }

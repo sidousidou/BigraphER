@@ -1,3 +1,7 @@
+###1.9.2 (2020-02-10): ###
+
+* Add support for application conditions on reaction rules
+
 ###1.9.1 (2019-12-13): ###
 
 * Migrate builds to dune 2.0.0
