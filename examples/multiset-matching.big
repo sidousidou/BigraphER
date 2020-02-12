@@ -22,5 +22,5 @@ big s0 = Set.(Square | Circle | Star);
 
 begin brs
   init s0;
-  rules = [{appIfCircle, appIfNoCircle}];
+  rules = [{appIfCircle, appIfNoCircle, appIfNoCircleNoSites}];
 end
