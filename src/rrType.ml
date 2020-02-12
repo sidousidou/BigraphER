@@ -208,7 +208,7 @@ module Make (R : R) = struct
             | Some (i_n, i_e, i_h) ->
               begin
               let (ctx, prm, _id) =
-                  Big.decomp ~target:b ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e i_h in
+                  Big.decomp ~target:s ~pattern:(lhs r) ~i_n:i_n ~i_e:i_e i_h in
                   if List.for_all
                       (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
                   then
