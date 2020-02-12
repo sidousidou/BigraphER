@@ -212,7 +212,7 @@ module Make (R : R) = struct
                   if List.for_all
                       (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
                   then
-                    Some (Big.rewrite (i_n, i_e, i_h) ~s:b
+                    Some (Big.rewrite (i_n, i_e, i_h) ~s
                                       ~r0:(lhs r) ~r1:(rhs r) (map r))
                   else None
               end
