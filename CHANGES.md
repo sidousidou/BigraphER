@@ -1,3 +1,7 @@
+###1.3.2 (2020-02-25): ###
+
+* Fix incorrect identity element for iterated operators
+
 ###1.3.1 (2019-11-11): ###
 
 * Migrate build system to `dune 2.0.0`

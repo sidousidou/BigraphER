@@ -226,7 +226,7 @@ let ppar_of_list =
   List.fold_left (fun acc b -> ppar acc b) id_eps
 
 let ppar_seq ~start ~stop f =
-  fold start stop ppar f id_eps
+    fold start stop ppar f one
 
 let par a b =
   let p = ppar a b in
@@ -239,7 +239,7 @@ let par_of_list =
   List.fold_left (fun acc b -> par acc b) id_eps
 
 let par_seq ~start ~stop f =
-  fold start stop par f id_eps
+  fold start stop par f one
 
 let nest a b =
   let idx = id (Inter (0, face_of_inter (outer b))) in
