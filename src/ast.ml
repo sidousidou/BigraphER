@@ -102,6 +102,8 @@ type big_exp =
   | Big_close of closure_exp                           (* closure *)
   | Big_sub of sub_exp                                 (* substitution *)
   | Big_wire of wire_exp * big_exp  * Loc.t            (* /x y/{y0, y1} /z A *)
+  | Big_iter of int_exp * big_exp * Loc.t	       (* T[n] *)
+  | Big_p_iter of int_exp * big_exp * Loc.t	       (* TT[n] *)
 
 type eta_exp = int list * Loc.t
 

@@ -634,6 +634,14 @@ module Make (T: TsType.RS)
            |> Big.close outer,
            env_t')
       end
+    | Big_iter(n, b, _) ->
+	let n' = eval_int n scope env in
+	let (b_v, env_t') = eval_big b scope env env_t in
+	(Big.par_seq 0 n' (fun i -> b_v), env_t')
+    | Big_p_iter(n, b, _) ->
+	let n' = eval_int n scope env in
+	let (b_v, env_t') = eval_big b scope env env_t in
+	(Big.ppar_seq 0 n' (fun i -> b_v), env_t')
 
   let eval_eta = function
     | Some (l, _) -> Some (Fun.parse l)
