@@ -11,8 +11,9 @@ fun big b(n) = T[n] B;
 big c = a(7) || C.(b(7));
 
 react r = A{x} --> A{x};
+react s = B --> B;
 
 begin brs
   init c;
-  rules = [{r}];
+  rules = [{r, s}];
 end
