@@ -339,7 +339,13 @@ module Make (T: TsType.RS)
 
   let eval_var (exp : var_exp) (scope : scope) (env : store) =
     match exp with
-    | Var (id, p) -> get_var id p scope env
+    | Var (id, p) ->
+       let v = get_var id p scope env in
+       (* let () = match v with
+        *           | Float f -> print_endline (id ^ " has val " ^ (string_of_float f))
+        *           | Int i -> print_endline (id ^ " has val " ^ (string_of_int i))
+        *           | _ -> () in *)
+       v
 
   let eval_plus (a : store_val) (b : store_val) p =
       match a, b with
@@ -634,14 +640,14 @@ module Make (T: TsType.RS)
            |> Big.close outer,
            env_t')
       end
-    | Big_iter(n, b, _) ->
-	let n' = eval_int n scope env in
-	let (b_v, env_t') = eval_big b scope env env_t in
-	(Big.par_seq 0 n' (fun i -> b_v), env_t')
-    | Big_p_iter(n, b, _) ->
-	let n' = eval_int n scope env in
-	let (b_v, env_t') = eval_big b scope env env_t in
-	(Big.ppar_seq 0 n' (fun i -> b_v), env_t')
+    | Big_iter(n, b, p) ->
+        let n' = as_int (eval_exp n scope env) p in
+        let (b_v, env_t') = eval_big b scope env env_t in
+        (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
+    | Big_p_iter(n, b, p) ->
+        let n' = as_int (eval_exp n scope env) p in
+        let (b_v, env_t') = eval_big b scope env env_t in
+        (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
 
   let eval_eta = function
     | Some (l, _) -> Some (Fun.parse l)
@@ -1187,6 +1193,12 @@ module Make (T: TsType.RS)
           "Big.rename ~inner:(" ^ (ml_of_face cs.m_cl_names) ^ ") ~"
           ^ outer ^ " (" ^ (ml_of_big b) ^ ") |> Big.close " ^ outer
       end
+    | Big_iter(n, b, _) ->
+        "Big.par_seq ~start:0 ~stop:" ^ (ml_of_exp n)
+      ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
+    | Big_p_iter(n, b, _) ->
+        "Big.ppar_seq ~start:0 ~stop:" ^ (ml_of_exp n)
+      ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
 
   let ml_of_eta = function
     | Some (l, _) -> "Some (Fun.parse " ^ (ml_of_ints l) ^ ")"
