@@ -49,8 +49,8 @@ open Bigraph
 %token            PROD
 %token            SLASH
 %token            CARET
-%token		  ITERM
-%token		  ITERP
+%token            PAR
+%token            PPAR
 
 %token            LSBR RSBR LCBR RCBR LPAR RPAR 
 %token            COLON SEMICOLON COMMA 
@@ -268,8 +268,10 @@ simple_bexp:
   | IDE LPAR exp_list RPAR                  { Big_var_fun ($1, $3, loc $startpos $endpos) }
   | ion_exp                                 { Big_ion $1                                  }
   | ion_exp DOT simple_bexp                 { Big_nest ($1, $3, loc $startpos $endpos)    }
-  | ITERM LSBR exp RSBR simple_bexp	      { Big_iter ($3, $5, loc $startpos $endpos)	  }
-  | ITERP LSBR exp RSBR simple_bexp	      { Big_p_iter ($3, $5, loc $startpos $endpos)  };
+  | PAR LPAR exp COMMA bexp RPAR
+                                            { Big_par_fn ($3, $5, loc $startpos $endpos)  }
+  | PPAR LPAR exp COMMA bexp RPAR
+                                            { Big_ppar_fn ($3, $5, loc $startpos $endpos) };
 
 id_exp:
   | ID o_delim_int_1                        { { id_place = $2;

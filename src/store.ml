@@ -640,11 +640,11 @@ module Make (T: TsType.RS)
            |> Big.close outer,
            env_t')
       end
-    | Big_iter(n, b, p) ->
+    | Big_par_fn(n, b, p) ->
         let n' = as_int (eval_exp n scope env) p in
         let (b_v, env_t') = eval_big b scope env env_t in
         (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
-    | Big_p_iter(n, b, p) ->
+    | Big_ppar_fn(n, b, p) ->
         let n' = as_int (eval_exp n scope env) p in
         let (b_v, env_t') = eval_big b scope env env_t in
         (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
@@ -1193,10 +1193,10 @@ module Make (T: TsType.RS)
           "Big.rename ~inner:(" ^ (ml_of_face cs.m_cl_names) ^ ") ~"
           ^ outer ^ " (" ^ (ml_of_big b) ^ ") |> Big.close " ^ outer
       end
-    | Big_iter(n, b, _) ->
+    | Big_par_fn(n, b, _) ->
         "Big.par_seq ~start:0 ~stop:" ^ (ml_of_exp n)
       ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
-    | Big_p_iter(n, b, _) ->
+    | Big_ppar_fn(n, b, _) ->
         "Big.ppar_seq ~start:0 ~stop:" ^ (ml_of_exp n)
       ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
 

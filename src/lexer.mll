@@ -100,8 +100,8 @@ rule token =  parse
   | "*"                     { PROD }
   | "/"                     { SLASH }
   | "^"                     { CARET }
-  | "T"			    { ITERM }
-  | "TT"		    { ITERP }
+  | "par"                   { PAR }
+  | "ppar"                  { PPAR }
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }
