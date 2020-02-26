@@ -16,6 +16,7 @@
        "ctrl"
        "float"
        "int"
+       "string"
        "react")))
   "BigraphER mode types.")
 
