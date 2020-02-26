@@ -216,7 +216,7 @@ param_str_exp:
   | LCBR exp_list RCBR               { Param_str_set ($2, loc $startpos $endpos)           };
 
 priority_list:
-  l = separated_nonempty_list(COMMA, priority_class)        { l };
+  l = separated_list(COMMA, priority_class)        { l };
 
 priority_class:
   | LCBR rule_ide_list RCBR                { Pr ($2, loc $startpos $endpos)     }

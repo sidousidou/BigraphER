@@ -2,6 +2,7 @@
 
 * Add support for iterated operators par(n, bexp) and ppar(n, bexp) that repeat
   a bigraph n times with | or || as requested.
+* Allow Non-BRS models with empty rule sets
 
 ###1.9.1 (2019-12-13): ###
 

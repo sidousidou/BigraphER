@@ -804,7 +804,12 @@ module Make (T: TsType.RS)
          else raise (ERROR (Invalid_priorities, p)))
 
   let eval_prs =
-    eval_p_list eval_pr (fun x -> T.is_valid_priority_list (fst x))
+    let chk_fn (pl, _) =
+      match pl with
+       | [] -> true
+       | ps -> T.is_valid_priority_list ps
+    in
+    eval_p_list eval_pr chk_fn
 
   let eval_pred_fun_app id args env env_t p =
     let print_id id exps =
