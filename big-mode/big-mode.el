@@ -45,6 +45,8 @@
        "by"
        "in"
        "share"
+       "par"
+       "ppar"
        )))
   "BigraphER mode expressions.")
 
