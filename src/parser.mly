@@ -185,6 +185,7 @@ str_exp:
 op_exp:
   | exp PLUS exp                            { Plus ($1, $3, loc $startpos $endpos)  }
   | exp MINUS exp                           { Minus ($1, $3, loc $startpos $endpos) }
+  | MINUS exp                               { UMinus ($2, loc $startpos $endpos) }
   | exp PROD exp                            { Prod ($1, $3, loc $startpos $endpos)  }
   | exp SLASH exp                           { Div ($1, $3, loc $startpos $endpos)   }
   | exp CARET exp                           { Pow ($1, $3, loc $startpos $endpos)   };

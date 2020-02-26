@@ -379,6 +379,12 @@ module Make (T: TsType.RS)
       (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
+  let eval_uminus (a : store_val) _p =
+      match a with
+    | Float f -> Float (-.f)
+    | Int i -> Int (-i)
+    | _ -> assert false (*BISECT-IGNORE*)
+
   let eval_prod (a : store_val) (b : store_val) p =
       match a, b with
     | Float f, Float g -> Float (f *. g)
@@ -427,11 +433,12 @@ module Make (T: TsType.RS)
       (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false (*BISECT-IGNORE*)
 
-  let rec eval_bin_op (exp : binary_op) (scope : scope) (env : store) =
+  let rec eval_op (exp : op) (scope : scope) (env : store) =
     let eval' e = eval_exp e scope env in
     match exp with
     | Plus (e1, e2, loc) -> eval_plus (eval' e1) (eval' e2) loc
     | Minus (e1, e2, loc) -> eval_minus (eval' e1) (eval' e2) loc
+    | UMinus (e1, loc) -> eval_uminus (eval' e1) loc
     | Prod (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
     | Div (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
     | Pow (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
@@ -441,7 +448,7 @@ module Make (T: TsType.RS)
     | ENum ne -> eval_num ne scope env
     | EStr se -> eval_str se scope env
     | EVar ve -> eval_var ve scope env
-    | EOp op -> eval_bin_op op scope env
+    | EOp op ->  eval_op op scope env
 
   let as_int (e : store_val) p =
      match e with
@@ -1118,6 +1125,7 @@ module Make (T: TsType.RS)
   let ml_of_op = function
     | Plus (_, _, _) -> " + "
     | Minus (_, _, _) -> " - "
+    | UMinus (_, _) -> "-"
     | Prod (_, _, _) -> " * "
     | Div  (_, _, _) -> " / "
     | Pow  (_, _, _) -> " ^ "

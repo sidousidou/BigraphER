@@ -19,11 +19,12 @@ type exp =
   | ENum of num_exp
   | EStr of str_exp
   | EVar of var_exp
-  | EOp  of binary_op
+  | EOp  of op
 
-and binary_op =
+and op =
   | Plus of exp * exp * Loc.t
   | Minus of exp * exp * Loc.t
+  | UMinus of exp * Loc.t
   | Prod of exp * exp * Loc.t
   | Div  of exp * exp * Loc.t
   | Pow of exp * exp * Loc.t
