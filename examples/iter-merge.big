@@ -1,0 +1,19 @@
+atomic ctrl A = 1;
+atomic ctrl B = 0;
+ctrl C = 0;
+
+# (/x A{x} | B) || ... || (/x A{x} | B)
+fun big a(n) = ppar(n, /x A{x} | B );
+
+# B | B | ... | B
+fun big b(n) = par(n, B);
+
+big c = a(7) || C.(b(7));
+
+react r = A{x} --> A{x};
+react s = B --> B;
+
+begin brs
+  init c;
+  rules = [{r, s}];
+end

@@ -1,3 +1,22 @@
+###1.9.2 (2020-02-25): ###
+
+* Add support for iterated operators par(n, bexp) and ppar(n, bexp) that repeat
+  a bigraph n times with | or || as requested.
+* Allow Non-BRS models with empty rule sets
+* Fix handling of negative number parsing
+
+###1.9.1 (2019-12-13): ###
+
+* Migrate builds to dune 2.0.0
+* Add support for string expressions in declarations, control parameters, and
+  BRS parameters
+* Disabled support for ml export due to missing/incorrect results being produced
+
+###1.9.0 (2019-11-25): ###
+
+* Migrate builds to dune
+* Use `Cmdliner` package to handle commandline and environment variable handling
+
 ###1.8.0 (2018-07-23): ###
 
 * Support new features in `bigraph 1.3.0`: edge and state labels in graphical

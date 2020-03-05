@@ -2,15 +2,15 @@ open Printf
 open Junit
 open Utils
 
-let bin = "./bigrapher.native full"
 let out_dir name = "./shippable/parser/" ^ name
+let out_dir_res = "./shippable/testresults/"
 let dec_out path = "-f svg,dot,txt,json -d " ^ path
 let l_out name = "-l " ^ name ^ ".csl"
 let prism_out name = "-p " ^ name ^ ".tra"
 let ts_out name = "-s -t " ^ name
 let ml_out name = "-m " ^ name ^ ".ml"
 let extra_flags = "--no-colors --debug -M 140"
-let path = "./tests/files"
+let path = "./files"
 let ext = ".reference"
 
 let set_args name =
@@ -21,7 +21,7 @@ let set_args name =
     l_out n;
     prism_out n;
     ts_out n;
-    ml_out n;
+    (*  ml_out n; *)
     extra_flags ]
   |> String.concat " "
 
@@ -39,11 +39,12 @@ let rec diff (out : string list) (reference : string list) =
   | (l :: _ , []) ->
     [xml_block "failure" attr_string [sprintf "%s != nil" l]]
 
-(* Args: PATH OUT-PATH FNAME *)
+(* Args: BIGRAPHER_PATH PATH OUT-PATH FNAME *)
 let () =
   printf "test_parser:\n";
+  let bin = Sys.argv.(1) ^ " full " in
   let (testcases : (string * string * string * string list) list) =
-    Io.parse Sys.argv.(1)
+    Io.parse Sys.argv.(2)
     |> List.map (fun f ->
         printf "%s\n" f;
         let name = Filename.chop_extension (Filename.basename f) in
@@ -60,4 +61,5 @@ let () =
          try diff std_out ref_out with
          | e ->
            [xml_block "error" attr_err [Printexc.to_string e]])) in
-  write_xml (testsuite "test_parser" testcases) Sys.argv.(2) Sys.argv.(3)
+  mkdir out_dir_res;
+  write_xml (testsuite "test_parser" testcases) Sys.argv.(3) Sys.argv.(4)
