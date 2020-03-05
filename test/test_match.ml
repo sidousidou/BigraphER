@@ -561,7 +561,16 @@ let tests bgs = (* TEST 1 *)
       pattern = List.assoc "P38" bgs;
       exp_res = [];
       res = [];
-    }]
+    } ; (* TEST 40 *)
+    {
+      t_name = "T28";
+      p_name = "P39";
+      target = List.assoc "T28" bgs;
+      pattern = List.assoc "P39" bgs;
+      exp_res = [ (Iso.of_list [ (0,2); (1,1); (2,6); (3,5); (4,8) ], Iso.of_list []) ];
+      res = [];
+    }
+  ]
 
 (* Args: PATH PATH-out*)
 let () =
@@ -577,6 +586,7 @@ let () =
   and testcases_eq = do_equality_tests bgs ts
   and testcases_to_string = do_to_string_tests bgs in
   print_endline "OK";
+  Io.mkdir Sys.argv.(2);
   write_xml (testsuite "test_match" testcases_match) Sys.argv.(2) "match-junit.xml";
   write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml";
   write_xml (testsuite "test_to_string" testcases_to_string) Sys.argv.(2) "to-string-junit.xml";

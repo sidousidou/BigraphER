@@ -203,6 +203,16 @@ val siblings : t -> int -> IntSet.t
 (** Dual of {!val:Sparse.siblings}. *)
 val partners : t -> int -> IntSet.t
 
+(** [sym m] returns the symmetric closure of a graph [m]. Argument [m] is assumed
+    square. *)                             
+val sym : t -> t
+
+(** [descendants m i] returns the set of nodes reachable from [i] in graph [m]. *)                 
+val descendants : t -> int -> IntSet.t
+
+(** Return a list of the connected components of an undirected graph. *)
+val connected_comps : t -> IntSet.t list                                
+                 
 (** [levels m] returns the level decomposition of [m]. Each level is obtained by
     iteratively removing the leaves in the graph until no nodes are
     left. Argument [m] is assumed square. *)

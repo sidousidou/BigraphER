@@ -115,6 +115,7 @@ let () =
           failures Stats.(ass_list stats.states stats.trans stats.occs))
        end; ] in
   print_endline "OK";
+  Io.mkdir Sys.argv.(1);
   write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2);
   print_endline "Done!";
   exit 0
