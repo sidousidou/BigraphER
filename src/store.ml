@@ -671,7 +671,7 @@ module Make (T: TsType.RS)
       P.parse_react name lhs_v rhs_v
         (match l with
          | Some f_exp ->
-           if action == "" then
+           if (String.equal action "") then
             `F (as_float (eval_exp f_exp scope env) p)
           else
             `P (action, reward, (as_float (eval_exp f_exp scope env) p))
