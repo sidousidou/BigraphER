@@ -3,7 +3,7 @@ type react =
     rdx  : Big.t;                  (* Redex   --- lhs   *)
     rct  : Big.t;                  (* Reactum --- rhs   *)
     eta  : Fun.t option;           (* Instantiation map *)
-    p    : float                   (* Probability       *)
+    w    : float                   (* Weight            *)
   }
 
 module RT = struct
@@ -18,35 +18,35 @@ module RT = struct
 
   let rhs r = r.rct
 
-  let l r = r.p
+  let l r = r.w
 
   let equal r r' =
     Big.equal r.rdx r'.rdx
     && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
-    && r.p = r'.p
+    && r.w = r'.w
 
   let map r = r.eta
 
   let merge_occ (b, p, r) (_, p', r') = (b, p +. p', r @ r')
 
-  let val_chk r = r.p > 0.0 && r.p <= 1.0
+  let val_chk r = r.w >= 0.0
 
-  let val_chk_error_msg = "Not a probability"
+  let val_chk_error_msg = "Not a valid weight"
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~name ~lhs ~rhs p eta =
+  let parse ~name ~lhs ~rhs w eta =
     { name = name;
       rdx  = lhs;
       rct  = rhs;
       eta  = eta;
-      p    = p; }
+      w    = w; }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
-    let sum = List.fold_left (fun acc (_, p, _) -> acc +. p) 0.0 l in
-    (List.map (fun (b, p, r) -> (b, p /. sum, r)) l, n)
+    let sum = List.fold_left (fun acc (_, w, _) -> acc +. w) 0.0 l in
+    (List.map (fun (b, w, r) -> (b, w /. sum, r)) l, n)
 
   let step b rules =
     RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
@@ -56,7 +56,7 @@ module RT = struct
      probability by subtracting the probability of the previous rule. *)
   let pick limit = function
     | [] -> None
-    | (b, p, rr) as head :: tail ->
+    | (_b, p, _rr) as head :: tail ->
       let rec _pick limit (b', p', rr') = function
         | (b, p, rr) as element :: tail ->
           if p > limit then Some (b, p -. p', rr) else _pick limit element tail
@@ -92,13 +92,11 @@ end
 
 module R = RrType.Make (RT)
 
-let is_determ r =
-  R.l r = 1.0
-
 module PT = struct
   type t = R.t list
   let f_val _ = true
-  let f_r_val = List.for_all is_determ
+  (* TODO: Rules should not be applied unless the /normalised/ probability is 0 *)
+  let f_r_val _ = true
 end
 
 module H_int = Base.H_int
@@ -141,5 +139,4 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
-let prob r = r.p
-
+let weight r = r.w

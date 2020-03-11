@@ -48,7 +48,7 @@ val rhs : react -> Big.t
 val map : react -> Fun.t option
 
 (** The probability of a reaction rule. *)
-val prob : react -> float
+val weight : react -> float
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string
@@ -74,10 +74,6 @@ val is_valid_react_exn : react -> bool
 
 (** String representation of reaction validity errors. *)
 val string_of_react_err : react_error -> string
-
-(** Return [true] if a reaction rule is deterministic ({e i.e.} its probability
-    is one), [false] otherwise. *)
-val is_determ : react -> bool
 
 (** Return [true] if all the reaction rules in a priority class are valid, all
     the reaction rules in a reducible classes are deterministic. Return [false]
