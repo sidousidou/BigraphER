@@ -1,0 +1,10 @@
+bin:  [
+  "_obuild/bigrapher/bigrapher.asm" { "bigrapher" }
+]
+man: [
+  "man/bigrapher.1" {"man1/bigrapher.1"}
+]
+share: [
+  "big-mode/big-mode.el"
+  "big-mode/big-mode.elc"
+]

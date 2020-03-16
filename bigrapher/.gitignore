@@ -1,0 +1,53 @@
+# Ignore dirs
+_obuild/
+ocp-build.*
+
+# Generated files
+aclocal.m4
+autom4te.cache/
+Makefile.config
+bin/cmd.ml
+bin/bigrapher.ocp
+man/bigrapher.1
+lib/bigraph.ocp
+opam/url
+config.*
+
+# OCaml 
+*.annot
+*.cmo
+*.cma
+*.cmi
+*.a
+*.o
+*.cmx
+*.cmxs
+*.cmxa
+*.byte
+*.native
+*.p.byte
+*.p.native
+*.conflicts
+
+# profiler
+massif*
+*.out
+*/massif*
+*.out
+prof*
+*.stackdump
+
+# ocamldoc
+*.html
+*.html
+
+# archives
+*.gz
+
+# temp files
+*~
+\#*\#
+.\#*
+*/*~
+*/\#*\#
+*/.\#*

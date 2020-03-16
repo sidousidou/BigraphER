@@ -1,0 +1,37 @@
+version = "@PACKAGE_VERSION@"
+authors = [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
+license = [ "BSD" ]
+
+comp += [ "-warn-error" "A" ]
+install = true
+
+begin library "bigraph"
+  
+  files = [
+    "../utils/utils.ml"
+    "iso.ml"
+    "intSet.ml"
+    "rel.ml"
+    "fun.ml"
+    "ctrl.ml"
+    "sig.ml"
+    "node.ml"
+    "port.ml"
+    "cnf.ml"
+    "sparse.ml"
+    "link.ml"
+    "place.ml"
+    "big.ml"
+    "brs.ml"
+    "sbrs.ml"
+    "export.ml"
+  ]
+
+  requires = [
+    "bigarray"
+    "minisat"
+    "unix" 
+    "str"
+  ]
+
+end

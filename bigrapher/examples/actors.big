@@ -1,0 +1,45 @@
+# Signature
+ctrl A = 1;
+ctrl Mail = 0;
+ctrl M = 2;
+ctrl Snd = 0;
+ctrl Ready = 0;
+ctrl New = 0;
+ctrl Fun = 0;
+
+# Reaction rules
+react snd =
+  A{a0}.Snd.(M{a1, v}.1 | id) | Mail
+  ->
+  A{a0} | Mail.(M{a1, v}.1 | id);
+
+react ready =
+  A{a}.Ready | Mail.(M{a, v}.1 | id)
+  ->
+  A{a} | Mail | {v};
+
+react lambda =
+  A{a}.Fun -> A{a};
+
+react new =
+  A{a0}.New.(A{a1} | id)
+  ->
+  A{a0} | A{a1};
+
+# Initial state
+big a0 =
+  A{a}.Snd.(M{a, v_a}.1 | Ready.Fun.1); 
+
+big a1 = 
+  A{b}.Snd.(M{a, v_b}.1);
+
+big s0 = 
+  a0 | a1 | Mail.1;
+
+# Reactive system
+brs
+  init s0;
+  rules = [
+    {snd, ready, lambda, new}
+  ];
+endbrs

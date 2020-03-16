@@ -1,0 +1,29 @@
+version = "@PACKAGE_VERSION@"
+authors = [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
+license = [ "BSD" ]
+
+comp += [ "-warn-error" "A" ]
+
+ocamlyacc = [ "menhir" "--explain" "--strict" ]
+
+install = false
+
+begin program "bigrapher"
+  
+  files = [
+    "../utils/utils.ml"
+    "cmd.ml"  
+    "loc.ml"
+    "ast.ml"
+    "lexer.mll"
+    "parser.mly"
+    "type.ml"
+    "env.ml"
+    "bigrapher.ml"
+  ]
+
+  requires = [
+    "bigraph" 
+  ]
+
+end

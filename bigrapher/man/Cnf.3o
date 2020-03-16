@@ -1,0 +1,455 @@
+.TH "Cnf" 3 2013-12-22 OCamldoc ""
+.SH NAME
+Cnf \- This module provides operations for CNF conversion.
+.SH Module
+Module   Cnf
+.SH Documentation
+.sp
+Module
+.BI "Cnf"
+ : 
+.B sig  end
+
+.sp
+This module provides operations for CNF conversion\&.
+.sp
+.B "Author(s)"
+:
+Michele Sevegnani
+.sp
+
+.sp
+
+.sp
+.sp
+.I type lit 
+=
+ | M_lit
+.B of 
+.B int * int
+.I "  "
+(* Literal stored in a matrix *)
+ | V_lit
+.B of 
+.B int
+.I "  "
+(* Literal stored in a vector *)
+ 
+.sp
+
+.sp
+.I type var 
+=
+ | P_var
+.B of 
+.B lit
+.I "  "
+(* Positive literal *)
+ | N_var
+.B of 
+.B lit
+.I "  "
+(* Negative literal *)
+ 
+.sp
+
+.sp
+
+.I val to_ij 
+: 
+.B var -> int * int
+.sp
+Unbox a variable stored in a matrix\&.
+.sp
+
+.sp
+.I type clause 
+= 
+.B var list
+
+.sp
+A disjunction of variables
+.sp
+
+.sp
+.I type b_clause 
+= 
+.B var * var
+
+.sp
+Binary disjunction
+.sp
+
+.sp
+
+.I val at_most 
+: 
+.B lit list -> b_clause list
+.sp
+At most a literal in the input list is 
+.B true
+\&.
+.sp
+
+.sp
+
+.I val at_least 
+: 
+.B lit list -> clause
+.sp
+At least a literal in the input list is 
+.B true
+\&.
+.sp
+
+.sp
+
+.I val block_rows 
+: 
+.B int list -> int -> clause list
+.sp
+Block any pair having an element in the input list as first component
+.sp
+
+.sp
+
+.I val blocking_pairs 
+: 
+.B (int * int) list -> clause list
+.sp
+
+.sp
+
+.I exception TSEITIN 
+.B of 
+.B clause list
+
+.sp
+
+.sp
+
+.I val tseitin 
+: 
+.B (lit * lit) list -> clause * b_clause list
+.sp
+Apply Tseitin transformation to a boolean formula\&.
+Input :  
+.B (X1 and Y1) or (X2 and Y2) or \&.\&.\&. or (Xn and Yn)
+Output : 
+.B (Z1 or Z2 or \&.\&.\&. or Zn) and (!Z1 or X1) and (!Z1 or Y1) and \&.\&.\&. 
+.B              and (!Zn or Xn) and (!Zn or Yn)
+
+.sp
+
+.sp
+
+.I val impl 
+: 
+.B lit -> lit list list -> clause list
+.sp
+CNF encoding of  boolean implications\&.
+Input :  
+.B  X \-> (clause0 and clause1 and \&.\&.\&.) 
+Output : 
+.B  (!X or clause0) and (!X or clause1) and \&.\&.\&. 
+
+.sp
+
+.sp
+
+.I val equiv 
+: 
+.B lit -> lit list list -> b_clause list * clause list
+.sp
+CNF encoding of 
+.B if and only if
+boolean formulae\&.
+Input :  
+.B M <\-> ((X0 or X1 or \&.\&.\&.) and (Y0 or Y1 or \&.\&.\&.) \&.\&.\&.)
+Output : 
+.B (M or !X0) and (M or !X1) and \&.\&.\&. and (M or !Y0) 
+.B              (!M or X0 or X1 or \&.\&.\&.) and (!M or Y0 or Y1 or \&.\&.\&.) and \&.\&.\&.
+
+.sp
+
+.sp
+
+.PP
+
+.B === 
+.B Commander\-variable Encoding
+.B  ===
+
+.PP
+.I type 
+.B 'a
+.I cmd_tree 
+=
+ | Leaf
+.B of 
+.B 'a list
+ | Node
+.B of 
+.B ('a * 'a cmd_tree) list
+ 
+.sp
+Data structure (n\-ary tree) for the encoding of the auxiliary variables\&.
+.sp
+
+.sp
+.I type cmd_constraint 
+=
+ | Cmd_at_most
+.B of 
+.B b_clause list * clause list * b_clause list
+ | Cmd_exactly
+.B of 
+.B b_clause list * clause list * b_clause list * clause
+ 
+.sp
+
+.sp
+
+.I val cmd_init 
+: 
+.B lit list -> int -> int -> lit cmd_tree
+.sp
+Initialisation of a tree of auxiliary variables\&. The two 
+.B int
+arguments
+specify the recursion threshold and the maximum group size, respectively\&.
+.sp
+
+.sp
+
+.I val at_most_cmd 
+: 
+.B lit cmd_tree -> cmd_constraint
+.sp
+At most a literal in the input list is 
+.B true
+\&.
+.sp
+
+.sp
+
+.I val at_least_cmd 
+: 
+.B lit cmd_tree -> clause
+.sp
+At least a literal in the input list is 
+.B true
+\&.
+.sp
+
+.sp
+
+.I val exactly_one_cmd 
+: 
+.B lit cmd_tree -> cmd_constraint
+.sp
+Axactly one literal in the input list is 
+.B true
+\&.
+.sp
+
+.sp
+
+.I val block_cmd 
+: 
+.B int list -> clause list
+.sp
+Block the roots of a Commander\-variable tree\&.
+.sp
+
+.sp
+
+.PP
+
+.B === 
+.B Higher level functions
+.B  ===
+
+.PP
+.I type cmd 
+= {
+ length : 
+.B int
+;  (* Number of auxiliary commander variables *) 
+ roots : 
+.B int list
+;  (* Root commander variables *) 
+ cmd : 
+.B cmd_constraint array
+;  (* Constraints *) 
+ }
+
+.sp
+
+.sp
+
+.I val bijection 
+: 
+.B int -> int -> int -> int -> cmd * cmd
+.sp
+Generate constraints for a bijection from n to m\&. Parameters t and g
+are used for configure the commander\-variable encoding\&. Auxiliary variables
+are returned\&.
+.sp
+
+.sp
+
+.I val tot_fun 
+: 
+.B int -> int -> int -> int -> cmd
+.sp
+Generate constraints for a total, non\-surjective function n to m\&. Parameters
+t and g  are used for configure the commander\-variable encoding\&. Auxiliary 
+variables are returned\&.
+.sp
+
+.sp
+
+.I val one_to_one 
+: 
+.B int ->
+.B   int ->
+.B   int -> (cmd_constraint list * int) * (cmd_constraint list * int)
+.sp
+Generate constraints for a one to one function\&. Parameters
+t and g  are used for configure the commander\-variable encoding\&.
+.sp
+
+.sp
+
+.PP
+
+.B === 
+.B Integration with Minisat
+.B  ===
+
+.PP
+
+.I val init_aux_v 
+: 
+.B int -> Minisat.solver -> Minisat.var array
+.sp
+Initialise a vector of (auxiliary) variables\&.
+.sp
+
+.sp
+
+.I val init_aux_m 
+: 
+.B int -> int -> Minisat.solver -> Minisat.var array array
+.sp
+Initialise a matrix of variables\&.
+.sp
+
+.sp
+
+.I val post_conj_v 
+: 
+.B clause list -> Minisat.solver -> Minisat.var array -> unit
+.sp
+Post conjunction of clauses to solver\&. All variables refer to the same
+vector\&.
+.sp
+
+.sp
+
+.I val post_conj_m 
+: 
+.B clause list -> Minisat.solver -> Minisat.var array array -> unit
+.sp
+To be used also when TSEITIN is raised\&. All variables refer to the same
+matrix\&.
+.sp
+
+.sp
+
+.I val post_tseitin 
+: 
+.B clause * b_clause list ->
+.B   Minisat.solver -> Minisat.var array array -> Minisat.var array
+.sp
+Post Tseitin constraints to solver and return array of auxiliary 
+variables\&.
+.sp
+
+.sp
+
+.I val post_impl 
+: 
+.B clause list ->
+.B   Minisat.solver -> Minisat.var array array -> Minisat.var array array -> unit
+.sp
+Post impl constraints to solver\&. Left hand\-sides are stored in matrix w\&.
+.sp
+
+.sp
+
+.I val post_equiv 
+: 
+.B b_clause list * clause list ->
+.B   Minisat.solver -> Minisat.var array array -> Minisat.var array array -> unit
+.sp
+Post equiv constraints to solver\&. Left hand\-sides are stored in matrix w\&.
+.sp
+
+.sp
+
+.I val post_bij 
+: 
+.B cmd * cmd ->
+.B   Minisat.solver ->
+.B   Minisat.var array array ->
+.B   (Minisat.var array array * int list) * (Minisat.var array array * int list)
+.sp
+Post bijection constraints to solver and return auxiliary variables\&.
+.sp
+
+.sp
+
+.I val post_tot 
+: 
+.B cmd ->
+.B   Minisat.solver ->
+.B   Minisat.var array array -> Minisat.var array array * int list
+.sp
+Post total non\-surjective function to solver and return auxiliary 
+variables\&.
+.sp
+
+.sp
+
+.I val post_one_to_one 
+: 
+.B (cmd_constraint list * int) * (cmd_constraint list * int) ->
+.B   Minisat.solver -> Minisat.var array array -> unit
+.sp
+
+.sp
+
+.I val post_block_cmd 
+: 
+.B int -> Minisat.solver -> Minisat.var array array -> int list -> unit
+.sp
+
+.sp
+
+.I val post_block 
+: 
+.B int -> Minisat.solver -> Minisat.var array array -> unit
+.sp
+
+.sp
+
+.I val post_impl2 
+: 
+.B var list ->
+.B   var list ->
+.B   Minisat.solver -> Minisat.var array array -> Minisat.var array array -> unit
+.sp
+
+.sp
