@@ -16,7 +16,8 @@ build:
   ci:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install pkg-config m4 zlib1g-dev minisat graphviz
     - sh -c "cd ~/opam-repository && git pull -q"
-    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y dune minisat conf-graphviz menhir cmdliner && eval $(opam env)
+    - opam repository add glasgow
+  "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y dune minisat conf-graphviz menhir cmdliner jsonm && eval $(opam env)
     - eval $(opam env)
     - mkdir -p shippable/testresults
     - mkdir -p shippable/svg
