@@ -1,0 +1,13 @@
+(jbuild_version 1)
+
+(executable
+ ((name test)
+  (libraries (bigraph big_json))
+))
+
+(alias
+ ((name    runtest)
+  (deps    (test.exe))
+  (action  (run ${<}))
+))
+

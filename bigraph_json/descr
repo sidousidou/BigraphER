@@ -1,0 +1,8 @@
+JSON codec for bigraphical structures
+
+big_json is a codec to encode and decode bigraphical structures such as bigraphs
+and reaction rules to the JSON data format. The library provides a JSON
+interface to the matching engine of the bigraph library. This is also exposed by
+the big_match command line tool.
+
+big_json is distributed under the BSD-2 license.
