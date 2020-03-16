@@ -16,6 +16,7 @@ build:
   ci:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install pkg-config m4 zlib1g-dev minisat graphviz
     - sh -c "cd ~/opam-repository && git pull -q"
+    - opam install dune
     - mkdir -p shippable/testresults
     - mkdir -p shippable/svg
     - mkdir -p shippable/parser
