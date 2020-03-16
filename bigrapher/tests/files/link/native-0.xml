@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="BigraphER">
+<testsuite name="link_native" tests="1">
+<testcase name="link_native" class="">
+</testcase>
+</testsuite>
+</testsuites>

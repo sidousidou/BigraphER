@@ -1,0 +1,196 @@
+OASISFormat:	0.4
+Name:		bigrapher
+Version:	1.0.2
+Synopsis:	Implementation of bigraphical reactive systems
+Description: BigraphER is an efficient implementation of Bigraphical Reactive
+ Systems (BRS) that supports bigraphs with sharing, stochastic reaction rules,
+ rule priorities, graphical output and predicate checking. Models can be
+ exported to probabilistic model checker PRISM.
+  
+Authors:	Michele Sevegnani
+Maintainers: 	Michele Sevegnani <Michele.Sevegnani@glasgow.ac.uk>
+License:     	BSD-2-clause
+LicenseFile:	LICENSE.md
+OCamlVersion:	>= 4.02.0
+Plugins:     	META (0.4), DevFiles (0.4)
+Homepage:    	http://www.dcs.gla.ac.uk/~michele/bigrapher.html
+BuildTools:	ocamlbuild, menhir
+FilesAB:       	bin/version.ml.ab,
+                man/bigrapher.1.ab,
+                man/bigrapher-validate.1.ab,
+                man/bigrapher-full.1.ab,
+                man/bigrapher-sim.1.ab,
+                opam/opam.ab,
+                README.md.ab,
+                Makefile.config.ab
+AlphaFeatures:  ocamlbuild_more_args
+XOCamlbuildExtraArgs: -j 4
+
+Executable bigrapher
+  Path:	bin
+  MainIs:         bigrapher.ml
+  CompiledObject: best
+  BuildDepends:	  bigraph, bigrapher-utils
+  CCOpt+:	  -O3
+  Install:	  true
+  
+Library bigraph
+  Path:            lib
+  FindlibName:	   bigraph
+# Pack:            true
+  Modules:         Ctrl,
+                   Nodes,
+                   Big,
+                   Brs,
+                   Link,
+                   Place,
+                   Rpo,
+                   Sbrs
+  InternalModules: Base,
+                   Cnf,
+                   Fun,
+                   IntSet,
+                   Iso,
+                   Rel,
+                   Sparse,
+                   TupleSet,
+                   RrType,
+                   PriType,
+                   TsType,
+                   Export
+  BuildDepends:    unix, minisat, str
+  CCOpt+:	   -O3
+  NativeOpt+:	   -noassert
+  ByteOpt+:	   -noassert
+  XMETARequires:   unix, minisat, str
+  XMETADescription: API for the manipulation of bigraphs and bigraphical reactive systems  
+  Install:	   true
+
+Library "bigraph-utils"
+  Path:            utils
+  Modules:         Utils
+  BuildDepends:    unix
+  CCOpt+:	   -O3
+  Install:	   false
+
+Library "bigrapher-utils"
+  Path:            bin
+  Modules:	   Version,
+                   Cmd,
+                   Ast,
+                   Store,
+                   Loc,
+                   Lexer,
+                   Parser,
+                   Unify
+  BuildDepends:    bigraph-utils, str
+  CCOpt+:	   -O3
+  Install:	   false
+
+SourceRepository master
+  Type:     	   git
+  Location: 	   https://mseve@bitbucket.org/mseve/bigrapher.git
+  Branch: 	   master
+  Browser: 	   https://bitbucket.org/mseve/bigrapher
+
+AlphaFeatures: ocamlbuild_more_args
+
+Document bigraph_api
+  Type:		   ocamlbuild (0.4)
+  Title:      	   API reference for bigraph library
+  Authors:	   Michele Sevegnani
+  BuildTools+: 	   ocamldoc 
+  Install:         true
+  Format:	   html
+  Index:	   API.html
+  Abstract:
+    API reference for library [bigraph]. It provides modules for:
+     * manipulation of place graphs link graphs and bigraphs with sharing,
+     * definition of (stochastic) reaction rules with support for instantiation maps,
+     * full generation of the state space and simulation of (stochastic) bigraphical
+       reactive systems with rule priorities. 
+  XOCamlbuildPath: lib
+  XOCamlbuildLibraries:	bigraph
+  XOCamlbuildExtraArgs: "-docflags '-t Bigraph -colorize-code -short-functors -charset utf-8'"
+  
+Library "junit"
+  Path:            tests
+  Modules:         Junit
+  Install:	   false
+  Build$:          flag(tests)
+
+Executable "matching-test"
+  Path:		   tests
+  MainIs:     	   test_match.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit
+  Install:	   false
+  Build$:          flag(tests)
+
+Test "matching"
+  Run$:            flag(tests)
+  Command:	   ./test_match.native ./tests/files/match/ ./shippable/testresults ./shippable/svg
+
+Executable "brs-test"
+  Path:		   tests
+  MainIs:     	   test_brs.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit
+  Install:	   false
+  Build$:          flag(tests)
+  
+Test "brs"
+  Run$:            flag(tests)
+  TestTools:	   mkdir
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_brs.native ./shippable/testresults brs-junit.xml
+
+Executable "decomp-test"
+  Path:		   tests
+  MainIs:     	   test_decomp.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit
+  Install:	   false
+  Build$:          flag(tests)
+
+Test "decomp"
+  Run$:            flag(tests)
+  TestTools:	   mkdir	
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_decomp.native ./tests/files/match/ ./shippable/testresults decomp-junit.xml
+
+Executable "parser-test"
+  Path:            tests
+  MainIs:     	   test_parser.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit, unix
+  Install:	   false
+  Build$:          flag(tests)
+  
+Test "parser"
+  Run$:            flag(tests)
+  TestTools:	   mkdir
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_parser.native ./tests/files/parser.in ./shippable/testresults parser-junit.xml
+
+Executable "cobertura"
+  Path:            tests
+  MainIs:     	   cobertura.ml
+  CompiledObject:  best
+  BuildDepends:	   junit, unix
+  Install:	   false
+  Build$:          flag(tests)
+
+Executable "rpo-test"
+  Path:            tests
+  MainIs:     	   test_rpo.ml
+  CompiledObject:  best
+  BuildDepends:	   bigraph, bigraph-utils, junit, unix
+  Install:	   false
+  Build$:          flag(tests)
+
+Test "rpo"
+  Run$:            flag(tests)
+  TestTools:	   mkdir
+  PreCommand:	   mkdir -p ./shippable/testresults
+  Command:	   ./test_rpo.native ./shippable/testresults rpo.xml
