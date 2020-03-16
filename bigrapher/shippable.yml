@@ -1,0 +1,18 @@
+archive: true
+
+language: java
+
+notifications:
+ email: false
+ 
+before_script:
+ - mkdir -p shippable/codecoverage
+ - mkdir -p shippable/testresults
+ - mkdir -p shippable/linktest
+
+script:
+ - ./scripts/shippable-build.sh
+ - ./scripts/shippable-tests.sh
+# - ./scripts/benchmark.sh
+ - ./scripts/shippable-link.sh
+ - ./scripts/shippable-opam-lint.sh
