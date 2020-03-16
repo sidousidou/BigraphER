@@ -1,0 +1,14 @@
+post-messages: [
+"bigrapher installed.
+
+Quick setup for EMACS
+-------------------
+Add opam emacs directory to your load-path by appending this to your .emacs:
+  ;; Add opam emacs directory to the load-path
+  (setq opam-share (substring (shell-command-to-string \"opam config var share 2> /dev/null\") 0 -1))
+  (add-to-list 'load-path (concat opam-share \"/emacs/site-lisp\"))
+  ;; Load big-mode
+  (require 'big-mode)
+"
+  {success}
+]

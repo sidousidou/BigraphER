@@ -1,0 +1,8 @@
+atomic fun ctrl A(n) = 0;
+
+fun big s0(n) = A(n-1);
+
+begin brs
+  init s0(2);
+  rules = [];
+end

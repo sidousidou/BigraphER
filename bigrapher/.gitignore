@@ -1,0 +1,29 @@
+# Ignore dirs
+_build
+
+# Generated files
+shippable
+*/*.merlin
+bigrapher.opam
+
+# profiler
+massif*
+*.out
+*/massif*
+*/*.out
+prof*
+*.stackdump
+
+# archives
+*.gz
+
+# temp files
+*~
+\#*\#
+.\#*
+*/*~
+*/\#*\#
+*/.\#*
+*.old
+
+.DS_Store

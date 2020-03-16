@@ -1,0 +1,31 @@
+#Signature 
+ctrl E = 1;
+ctrl V = 2;
+ctrl I = 0;
+ctrl T = 0;
+ctrl N = 2;
+atomic ctrl P = 1;
+
+# Reaction rules
+
+react new = 
+  N{v,t} || E{t} || I
+  -> 
+  id  ||  E{t} || I.(V{v,t} |  id)  
+  @ [0,1,1,2];
+
+#Initial state
+
+big arch = E{t0}.P{p0} |  I.1;
+
+big rcfs = N{v0,t0}.1;
+
+big sys = arch | rcfs;
+
+#System
+begin brs
+  init sys;
+  rules = [ {new} ];
+end
+
+
