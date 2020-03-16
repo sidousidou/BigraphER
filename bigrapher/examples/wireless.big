@@ -1,0 +1,16 @@
+#Wireless network showing the 'hidden node problem'
+
+ctrl S = 1;            # Signal range
+atomic ctrl M = 1;     # Mobile station
+
+big n_0 =
+  share (M{a_A} || M{a_B} || M{a_C})
+  by ([{0,1}, {0,1,2}, {1,2}], 3)
+  in (id{a_A,a_B,a_C} | S{a_A} | S{a_B} | S{a_C});
+
+react r = S{a}.1 -[2.3]-> {a} | 1; 
+       
+begin sbrs
+  init n_0;
+  rules = [ {r} ];  
+end

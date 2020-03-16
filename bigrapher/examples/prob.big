@@ -1,0 +1,25 @@
+# Example probabilistic BRS
+
+atomic ctrl M = 1;  # Mobile device
+ctrl R = 0;         # Room
+ctrl B = 0;         # Building
+ctrl Out = 1;       # External environment
+
+big s0 =
+  B.(R.M{x} | R.M{x} | R.1 | M{x}) || Out{y}.1;
+
+float p_enter = 0.2;
+
+react enter_room =
+  R | M{x} -[p_enter]-> R.(M{x} | id);
+
+react leave_room =
+  R.(M{x} | id) -[1. - p_enter]-> R | M{x};
+
+react leave_building =
+  B.(M{x} | id) || Out{y} -[0.3]->   B | {x} || Out{y}.(id | M{y});
+
+begin pbrs
+  init s0;
+  rules = [ { enter_room, leave_room, leave_building } ];
+end

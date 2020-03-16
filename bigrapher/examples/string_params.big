@@ -1,0 +1,17 @@
+atomic fun ctrl A(s) = 0;
+atomic fun ctrl C(f) = 0;
+atomic ctrl B = 0;
+
+fun big t1(s) = A(s);
+
+fun react t2(s) = A(s) --> A(s);
+
+big s0 = A("StringExample") || B || C(-1.);
+
+string s = "x";
+
+begin brs
+  string xs = {"hello", "world"};
+  init s0;
+  rules = [ { t2(xs) } ];
+end
