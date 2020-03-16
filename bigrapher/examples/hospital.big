@@ -1,0 +1,120 @@
+# Bigraphical model of an hospital and its data-handling privacy policies
+
+# Hospital physical locations
+ctrl H = 0;             # Hospital
+#ctrl Ward = 0;          # Ward
+ctrl MRD = 0;           # Medical Record department 
+
+# Agents
+ctrl Nurse = 2;
+ctrl Doc = 2;
+ctrl DB = 1;
+atomic ctrl DBadmin = 1;
+ctrl Record = 1;
+atomic ctrl Ref = 1;
+atomic ctrl Ref' = 1;
+atomic fun ctrl Id(i) = 0;
+atomic ctrl Data = 0;
+#atomic ctrl Data' = 0;
+atomic ctrl Data_local = 1;
+ctrl Private = 0;
+
+# Reaction rules
+
+# Database administrator actions
+big send_lhs =
+  DB{db}.(/r Record{r} | id) | DBadmin{db};
+
+big send_rhs = 
+  DB{db}.(Record{r} | id) | DBadmin{db};
+
+react send_doc =
+  send_lhs | /ch Doc{db,ch}
+  -->
+  /r (send_rhs | /ch Doc{db,ch}.(Ref{r} | id));
+
+react send_nurse =
+  send_lhs | /ch Nurse{db,ch}
+  -->
+  /r (send_rhs | /ch Nurse{db,ch}.(Ref{r} | id));
+
+#react send_doc_delegate
+
+# Nurse actions
+big nurse =
+  Nurse{db,ch}.(Ref{r} | id);
+big nurse' =
+  Nurse{db,ch}.(Ref'{r} | id);
+
+react disclose_nurse_0 =
+  /ch nurse | /ch Nurse{db',ch}
+  -->
+  /ch (nurse' | Nurse{db',ch});
+
+react disclose_nurse_1 =
+  /ch (nurse' | Nurse{db',ch})
+  -->
+  /ch Nurse{db,ch} | /ch Nurse{db',ch}.(Ref{r} | id);
+
+react disclose_doc_0 =
+  /ch nurse | /ch Doc{db',ch}
+  -->
+  /ch (nurse' | Doc{db',ch});
+
+react disclose_doc_1 =
+  /ch (nurse' | Doc{db',ch})
+  -->
+  /ch Nurse{db,ch} | /ch Doc{db',ch}.(Ref{r} | id);
+
+# Discard reference
+react discard =
+  Ref{r} -> 1 | {r};
+
+# Doctor actions
+big lock =
+  /r DB{db}.(Record{r}.(id | Private.Data) | id)
+    | /ch Doc{db,ch}.(Ref{r} | id);
+
+big local_data =
+  /r DB{db}.(Record{r}.(id | Private.Data) | id)
+    | /ch Doc{db,ch}.(Ref'{r} | Data_local{r} | id);
+
+react read =
+  lock --> local_data;
+
+# Abstraction on the actual data
+react edit =
+  local_data --> local_data;
+
+react write =
+  local_data --> lock;
+
+# Example scenario
+big archive =
+  DB{db}.(
+    /r Record{r}.(Id(0) | Private.Data)
+    | /r Record{r}.(Id(1) | Private.Data)
+    | /r Record{r}.(Id(2) | Private.Data)
+    | /r Record{r}.(Id(3) | Private.Data)
+  );
+
+big n =
+  /ch Nurse{db, ch}.1;
+
+big d =
+  /ch Doc{db, ch}.1;  
+  
+big hospital =
+  H.(archive | DBadmin{db}
+    | n | n | n
+    | d);
+   
+begin brs
+  init hospital;
+  rules = [
+           { send_doc, send_nurse,
+             disclose_nurse_0, disclose_nurse_1, disclose_doc_0, disclose_doc_1,
+             read, edit, write,
+             discard }
+          ];
+end
