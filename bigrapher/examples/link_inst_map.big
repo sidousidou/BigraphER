@@ -1,0 +1,28 @@
+ctrl Dup = 0;
+atomic ctrl A = 1;
+atomic ctrl B = 1;
+ctrl T = 0;
+ctrl C = 0;
+ctrl Alg = 0;
+
+big r =
+  Dup.(A{x1} | B{x2}) || T.(A{x1} | B{x2});
+
+big s = 
+   /x1 /x2 r || C.1;
+
+big s' =
+  /{x1,x2} r || C.1;
+
+react dup =
+  Dup || C --> Dup || C.(id | Alg.id)
+  @ [0, 1, 0];
+
+# Reactive system
+begin brs
+  init s;
+  rules = [ { dup } ];
+end
+
+
+
