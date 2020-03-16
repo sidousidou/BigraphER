@@ -1,0 +1,11 @@
+# OASIS_START
+# DO NOT EDIT (digest: f2ce16c704811e9c6555f0ed29ddd7bd)
+version = "1.0.1"
+description = "Implementation of bigraphical reactive systems"
+archive(byte) = "junit.cma"
+archive(byte, plugin) = "junit.cma"
+archive(native) = "junit.cmxa"
+archive(native, plugin) = "junit.cmxs"
+exists_if = "junit.cma"
+# OASIS_STOP
+

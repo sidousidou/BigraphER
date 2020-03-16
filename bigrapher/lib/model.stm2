@@ -1,0 +1,74 @@
+(define-fun ctrl_p ((i Int)) String
+  (ite (= i 0) "A" (ite (= i 1) "B" "U")))
+
+(define-fun ctrl_t ((i Int)) String
+  (ite (= i 0) "A" (ite (= i 1) "B" (ite (= i 2) "A" (ite (= i 3) "B" "U")))))
+
+(declare-fun adj_p (Int Int) Bool)
+(assert (forall ((i Int) (j Int))
+   (! (= (adj_p i j) (and (= i 0) (= j 1)))
+      :pattern (adj_p i j))))
+
+(define-fun adj_t ((i Int) (j Int)) Bool
+  (or (and (= i 0) (= j 1))
+      (or (and (= i 1) (= j 2))
+            (and (= i 2) (= j 3)))))
+
+(define-fun deg_s_p ((i Int)) Bool
+  (or (= i 0) (= i 1)))
+
+(define-fun deg_s_t ((i Int)) Bool
+  false)
+
+(define-fun deg_out_p ((i Int)) Int
+  (ite (= i 0) 1 0))
+
+(define-fun deg_out_t ((i Int)) Int
+  (ite (= i 0) 1 (ite (= i 1) 1 (ite (= i 2) 1 0))))
+
+(declare-fun iso (Int) Int)
+
+(assert (forall ((v Int))
+  (! (= (ctrl_p v) (ctrl_t (iso v)))
+      :pattern (iso v))))
+
+(assert (forall ((v Int) (w Int))
+  (! (= (adj_p v w) (adj_t (iso v) (iso w)))
+      :pattern (adj_p v w))))
+
+(assert (forall ((v Int))
+  (or (deg_s_p v)
+      (= (deg_out_p v) (deg_out_t (iso v))))))
+
+(check-sat)
+(get-model)
+(echo "P")
+(echo "0->1")
+(eval (adj_p 0 1))
+(eval (ctrl_p 0))
+(eval (ctrl_p 1))
+(echo "T")
+(echo "0->1 1->2 2->3")
+(eval (adj_t 0 1))
+(eval (adj_t 1 2))
+(eval (adj_t 2 3))
+(eval (ctrl_t 0))
+(eval (ctrl_t 1))
+(eval (ctrl_t 2))
+(eval (ctrl_t 3))
+(echo "iso 1")
+(eval (iso 0))
+(eval (iso 1))
+
+;;already eliminated by deg
+(assert (not (and (= (iso 0) 0) (= (iso 1) 1))))
+(check-sat)
+(get-model)
+
+(echo "iso 2")
+(eval (iso 0))
+(eval (iso 1))
+
+(assert (not (and (= (iso 0) 2) (= (iso 1) 3))))
+
+(check-sat)

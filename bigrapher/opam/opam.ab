@@ -1,0 +1,64 @@
+opam-version: "1.2"
+name: "${pkg_name}"
+version: "${pkg_version}"
+maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
+authors: [ "Michele Sevegnani" ]
+license: "BSD-3-clause"
+homepage: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
+
+doc: "http://www.dcs.gla.ac.uk/~michele/bigrapher.html"
+bug-reports: "https://bitbucket.org/mseve/bigrapher/issues"
+dev-repo: "https://bitbucket.org/mseve/bigrapher.git"
+
+tags: [
+  "bigraphs"
+  "rewriting engine"
+  "stochastic simulation"
+]
+
+libraries: [
+  "bigraph"
+]
+
+build: [
+  ["ocaml" "setup.ml" "-configure" "--disable-debug" "--prefix" prefix]
+  ["ocaml" "setup.ml" "-build"]
+]
+
+install: [
+  ["ocaml" "setup.ml" "-install"]
+]
+
+remove: [
+  ["ocamlfind" "remove" "bigraph"]
+]
+
+build-doc: [
+  [ "ocaml" "setup.ml" "-doc" ]
+]
+
+depends: [
+  "base-unix"
+  "ocamlfind" {build}
+  "menhir" {build}
+  "ocamlbuild" {build}
+  "conf-graphviz"
+  "Z3"
+]
+
+available: [ ocaml-version >= "4.02.0" & ocaml-version < "4.03.0"]
+
+post-messages: [
+"bigrapher installed.
+
+Quick setup for EMACS
+-------------------
+Add opam emacs directory to your load-path by appending this to your .emacs:
+  ;; Add opam emacs directory to the load-path
+  (setq opam-share (substring (shell-command-to-string \"opam config var share 2> /dev/null\") 0 -1))
+  (add-to-list 'load-path (concat opam-share \"/bigrapher\"))
+  ;; Load big-mode
+  (require 'big-mode)
+"
+  {success}
+]
