@@ -1,0 +1,148 @@
+###### Savannah model
+
+###### Controls
+
+ctrl Locale = 1;
+ctrl Localeattack = 1;
+ctrl Aura = 1;
+fun ctrl Area(i) = 1;
+
+atomic ctrl Lion = 1;
+atomic ctrl Lionattack = 2;
+atomic ctrl Liongroup = 2;
+
+atomic ctrl Impala = 1;
+atomic ctrl Impalaseen = 2;
+atomic ctrl Impalaheld = 2;
+
+atomic ctrl Field = 0;
+
+atomic fun ctrl GPS(i) = 1;
+
+atomic ctrl Child = 1;
+atomic ctrl Childattack = 1;
+atomic ctrl Childgroup = 1;
+
+###### Rules of the game
+
+big attack_lhs =
+  Child{a} || Locale{m}.(Lion{a} | Impala{b} | id(1));
+big attack_rhs =
+  /l (Childattack{a} || Localeattack{m}.(Lionattack{a,l} | Impalaseen{b,l} | id(1)));
+
+react attack =
+  attack_lhs -> attack_rhs;
+
+react timeout1 =
+  attack_rhs -> attack_lhs;
+
+react join1 =
+  /l (Child{a} || Childattack{a'} || (Lion{a} | Lionattack{a',l} | Impalaseen{b,l}))
+  ->
+  /l (Childgroup{a} || Childgroup{a'} || (Liongroup{a,l} | Liongroup{a',l} | Impalaheld{b,l}));
+
+react timeout2 =
+  /l (Childgroup{a} || Childgroup{a'} || Localeattack{m}.(
+        Liongroup{a,l} | Liongroup{a',l} | Impalaheld{b,l} | id(1))
+     )
+  ->
+  Child{a} || Child{a'} || Locale{m}.(Lion{a} | Lion{a'} | Impala{b} | id(1));
+  
+react join2 =
+  /l (Child{a} ||  (Lion{a} | Liongroup{a',l} | Liongroup{a'',l} | Impalaheld{b,l}))
+  ->
+  /l (Childgroup{a} ||  (Liongroup{a,l} | Liongroup{a',l} | Liongroup{a'',l} | Impalaheld{b,l}));
+
+fun react kill(i) =
+  /b/l (Childgroup{a} || Childgroup{a'} || Childgroup{a''} ||
+        Localeattack{m}.(Liongroup{a,l} | Liongroup{a',l} | Liongroup{a'',l} | Impalaheld{b,l} | id(1)) ||
+        GPS(i){b}
+       )      
+  ->
+  Child{a} || Child{a'} || Child{a''} || Locale{m}.(Lion{a} | Lion{a'} | Lion{a''} | id(1)) || 1;      
+
+###### Rules for GPS update
+       
+# Positions p,p' in area a       
+fun react mov1(a,p,p') =
+  /m (Area(a){m}.(GPS(p){a} | id(1)) || Locale{m}.(Lion{a} | id(1)))
+  ->
+  /m (Area(a){m}.(GPS(p'){a} | id(1)) || Locale{m}.(Lion{a} | id(1)));
+
+# Position p in area a, position p' in area a'       
+fun react mov2(a,a',p,p') =
+  /m/m' ((Area(a){m}.(GPS(p){a} | id(1)) | Area(a'){m'}) || (Locale{m}.(Lion{a} | id(1)) | Locale{m'}))
+  ->
+  /m/m' ((Area(a){m} | Area(a'){m'}.(GPS(p'){a} | id(1))) || (Locale{m} | Locale{m'}.(Lion{a} | id(1))));
+
+###### Rules for the human perspective
+
+big children = id(1) || Child{a} || Child{a'} || id(1);       
+big auras = (Aura{a} | Aura{a'}) || id(2,{a,a'});
+big phi = ([{0}, {0,2}, {1,3}, {1}], 4);     
+big psi = ([{0}, {0,1,2}, {0,1,3}, {1}], 4);
+
+react aura_join =
+  share children by phi in auras 
+  ->
+  share children by psi in auras;
+
+react aura_disjoin =
+  share children by psi in auras 
+  ->
+  share children by phi in auras;
+
+###### Initial configuration: three girls, a boy, and an impala problem     
+
+big girls =
+  share (Child{g} || Child{g'} || Child{g''})
+  by ([{0,1,2}, {0,1,2}, {0,1,2}], 3) 
+  in (Aura{g} | Aura{g'} | Aura{g''} || id{g, g',g''});     
+big boy = Aura{b}.Child{b};       
+big field =
+  /b/g/g'/g''/i/m/m'/m''
+  ((Field | girls | boy) ||
+   (Locale{m}.(Lion{g} | Impala{i}) | Locale{m'}.(Lion{g'} | Lion{g''}) | Locale{m''}.(Lion{b})) ||
+   (Area(0){m}.(GPS(1){g} | GPS(0){i}) | Area(1){m'}.(GPS(2){g'} | GPS(3){g''}) | Area(2){m''}.(GPS(4){b})));
+
+###### Bigraphical reactive system
+
+begin brs
+  # Area 0
+  int p0, p0' = {0, 1, 5, 6, 8};
+  # Area 1
+  int p1, p1' = {2, 3, 7, 10, 11};
+  # Area 2
+  int p2, p2' = {4, 9};
+
+  # Initial configuratino
+  init field;
+  
+  # GPS events only for the example trace     
+  rules = [
+    { attack, timeout1, join1, timeout2, join2, kill(0),
+      # Update within the same area  
+      mov1(0, p0, p0'), mov1(1, p1, p1'), mov1(2, p2, p2'),
+      # Updates 0 -> 1
+      mov2(0, 1, p0, p1),
+      # Updates 0 -> 2
+      mov2(0, 2, p0, p2),
+      # Updates 1 -> 0
+      mov2(1, 0, p1, p0),
+      # Updates 1 -> 2
+      mov2(1, 2, p1, p2),
+      # Updates 2 -> 0
+      mov2(2, 0, p2, p0),
+      # Updates 2 -> 1
+      mov2(2, 1, p2, p1) }
+      # Moves in the problem trace 
+      # mov2(1, 0, 2, 5), mov2(1, 0, 3, 6), mov2(0, 1, 5, 7),
+      # mov2(2, 0, 4, 8), mov2(0, 2, 8, 9),
+      # Reverse moves
+      # mov2(0, 1, 5, 2), mov2(0, 1, 6, 3), mov2(1, 0, 7, 5),
+      # mov2(0, 2, 8, 4), mov2(2, 0, 9, 8),
+      # Other moves
+      # mov2(0, 1, 1, 10), mov2(1, 0, 10, 1),
+      # mov2(2, 1, 4, 11), mov2(1, 2, 11, 4) }
+  ];
+end

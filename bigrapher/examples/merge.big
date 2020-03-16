@@ -1,0 +1,45 @@
+# Signature
+ctrl V0 = 0;
+ctrl V1 = 0;
+atomic ctrl V2 = 0;
+ctrl V3 = 0;
+atomic ctrl V4 = 0;
+ctrl V5 = 0;
+ctrl V6 = 0;
+ctrl V7 = 0;
+
+#Reaction rules
+react snd =
+  V0
+  -->
+  V0;
+
+# Initial state
+big d0 = (V3.merge | V4 | id) || (V6 | id);
+
+big d1' = 
+  share (id || id || id)
+  by([{0}, {0,1,2}, {1,2}], 3)
+  in((V4 | V5) || (V6 | V7));
+#          0       1     2
+
+big d1 =
+  (merge(2) || id) * (id || d1');
+
+big b' =
+  (V4 | merge ) || 0 || (V6 | id);     
+
+big b =
+  b' * ([{0}, {2}, {1}, {3}, {4}], 5);
+
+big s0 = V2;
+
+# Predicate
+big phi = V3;
+
+# Reactive system
+begin brs
+  init s0;
+  rules = [ {snd} ];
+  preds = { phi };
+end
