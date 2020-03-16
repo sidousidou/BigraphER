@@ -95,7 +95,8 @@ module R = RrType.Make (RT)
 module PT = struct
   type t = R.t list
   let f_val _ = true
-  (* TODO: Rules should not be applied unless the /normalised/ probability is 0 *)
+  (* TODO: Rules should not be applied unless the /normalised/ probability is 1,
+   * which means we need the match first *)
   let f_r_val _ = true
 end
 

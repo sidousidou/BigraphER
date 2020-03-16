@@ -5,7 +5,7 @@ type react =
     rdx    : Big.t;                  (* Redex   --- lhs   *)
     rct    : Big.t;                  (* Reactum --- rhs   *)
     eta    : Fun.t option;           (* Instantiation map *)
-    p      : float                   (* Probability       *)
+    w      : float                   (* Weight            *)
   }
 
 module RT = struct
@@ -22,35 +22,35 @@ module RT = struct
 
   let rhs r = r.rct
 
-  let l r = r.action, r.reward, r.p
+  let l r = r.action, r.reward, r.w
 
   let equal r r' =
     r.action = r'.action
     && Big.equal r.rdx r'.rdx
     && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
-    && r.p = r'.p
+    && r.w = r'.w
 
   let map r = r.eta
 
   let merge_occ (b, (a, rew, p), r) (_, (_, _, p'), r') =
     (b, (a, rew, p +. p'), r @ r')
 
-  let val_chk r = r.p > 0.0 && r.p <= 1.0
+  let val_chk r = r.w >= 0.0
 
-  let val_chk_error_msg = "Not a probability"
+  let val_chk_error_msg = "Not a valid weight"
 
   let string_of_label (action, reward, probability) =
     Printf.sprintf "%s %d %-3g" action reward probability
 
-  let parse ~name ~lhs ~rhs (action, reward, p) eta =
+  let parse ~name ~lhs ~rhs (action, reward, w) eta =
     { name   = name;
       action = action;
       reward = reward;
       rdx    = lhs;
       rct    = rhs;
       eta    = eta;
-      p      = p; }
+      w      = w; }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
@@ -81,7 +81,7 @@ module RT = struct
      probability by subtracting the probability of the previous rule. *)
   let pick limit = function
   | [] -> None
-  | (b, (a, r, p), rr) as head :: tail ->
+  | (_b, (_a, _r, p), _rr) as head :: tail ->
     let rec _pick limit (b', (a', r', p'), rr') = function
       | (b, (a, r, p), rr) as element :: tail ->
         if p > limit then Some (b, (a, r, p -. p'), rr)
@@ -96,7 +96,7 @@ module RT = struct
     | [] -> (None, m)
     | _ ->
       begin
-        (* Sort transitions by probability *)
+        (* Sort transitions by normalised probability *)
         let ss_sort =
           List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
         (* Compute cumulative probability *)
@@ -115,14 +115,12 @@ end
 
 module R = RrType.Make (RT)
 
-let is_determ r =
-  let third (_, _, x) = x in
-  third (R.l r) = 1.0
-
 module PT = struct
   type t = R.t list
   let f_val _ = true
-  let f_r_val = List.for_all is_determ
+  (* TODO: Rules should not be applied unless the /normalised/ probability is 1,
+   * which means we need the match first *)
+  let f_r_val _ = true
 end
 
 module H_int = Base.H_int
@@ -166,6 +164,6 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
-let prob r = r.p
+let weight r = r.w
 
 let action r = r.action

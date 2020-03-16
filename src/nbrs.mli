@@ -15,7 +15,7 @@ type p_class =
 type graph
   
 (** The type of edge labels in Markov Decision Processes (MDP), {e i.e.},
-    actions, rewards, and probabilities. *)
+    actions, rewards, and weights. *)
 type label = string * int * float
 
 (** Type of simulation limit {e i.e.}, number of execution steps. *)
@@ -51,14 +51,14 @@ val rhs : react -> Big.t
 (** The instantiation map of a reaction rule. *)
 val map : react -> Fun.t option
 
-(** The probability of a reaction rule. *)
-val prob : react -> float
+(** The weight of a reaction rule. *)
+val weight : react -> float
 
 (** String representation of a simulation limit. *)
 val string_of_limit : limit -> string
 
-(** Same as {!val:Brs.is_valid_react} but also checks that probability is
-    greater than zero and less or equal than one. *)
+(** Same as {!val:Brs.is_valid_react} but also checks that is
+    greater than or equal to zero *)
 val is_valid_react : react -> bool
 
 (** Equality for reaction rules. *)
@@ -78,10 +78,6 @@ val is_valid_react_exn : react -> bool
 
 (** String representation of reaction validity errors. *)
 val string_of_react_err : react_error -> string
-
-(** Return [true] if a reaction rule is deterministic ({e i.e.} its probability
-    is one), [false] otherwise. *)
-val is_determ : react -> bool
 
 (** Return [true] if all the reaction rules in a priority class are valid, all
     the reaction rules in a reducible classes are deterministic. Return [false]
