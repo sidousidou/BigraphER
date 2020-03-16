@@ -1,0 +1,43 @@
+language: none
+
+env:
+  - OCAML_VERSION=4.03
+  - OCAML_VERSION=4.04
+  - OCAML_VERSION=4.05
+  - OCAML_VERSION=4.06
+  - OCAML_VERSION=4.07
+
+build:
+  pre_ci_boot:
+      image_name: ocaml/opam2
+      image_tag: $OCAML_VERSION
+      pull: true
+
+  ci:
+    - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install pkg-config m4 zlib1g-dev minisat graphviz
+    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y bigraph big_json conf-graphviz bisect_ppx oasis menhir && eval $(opam env)
+    - mkdir -p shippable/testresults
+    - mkdir -p shippable/codecoverage
+    - mkdir -p shippable/svg
+    - mkdir -p shippable/parser
+    - mkdir -p shippable/bisect/html
+    - mkdir -p shippable/api
+    - mkdir -p shippable/man
+    - ./scripts/shippable-build.sh
+    - ./scripts/shippable-opam-lint.sh
+    - ./scripts/shippable-cover.sh
+
+integrations:
+  notifications:
+    - integrationName: email
+      type: email
+      recipients:
+        - Michele.Sevegnani@glasgow.ac.uk
+      on_success: change
+      on_failure: always
+    - integrationName: bigrapher-slack
+      type: slack
+      recipients:
+        - "#dev"
+      on_success: never
+      on_failure: always
