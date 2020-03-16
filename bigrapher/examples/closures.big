@@ -1,0 +1,16 @@
+atomic ctrl M = 2;
+
+big test = M{r, x};
+
+big test1 = /r test;
+
+big test2 = /x test1;
+
+react r = test1 -> test2 | {x};
+
+begin brs
+  init test1;
+  rules = [ { r } ];
+end
+
+

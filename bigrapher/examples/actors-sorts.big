@@ -1,0 +1,84 @@
+# Signature
+ctrl A = 1;
+ctrl A' = 1;
+ctrl Mail = 0;
+atomic ctrl M = 2;
+ctrl Snd = 0;
+ctrl Ready = 0;
+ctrl New = 0;
+ctrl Fun = 0;
+
+# Sorts Def. A `sort` is a set of controls.
+# Examples:
+#   a = {A}
+#   b = {Snd, Ready,New, Fun}
+#   x = {Mail}
+#   not_x = !{Mail}
+#   sort_ab = a | b
+
+# Def. A `formation rule` is a set of predicates over sorts. 
+# Examples: 
+#   a > b | e        ~~> All children of an a-node have sort b|e
+#   a > b[1] & e[1]  ~~> An a-node has exactly one b-child and an e-child
+#   a > b[2] & e[*]  ~~>               two b-chils ans zero or more e-children
+#   i ~ i      ~~> An i-node may only be linked to i-nodes
+#   .........                                      to zero or more 
+#   .........                                      to exactly two
+#   i ~ i & T  ~~> An i-node may be linked to an i-node and an oouter name
+# Grammar:
+#   phi  ::=  sort  ||  !sort  ||  sort | sort  ||  sort & sort
+#   sort ::=  name  || name[i]
+#   i    ::=  0...n  ||  *
+
+# Semantics:
+#   >    |- name > phi   <==> (all children of name) |- phi
+#   >>   |- name >> phi  <==> (all descendants of name) |- phi
+#   ~    |- name ~ phi   <==> (all nodes linked to name) | phi
+
+# Algorithms:
+# > requires to check:
+#   - atomic controls
+#   - nesting
+#   - sharing
+#   - composition
+#   - match
+#   - instantiation maps
+
+# Reaction rules
+react snd =
+  A{a0}.Snd.(M{a1, v} | id) | Mail
+  -->
+  A{a0} | Mail.(M{a1, v} | id);
+
+react ready =
+  A{a}.Ready | Mail.(M{a, v} | id)
+  -->
+  A{a} | Mail | {v};
+
+react lambda =
+  A{a}.Fun --> A{a};
+
+react new =
+  A{a0}.(New.(A'{a1} | id) | id)
+  -->
+  A{a0}.(id | id) | A{a1}.(id | id)
+  @ [1, 2, 0, 2];
+
+# Initial state
+big a0 =
+  A{a}.Snd.(M{a, v_a} | Ready.Fun.1); 
+
+big a1 = 
+  A{b}.Snd.(M{a, v_b});
+
+big s0 = 
+  a0 | a1 | Mail.1;
+
+big phi = Mail.(M{a, v} | id);
+
+# Reactive system
+begin brs
+  init s0;
+  rules = [ {snd, ready, lambda, new} ];
+  preds = { phi };
+end

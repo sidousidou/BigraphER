@@ -1,0 +1,16 @@
+# Using Conditional Bigraphs to force an entity to be unique
+
+ctrl Place = 0;
+atomic ctrl Unique = 0;
+
+react createUnique =
+ Place.id --> Place.(id | Unique)
+ if
+ !(Unique) in ctx, !(Unique) in param;
+
+big s0 = Place.1;
+
+begin brs
+  init s0;
+  rules = [{createUnique}];
+end
