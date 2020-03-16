@@ -1,0 +1,13 @@
+{1 Library bigraph}
+
+This library provides primitives to programmaticaly manipulate bigraphs,
+reaction rules and Bigraphical Reactive Systems (BRS). It supports both bigraphs
+and bigraphs with sharing, probabilistic and stochastic reaction rules, rule
+priorities, rules with instantiation maps, parameterised controls, simulation,
+exhaustive state space exploration, export to probabilistic model checker PRISM,
+and predicate checking. It is based on an efficient matching engine based on
+SAT.
+
+Module {!Bigraph} is the main entry point of the library.
+
+@author Michele Sevegnani
