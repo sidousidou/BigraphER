@@ -1,0 +1,255 @@
+#802.11 CSMA/CA with RTS/CTS
+
+# Constants
+float difs = 50.;
+float sifs = 10.;
+float tau = 20.;
+float timeout = sifs + tau;
+float rts = 160.;
+float cts = 112.;
+float ack = 112.;
+float t_min = 15.;
+
+# Rates
+float rho2 = 1./(sifs + cts);
+float rho4 = 1./(sifs + ack);
+float rho5 = 1./(timeout);
+
+# Signals (default, Locked, Clear, Error)
+fun ctrl S(t) = 1;
+fun ctrl S_L(t) = 1;
+fun ctrl S_C(t) = 1;
+ctrl S_E = 1;
+
+# Machines (default, Locked, Deferred, Potential collision, Backoff)
+ctrl M = 2;
+ctrl M_L = 2;
+ctrl M_D = 2;
+ctrl M_P = 2;
+ctrl M_B = 2;
+
+# Triangles (Waiting, RTS, CTS, Data packet)
+fun ctrl W(l) = 2;
+fun ctrl RTS(l) = 2;
+fun ctrl CTS(l) = 2;
+fun ctrl P(l) = 2;
+
+# Next triangle in the queue
+atomic ctrl Q = 1;
+
+# IP address
+atomic ctrl A = 1;
+
+# n_0
+fun big m_A(l) = 
+  /x /r /q (M{r, x}.(W(l){x,a_B}.Q{q} | A{a_A}));
+
+big m_B =
+  /x /r (M{r, x}.A{a_B});
+
+fun big m_C(k) =
+  /x /r /q (M{r, x}.(W(k){x,a_B}.Q{q} | A{a_C}));
+
+big psi =
+  ([{0,1}, {0,1,2}, {1,2}], 3);
+
+fun big n_0(l,k,t_A,t_B,t_C) =
+  share (m_A(l) || m_B || m_C(k))
+  by psi
+  in (id{a_A,a_B,a_C} | S(t_A){a_A} | S(t_B){a_B} | S(t_C){a_C} );
+
+# Reaction rule 1
+big psi_1 = ([{1}, {0,1}], 2);
+
+fun big m_w(l) =
+  /x /r (M{r,x}.(id | W(l){x,d}.Q{q} | A{a})); 
+
+fun big m_l(l) =
+  /x /r (M_L{r,x}.(id | RTS(l){x,d}.Q{q} | A{a})); 
+
+fun react r_RTS(t,l) =
+  share (id || m_w(l)) by psi_1 in (id(1, {a, d, q}) || S(t){a})
+  -[ 1.0/(difs + tau*t/2.0 + rts) ]->
+  share (id || m_l(l)) by psi_1 in (id(1, {a, d, q}) || S_L(t){a});
+
+# Reaction rule 2
+big psi_2 = ([{0,2,3}, {1,2,3}, {2}, {3}], 4);
+
+fun big s(l) =
+  /x (M_L{r,x}.(id | CTS(l){x,d}.Q{q} | A{a}));
+
+big r = 
+  M_L{r,x}.(id | A{d});
+  
+fun react r_CTS(t, u, l) =
+  share (m_l(l) || M_D{r,x}.(id | A{d})|| id(2))
+  by psi_2
+  in (id(2, {x,a,d,q}) || (S_L(t){a} | S(u){d}) || /r)
+  -[ rho2 ]->
+  share (s(l) || r || id(2))
+  by psi_2
+  in (id(2, {x,a,d,q}) ||(S_L(t){a} | S_L(u){d}) || /r);
+
+# Reaction rule 3
+fun big s1(l) =
+  /x (M_L{r,x}.(id | P(l){x,d}.Q{q} | A{a}));
+
+fun react r_DATA(l) = 
+  /r (s(l) || r)
+  -[ 1.0 / (sifs + l) ]->
+  /r (s1(l) || r);   
+
+# Reaction rule 4
+fun big s2(l) =
+  /r (M{r,q}.(id | A{a}));
+
+big r1 = 
+  /r (M{r,x}.(id | A{d}));  
+
+fun react r_ACK(t,u,l) = 
+  share (s1(l) || r || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_L(t){a} | S_L(u){d}) || /r)
+  -[ rho4 ]->  
+  share (s2(l) || r1 || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_C(t_min){a} | S_C(u){d}));
+
+# Reaction rule 5
+fun big f(t,u,l) = 
+  share (m_w(l) || M{r,x}.(id | A{d}) || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_C(2.0*t+1.0){a} | S(u){d}) || /r);
+
+fun big m_b(l) =
+  /x /r (M_B{r,x}.(id | RTS(l){x,d}.Q{q} | A{a})); 
+
+fun react r_BACK1(t,u,l) =
+  share (m_b(l) || M_P{r,x}.(id | A{d}) || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_L(t){a} | S(u){d}) || /r)
+  -[ rho5 ]->
+  f(t,u,l);
+  
+# After last transmission attempt
+fun big f_E(u,l) =
+  share (m_w(l) || M{r,x}.(id | A{d}) || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_E{a} | S(u){d}) || /r);
+
+fun react r_BACK1E(u,l) =
+  share (m_b(l) || M_P{r,x}.(id | A{d}) || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_L(1023.0){a} | S(u){d}) || /r)
+  -[ rho5 ]->
+  f_E(u,l);
+
+# Reaction rule 6
+fun react r_BACK2(t,u,l) =
+  share (m_b(l) || M_D{r,x}.(id | A{d}) || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_L(t){a} | S(u){d}) || /r)
+  -[ rho5 ]->
+  f(t,u,l);
+
+# After last transmission attempt
+fun react r_BACK2E(u,l) =
+  share (m_b(l) || M_D{r,x}.(id | A{d}) || id(2))
+  by psi_2
+  in (id(2,{x,a,q,d}) || (S_L(1023.0){a} | S(u){d}) || /r)
+  -[ rho5 ]->
+  f_E(u,l);
+
+# Reaction rule 7
+fun react r_D(t) =
+  share (id || M{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S_L(t){b} || /r)
+  -[ inf ]->
+  share (id || M_D{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S_L(t){b} || /r);  
+
+# Reaction rule 8
+big psi_3 = ([{1}, {2}, {0,1,2}], 3);
+
+fun react r_P(t,u) = 
+  share (id(2) || M_D{r,x}.(id | A{a}))
+  by psi_3
+  in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r)
+  -[ inf ]->
+  share (id(2) || M_P{r,x}.(id | A{a}))
+  by psi_3
+  in (id(1,{a,x}) || (S_L(t){b} | S_L(u){c}) || /r);  
+
+# Reaction rule 9
+fun react r_B(l) = 
+  m_l(l) || /r M_P{r,x}.(id | A{d})
+  -[ inf ]->
+  m_b(l) || /r M_P{r,x}.(id | A{d});
+  
+# Reaction rule 10
+fun big clr(t) =
+  share (id || M{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S_C(t){b} || /r);
+
+fun react r_UD(t) = 
+  share (id || M_D{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S_C(t){b} || /r)
+  -[ inf ]->
+  clr(t);  
+
+# Reaction rule 11
+fun react r_UP(t) = 
+  share (id || M_P{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S_C(t){b} || /r)
+  -[ inf ]->
+  clr(t);    
+
+# Reaction rule 12
+fun react r_UC(t) = 
+  share (id || M{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S_C(t){a} || /r)
+  -[ inf ]->
+  share (id || M{r,x}.(id | A{a}))
+  by psi_1
+  in (id(1,{a,x}) || S(t){a} || /r);
+
+
+# Phi_1: At least a trasmission error occurs
+big error = S_E{x};
+
+# Phi_2: Collision occurs
+big collision = M_B{x,y} || M_B{z,w};
+
+# Phi_3: Station A sends packet
+fun big transmission(t) =
+  share (id || /x M_L{r,x}.(id | P(8464.){x,d} | A{a})) 
+  by ([{0}, {0,1}], 2)
+  in (S_L(t){a} || id(1,{d,r,a}));
+    
+begin sbrs
+  # Parameters
+  float t, t' = { 15., 31., 63., 127., 255., 511., 1023. };
+  float z = { 15., 31., 63., 127., 255., 511. };
+  float l = { 8464., 4368. };
+  
+  # Initial state
+  init n_0(8464., 4368., 15., 15., 15.);
+  
+  rules = [ 
+            (r_UD(t), r_UP(t)),
+	    (r_UC(t)),
+      	    (r_D(t)),
+      	    (r_P(t,t')),
+      	    (r_B(l)),
+      	    {r_BACK1(z,t,l), r_BACK1E(t,l), r_BACK2(z,t,l), r_BACK2E(t,l)},
+      	    {r_RTS(t,l), r_CTS(t,t',l), r_DATA(l), r_ACK(t,t',l)}
+          ];
+
+   preds = { error, collision, transmission(t) };
+end
