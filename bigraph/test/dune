@@ -1,0 +1,24 @@
+(executables
+ (names test_match test_decomp test_brs test_inst)
+ (libraries bigraph))
+
+(alias
+ (name    runtest)
+ (deps    (:exe test_match.exe))
+ (action  (run %{exe} %{workspace_root}/../../files %{workspace_root}/../../shippable/testresults)))
+
+(alias
+ (name    runtest)
+ (deps    (:exe test_decomp.exe))
+ (action  (run %{exe} %{workspace_root}/../../files/ %{workspace_root}/../../shippable/testresults decomp-junit.xml)))
+
+(alias
+ (name    runtest)
+ (deps    (:exe test_brs.exe))
+ (action  (run %{exe} %{workspace_root}/../../shippable/testresults brs-junit.xml)))
+
+(alias
+ (name    runtest)
+ (deps    (:exe test_inst.exe))
+ (action  (run %{exe} %{workspace_root}/../../shippable/testresults inst-junit.xml)))
+

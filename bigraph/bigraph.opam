@@ -1,0 +1,24 @@
+opam-version: "1.2"
+maintainer: "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>"
+version: "1.3.0"
+authors: [ "Michele Sevegnani <michele.sevegnani@glasgow.ac.uk>" ]
+license: "BSD-2-clause"
+tags: [ "bigraphs" "rewriting" "org:dcs" ]
+homepage: "http://www.dcs.gla.ac.uk/~michele/docs/_doc/bigraph"
+dev-repo: "git+https://bitbucket.org/mseve/bigraph.git"
+
+depends: [
+  "dune" {build & >= "1.0.0"}
+  "minisat" {>= "0.5.3"}
+  "odoc" {doc}
+]
+
+build: [ "dune" "build" "-p" name "-j" jobs ]
+
+build-test: [ "dune" "runtest" "-p" name "-j" jobs ]
+
+build-doc: [ "dune" "build" "@doc" "-j" jobs ]
+    
+available: [ ocaml-version >= "4.02.3" ]
+
+conflicts: [ "bigrapher" {<= "1.6.1"} ]
