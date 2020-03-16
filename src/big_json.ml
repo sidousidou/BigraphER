@@ -155,7 +155,7 @@ let preact e r =
   field e "pbrs_name" (string e) (Pbrs.name r);
   field e "pbrs_lhs" (big e) (Pbrs.lhs r);
   field e "pbrs_rhs" (big e) (Pbrs.rhs r);
-  field e "pbrs_p" (float e) (Pbrs.prob r);
+  field e "pbrs_p" (float e) (Pbrs.weight r);
   field e "pbrs_eta" (option e eta) (Pbrs.map r);
   lexeme e `Oe
 
@@ -165,7 +165,7 @@ let nreact e r =
   field e "nbrs_action" (string e) (Nbrs.action r);
   field e "nbrs_lhs" (big e) (Nbrs.lhs r);
   field e "nbrs_rhs" (big e) (Nbrs.rhs r);
-  field e "nbrs_p" (float e) (Nbrs.prob r);
+  field e "nbrs_p" (float e) (Nbrs.weight r);
   field e "nbrs_eta" (option e eta) (Nbrs.map r);
   lexeme e `Oe
 
