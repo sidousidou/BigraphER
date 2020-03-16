@@ -1,0 +1,13 @@
+# OASIS_START
+# DO NOT EDIT (digest: 12face7d991b66cecf0790b6fcda553e)
+version = "1.0.2"
+description =
+"API for the manipulation of bigraphs and bigraphical reactive systems"
+requires = "unix minisat str"
+archive(byte) = "bigraph.cma"
+archive(byte, plugin) = "bigraph.cma"
+archive(native) = "bigraph.cmxa"
+archive(native, plugin) = "bigraph.cmxs"
+exists_if = "bigraph.cma"
+# OASIS_STOP
+
