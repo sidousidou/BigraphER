@@ -23,4 +23,4 @@ build:
     - mkdir -p shippable/parser
     - mkdir -p shippable/man
     - dune runtest --profile=release
-    - cp _build/default/test/shippable/testresults/*.xml shippable/testresults/
+    - cp _build/default/bigraph/test/shippable/testresults/*.xml _build/default/bigrapher/test/shippable/testresults/*.xml _build/default/bigraph_json/test/shippable/testresults/*.xml shippable/testresults/
