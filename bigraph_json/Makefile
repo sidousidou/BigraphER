@@ -19,7 +19,7 @@ test:
 doc:
 	dune build @doc
 
-ARCH = big_json-0.2.0.tar.gz
+ARCH = big_json-0.2.1.tar.gz
 
 dist:
 	git archive --format=tar --prefix="bigraph/" HEAD | gzip -n > $(ARCH)

@@ -1,0 +1,13 @@
+diff --git a/Makefile b/Makefile
+index 45e5895..d9f0a1b 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,7 +2,7 @@
+ 
+ NAME = caml$(SHORTNAME)
+ 
+-CXXFLAGS = -shared -fPIC -Wall -O3 
++CXXFLAGS = -shared -fPIC -Wall -O3 -fpermissive
+ OMKFLAGS = -ccopt -Wall -ccopt -O3 -verbose
+ OCFLAGS = -w +A
+ OMKLIB = $(OCAMLMKLIB) $(OMKFLAGS)

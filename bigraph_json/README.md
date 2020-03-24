@@ -1,6 +1,6 @@
 # Big_json - JSON codec for bigraphical structures
 
-Version 0.2.0
+Version 0.2.1
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), Paulius Dilkas
 
