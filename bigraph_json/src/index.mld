@@ -3,14 +3,16 @@
 This library defines a codec to {{!section:Big_json.enc}encode} and
 {{!section:Big_json.dec}decode} bigraphical structures such as {e bigraphs} and
 {e bigraphical rules} to the {{:http://tools.ietf.org/html/rfc7159}JSON} data
-format. The library also provides {ul
+format. The library also provides 
+{ul
 {- a JSON interface to the {{!section:Big_json.match}matching engine} of the
 {{:../bigraph/index.html}Bigraph} library, and}
 {- [big_match], a simple command line tool exposing this interface.}}
 
 Module {!Big_json} is the main entry point of the library.
 
-{3 References} {ul
+{3 References} 
+{ul
 {- T. Bray Ed.  {e {{:http://tools.ietf.org/html/rfc7159}The
 JavaScript Object Notation (JSON) Data Interchange Format}, 2014}}
 {- M. Sevegnani and M. Calder {e
