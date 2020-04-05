@@ -1,0 +1,13 @@
+# Ignore dirs
+_build
+
+# temp files
+*~
+\#*\#
+.\#*
+*/*~
+*/\#*\#
+*/.\#*
+*.old
+
+.DS_Store
