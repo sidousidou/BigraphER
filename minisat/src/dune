@@ -1,0 +1,10 @@
+(library
+ (name        minisat)
+ (public_name minisat)
+; (flags (-ccopt -static))
+ (foreign_stubs (language cxx) (names stubs) (flags -pedantic -O3 -I/include))
+ (c_library_flags (-lstdc++ -lminisat -lz))
+ (synopsis "OCaml bindings for the MiniSAT SAT solver"))
+
+(documentation
+ (mld_files (:standard)))

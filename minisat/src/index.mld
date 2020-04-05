@@ -1,0 +1,8 @@
+{1 Library minisat}
+
+This library provides a basic set of OCaml bindings for the
+{{:https://github.com/niklasso/minisat}MiniSat} SAT solver.
+
+Module {!Minisat} is the main entry point of the library.
+
+@author Michele Sevegnani
