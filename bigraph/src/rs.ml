@@ -20,17 +20,14 @@ let sim_type = function
 let ts_type = function
   | BRS -> "transition system"
   | PBRS -> "DTMC" (* Discrete Time Markov Chain *)
-  | SBRS -> "CTMC" (* Continuous Time Markov Chain *)
+  | SBRS -> "CTMC"
 
-let limit_type = function
-  | BRS | PBRS -> "step"
-  | SBRS -> "time"
+(* Continuous Time Markov Chain *)
+
+let limit_type = function BRS | PBRS -> "step" | SBRS -> "time"
 
 let limit_msg = function
   | BRS | PBRS -> "number of simulation steps"
   | SBRS -> "simulation time"
 
-let module_id = function
-  | BRS -> "Brs"
-  | PBRS -> "Pbrs"
-  | SBRS -> "Sbrs"
+let module_id = function BRS -> "Brs" | PBRS -> "Pbrs" | SBRS -> "Sbrs"

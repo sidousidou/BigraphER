@@ -3,7 +3,8 @@
  (libraries bigraph big_json))
 
 (rule
- (alias   runtest)
- (deps    (:exe test.exe))
- (action  (run %{exe})))
-
+ (alias runtest)
+ (deps
+  (:exe test.exe))
+ (action
+  (run %{exe})))

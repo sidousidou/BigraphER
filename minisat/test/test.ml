@@ -1,5 +1,3 @@
-
-
 (* To use printf without referencing the model name *)
 open Printf
 open Minisat
@@ -28,11 +26,10 @@ let split str ch =
     try
       let i = String.index str ch in
       let t = take str i in
-      let str' = drop str (i+1) in
-      let l' = t::l in
+      let str' = drop str (i + 1) in
+      let l' = t :: l in
       split' str' l'
-    with Not_found ->
-      List.rev (str::l)
+    with Not_found -> List.rev (str :: l)
   in
   split' str []
 
@@ -41,7 +38,6 @@ let split str ch =
  * and returns a mapping between names and Minisat variables.
  *)
 let process_file solver file =
-
   (* Mapping between variable names and indices. *)
   let vars = Hashtbl.create 0 in
 
@@ -61,25 +57,17 @@ let process_file solver file =
     assert (l > 2);
     assert (line.[1] = ' ');
     let lits =
-        List.map
-          (fun lit ->
-            if lit.[0] = '-' then
-              (false, drop lit 1)
-            else
-              (true, lit)
-          )
-          (split (drop line 2) ' ')
+      List.map
+        (fun lit ->
+          if lit.[0] = '-' then (false, drop lit 1) else (true, lit))
+        (split (drop line 2) ' ')
     in
     let clause =
-        List.map
-          (fun (sign, name) ->
-            let var = Hashtbl.find vars name in
-            if sign then
-              Minisat.pos_lit var
-            else
-              Minisat.neg_lit var
-          )
-          lits
+      List.map
+        (fun (sign, name) ->
+          let var = Hashtbl.find vars name in
+          if sign then Minisat.pos_lit var else Minisat.neg_lit var)
+        lits
     in
     solver#add_clause clause
   in
@@ -88,18 +76,15 @@ let process_file solver file =
   let rec process_line () =
     try
       let line = input_line file in
-      if line = "" then
-        ()
+      ( if line = "" then ()
       else
-        (match line.[0] with
+        match line.[0] with
         | 'v' -> process_var line
         | 'c' -> process_clause line
         | '#' -> ()
-        | _   -> assert false
-        );
+        | _ -> assert false );
       process_line ()
-    with End_of_file ->
-      ()
+    with End_of_file -> ()
   in
 
   process_line ();
@@ -108,19 +93,16 @@ let process_file solver file =
 (* Reads a given file and solves the instance. *)
 let solve file =
   let solver = new solver in
-  let vars = process_file solver file in 
+  let vars = process_file solver file in
   match solver#solve with
   | Minisat.UNSAT -> printf "unsat\n"
-  | Minisat.SAT   ->
+  | Minisat.SAT ->
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->
-          printf "  %s=%s\n"
-            name
-            (Minisat.string_of_value (solver#value_of v)) 
-        )
+          printf "  %s=%s\n" name
+            (Minisat.string_of_value (solver#value_of v)))
         vars
-;;
 
 (*
  * Solve the files given on the command line, or read one from standard
@@ -128,18 +110,14 @@ let solve file =
  *)
 let main () =
   let argc = Array.length Sys.argv in
-  if argc = 1 then
-    solve stdin
+  if argc = 1 then solve stdin
   else
     Array.iter
       (fun fname ->
         try
           printf "Solving %s...\n" fname;
           solve (open_in fname)
-        with Sys_error msg ->
-          printf "ERROR: %s\n" msg
-      )
-      (Array.sub Sys.argv 1 (argc-1))
+        with Sys_error msg -> printf "ERROR: %s\n" msg)
+      (Array.sub Sys.argv 1 (argc - 1))
 
-let () = 
-  main ()
+let () = main ()

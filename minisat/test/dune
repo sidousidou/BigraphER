@@ -3,11 +3,18 @@
  (libraries minisat))
 
 (rule
- (deps    (:exe test.exe)
-          (:phi (glob_files %{project_root}/files/*.formula)))
- (action (with-stdout-to test.output (run %{exe} %{phi}))))
+ (deps
+  (:exe test.exe)
+  (:phi
+   (glob_files %{project_root}/files/*.formula)))
+ (action
+  (with-stdout-to
+   test.output
+   (run %{exe} %{phi}))))
 
 (rule
  (alias runtest)
- (deps (:ref %{project_root}/files/test.reference))
- (action (diff %{ref} test.output)))
+ (deps
+  (:ref %{project_root}/files/test.reference))
+ (action
+  (diff %{ref} test.output)))

@@ -1,5 +1,5 @@
 (library
- (name        big_json)
+ (name big_json)
  (public_name big_json)
  (libraries bigraph jsonm))
 

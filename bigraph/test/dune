@@ -3,23 +3,31 @@
  (libraries bigraph))
 
 (rule
- (alias    runtest)
- (deps    (:exe test_match.exe)
-          (glob_files ../files/*.big))
- (action  (run %{exe} %{project_root}/files shippable/testresults)))
+ (alias runtest)
+ (deps
+  (:exe test_match.exe)
+  (glob_files ../files/*.big))
+ (action
+  (run %{exe} %{project_root}/files shippable/testresults)))
 
 (rule
- (alias    runtest)
- (deps    (:exe test_decomp.exe)
-          (glob_files ../files/*.big))
- (action  (run %{exe} %{project_root}/files/ shippable/testresults decomp-junit.xml)))
+ (alias runtest)
+ (deps
+  (:exe test_decomp.exe)
+  (glob_files ../files/*.big))
+ (action
+  (run %{exe} %{project_root}/files/ shippable/testresults decomp-junit.xml)))
 
 (rule
- (alias    runtest)
- (deps    (:exe test_brs.exe))
- (action  (run %{exe} shippable/testresults brs-junit.xml)))
+ (alias runtest)
+ (deps
+  (:exe test_brs.exe))
+ (action
+  (run %{exe} shippable/testresults brs-junit.xml)))
 
 (rule
- (alias    runtest)
- (deps    (:exe test_inst.exe))
- (action  (run %{exe} shippable/testresults inst-junit.xml)))
+ (alias runtest)
+ (deps
+  (:exe test_inst.exe))
+ (action
+  (run %{exe} shippable/testresults inst-junit.xml)))

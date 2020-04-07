@@ -2,16 +2,22 @@ FROM ocaml/opam2:ubuntu-19.04 AS build
 LABEL maintainer="michele.sevegnani@glasgow.ac.uk"
 
 # Install OS dependencies
-RUN sudo apt-get -qy --no-install-recommends install \
-                 m4 \
-                 pkg-config \
-                 graphviz \
-                 zlib1g-dev \
-                 minisat && \
+RUN sudo apt-get update && \
+    sudo apt-get -qy --no-install-recommends install \
+      musl-tools \
+      opam \
+      m4 \
+      pkg-config \
+      graphviz \
+      zlib1g-dev \
+      minisat && \
     sudo apt-get clean
 
 # Install OCaml dependencies
-RUN opam repository add glasgow http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/ && \
+RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
+    opam update && \
+    opam switch install 4.09.1+musl+static+flambda && \
+    opam repo add glasgow http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/ && \
     opam install -y dune bigraph menhir big_json cmdliner
 
 # Build bigrapher
@@ -21,15 +27,15 @@ RUN eval $(opam env) && \
     dune build --profile=release
 
 # Second stage image
-FROM ubuntu:19.04
-RUN apt-get update && \
-    apt-get install -y \
-      m4 \
-      pkg-config \
-      graphviz \
-      zlib1g-dev \
-      minisat && \
-    rm -rf /var/lib/apt/lists/*
-COPY --from=build /home/opam/devel/_build/install/default/bin/bigrapher /bin/bigrapher
-ENTRYPOINT ["/bin/bigrapher"]
-CMD ["--help"]
+# FROM ubuntu:19.04
+# RUN apt-get update && \
+#     apt-get install -y \
+#       m4 \
+#       pkg-config \
+#       graphviz \
+#       zlib1g-dev \
+#       minisat && \
+#     rm -rf /var/lib/apt/lists/*
+# COPY --from=build /home/opam/devel/_build/install/default/bin/bigrapher /bin/bigrapher
+# ENTRYPOINT ["/bin/bigrapher"]
+# CMD ["--help"]

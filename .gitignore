@@ -1,6 +1,9 @@
 # Ignore dirs
 _build
 
+# Generated files
+*.opam
+
 # temp files
 *~
 \#*\#

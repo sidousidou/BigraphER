@@ -1,7 +1,8 @@
 (library
- (name        bigraph)
+ (name bigraph)
  (public_name bigraph)
- (synopsis "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems")
+ (synopsis
+   "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems")
  (libraries unix str minisat))
 
 (documentation

@@ -1,7 +1,4 @@
-type t = {
-  lstart: Lexing.position;
-  lend:   Lexing.position;
-}
+type t = { lstart : Lexing.position; lend : Lexing.position }
 
 val print_loc : Format.formatter -> t -> unit
 
