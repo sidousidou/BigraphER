@@ -1,0 +1,4 @@
+(lang dune 2.0)
+
+(env (_ (flags -cclib -static)
+        (ocamlopt_flags -O3 -noassert)))
