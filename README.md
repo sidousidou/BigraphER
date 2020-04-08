@@ -2,8 +2,10 @@
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
-This repository contains a collection of tools for writing and anlysing 
-Bigraph models. It contains:
+[![Run Status](https://api.shippable.com/projects/5e6fa6aa5f10de0007bc21a1/badge?branch=master)]()
+
+This repository contains a collection of tools for writing and
+anlysing Bigraph models. It contains:
 
 1. *bigraph* - a library to programmaticaly manipulate bigraphs, reaction rules
   and Bigraphical Reactive Systems (BRS). It supports both bigraphs and bigraphs
