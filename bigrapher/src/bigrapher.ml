@@ -306,16 +306,6 @@ struct
           (Utils.err_opt Cmd.(defaults.colors))
           (Export.report_error e))
 
-  let export_model fmt m env env_t =
-    (* DECLARATIONS *)
-    ( match Cmd.(defaults.export_decs) with
-    | None -> ()
-    | Some path -> export_decs fmt path m env env_t );
-    (* Export model to OCaml *)
-    match Cmd.(defaults.export_ml) with
-    | None -> ()
-    | Some path -> export_ml fmt path m
-
   let print_stats_store fmt env priorities =
     [
       {
@@ -431,9 +421,8 @@ struct
   let run fmt c m exec_type =
     try
       let env = S.init_env fmt c Cmd.(defaults.consts) in
-      let s0, pri, preds, env_t = S.eval_model fmt c m env in
+      let s0, pri, preds, _ = S.eval_model fmt c m env in
       print_stats_store fmt env pri;
-      export_model fmt m env env_t;
       run_aux fmt s0 pri preds exec_type
     with S.ERROR (e, p) ->
       Format.(

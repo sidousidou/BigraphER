@@ -6,8 +6,6 @@ let out_dir name = "./shippable/parser/" ^ name
 
 let out_dir_res = "./shippable/testresults/"
 
-let dec_out path = "-f svg,dot,txt,json -d " ^ path
-
 let l_out name = "-l " ^ name ^ ".csl"
 
 let prism_out name = "-p " ^ name ^ ".tra"
@@ -26,10 +24,7 @@ let set_args name =
   let path = out_dir name in
   mkdir path;
   let n = Filename.concat path name in
-  [
-    dec_out path; l_out n; prism_out n; ts_out n; (* ml_out n; *) extra_flags;
-  ]
-  |> String.concat " "
+  [ l_out n; prism_out n; ts_out n; extra_flags ] |> String.concat " "
 
 let attr_string =
   [ ("type", "ASSERT_OUTPUT"); ("message", "Output is not the same") ]

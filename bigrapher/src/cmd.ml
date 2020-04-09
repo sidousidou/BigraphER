@@ -11,14 +11,12 @@ type format_op = Dot | Svg | Txt | Json
 type opt =
   | Const of Ast.const list
   | Debug
-  | Decs of path
   | Ext of format_op list
   | Graph of file
   | Help
   | Labels of file
   | Max of int
   | Prism of file
-  | Ml of file
   | Quiet
   | States of path option
   | Steps of int
@@ -30,9 +28,7 @@ type settings = {
   mutable consts : Ast.const list;
   mutable debug : bool;
   mutable dot_installed : bool;
-  mutable export_decs : path option;
   mutable export_graph : file option;
-  mutable export_ml : file option;
   mutable export_lab : file option;
   mutable export_prism : file option;
   mutable export_states : path option;
@@ -57,9 +53,7 @@ let defaults =
     consts = [];
     debug = false;
     dot_installed = dot_installed ();
-    export_decs = None;
     export_graph = None;
-    export_ml = None;
     export_lab = None;
     export_prism = None;
     export_states = None;
@@ -132,10 +126,6 @@ let eval_config fmt () =
               | "" -> "-"
               | s -> s ) );
         ("debug", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.debug);
-        ( "export_decs",
-          fun fmt () ->
-            fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_decs)
-        );
         ( "export_graph",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_graph)
@@ -143,9 +133,6 @@ let eval_config fmt () =
         ( "export_lab",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_lab) );
-        ( "export_ml",
-          fun fmt () ->
-            fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_ml) );
         ( "export_prism",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]" (string_of_file defaults.export_prism)
@@ -270,16 +257,13 @@ let empty_to_none = function
   | Some _ as s -> s
   | None -> None
 
-let copts consts debug decs ext graph lbls prism (*ml*) quiet states verbose
-    nocols =
+let copts consts debug ext graph lbls prism quiet states verbose nocols =
   defaults.consts <- consts;
   defaults.debug <- debug;
-  defaults.export_decs <- decs;
   defaults.out_format <- ext;
   defaults.export_graph <- graph;
   defaults.export_lab <- lbls;
   defaults.export_prism <- prism;
-  (* defaults.export_ml <- ml; *)
   defaults.quiet <- quiet;
   (* States have extra handling to ensure that the directory is inferred
    * from export-ts if required *)
@@ -313,15 +297,6 @@ let copts_t =
       & opt (list (conv fconv)) [ Dot ]
       & info [ "f"; "format" ] ~docv:"FORMAT" ~doc ~env)
   in
-  let decs =
-    let doc =
-      "Export each declaration in the model (bigraphs and reaction rules)\n\
-      \               to a distinct file in $(docv).\n\
-      \               Dummy values are used to instantiate functional \
-       values."
-    in
-    Arg.(value & opt_str & info [ "d"; "export-decs" ] ~docv:"DIR" ~doc)
-  in
   let graph =
     let doc = "Export the transition system to $(docv)." in
     Arg.(value & opt_str & info [ "t"; "export-ts" ] ~docv:"FILE" ~doc)
@@ -338,10 +313,6 @@ let copts_t =
     in
     Arg.(value & opt_str & info [ "p"; "export-prism" ] ~docv:"FILE" ~doc)
   in
-  (* let ml      =
-   *   let doc = "Export the model in OCaml format to $(docv)" in
-   *   Arg.(value & opt_str & info ["m";"export-ml"] ~docv:"FILE" ~doc)
-   * in *)
   let quiet =
     let doc = "Disable progress indicator." in
     let env = Arg.env_var "BIGQUIET" ~doc in
@@ -367,8 +338,7 @@ let copts_t =
     Arg.(value & flag & info [ "n"; "no-colors" ] ~doc ~env)
   in
   Term.(
-    const copts $ consts $ debug $ decs $ ext $ graph $ lbls $ prism
-    (* $ ml *) $ quiet
+    const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
     $ states $ verbose $ nocols)
 
 (* Sim options *)
