@@ -25,5 +25,5 @@ WORKDIR /home/opam/devel
 RUN eval $(opam env) && \
     dune build -j 4 --profile=release --always-show-command-line && \
     dune install
-ENTRYPOINT ["/home/opam/.opam/4.10.0+flambda/bin/bigrapher"]
+ENTRYPOINT ["bash", "-l"]
 
