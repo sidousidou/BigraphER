@@ -3,6 +3,7 @@
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
 [![Run Status](https://api.shippable.com/projects/5e6fa6aa5f10de0007bc21a1/badge?branch=master)]()
+[![Docker Build Status](https://img.shields.io/docker/build/mseve/bigrapher)]()
 
 This repository contains a collection of tools for writing and
 anlysing Bigraph models. It contains:

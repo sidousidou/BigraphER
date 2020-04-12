@@ -1,0 +1,13 @@
+_build
+bigraph-docker
+nix
+static-bin
+*.tar.gz
+*.opam
+*.yml
+*.yaml
+*.nix
+*~
+*/*~
+*#
+*/*#
