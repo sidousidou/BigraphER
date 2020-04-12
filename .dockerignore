@@ -1,9 +1,0 @@
-_build
-static-bin
-*.tar.gz
-*.opam
-*.yml
-*~
-*/*~
-*#
-*/*#

@@ -1,4 +1,5 @@
 #! /usr/bin/env sh
+set -e
 
 IMG_NAME=bigrapher:static
 CON_NAME=dummy
