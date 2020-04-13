@@ -18,4 +18,4 @@ build:
     - eval $(opam env)
     - mkdir -p shippable/testresults
     - dune runtest --profile=release
-    - cp _build/default/bigraph/test/shippable/testresults/*.xml _build/default/bigrapher/tests/shippable/testresults/*.xml shippable/testresults/
+    - cp _build/default/shippable/testresults/*.xml shippable/testresults/
