@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-type react
 (** The type of stochastic bigraphical reaction rules.*)
+type react
 
 (** The type of priority classes, {e i.e.}, lists of stochastic reaction
     rules. Intermediate states resulting from the application of reaction
@@ -12,15 +12,15 @@ type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list  (** Reducible priority class *)
 
-type graph
 (** The type of Continuous Time Markov Chains (CTMC). *)
+type graph
 
-type label = float
 (** The type of edge labels in Continuous Time Markov Chains (CTMC), {e
     i.e.}, stochastic rates. *)
+type label = float
 
-type limit = float
 (** Type of simulation limit {e i.e.}, execution time. *)
+type limit = float
 
 val typ : Rs.t
 (** Type of transition system: {{!Rs.t} [SBRS]}. *)
@@ -66,11 +66,11 @@ val is_valid_react : react -> bool
 val equal_react : react -> react -> bool
 (** Equality for reaction rules. *)
 
-type react_error
 (** The type of reaction validity errors. *)
+type react_error
 
-exception NOT_VALID of react_error
 (** Raised when a reaction rule is not valid. *)
+exception NOT_VALID of react_error
 
 val is_valid_react_exn : react -> bool
 (** Same as {!is_valid_react} but an exception is raised when the rule is not
@@ -122,9 +122,9 @@ val rewrite : Big.t -> p_class list -> Big.t * int
 
 (** {2 Continuous Time Markov Chains} *)
 
-exception MAX of graph * Stats.t
 (** Raised when the size of the transition system reaches the maximum number
     of states. *)
+exception MAX of graph * Stats.t
 
 val bfs :
   s0:Big.t ->
@@ -146,11 +146,11 @@ val bfs :
 
 (** {2 Stochastic simulation traces} *)
 
-exception DEADLOCK of graph * Stats.t * float
 (** Raised when the simulation reaches a deadlock state. *)
+exception DEADLOCK of graph * Stats.t * float
 
-exception LIMIT of graph * Stats.t
 (** Raised when the simulation reaches the maximum simulation time. *)
+exception LIMIT of graph * Stats.t
 
 val sim :
   s0:Big.t ->

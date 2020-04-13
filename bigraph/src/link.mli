@@ -121,12 +121,12 @@ end
 
 (** {2 Link graphs} *)
 
+(** The type of edges. *)
 type edg = {
   i : Face.t;  (** Inner face *)
   o : Face.t;  (** Outer face *)
   p : Ports.t;  (** Set of ports *)
 }
-(** The type of edges. *)
 
 (** This module provides set operations for link graphs. *)
 module Lg : sig
@@ -242,14 +242,14 @@ val id_empty : Lg.t
 
 (** {2 Operations on link graphs} *)
 
-exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
 (** Raised when the tensor product between two incompatible link graphs
     cannot be performed. The first element is the set of inner common names
     while the second is the set of outer common names. *)
+exception NAMES_ALREADY_DEFINED of (Face.t * Face.t)
 
-exception FACES_MISMATCH of (Face.t * Face.t)
 (** Raised when a composition between two incompatible link graphs cannot be
     performed. *)
+exception FACES_MISMATCH of (Face.t * Face.t)
 
 val tens : Lg.t -> Lg.t -> int -> Lg.t
 (** [tens a b n] computes the tensor product of link graphs [a] and [b].

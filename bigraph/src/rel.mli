@@ -3,8 +3,8 @@
 
     @author Michele Sevegnani *)
 
-type t
 (** Type of finite binary relations on integers. *)
+type t
 
 (** {2 Standard map operations} *)
 

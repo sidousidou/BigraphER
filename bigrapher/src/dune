@@ -6,6 +6,7 @@
  (modules parser))
 
 (executables
+ (package bigrapher)
  (names bigrapher)
  (public_names bigrapher)
  (modes exe)

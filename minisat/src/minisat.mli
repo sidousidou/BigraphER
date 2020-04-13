@@ -5,14 +5,14 @@
 
 (** {2 Datatypes & exceptions} *)
 
-type s
 (** The type of MiniSAT solvers. *)
+type s
 
-type var = int
 (** The type of variables. *)
+type var = int
 
-type lit = int
 (** The type of literals. *)
+type lit = int
 
 (** The type of variable values. *)
 type value = False | True | Unknown
@@ -20,48 +20,48 @@ type value = False | True | Unknown
 (** The type of MiniSAT solver solutions. *)
 type solution = SAT | UNSAT
 
+(** The type of MiniSAT solver statistics. *)
 type stat = {
   v : int;  (** Number of variables. *)
   c : int;  (** Number of clauses. *)
   mem : float;  (** Memory used in MB. *)
   cpu : float;  (** CPU time in seconds. *)
 }
-(** The type of MiniSAT solver statistics. *)
 
-exception MINISAT of string
 (** Raised by {!Minisat.solver.value_of} when using an invalid argument. *)
+exception MINISAT of string
 
 (** The class implementing MiniSAT solvers. *)
 class solver :
   object
-    (** MiniSAT instance.*)
     val solver : s
+    (** MiniSAT instance.*)
 
+    method add_clause : lit list -> unit
     (** Add a clause (i.e. disjunction of literals) to the set of problem
         constraints. A clause is represented as a list of literals. *)
-    method add_clause : lit list -> unit
 
-    (** Create a fresh variable. *)
     method new_var : var
+    (** Create a fresh variable. *)
 
+    method simplify : unit
     (** [simplify] can be called before [solve] to simply the set of problem
         constrains. It will first propagate all unit information and the
         remove all satisfied constraints. *)
-    method simplify : unit
 
-    (** Find a solution to the current sat problem. *)
     method solve : solution
+    (** Find a solution to the current sat problem. *)
 
+    method value_of : var -> value
     (** Return the value associated to a variable.
 
         @raise Minisat.MINISAT when the input variable is not a valid index. *)
-    method value_of : var -> value
 
-    (** Return some current statistics. *)
     method get_stats : stat
+    (** Return some current statistics. *)
 
-    (** Print some current statistics to standard output. *)
     method print_stats : unit
+    (** Print some current statistics to standard output. *)
   end
 
 val string_of_value : value -> string

@@ -6,7 +6,7 @@ CON_NAME=dummy
 VERSION=1.9.1
 
 cd ..
-docker build --tag $IMG_NAME -f static-bin/Dockerfile .
+docker build --tag $IMG_NAME -f static-bin/Dockerfile.static .
 docker create --name $CON_NAME $IMG_NAME
 # libc static binaries
 cd static-bin

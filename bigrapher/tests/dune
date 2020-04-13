@@ -5,8 +5,10 @@
 (rule
  (alias runtest)
  (deps
+  (:exe test_parser.exe)
   (glob_files ../examples/*.big)
-  (glob_files files/*.reference))
+  (glob_files files/*.reference)
+  (:list files/parser.in))
  (action
-  (run %{exe:test_parser.exe} %{bin:bigrapher} %{dep:files/parser.in}
-    shippable/testresults parser-junit.xml)))
+  (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
+    parser-junit.xml)))

@@ -6,4 +6,5 @@
  (libraries unix str minisat))
 
 (documentation
+ (package bigraph)
  (mld_files (:standard)))

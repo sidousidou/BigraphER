@@ -16,11 +16,11 @@ type var =
   | P_var of lit  (** Positive literal *)
   | N_var of lit  (** Negative literal *)
 
-type clause = var list
 (** A disjunction of variables *)
+type clause = var list
 
-type b_clause = var * var
 (** Binary disjunction *)
+type b_clause = var * var
 
 (** The type of formulae obtained by application of the
     {{:https://en.wikipedia.org/wiki/Conjunctive_normal_form#Conversion_into_CNF}
@@ -106,8 +106,8 @@ val equiv : lit -> lit list list -> b_clause list * clause list
     {{:http://www.cs.cmu.edu/~wklieber/papers/2007_efficient-cnf-encoding-for-selecting-1.pdf}
     paper}. *)
 
-type group = lit list
 (** A group in the encoding corresponds to a list of literals. *)
+type group = lit list
 
 (** N-ary tree for the encoding of the auxiliary variables introduced by the
     encoding. *)
@@ -139,12 +139,12 @@ val block_cmd : int list -> clause list
 
 (** {2 Higher level functions} *)
 
+(** The type of a commander-variable constraint. *)
 type cmd = {
   length : int;  (** Number of auxiliary commander variables *)
   roots : int list;  (** Root commander variables *)
   cmd : cmd_constraint array;  (** Constraints *)
 }
-(** The type of a commander-variable constraint. *)
 
 val bijection : int -> int -> int -> int -> cmd * cmd
 (** [bijection n m t g] generates constraints for a bijection from [n] to [m]

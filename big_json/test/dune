@@ -1,16 +1,14 @@
-(executables
- (names test)
- (libraries minisat))
+(executable
+ (name test)
+ (libraries bigraph big_json))
 
 (rule
  (deps
-  (:exe test.exe)
-  (:phi
-   (glob_files ../files/*.formula)))
+  (:exe test.exe))
  (action
   (with-stdout-to
    test.output
-   (run %{exe} %{phi}))))
+   (run %{exe}))))
 
 (rule
  (alias runtest)

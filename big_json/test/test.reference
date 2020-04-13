@@ -1,0 +1,1872 @@
+ENCODING
+Testing big_to_json:
+
+{
+  "nodes": [
+    {
+      "node_id": 0,
+      "control": {
+        "ctrl_name": "Park",
+        "ctrl_params": [],
+        "ctrl_arity": 3
+      }
+    },
+    {
+      "node_id": 1,
+      "control": {
+        "ctrl_name": "Hospital",
+        "ctrl_params": [
+          {
+            "ctrl_int": 12
+          },
+          {
+            "ctrl_string": "Church Street"
+          }
+        ],
+        "ctrl_arity": 0
+      }
+    },
+    {
+      "node_id": 2,
+      "control": {
+        "ctrl_name": "Park",
+        "ctrl_params": [],
+        "ctrl_arity": 3
+      }
+    },
+    {
+      "node_id": 3,
+      "control": {
+        "ctrl_name": "Bridge",
+        "ctrl_params": [
+          {
+            "ctrl_float": 3.6
+          }
+        ],
+        "ctrl_arity": 2
+      }
+    }
+  ],
+  "place_graph": {
+    "num_regions": 2,
+    "num_nodes": 4,
+    "num_sites": 2,
+    "rn": [
+      {
+        "source": 0,
+        "target": 0
+      },
+      {
+        "source": 1,
+        "target": 1
+      }
+    ],
+    "rs": [],
+    "nn": [
+      {
+        "source": 0,
+        "target": 2
+      },
+      {
+        "source": 1,
+        "target": 2
+      },
+      {
+        "source": 1,
+        "target": 3
+      }
+    ],
+    "ns": [
+      {
+        "source": 2,
+        "target": 0
+      },
+      {
+        "source": 3,
+        "target": 1
+      }
+    ]
+  },
+  "link_graph": [
+    {
+      "inner": [],
+      "outer": [],
+      "ports": [
+        {
+          "node_id": 0,
+          "port_arity": 1
+        }
+      ]
+    },
+    {
+      "inner": [],
+      "outer": [],
+      "ports": [
+        {
+          "node_id": 0,
+          "port_arity": 1
+        }
+      ]
+    },
+    {
+      "inner": [],
+      "outer": [],
+      "ports": [
+        {
+          "node_id": 0,
+          "port_arity": 1
+        },
+        {
+          "node_id": 2,
+          "port_arity": 1
+        },
+        {
+          "node_id": 3,
+          "port_arity": 1
+        }
+      ]
+    },
+    {
+      "inner": [],
+      "outer": [],
+      "ports": [
+        {
+          "node_id": 2,
+          "port_arity": 1
+        }
+      ]
+    },
+    {
+      "inner": [],
+      "outer": [],
+      "ports": [
+        {
+          "node_id": 3,
+          "port_arity": 1
+        }
+      ]
+    },
+    {
+      "inner": [],
+      "outer": [
+        {
+          "name": "x"
+        }
+      ],
+      "ports": [
+        {
+          "node_id": 2,
+          "port_arity": 1
+        }
+      ]
+    }
+  ]
+}
+
+Testing react_to_json:
+
+{
+  "brs_name": "",
+  "brs_lhs": {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "brs_rhs": {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "brs_eta": null
+}
+
+Testing preact_to_json:
+
+{
+  "pbrs_name": "",
+  "pbrs_lhs": {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "pbrs_rhs": {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "pbrs_p": 0.476,
+  "pbrs_eta": null
+}
+
+Testing sreact_to_json:
+
+{
+  "sbrs_name": "",
+  "sbrs_lhs": {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "sbrs_rhs": {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  },
+  "sbrs_rate": 8.031000000000001,
+  "sbrs_eta": [
+    {
+      "x": 0,
+      "y": 1
+    },
+    {
+      "x": 1,
+      "y": 1
+    }
+  ]
+}
+
+Testing s_occs_to_json:
+
+[
+  {
+    "state": {
+      "nodes": [
+        {
+          "node_id": 0,
+          "control": {
+            "ctrl_name": "Park",
+            "ctrl_params": [],
+            "ctrl_arity": 3
+          }
+        },
+        {
+          "node_id": 1,
+          "control": {
+            "ctrl_name": "Hospital",
+            "ctrl_params": [
+              {
+                "ctrl_int": 12
+              },
+              {
+                "ctrl_string": "Church Street"
+              }
+            ],
+            "ctrl_arity": 0
+          }
+        },
+        {
+          "node_id": 2,
+          "control": {
+            "ctrl_name": "Park",
+            "ctrl_params": [],
+            "ctrl_arity": 3
+          }
+        },
+        {
+          "node_id": 3,
+          "control": {
+            "ctrl_name": "Bridge",
+            "ctrl_params": [
+              {
+                "ctrl_float": 3.6
+              }
+            ],
+            "ctrl_arity": 2
+          }
+        }
+      ],
+      "place_graph": {
+        "num_regions": 2,
+        "num_nodes": 4,
+        "num_sites": 0,
+        "rn": [
+          {
+            "source": 0,
+            "target": 0
+          },
+          {
+            "source": 1,
+            "target": 1
+          }
+        ],
+        "rs": [],
+        "nn": [
+          {
+            "source": 0,
+            "target": 2
+          },
+          {
+            "source": 1,
+            "target": 2
+          },
+          {
+            "source": 1,
+            "target": 3
+          }
+        ],
+        "ns": []
+      },
+      "link_graph": [
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            },
+            {
+              "node_id": 2,
+              "port_arity": 1
+            },
+            {
+              "node_id": 3,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 2,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 3,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [
+            {
+              "name": "x"
+            }
+          ],
+          "ports": [
+            {
+              "node_id": 2,
+              "port_arity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "rate": 8.031000000000001
+  }
+]
+
+Testing matches_to_json:
+
+[
+  {
+    "iso_n": [
+      {
+        "i": 0,
+        "j": 0
+      },
+      {
+        "i": 1,
+        "j": 1
+      },
+      {
+        "i": 2,
+        "j": 2
+      },
+      {
+        "i": 3,
+        "j": 3
+      }
+    ],
+    "iso_e": [
+      {
+        "i": 0,
+        "j": 1
+      },
+      {
+        "i": 1,
+        "j": 0
+      },
+      {
+        "i": 2,
+        "j": 2
+      },
+      {
+        "i": 3,
+        "j": 3
+      },
+      {
+        "i": 4,
+        "j": 4
+      }
+    ],
+    "f_e": [
+      {
+        "x": 5,
+        "y": 5
+      }
+    ]
+  }
+]
+
+DECODING
+Testing big_of_json: Ok
+Testing react_of_json: Ok
+Testing preact_of_json: Ok
+Testing sreact_of_json: Ok
+
+MATCHING ENGINE
+Testing Brs.step:
+[
+  {
+    "nodes": [
+      {
+        "node_id": 0,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 1,
+        "control": {
+          "ctrl_name": "Hospital",
+          "ctrl_params": [
+            {
+              "ctrl_int": 12
+            },
+            {
+              "ctrl_string": "Church Street"
+            }
+          ],
+          "ctrl_arity": 0
+        }
+      },
+      {
+        "node_id": 2,
+        "control": {
+          "ctrl_name": "Park",
+          "ctrl_params": [],
+          "ctrl_arity": 3
+        }
+      },
+      {
+        "node_id": 3,
+        "control": {
+          "ctrl_name": "Bridge",
+          "ctrl_params": [
+            {
+              "ctrl_float": 3.6
+            }
+          ],
+          "ctrl_arity": 2
+        }
+      }
+    ],
+    "place_graph": {
+      "num_regions": 2,
+      "num_nodes": 4,
+      "num_sites": 2,
+      "rn": [
+        {
+          "source": 0,
+          "target": 0
+        },
+        {
+          "source": 1,
+          "target": 1
+        }
+      ],
+      "rs": [],
+      "nn": [
+        {
+          "source": 0,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 2
+        },
+        {
+          "source": 1,
+          "target": 3
+        }
+      ],
+      "ns": [
+        {
+          "source": 2,
+          "target": 0
+        },
+        {
+          "source": 3,
+          "target": 1
+        }
+      ]
+    },
+    "link_graph": [
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 0,
+            "port_arity": 1
+          },
+          {
+            "node_id": 2,
+            "port_arity": 1
+          },
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [],
+        "ports": [
+          {
+            "node_id": 3,
+            "port_arity": 1
+          }
+        ]
+      },
+      {
+        "inner": [],
+        "outer": [
+          {
+            "name": "x"
+          }
+        ],
+        "ports": [
+          {
+            "node_id": 2,
+            "port_arity": 1
+          }
+        ]
+      }
+    ]
+  }
+]
+Testing Pbrs.step:
+[
+  {
+    "state": {
+      "nodes": [
+        {
+          "node_id": 0,
+          "control": {
+            "ctrl_name": "Park",
+            "ctrl_params": [],
+            "ctrl_arity": 3
+          }
+        },
+        {
+          "node_id": 1,
+          "control": {
+            "ctrl_name": "Hospital",
+            "ctrl_params": [
+              {
+                "ctrl_int": 12
+              },
+              {
+                "ctrl_string": "Church Street"
+              }
+            ],
+            "ctrl_arity": 0
+          }
+        },
+        {
+          "node_id": 2,
+          "control": {
+            "ctrl_name": "Park",
+            "ctrl_params": [],
+            "ctrl_arity": 3
+          }
+        },
+        {
+          "node_id": 3,
+          "control": {
+            "ctrl_name": "Bridge",
+            "ctrl_params": [
+              {
+                "ctrl_float": 3.6
+              }
+            ],
+            "ctrl_arity": 2
+          }
+        }
+      ],
+      "place_graph": {
+        "num_regions": 2,
+        "num_nodes": 4,
+        "num_sites": 2,
+        "rn": [
+          {
+            "source": 0,
+            "target": 0
+          },
+          {
+            "source": 1,
+            "target": 1
+          }
+        ],
+        "rs": [],
+        "nn": [
+          {
+            "source": 0,
+            "target": 2
+          },
+          {
+            "source": 1,
+            "target": 2
+          },
+          {
+            "source": 1,
+            "target": 3
+          }
+        ],
+        "ns": [
+          {
+            "source": 2,
+            "target": 0
+          },
+          {
+            "source": 3,
+            "target": 1
+          }
+        ]
+      },
+      "link_graph": [
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            },
+            {
+              "node_id": 2,
+              "port_arity": 1
+            },
+            {
+              "node_id": 3,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 2,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 3,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [
+            {
+              "name": "x"
+            }
+          ],
+          "ports": [
+            {
+              "node_id": 2,
+              "port_arity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "prob": 1
+  }
+]
+Testing Sbrs.step:
+[
+  {
+    "state": {
+      "nodes": [
+        {
+          "node_id": 0,
+          "control": {
+            "ctrl_name": "Park",
+            "ctrl_params": [],
+            "ctrl_arity": 3
+          }
+        },
+        {
+          "node_id": 1,
+          "control": {
+            "ctrl_name": "Hospital",
+            "ctrl_params": [
+              {
+                "ctrl_int": 12
+              },
+              {
+                "ctrl_string": "Church Street"
+              }
+            ],
+            "ctrl_arity": 0
+          }
+        },
+        {
+          "node_id": 2,
+          "control": {
+            "ctrl_name": "Park",
+            "ctrl_params": [],
+            "ctrl_arity": 3
+          }
+        },
+        {
+          "node_id": 3,
+          "control": {
+            "ctrl_name": "Bridge",
+            "ctrl_params": [
+              {
+                "ctrl_float": 3.6
+              }
+            ],
+            "ctrl_arity": 2
+          }
+        }
+      ],
+      "place_graph": {
+        "num_regions": 2,
+        "num_nodes": 4,
+        "num_sites": 0,
+        "rn": [
+          {
+            "source": 0,
+            "target": 0
+          },
+          {
+            "source": 1,
+            "target": 1
+          }
+        ],
+        "rs": [],
+        "nn": [
+          {
+            "source": 0,
+            "target": 2
+          },
+          {
+            "source": 1,
+            "target": 2
+          },
+          {
+            "source": 1,
+            "target": 3
+          }
+        ],
+        "ns": []
+      },
+      "link_graph": [
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 0,
+              "port_arity": 1
+            },
+            {
+              "node_id": 2,
+              "port_arity": 1
+            },
+            {
+              "node_id": 3,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 2,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [],
+          "ports": [
+            {
+              "node_id": 3,
+              "port_arity": 1
+            }
+          ]
+        },
+        {
+          "inner": [],
+          "outer": [
+            {
+              "name": "x"
+            }
+          ],
+          "ports": [
+            {
+              "node_id": 2,
+              "port_arity": 1
+            }
+          ]
+        }
+      ]
+    },
+    "rate": 8.031000000000001
+  }
+]

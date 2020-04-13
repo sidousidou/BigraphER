@@ -2,9 +2,10 @@
 
     @author Michele Sevegnani *)
 
-type m = Sparse.t
 (** The type of boolean matrices. *)
+type m = Sparse.t
 
+(** The type of place graphs. *)
 type t = {
   r : int;  (** Number of regions *)
   n : int;  (** Number of nodes *)
@@ -14,7 +15,6 @@ type t = {
   nn : m;  (** Boolean adjacency matrix nodes X nodes *)
   ns : m;  (** Boolean adjacency matrix nodes X sites *)
 }
-(** The type of place graphs. *)
 
 val to_string : t -> string
 (** [to_string p] returns a string representation of place graph [p]. *)
@@ -105,10 +105,10 @@ val compare_placing : t -> t -> int
 
 (** {2 Operations} *)
 
-exception COMP_ERROR of (int * int)
 (** Raised when a composition between two incompatible place graphs is
     attempted. The two integers are the number of sites and regions involved
     in the composition, respectively. *)
+exception COMP_ERROR of (int * int)
 
 val tens : t -> t -> t
 (** [tens p0 p1] returns the tensor product of place graphs [p0] and [p1]. *)
@@ -157,10 +157,10 @@ val decomp : target:t -> pattern:t -> Iso.t -> t * t * t * Iso.t * Iso.t
     [c], identity [id], parameter [d], and nodes in [c] and [d] expressed as
     rows of [t]. *)
 
-exception NOT_PRIME
 (** Raised when a place graph cannot be decomposed into prime components. The
     first element is a set of shared nodes and the second a set of shared
     sites. *)
+exception NOT_PRIME
 
 val prime_components : t -> (t * Iso.t) list
 (** Compute the prime components ({e i.e.} place graphs with one region) of a
@@ -176,9 +176,9 @@ val decomp_d : t -> int -> t * t * Iso.t * Iso.t
 
 (** {2 Matching constraints} *)
 
-exception NOT_TOTAL
 (** Raised when a node in the pattern cannot be matched to any node in the
     target. *)
+exception NOT_TOTAL
 
 val match_list :
   target:t ->

@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-type t
 (** The type of sets of integers. *)
+type t
 
 (** {2 Standard set operations} *)
 

@@ -10,4 +10,5 @@
  (synopsis "OCaml bindings for the MiniSAT SAT solver"))
 
 (documentation
+ (package minisat)
  (mld_files (:standard)))

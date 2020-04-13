@@ -1,4 +1,5 @@
 (install
+ (package bigrapher)
  (section share_root)
  (files
   (big-mode.el as emacs/site-lisp/big-mode.el)

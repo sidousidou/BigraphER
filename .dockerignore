@@ -2,7 +2,8 @@ _build
 bigraph-docker
 .git
 nix
-static-bin
+static-bin/Dockerfile
+static-bin/.dockerignore
 *.tar.gz
 *.opam
 *.yml

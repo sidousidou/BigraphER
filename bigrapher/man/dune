@@ -27,5 +27,6 @@
    (run %{bin:bigrapher} validate --help=groff))))
 
 (install
+ (package bigrapher)
  (section man)
  (files bigrapher.1 bigrapher-validate.1 bigrapher-full.1 bigrapher-sim.1))

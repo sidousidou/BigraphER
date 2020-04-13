@@ -4,7 +4,7 @@ _build
 # Generated files
 *.opam
 .merlin
-.tar.gz
+*.tar.gz
 
 # temp files
 *~
