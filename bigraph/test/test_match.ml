@@ -1,7 +1,8 @@
 (* Tests for the matching engine *)
 open Printf
-open Junit
 open Bigraph
+module ST = CI_utils.Shippable_test
+module IO = CI_utils.Io
 
 type test = {
   target : Big.t;
@@ -45,22 +46,22 @@ let do_tests =
   let success t =
     ( t.t_name ^ " &gt; " ^ t.p_name,
       module_name,
-      xml_block "system-out" [] [ "Result: " ^ print_res t.res ],
+      ST.xml_block "system-out" [] [ "Result: " ^ print_res t.res ],
       [] )
   and failure_occ t msg =
     ( t.t_name ^ " &gt; " ^ t.p_name,
       module_name,
-      xml_block "system-out" []
+      ST.xml_block "system-out" []
         [
           "Result: " ^ print_res t.res ^ "\nExpected result: "
           ^ print_res t.exp_res ^ "\nTarget:\n" ^ Big.to_string t.target
           ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\n";
         ],
-      [ xml_block "failure" attr_match [ msg ] ] )
+      [ ST.xml_block "failure" attr_match [ msg ] ] )
   and failure_decomp t msg occs =
     ( t.t_name ^ " &gt; " ^ t.p_name,
       module_name,
-      xml_block "system-out" []
+      ST.xml_block "system-out" []
         [
           "Decompositions:\n"
           ^ ( List.mapi
@@ -81,7 +82,7 @@ let do_tests =
                 occs
             |> String.concat "\n" );
         ],
-      [ xml_block "failure" attr_match [ msg ] ] )
+      [ ST.xml_block "failure" attr_match [ msg ] ] )
   and error n0 b0 n1 b1 =
     n0 ^ "\n" ^ Big.to_string b0 ^ "\n" ^ n1 ^ "\n" ^ Big.to_string b1 ^ "\n"
     ^ Printexc.get_backtrace ()
@@ -120,19 +121,21 @@ let do_tests =
       | _ ->
           ( t.t_name ^ " &gt; " ^ t.p_name,
             module_name,
-            xml_block "system-out" [] [ error_msg ],
+            ST.(xml_block "system-out" [] [ error_msg ]),
             [
-              xml_block "error" attr_err
-                [ error t.t_name t.target t.p_name t.pattern ];
+              ST.(
+                xml_block "error" attr_err
+                  [ error t.t_name t.target t.p_name t.pattern ]);
             ] ))
 
 let do_equality_tests l ts =
-  let success s msg = (s, module_name, xml_block "system-out" [] [ msg ], [])
+  let success s msg =
+    (s, module_name, ST.xml_block "system-out" [] [ msg ], [])
   and failure s msg_out msg =
     ( s,
       module_name,
-      xml_block "system-out" [] [ msg_out ],
-      [ xml_block "failure" attr_match [ msg ] ] )
+      ST.xml_block "system-out" [] [ msg_out ],
+      [ ST.xml_block "failure" attr_match [ msg ] ] )
   and error n b =
     (* let aux m = *)
     (* "(" ^ (string_of_int m.Sparse.r) ^ " X " ^ (string_of_int m.Sparse.c)
@@ -163,8 +166,8 @@ let do_equality_tests l ts =
       with _ ->
         ( s,
           module_name,
-          xml_block "system-out" [] [ error_msg ],
-          [ xml_block "error" attr_err [ error n b ] ] ))
+          ST.(xml_block "system-out" [] [ error_msg ]),
+          [ ST.(xml_block "error" attr_err [ error n b ]) ] ))
     (List.sort (fun (x, _) (y, _) -> String.compare x y) l)
   @ List.map
       (fun t ->
@@ -178,24 +181,26 @@ let do_equality_tests l ts =
         with _ ->
           ( s,
             module_name,
-            xml_block "system-out" [] [ error_msg ],
+            ST.(xml_block "system-out" [] [ error_msg ]),
             [
-              xml_block "error" attr_err
-                [
-                  t.t_name ^ "\n" ^ Big.to_string t.target ^ "\n" ^ t.p_name
-                  ^ "\n" ^ Big.to_string t.pattern ^ "\n"
-                  ^ Printexc.get_backtrace ();
-                ];
+              ST.(
+                xml_block "error" attr_err
+                  [
+                    t.t_name ^ "\n" ^ Big.to_string t.target ^ "\n"
+                    ^ t.p_name ^ "\n" ^ Big.to_string t.pattern ^ "\n"
+                    ^ Printexc.get_backtrace ();
+                  ]);
             ] ))
       ts
 
 let do_to_string_tests =
-  let success s msg = (s, module_name, xml_block "system-out" [] [ msg ], [])
+  let success s msg =
+    (s, module_name, ST.xml_block "system-out" [] [ msg ], [])
   and failure s msg_out msg =
     ( s,
       module_name,
-      xml_block "system-out" [] [ msg_out ],
-      [ xml_block "failure" attr_match [ msg ] ] )
+      ST.xml_block "system-out" [] [ msg_out ],
+      [ ST.xml_block "failure" attr_match [ msg ] ] )
   and error n b e =
     n ^ "\n" ^ Big.to_string b ^ "\n" ^ Printexc.to_string e ^ "\n"
     ^ Printexc.get_backtrace ()
@@ -212,8 +217,8 @@ let do_to_string_tests =
       with e ->
         ( s,
           module_name,
-          xml_block "system-out" [] [ error_msg ],
-          [ xml_block "error" attr_err [ error n b e ] ] ))
+          ST.(xml_block "system-out" [] [ error_msg ]),
+          [ ST.(xml_block "error" attr_err [ error n b e ]) ] ))
 
 let tests bgs =
   (* TEST 1 *)
@@ -611,7 +616,7 @@ let tests bgs =
 let () =
   Printexc.record_backtrace true;
   let bg_strings =
-    Io.parse_all Sys.argv.(1) (fun x -> Filename.check_suffix x ".big")
+    IO.parse_all Sys.argv.(1) (fun x -> Filename.check_suffix x ".big")
   in
   let bgs = List.map (fun (n, ls) -> (n, Big.parse ls)) bg_strings in
   let ts = tests bgs in
@@ -619,13 +624,14 @@ let () =
   and testcases_eq = do_equality_tests bgs ts
   and testcases_to_string = do_to_string_tests bgs in
   print_endline "OK";
-  Io.mkdir Sys.argv.(2);
-  write_xml
-    (testsuite "test_match" testcases_match)
-    Sys.argv.(2) "match-junit.xml";
-  write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml";
-  write_xml
-    (testsuite "test_to_string" testcases_to_string)
-    Sys.argv.(2) "to-string-junit.xml";
+  IO.mkdir Sys.argv.(2);
+  ST.(
+    write_xml
+      (testsuite "test_match" testcases_match)
+      Sys.argv.(2) "match-junit.xml";
+    write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml";
+    write_xml
+      (testsuite "test_to_string" testcases_to_string)
+      Sys.argv.(2) "to-string-junit.xml");
   print_endline "Done!";
   exit 0

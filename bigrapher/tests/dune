@@ -1,6 +1,6 @@
 (executables
  (names test_parser)
- (libraries bigraph unix utils))
+ (libraries bigraph CI_utils unix utils))
 
 (rule
  (alias runtest)

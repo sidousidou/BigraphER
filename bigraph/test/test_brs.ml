@@ -1,6 +1,7 @@
-open Junit
 open Bigraph
 open Big
+module ST = CI_utils.Shippable_test
+module IO = CI_utils.Io
 
 let r_p = comp (ion (Link.parse_face [ "x" ]) (Ctrl.C ("B", [], 1))) one
 
@@ -49,7 +50,7 @@ let () =
   and reacts_reference = 29
   and occurs_reference = 4495
   and print_res l =
-    xml_block "system-out" []
+    ST.xml_block "system-out" []
       [
         List.filter (fun (_, _, flag) -> not flag) l
         |> List.map (fun (desc, value, _) -> desc ^ " " ^ value)
@@ -57,7 +58,9 @@ let () =
       ]
   in
   let failures l =
-    List.map (fun (id, reference, out) -> assert_eq_int id reference out) l
+    List.map
+      (fun (id, reference, out) -> ST.assert_eq_int id reference out)
+      l
   and ass_list s r o =
     [
       ("States", states_reference, s);
@@ -120,7 +123,7 @@ let () =
     ]
   in
   print_endline "OK";
-  Io.mkdir Sys.argv.(1);
-  write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2);
+  IO.mkdir Sys.argv.(1);
+  ST.(write_xml (testsuite "test_brs" testcases) Sys.argv.(1) Sys.argv.(2));
   print_endline "Done!";
   exit 0

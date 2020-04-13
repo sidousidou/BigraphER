@@ -1,6 +1,6 @@
 (executables
  (names test_match test_decomp test_brs test_inst)
- (libraries bigraph))
+ (libraries CI_utils bigraph))
 
 (rule
  (alias runtest)

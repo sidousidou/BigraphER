@@ -1,5 +1,6 @@
-open Junit
 open Bigraph
+module ST = CI_utils.Shippable_test
+module IO = CI_utils.Io
 
 (* Controls *)
 let a = Big.ion Link.Face.empty (Ctrl.C ("A", [], 0))
@@ -68,7 +69,7 @@ let test = [ (b1, rr1, b1'); (b2, rr2, b2'); (b3, rr3, b3') ]
 
 let () =
   let print_res (a, r, b) =
-    xml_block "system-out" []
+    ST.xml_block "system-out" []
       [
         "a:\n" ^ Big.to_string a ^ "\nr:\n" ^ Brs.string_of_react r
         ^ "\nb:\n" ^ Big.to_string b;
@@ -84,11 +85,12 @@ let () =
           ( label,
             __MODULE__,
             print_out,
-            [ xml_block "failure" [ ("message", "Wrong rewriting") ] [] ] ))
+            [ ST.xml_block "failure" [ ("message", "Wrong rewriting") ] [] ]
+          ))
       test
   in
   print_endline "OK";
-  Io.mkdir Sys.argv.(1);
-  write_xml (testsuite "test_inst" testcases) Sys.argv.(1) Sys.argv.(2);
+  IO.mkdir Sys.argv.(1);
+  ST.(write_xml (testsuite "test_inst" testcases) Sys.argv.(1) Sys.argv.(2));
   print_endline "Done!";
   exit 0

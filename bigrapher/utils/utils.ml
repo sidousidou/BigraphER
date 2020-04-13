@@ -60,18 +60,6 @@ let format_time () =
     months.(tm.Unix.tm_mon) tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min
     tm.Unix.tm_sec (tm.Unix.tm_year + 1900)
 
-let safe_mkdir dir =
-  if not (Sys.file_exists dir) then
-    try Unix.mkdir dir 0o755 with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
-
-let mkdir dir =
-  let rec aux dir =
-    if not (Sys.file_exists dir) then (
-      aux (Filename.dirname dir);
-      safe_mkdir dir )
-  in
-  aux dir
-
 let dot_installed () =
   try
     match Unix.fork () with
