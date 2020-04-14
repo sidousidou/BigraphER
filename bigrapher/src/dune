@@ -10,6 +10,6 @@
  (names bigrapher)
  (public_names bigrapher)
  (modes exe)
-  (ocamlopt_flags
+ (ocamlopt_flags
   (:standard -O3 -inline 100 -ccopt -ffast-math))
  (libraries bigraph big_json utils cmdliner))

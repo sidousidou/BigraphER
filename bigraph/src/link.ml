@@ -361,17 +361,20 @@ let equiv_class a b =
   let rec fix_point s res =
     (* Smallest face in set s *)
     match Face_set.min_elt_opt s with
-    | Some f ->
-       (* set s without face f *)
-       let new_s = Face_set.remove f s in
-       (* Largest face having names in common with f *)
-       (match Face_set.max_elt_opt
-                (Face_set.filter
-                   (fun x -> not (Face.is_empty (Face.inter x f)))
-                   new_s)  with
-        | Some c -> let new_c = Face.union c f in
-                    fix_point (Face_set.add new_c (Face_set.remove c new_s)) res
-        | None -> fix_point new_s (Face_set.add f res))
+    | Some f -> (
+        (* set s without face f *)
+        let new_s = Face_set.remove f s in
+        (* Largest face having names in common with f *)
+        match
+          Face_set.max_elt_opt
+            (Face_set.filter
+               (fun x -> not (Face.is_empty (Face.inter x f)))
+               new_s)
+        with
+        | Some c ->
+            let new_c = Face.union c f in
+            fix_point (Face_set.add new_c (Face_set.remove c new_s)) res
+        | None -> fix_point new_s (Face_set.add f res) )
     | None -> res
   in
   fix_point (Face_set.union a b) Face_set.empty
