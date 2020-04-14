@@ -86,8 +86,6 @@ let merge_f _ l r =
   | Some s, None | None, Some s -> Some s
   | None, None -> None
 
-(*BISECT-IGNORE*)
-
 let row n =
   assert (n >= 0);
   IntSet.of_int n |> flip2 IntSet.fold (fun j acc -> add 0 j acc) (make 1 n)

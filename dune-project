@@ -27,6 +27,7 @@
   (tags ("bigraphs" "rewriting" "org:dcs"))
   (depends
     (dune (and :build (>= 2.0.0)))
+    (ocaml (> 4.05))
     (minisat (>= 0.5.3))
     (odoc :with-doc))
   (conflicts

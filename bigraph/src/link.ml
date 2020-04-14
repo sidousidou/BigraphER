@@ -94,7 +94,7 @@ module Ports = struct
     M_int.bindings p
     |> List.map (fun (i, mul) ->
            match Nodes.get_ctrl i n with
-           | None -> failwith "Ports.ports_type" (*BISECT-IGNORE*)
+           | None -> failwith "Ports.ports_type"
            | Some c -> (c, mul))
     |> List.fast_sort comp_multi
 
@@ -146,8 +146,6 @@ module Ports = struct
         | Some ar, Some ar' -> Some (ar + ar')
         | Some ar, None | None, Some ar -> Some ar
         | None, None -> None)
-
-  (*BISECT-IGNORE*)
 
   let cardinal ps = fold (fun _ ar acc -> ar + acc) ps 0
 
@@ -360,27 +358,23 @@ let is_id l =
 
 (* Merge two sets of equivalence classes *)
 let equiv_class a b =
-  let u = Face_set.union a b in
   let rec fix_point s res =
-    try
-      (* Smallest face in set s *)
-      let f = Face_set.min_elt s in
-      (* set s without face f *)
-      let new_s = Face_set.remove f s in
-      try
-        (* Largest face having names in common with f *)
-        let c =
-          Face_set.max_elt
-            (Face_set.filter
-               (fun x -> not (Face.is_empty (Face.inter x f)))
-               new_s)
-        in
-        let new_c = Face.union c f in
-        fix_point (Face_set.add new_c (Face_set.remove c new_s)) res
-      with _ -> fix_point new_s (Face_set.add f res)
-    with _ -> res
+    (* Smallest face in set s *)
+    match Face_set.min_elt_opt s with
+    | Some f ->
+       (* set s without face f *)
+       let new_s = Face_set.remove f s in
+       (* Largest face having names in common with f *)
+       (match Face_set.max_elt_opt
+                (Face_set.filter
+                   (fun x -> not (Face.is_empty (Face.inter x f)))
+                   new_s)  with
+        | Some c -> let new_c = Face.union c f in
+                    fix_point (Face_set.add new_c (Face_set.remove c new_s)) res
+        | None -> fix_point new_s (Face_set.add f res))
+    | None -> res
   in
-  fix_point u Face_set.empty
+  fix_point (Face_set.union a b) Face_set.empty
 
 (* Merge a set of edges *)
 let merge lg =

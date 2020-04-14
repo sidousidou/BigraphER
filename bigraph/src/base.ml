@@ -17,18 +17,16 @@ let pp_print_pair ~open_b ~first ~last ~sep a b out p =
   last out;
   Format.pp_close_box out ()
 
-(* Functor overriding values in module Map. Required to be compatible with
-   OCaml < 4.05 *)
 module M_opt (M_lib : Map.S) (P : Pp with type t = M_lib.key) = struct
   include M_lib
 
-  let find k m = try Some (find k m) with Not_found -> None
+  let find = find_opt
 
-  let choose m = try Some (choose m) with Not_found -> None
+  let choose = choose_opt
 
-  let min_binding m = try Some (min_binding m) with Not_found -> None
+  let min_binding = min_binding_opt
 
-  let max_binding m = try Some (max_binding m) with Not_found -> None
+  let max_binding = max_binding_opt
 
   let pp ~open_b ~first ~last ~sep pp_b out m =
     let open Format in
@@ -60,13 +58,13 @@ end
 module S_opt (S_lib : Set.S) (P : Pp with type t = S_lib.elt) = struct
   include S_lib
 
-  let find x s = try Some (find x s) with Not_found -> None
+  let find = find_opt
 
-  let min_elt s = try Some (min_elt s) with Not_found -> None
+  let min_elt = min_elt_opt
 
-  let max_elt s = try Some (max_elt s) with Not_found -> None
+  let max_elt = max_elt_opt
 
-  let choose s = try Some (choose s) with Not_found -> None
+  let choose = choose_opt
 
   let pp ~open_b ~first ~last ~sep out s =
     let open Format in
@@ -128,7 +126,7 @@ module H_int = struct
     let hash = Hashtbl.hash
   end)
 
-  let find h x = try Some (find h x) with Not_found -> None
+  let find = find_opt
 end
 
 module H_string = struct
@@ -140,16 +138,10 @@ module H_string = struct
     let hash = Hashtbl.hash
   end)
 
-  let find h x = try Some (find h x) with Not_found -> None
+  let find = find_opt
 end
 
 let safe = function Some v -> v | None -> assert false
-
-(*BISECT-IGNORE*)
-
-let safe_exn f = try f with _ -> assert false
-
-(*BISECT-IGNORE*)
 
 let ints_compare (i0, p0) (i1, p1) =
   match i0 - i1 with 0 -> p0 - p1 | x -> x
