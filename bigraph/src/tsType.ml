@@ -97,18 +97,24 @@ module MakeE (G : G) = struct
       rank states edges
 
   let to_lab g =
+    let sanitise s =
+      Str.global_replace (Str.regexp_string "(") "_" s
+      |> Str.global_replace (Str.regexp_string ",") "_"
+      |> Str.global_replace (Str.regexp_string ")") "" in
     let preds, h = G.label g in
-    Base.S_string.fold
-      (fun p acc ->
-        ( match Base.H_string.find_all h p with
-        | [] -> "false"
-        | xs ->
-            List.map (fun s -> "x = " ^ string_of_int s) xs
-            |> String.concat " | " )
-        |> fun s ->
-        "label \"" ^ p ^ "\" = " ^ s |> fun s -> s :: acc)
-      preds []
-    |> List.rev |> String.concat ";\n"
+    let labs = Base.S_string.fold
+                 (fun p acc ->
+                   ( match Base.H_string.find_all h p with
+                     | [] -> "false"
+                     | xs ->
+                        List.map (fun s -> "x = " ^ string_of_int s) xs
+                        |> String.concat " | " )
+                   |> fun s ->
+                      "label \"" ^ (sanitise p) ^ "\" = " ^ s |> fun s -> s :: acc)
+                 preds []
+               |> List.rev |> String.concat ";\n"
+    in
+    if labs == "" then labs else labs ^ ";\n"
 
   let iter_states f g = Base.H_int.iter (fun _ (i, b) -> f i b) (G.states g)
 

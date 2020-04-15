@@ -21,7 +21,7 @@
 
 (package
   (name bigraph)
-  (version 1.3.1)
+  (version 1.3.2)
   (synopsis "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems")
   (description "bigraph is a library to programmaticaly manipulate bigraphs, reaction rules and Bigraphical Reactive Systems (BRS). It supports both bigraphs and bigraphs with sharing, probabilistic and stochastic reaction rules, rule priorities, rules with instantiation maps, parameterised controls, simulation, exhaustive state space exploration, export to probabilistic model checker PRISM, and predicate checking.")
   (tags ("bigraphs" "rewriting" "org:dcs"))

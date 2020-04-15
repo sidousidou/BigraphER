@@ -610,6 +610,15 @@ let tests bgs =
       exp_res = [];
       res = [];
     };
+    (* TEST 40 *)
+    {
+      t_name = "T28";
+      p_name = "P39";
+      target = List.assoc "T28" bgs;
+      pattern = List.assoc "P39" bgs;
+      exp_res = [ (Iso.of_list [ (0,2); (1,1); (2,6); (3,5); (4,8) ], Iso.of_list []) ];
+      res = [];
+    }
   ]
 
 (* Args: PATH PATH-out*)
