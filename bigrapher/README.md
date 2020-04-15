@@ -15,32 +15,12 @@ To get started, checkout the
 [Install](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#inst) and
 [Usage](http://www.dcs.gla.ac.uk/~michele/bigrapher.html#tool) guides.
 
-### Install
-
-[OPAM][opam] is a source-based package manager for OCaml. It supports all the
-major Linux distributions, macOS, BSD systems and Windows (Cygwin). Once OPAM is
-installed on your system, add the repository of the University of Glasgow with
-the following command:
-
-```
-opam repository add glasgow 'http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/'
-```
-
-Then, to install BigraphER simply run:
-
-```
-opam install bigrapher
-```
-
-OPAM will automatically download and install all the dependencies.
-	    
 ### Documentation
 
 #### User manual
 
 The main documentation entry point to BigraphER is the man page. It can be
-viewed with command `man man/bigrapher.1`.  A short description of the command
-line interface is available using `bigrapher --help`.
+viewed with command `man bigrapher`.
 
 #### Guides and tutorials
 
@@ -63,10 +43,3 @@ available in PDF format as [CAV 2016 tool paper][tech].
 [tech]: <http://doi.org/10.1007/978-3-319-41540-6_27> "Michele Sevegnani and Muffy Calder. *BigraphER: rewriting and analysis engine for bigraphs*. Proceedings of Computer Aided Verification (CAV 2016), Lecture Notes in Computer Science 9780 (2016): 494-501"
 [opam]:    <http://opam.ocaml.org/> "OPAM: OCaml package manager"
 [prism]:   <http://www.prismmodelchecker.org/> "PRISM: probabilistic model checker"
-
-### Copyright and license
-
-Copyright 2012-2019 Michele Sevegnani
-
-All rights reserved. BigraphER is distributed under the terms of the Simplified
-BSD License that can be found in the [LICENSE file](LICENSE.md).
