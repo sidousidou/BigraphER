@@ -4,8 +4,6 @@ Version 1.9.1
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
-[![Run Status](https://api.shippable.com/projects/540f670b21c97efdb898a046/badge?branch=master)](https://app.shippable.com/bitbucket/mseve/bigrapher)
-
 ----------------------------------------------------------------------------
 
 BigraphER is a command-line tool to compute the transition system of a BRS and
