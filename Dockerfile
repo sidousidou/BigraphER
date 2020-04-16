@@ -1,11 +1,10 @@
 # Development image -- includes opam graphviz and emacs
 
-FROM ocaml/opam2:ubuntu-19.04
+FROM ocaml/opam2:ubuntu-20.04
 LABEL maintainer="michele.sevegnani@glasgow.ac.uk"
 
 # Install OS dependencies
-RUN sudo apt-get update && \
-    sudo apt-get -qy --no-install-recommends install \
+RUN sudo apt-get -qy --no-install-recommends install \
       m4 \
       zlib1g-dev \
       minisat \
@@ -15,7 +14,6 @@ RUN sudo apt-get update && \
 
 # Install OCaml dependencies
 RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
-    opam update && \
     opam switch install 4.10.0+flambda && \
     opam install -y dune jsonm menhir cmdliner
 

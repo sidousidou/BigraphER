@@ -2,8 +2,7 @@
 FROM ocaml/opam2:ubuntu-20.04 AS build-libc
 
 # Install OS dependencies
-RUN sudo apt-get update && \
-    sudo apt-get -qy --no-install-recommends install \
+RUN sudo apt-get -qy --no-install-recommends install \
       m4 \
       zlib1g-dev \
       minisat && \
@@ -11,7 +10,6 @@ RUN sudo apt-get update && \
 
 # Install OCaml dependencies
 RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
-    opam update && \
     opam switch install 4.10.0+flambda && \
     opam install -y dune jsonm menhir cmdliner
 
@@ -31,8 +29,7 @@ RUN ldd _build/install/default/bin/bigrapher ; \
 FROM ocaml/opam2:alpine-3.10 AS build-musl
 
 # Install OS dependencies
-RUN sudo apk update && \
-    sudo apk add --no-cache git m4 zlib-dev
+RUN sudo apk add --no-cache git m4 zlib-dev
 
 # Install MiniSAT
 COPY --chown=opam . /home/opam/devel
@@ -47,7 +44,6 @@ RUN git checkout -q 37dc6c67e2af26379d88ce349eb9c4c6160e8543 && \
 
 # Install OCaml dependencies
 RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
-    opam update && \
     opam switch install 4.10.0+musl+static+flambda && \
     opam install -y dune jsonm menhir cmdliner
 
@@ -68,4 +64,4 @@ COPY --from=build-libc /home/opam/devel/_build/install/default/bin/bigrapher /bi
 COPY --from=build-libc /home/opam/devel/_build/install/default/bin/big_match /bin/big_match
 COPY --from=build-musl /home/opam/devel/_build/install/default/bin/bigrapher /bin/musl/bigrapher
 COPY --from=build-musl /home/opam/devel/_build/install/default/bin/big_match /bin/musl/big_match
-WORKDIR /root
+CMD ["/bin/musl/bigrapher", "--help""]
