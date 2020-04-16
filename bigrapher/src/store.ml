@@ -355,12 +355,12 @@ struct
   let eval_var (exp : var_exp) (scope : scope) (env : store) =
     match exp with
     | Var (id, p) ->
-       let v = get_var id p scope env in
-       (* let () = match v with
-        *           | Float f -> print_endline (id ^ " has val " ^ (string_of_float f))
-        *           | Int i -> print_endline (id ^ " has val " ^ (string_of_int i))
-        *           | _ -> () in *)
-       v
+        let v = get_var id p scope env in
+        (* let () = match v with
+         *           | Float f -> print_endline (id ^ " has val " ^ (string_of_float f))
+         *           | Int i -> print_endline (id ^ " has val " ^ (string_of_int i))
+         *           | _ -> () in *)
+        v
 
   let eval_plus (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -408,12 +408,11 @@ struct
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
 
-let eval_uminus (a : store_val) _p =
-      match a with
+  let eval_uminus (a : store_val) _p =
+    match a with
     | Float f -> Float (-.f)
     | Int i -> Int (-i)
     | _ -> assert false
-
 
   let eval_prod (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -436,8 +435,6 @@ let eval_uminus (a : store_val) _p =
         raise
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
-
-
 
   let eval_div (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -484,7 +481,6 @@ let eval_uminus (a : store_val) _p =
         raise
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
-
 
   let rec eval_op (exp : op) (scope : scope) (env : store) =
     let eval' e = eval_exp e scope env in
@@ -703,14 +699,14 @@ let eval_uminus (a : store_val) _p =
             ( Big.rename ~inner:(Link.parse_face cs.m_cl_names) ~outer b_v
               |> Big.close outer,
               env_t' ) )
-    | Big_par_fn(n, b, p) ->
-       let n' = as_int (eval_exp n scope env) p in
-       let (b_v, env_t') = eval_big b scope env env_t in
-       (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
-    | Big_ppar_fn(n, b, p) ->
-       let n' = as_int (eval_exp n scope env) p in
-       let (b_v, env_t') = eval_big b scope env env_t in
-       (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
+    | Big_par_fn (n, b, p) ->
+        let n' = as_int (eval_exp n scope env) p in
+        let b_v, env_t' = eval_big b scope env env_t in
+        (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
+    | Big_ppar_fn (n, b, p) ->
+        let n' = as_int (eval_exp n scope env) p in
+        let b_v, env_t' = eval_big b scope env env_t in
+        (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
 
   let eval_eta = function Some (l, _) -> Some (Fun.parse l) | None -> None
 
@@ -763,7 +759,6 @@ let eval_uminus (a : store_val) _p =
     | React _, _, _
     | React_fun (_, _, _, _, _), _, _ ->
         assert false
-
 
   let is_param id env p =
     match Base.H_string.find env id with
@@ -861,9 +856,7 @@ let eval_uminus (a : store_val) _p =
 
   let eval_prs =
     let chk_fn (pl, _) =
-      match pl with
-      | [] -> true
-      | ps -> T.is_valid_priority_list ps
+      match pl with [] -> true | ps -> T.is_valid_priority_list ps
     in
     eval_p_list eval_pr chk_fn
 
@@ -1272,12 +1265,12 @@ let eval_uminus (a : store_val) _p =
             let outer = ml_of_face [ "~0" ] in
             "Big.rename ~inner:(" ^ ml_of_face cs.m_cl_names ^ ") ~" ^ outer
             ^ " (" ^ ml_of_big b ^ ") |> Big.close " ^ outer )
-    | Big_par_fn(n, b, _) ->
-       "Big.par_seq ~start:0 ~stop:" ^ (ml_of_exp n)
-       ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
-    | Big_ppar_fn(n, b, _) ->
-       "Big.ppar_seq ~start:0 ~stop:" ^ (ml_of_exp n)
-       ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
+    | Big_par_fn (n, b, _) ->
+        "Big.par_seq ~start:0 ~stop:" ^ ml_of_exp n ^ "(fun _ -> "
+        ^ ml_of_big b ^ ")"
+    | Big_ppar_fn (n, b, _) ->
+        "Big.ppar_seq ~start:0 ~stop:" ^ ml_of_exp n ^ "(fun _ -> "
+        ^ ml_of_big b ^ ")"
 
   let ml_of_eta = function
     | Some (l, _) -> "Some (Fun.parse " ^ ml_of_ints l ^ ")"
