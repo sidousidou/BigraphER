@@ -11,3 +11,5 @@
 ../examples/prob.big
 ../examples/link_inst_map.big
 ../examples/string_params.big
+../examples/iter-merge.big
+../examples/norules.big

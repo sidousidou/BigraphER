@@ -16,11 +16,12 @@ type exp =
   | ENum of num_exp
   | EStr of str_exp
   | EVar of var_exp
-  | EOp of binary_op
+  | EOp of op
 
-and binary_op =
+and op =
   | Plus of exp * exp * Loc.t
   | Minus of exp * exp * Loc.t
+  | UMinus of exp * Loc.t
   | Prod of exp * exp * Loc.t
   | Div of exp * exp * Loc.t
   | Pow of exp * exp * Loc.t
@@ -83,9 +84,10 @@ type big_exp =
   | Big_ion of ion_exp
   | Big_close of closure_exp (* closure *)
   | Big_sub of sub_exp (* substitution *)
-  | Big_wire of wire_exp * big_exp * Loc.t
+  | Big_wire of wire_exp * big_exp * Loc.t (* /x y/{y0, y1} /z A *)
+  | Big_par_fn of exp * big_exp * Loc.t                (* par(n,b)  *)
+  | Big_ppar_fn of exp * big_exp * Loc.t               (* ppar(n,b) *)
 
-(* /x y/{y0, y1} /z A *)
 
 type eta_exp = int list * Loc.t
 
@@ -201,7 +203,9 @@ let loc_of_big_exp = function
   | Big_nest (_, _, p)
   | Big_wire (_, _, p)
   | Big_merge (_, p)
-  | Big_split (_, p) ->
+  | Big_split (_, p)
+  | Big_par_fn (_,_,p)
+  | Big_ppar_fn (_,_,p) ->
       p
   | Big_id e -> e.id_loc
   | Big_plc e -> e.plc_loc

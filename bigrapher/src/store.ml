@@ -353,7 +353,14 @@ struct
     | Num_float_val (v, _) -> Float v
 
   let eval_var (exp : var_exp) (scope : scope) (env : store) =
-    match exp with Var (id, p) -> get_var id p scope env
+    match exp with
+    | Var (id, p) ->
+       let v = get_var id p scope env in
+       (* let () = match v with
+        *           | Float f -> print_endline (id ^ " has val " ^ (string_of_float f))
+        *           | Int i -> print_endline (id ^ " has val " ^ (string_of_int i))
+        *           | _ -> () in *)
+       v
 
   let eval_plus (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -401,7 +408,12 @@ struct
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
 
-  (*BISECT-IGNORE*)
+let eval_uminus (a : store_val) _p =
+      match a with
+    | Float f -> Float (-.f)
+    | Int i -> Int (-i)
+    | _ -> assert false
+
 
   let eval_prod (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -425,7 +437,7 @@ struct
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
 
-  (*BISECT-IGNORE*)
+
 
   let eval_div (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -473,13 +485,13 @@ struct
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
 
-  (*BISECT-IGNORE*)
 
-  let rec eval_bin_op (exp : binary_op) (scope : scope) (env : store) =
+  let rec eval_op (exp : op) (scope : scope) (env : store) =
     let eval' e = eval_exp e scope env in
     match exp with
     | Plus (e1, e2, loc) -> eval_plus (eval' e1) (eval' e2) loc
     | Minus (e1, e2, loc) -> eval_minus (eval' e1) (eval' e2) loc
+    | UMinus (e1, loc) -> eval_uminus (eval' e1) loc
     | Prod (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
     | Div (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
     | Pow (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
@@ -489,7 +501,7 @@ struct
     | ENum ne -> eval_num ne scope env
     | EStr se -> eval_str se scope env
     | EVar ve -> eval_var ve scope env
-    | EOp op -> eval_bin_op op scope env
+    | EOp op -> eval_op op scope env
 
   let as_int (e : store_val) p =
     match e with
@@ -691,6 +703,14 @@ struct
             ( Big.rename ~inner:(Link.parse_face cs.m_cl_names) ~outer b_v
               |> Big.close outer,
               env_t' ) )
+    | Big_par_fn(n, b, p) ->
+       let n' = as_int (eval_exp n scope env) p in
+       let (b_v, env_t') = eval_big b scope env env_t in
+       (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
+    | Big_ppar_fn(n, b, p) ->
+       let n' = as_int (eval_exp n scope env) p in
+       let (b_v, env_t') = eval_big b scope env env_t in
+       (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
 
   let eval_eta = function Some (l, _) -> Some (Fun.parse l) | None -> None
 
@@ -744,7 +764,6 @@ struct
     | React_fun (_, _, _, _, _), _, _ ->
         assert false
 
-  (*BISECT-IGNORE*)
 
   let is_param id env p =
     match Base.H_string.find env id with
@@ -841,7 +860,12 @@ struct
     |> fun x -> if chk_f x then x else raise (ERROR (Invalid_priorities, p))
 
   let eval_prs =
-    eval_p_list eval_pr (fun x -> T.is_valid_priority_list (fst x))
+    let chk_fn (pl, _) =
+      match pl with
+      | [] -> true
+      | ps -> T.is_valid_priority_list ps
+    in
+    eval_p_list eval_pr chk_fn
 
   let eval_pred_fun_app id args env env_t p =
     let print_id id exps =
@@ -1165,6 +1189,7 @@ struct
   let ml_of_op = function
     | Plus (_, _, _) -> " + "
     | Minus (_, _, _) -> " - "
+    | UMinus (_, _) -> "-"
     | Prod (_, _, _) -> " * "
     | Div (_, _, _) -> " / "
     | Pow (_, _, _) -> " ^ "
@@ -1247,6 +1272,12 @@ struct
             let outer = ml_of_face [ "~0" ] in
             "Big.rename ~inner:(" ^ ml_of_face cs.m_cl_names ^ ") ~" ^ outer
             ^ " (" ^ ml_of_big b ^ ") |> Big.close " ^ outer )
+    | Big_par_fn(n, b, _) ->
+       "Big.par_seq ~start:0 ~stop:" ^ (ml_of_exp n)
+       ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
+    | Big_ppar_fn(n, b, _) ->
+       "Big.ppar_seq ~start:0 ~stop:" ^ (ml_of_exp n)
+       ^ "(fun _ -> " ^ (ml_of_big b) ^ ")"
 
   let ml_of_eta = function
     | Some (l, _) -> "Some (Fun.parse " ^ ml_of_ints l ^ ")"

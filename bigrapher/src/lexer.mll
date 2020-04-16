@@ -28,10 +28,9 @@ let read_float lexbuf =
 
 let blank = [' ' '\009' '\012']
 let newline = ('\r' | '\n' | "\r\n")
-let int_literal = ['-']? ['0'-'9'] ['0'-'9' '_']*
+let int_literal = ['0'-'9'] ['0'-'9' '_']*
 let float_literal =
   ("inf" | (
-      ['-']?
       ['0'-'9'] ['0'-'9' '_']*
       ('.' ['0'-'9' '_']*)?
       (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
@@ -100,6 +99,8 @@ rule token =  parse
   | "*"                     { PROD }
   | "/"                     { SLASH }
   | "^"                     { CARET }
+  | "par"                   { PAR }
+  | "ppar"                  { PPAR }
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }

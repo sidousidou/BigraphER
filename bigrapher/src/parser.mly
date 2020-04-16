@@ -49,6 +49,8 @@ open Bigraph
 %token            PROD
 %token            SLASH
 %token            CARET
+%token            PAR
+%token            PPAR
 
 %token            LSBR RSBR LCBR RCBR LPAR RPAR 
 %token            COLON SEMICOLON COMMA 
@@ -183,6 +185,7 @@ str_exp:
 op_exp:
   | exp PLUS exp                            { Plus ($1, $3, loc $startpos $endpos)  }
   | exp MINUS exp                           { Minus ($1, $3, loc $startpos $endpos) }
+  | MINUS exp                               { UMinus ($2, loc $startpos $endpos) }
   | exp PROD exp                            { Prod ($1, $3, loc $startpos $endpos)  }
   | exp SLASH exp                           { Div ($1, $3, loc $startpos $endpos)   }
   | exp CARET exp                           { Pow ($1, $3, loc $startpos $endpos)   };
@@ -214,7 +217,7 @@ param_str_exp:
   | LCBR exp_list RCBR               { Param_str_set ($2, loc $startpos $endpos)           };
 
 priority_list:
-  l = separated_nonempty_list(COMMA, priority_class)        { l };
+  l = separated_list(COMMA, priority_class)        { l };
 
 priority_class:
   | LCBR rule_ide_list RCBR                { Pr ($2, loc $startpos $endpos)     }
@@ -265,7 +268,11 @@ simple_bexp:
   | IDE                                     { Big_var ($1, loc $startpos $endpos)         }
   | IDE LPAR exp_list RPAR                  { Big_var_fun ($1, $3, loc $startpos $endpos) }
   | ion_exp                                 { Big_ion $1                                  }
-  | ion_exp DOT simple_bexp                 { Big_nest ($1, $3, loc $startpos $endpos)    };
+  | ion_exp DOT simple_bexp                 { Big_nest ($1, $3, loc $startpos $endpos)    }
+  | PAR LPAR exp COMMA bexp RPAR
+                                            { Big_par_fn ($3, $5, loc $startpos $endpos)  }
+  | PPAR LPAR exp COMMA bexp RPAR
+                                            { Big_ppar_fn ($3, $5, loc $startpos $endpos) };
 
 id_exp:
   | ID o_delim_int_1                        { { id_place = $2;

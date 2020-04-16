@@ -16,6 +16,7 @@
        "ctrl"
        "float"
        "int"
+       "string"
        "react")))
   "BigraphER mode types.")
 
@@ -45,6 +46,8 @@
        "by"
        "in"
        "share"
+       "par"
+       "ppar"
        )))
   "BigraphER mode expressions.")
 

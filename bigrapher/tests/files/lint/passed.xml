@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="BigraphER">
-<testsuite name="opam_lint" tests="1">
-<testcase name="opam_lint" class="">
-</testcase>
-</testsuite>
-</testsuites>
