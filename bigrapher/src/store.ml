@@ -124,6 +124,7 @@ struct
     | Reaction of string (* error message *)
     | Init_not_ground
     | Not_face of Id.t list
+    | Invalid_iter_op of int
 
   type warning = Multiple_declaration of Id.t * Loc.t * Loc.t
 
@@ -166,6 +167,11 @@ struct
           "Expression {%s} is not a valid interface as it contains \
            duplicate names"
           (String.concat "," ns)
+    | Invalid_iter_op n ->
+        fprintf fmt
+          "Argument of iterated operator evaluates to %d but a value >= 0 \
+           was expected"
+          n
 
   let report_error fmt c err =
     fprintf fmt "@[%s: %a@]@," (Utils.err_opt c) report_error_aux err
@@ -701,12 +707,16 @@ struct
               env_t' ) )
     | Big_par_fn (n, b, p) ->
         let n' = as_int (eval_exp n scope env) p in
-        let b_v, env_t' = eval_big b scope env env_t in
-        (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
+        if n' < 0 then raise (ERROR (Invalid_iter_op n', p))
+        else
+          let b_v, env_t' = eval_big b scope env env_t in
+          (Big.par_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
     | Big_ppar_fn (n, b, p) ->
         let n' = as_int (eval_exp n scope env) p in
-        let b_v, env_t' = eval_big b scope env env_t in
-        (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
+        if n' < 0 then raise (ERROR (Invalid_iter_op n', p))
+        else
+          let b_v, env_t' = eval_big b scope env env_t in
+          (Big.ppar_seq ~start:0 ~stop:n' (fun _ -> b_v), env_t')
 
   let eval_eta = function Some (l, _) -> Some (Fun.parse l) | None -> None
 

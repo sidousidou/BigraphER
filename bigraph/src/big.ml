@@ -171,6 +171,8 @@ let tens a b =
 let tens_of_list = List.fold_left (fun acc b -> tens acc b) id_eps
 
 let rec fold i n op f res =
+  assert (i >= 0);
+  assert (n >= i);
   if i < n then fold (i + 1) n op f (op res (f i)) else res
 
 let tens_seq ~start ~stop f = fold start stop tens f id_eps
