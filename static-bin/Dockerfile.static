@@ -1,5 +1,5 @@
 # Libc build image
-FROM ocaml/opam2:ubuntu-19.04 AS build-libc
+FROM ocaml/opam2:ubuntu-20.04 AS build-libc
 
 # Install OS dependencies
 RUN sudo apt-get update && \
@@ -63,7 +63,7 @@ RUN ldd _build/install/default/bin/bigrapher ; \
 # ========================================================
 
 # Second stage image
-FROM ubuntu:19.04
+FROM scratch
 COPY --from=build-libc /home/opam/devel/_build/install/default/bin/bigrapher /bin/bigrapher
 COPY --from=build-libc /home/opam/devel/_build/install/default/bin/big_match /bin/big_match
 COPY --from=build-musl /home/opam/devel/_build/install/default/bin/bigrapher /bin/musl/bigrapher
