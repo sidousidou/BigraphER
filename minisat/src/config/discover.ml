@@ -20,8 +20,8 @@ let () =
         match C.ocaml_config_var c "system" with
         | Some "freebsd" | Some "netbsd" | Some "openbsd" ->
             {
-              libs = default.libs @ [ "-I/usr/local/include" ];
-              cflags = "-L/usr/local/lib" :: default.cflags;
+              libs = default.libs @ [ "-L/usr/local/lib" ];
+              cflags = "-I/usr/local/include" :: default.cflags;
             }
         | Some _ | None -> default
       in
