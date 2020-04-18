@@ -6,6 +6,8 @@ _build
 *.install
 *.merlin
 *.tar.gz
+static-bin/bigrapher
+static-bin/big_match
 
 # temp files
 *~
