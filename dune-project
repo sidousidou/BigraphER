@@ -17,6 +17,7 @@
   (tags ("SAT solver" "org:dcs"))
   (depends
     (dune (and :build (>= 2.0.0)))
+    (dune-configurator :build)
     (odoc :with-doc)))
 
 (package

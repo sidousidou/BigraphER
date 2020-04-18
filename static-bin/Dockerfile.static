@@ -11,7 +11,7 @@ RUN sudo apt-get -qy --no-install-recommends install \
 # Install OCaml dependencies
 RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
     opam switch install 4.10.0+flambda && \
-    opam install -y dune jsonm menhir cmdliner
+    opam install -y dune dune-configurator jsonm menhir cmdliner
 
 # Build bigrapher
 COPY --chown=opam . /home/opam/devel
@@ -45,7 +45,7 @@ RUN git checkout -q 37dc6c67e2af26379d88ce349eb9c4c6160e8543 && \
 # Install OCaml dependencies
 RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
     opam switch install 4.10.0+musl+static+flambda && \
-    opam install -y dune jsonm menhir cmdliner
+    opam install -y dune dune-configurator jsonm menhir cmdliner
 
 # Build bigrapher
 WORKDIR /home/opam/devel
