@@ -425,7 +425,7 @@ let exp_quintuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) = function
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
     Error (t, "5-tuple")
 
-let exp_sextuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5) =
+let _exp_sextuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5) =
   function
   | `O [ (n, v); (n', v'); (n'', v''); (n''', v''');
          (n'''', v''''); (n''''', v''''') ] as t ->
