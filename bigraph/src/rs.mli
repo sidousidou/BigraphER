@@ -5,12 +5,12 @@
 (** Kinds of transition systems. *)
 type t =
   | BRS  (** Bigraphical Reactive Systems *)
-  | PBRS (** Probabilistic Bigraphical Reactive Systems *)
-  | SBRS (** Stochasrtic Bigraphical Reactive Systems *)
-  | NBRS (** Nondeterministic Bigraphical Reactive Systems *)
+  | PBRS  (** Probabilistic Bigraphical Reactive Systems *)
+  | SBRS  (** Stochasrtic Bigraphical Reactive Systems *)
+  | NBRS  (** Nondeterministic Bigraphical Reactive Systems *)
 
-(** Raised when an export error occurs. *)
 exception EXPORT_ERROR of string
+(** Raised when an export error occurs. *)
 
 val to_string : t -> string
 

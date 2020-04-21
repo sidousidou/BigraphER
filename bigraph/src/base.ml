@@ -86,8 +86,11 @@ end
 
 module Predicate = struct
   type t = string * int
+
   let compare = compare
+
   let equal x y = x = y
+
   let hash = Hashtbl.hash
 end
 
@@ -151,7 +154,8 @@ module H_string = struct
 end
 
 module H_predicate = struct
-  include Hashtbl.Make(Predicate)
+  include Hashtbl.Make (Predicate)
+
   let find = find_opt
 end
 

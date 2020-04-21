@@ -23,11 +23,11 @@ let ts_type = function
   | BRS -> "transition system"
   | PBRS -> "DTMC" (* Discrete Time Markov Chain *)
   | SBRS -> "CTMC" (* Continuous Time Markov Chain *)
-  | NBRS -> "MDP"  (* Markov Decision Process *)
+  | NBRS -> "MDP"
 
-let limit_type = function
-  | BRS | PBRS | NBRS -> "step"
-  | SBRS -> "time"
+(* Markov Decision Process *)
+
+let limit_type = function BRS | PBRS | NBRS -> "step" | SBRS -> "time"
 
 let limit_msg = function
   | BRS | PBRS | NBRS -> "number of simulation steps"

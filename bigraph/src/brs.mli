@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-(** The type of bigraphical reaction rules. *)
 type react
+(** The type of bigraphical reaction rules. *)
 
 (** The type of priority classes, {e i.e.}, lists of reaction rules.
     Intermediate states resulting from the application of reaction rules in
@@ -12,14 +12,14 @@ type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list  (** Reducible priority class *)
 
-(** The type of transition systems. *)
 type graph
+(** The type of transition systems. *)
 
-(** The type of edge labels in BRSs. *)
 type label = unit
+(** The type of edge labels in BRSs. *)
 
-(** Type of simulation limit {e i.e.}, number of execution steps. *)
 type limit = int
+(** Type of simulation limit {e i.e.}, number of execution steps. *)
 
 val typ : Rs.t
 (** Type of transition system: {{!Rs.t} [BRS]}. *)
@@ -61,11 +61,11 @@ val is_valid_react : react -> bool
 val equal_react : react -> react -> bool
 (** Equality for reaction rules. *)
 
-(** The type of reaction validity errors. *)
 type react_error
+(** The type of reaction validity errors. *)
 
-(** Raised when a reaction rule is not valid. *)
 exception NOT_VALID of react_error
+(** Raised when a reaction rule is not valid. *)
 
 val is_valid_react_exn : react -> bool
 (** Same as {!is_valid_react} but an exception is raised when the rule is not
@@ -114,9 +114,9 @@ val rewrite : Big.t -> p_class list -> Big.t * int
 
 (** {2 Transition systems} *)
 
+exception MAX of graph * Stats.t
 (** Raised when the size of the transition system reaches the maximum number
     of states. *)
-exception MAX of graph * Stats.t
 
 val bfs :
   s0:Big.t ->
@@ -138,12 +138,12 @@ val bfs :
 
 (** {2 Simulation traces} *)
 
-(** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * Stats.t * int
+(** Raised when the simulation reaches a deadlock state. *)
 
+exception LIMIT of graph * Stats.t
 (** Raised when the simulation reaches the maximum number of simulation
     steps. *)
-exception LIMIT of graph * Stats.t
 
 val sim :
   s0:Big.t ->

@@ -148,16 +148,14 @@ let eval_config fmt () =
         ( "export_states_flag",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.export_states_flag
         );
-        ("export_state_rewards",
+        ( "export_state_rewards",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]"
-              (string_of_file defaults.export_state_rewards)
-        );
-        ("export_transition_rewards",
+              (string_of_file defaults.export_state_rewards) );
+        ( "export_transition_rewards",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]"
-              (string_of_file defaults.export_transition_rewards)
-        );
+              (string_of_file defaults.export_transition_rewards) );
         ("help", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.help);
         ( "max_states",
           fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.max_states );
@@ -271,7 +269,8 @@ let empty_to_none = function
   | Some _ as s -> s
   | None -> None
 
-let copts consts debug ext graph lbls prism quiet states srew trew verbose nocols =
+let copts consts debug ext graph lbls prism quiet states srew trew verbose
+    nocols =
   defaults.consts <- consts;
   defaults.debug <- debug;
   defaults.out_format <- ext;
@@ -331,11 +330,15 @@ let copts_t =
   in
   let srew =
     let doc = "Export state rewards in PRISM srew format to $(docv)." in
-    Arg.(value & opt_str & info ["r";"export-state-rewards"] ~docv:"FILE" ~doc)
+    Arg.(
+      value & opt_str
+      & info [ "r"; "export-state-rewards" ] ~docv:"FILE" ~doc)
   in
   let trew =
     let doc = "Export transition rewards in PRISM srew format to $(docv)." in
-    Arg.(value & opt_str & info ["R";"export-transition-rewards"] ~docv:"FILE" ~doc)
+    Arg.(
+      value & opt_str
+      & info [ "R"; "export-transition-rewards" ] ~docv:"FILE" ~doc)
   in
   let quiet =
     let doc = "Disable progress indicator." in
@@ -361,8 +364,9 @@ let copts_t =
     let env = Arg.env_var "BIGNOCOLORS" ~doc in
     Arg.(value & flag & info [ "n"; "no-colors" ] ~doc ~env)
   in
-  Term.(const copts $ consts $ debug $ ext $ graph $ lbls $ prism
-        $ quiet $ states $ srew $ trew $ verbose $ nocols)
+  Term.(
+    const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
+    $ states $ srew $ trew $ verbose $ nocols)
 
 (* Sim options *)
 let sim_opts time steps =

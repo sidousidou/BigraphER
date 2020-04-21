@@ -79,10 +79,12 @@ module H_int = Base.H_int
 module H_predicate = Base.H_predicate
 module S_predicate = Base.S_predicate
 
-type graph = { v : (int * Big.t) H_int.t;
-               e : (int * R.label * string) H_int.t;
-               l : int H_predicate.t;
-               preds : S_predicate.t; }
+type graph = {
+  v : (int * Big.t) H_int.t;
+  e : (int * R.label * string) H_int.t;
+  l : int H_predicate.t;
+  preds : S_predicate.t;
+}
 
 module G = struct
   type t = graph
@@ -94,7 +96,7 @@ module G = struct
       v = H_int.create n;
       e = H_int.create n;
       l = H_predicate.create n;
-      preds =  S_predicate.of_list preds;
+      preds = S_predicate.of_list preds;
     }
 
   let states g = g.v

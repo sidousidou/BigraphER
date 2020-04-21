@@ -94,8 +94,8 @@ module Make (R : R) : sig
 
   exception NOT_VALID of react_error
 
-  (** Returns the name of a rewrite rule. *)
   val name : t -> string
+  (** Returns the name of a rewrite rule. *)
 
   val lhs : t -> Big.t
   (** Return the left-hand side of a rewrite rule. *)

@@ -3,8 +3,8 @@
 
     @author Michele Sevegnani *)
 
-(** Type of isomorphisms over integers. *)
 type t
+(** Type of isomorphisms over integers. *)
 
 (** {2 Standard map operations} *)
 

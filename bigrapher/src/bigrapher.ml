@@ -118,7 +118,7 @@ let print_max fmt =
     ]
 
 let print_max_sim fmt = function
-  | Rs.BRS | Rs.PBRS | Rs.NBRS->
+  | Rs.BRS | Rs.PBRS | Rs.NBRS ->
       print_table fmt
         [
           {
@@ -353,18 +353,22 @@ struct
       ("Exporting " ^ Rs.to_string T.typ ^ " to ")
       (List.map format_map Cmd.(defaults.out_format));
     export_states fmt T.iter_states graph;
-    export_prism Cmd.(defaults.export_prism) fmt
-      ("Exporting " ^ (Rs.to_string T.typ) ^ " in PRISM format to ")
+    export_prism
+      Cmd.(defaults.export_prism)
+      fmt
+      ("Exporting " ^ Rs.to_string T.typ ^ " in PRISM format to ")
       (E.write_prism graph);
-    export_prism Cmd.(defaults.export_state_rewards) fmt
-      ("Exporting the state rewards of "
-       ^ (Rs.to_string T.typ)
-       ^ " in PRISM format to ")
+    export_prism
+      Cmd.(defaults.export_state_rewards)
+      fmt
+      ( "Exporting the state rewards of " ^ Rs.to_string T.typ
+      ^ " in PRISM format to " )
       (E.write_state_rewards graph);
-    export_prism Cmd.(defaults.export_transition_rewards) fmt
-      ("Exporting the transition rewards of "
-       ^ (Rs.to_string T.typ)
-       ^ " in PRISM format to ")
+    export_prism
+      Cmd.(defaults.export_transition_rewards)
+      fmt
+      ( "Exporting the transition rewards of " ^ Rs.to_string T.typ
+      ^ " in PRISM format to " )
       (E.write_transition_rewards graph);
     export_csl fmt (E.write_lab graph);
     Format.(pp_print_flush err_formatter ());
@@ -474,135 +478,147 @@ let () =
   (* Allow early exit, e.g. when the config is to be printed *)
   match exec_type with
   | `exit -> exit 1
-  | _ -> ();
-  try
-    let fmt = set_output_ch () in
-    print_header fmt ();
-    print_msg fmt `yellow ("Parsing model file "
-                           ^ (match Cmd.(defaults.model) with
-                               | None -> "stdin"
-                               | Some name -> name)
-                           ^ " ...");
-    let (lexbuf, file) = open_lex Cmd.(defaults.model) in
-    try
-      let m = Parser.model Lexer.token lexbuf in
-      close_in file;
-      (match m.model_rs.dbrs_type with
-       | Rs.BRS ->
-         begin
-           let module R = Run
-               (struct
+  | _ -> (
+      ();
+      try
+        let fmt = set_output_ch () in
+        print_header fmt ();
+        print_msg fmt `yellow
+          ( "Parsing model file "
+          ^ ( match Cmd.(defaults.model) with
+            | None -> "stdin"
+            | Some name -> name )
+          ^ " ..." );
+        let lexbuf, file = open_lex Cmd.(defaults.model) in
+        try
+          let m = Parser.model Lexer.token lexbuf in
+          close_in file;
+          match m.model_rs.dbrs_type with
+          | Rs.BRS ->
+              let module R =
+                Run
+                  (struct
+                    include Brs
 
-                 include Brs
+                    let parse_react_unsafe ~name ~lhs ~rhs _ eta =
+                      parse_react_unsafe ~name ~lhs ~rhs eta
 
-                 let parse_react_unsafe ~name ~lhs ~rhs _ eta =
-                   parse_react_unsafe ~name ~lhs ~rhs eta
-                
-                 let parse_react ~name ~lhs ~rhs _ eta =
-                   parse_react ~name ~lhs ~rhs eta
-                   
-               end)
-               (struct
-                 let stop = Cmd.(defaults.steps)
-               end)
-               (struct
-                 let parse_react name lhs rhs _ eta =
-                   Brs.parse_react ~name ~lhs ~rhs eta
-               end)
-               (struct
-                  let f = Big_json.ts_to_json
-                end) in
-           R.run fmt Cmd.(defaults.colors) m exec_type
-         end
-       | Rs.PBRS ->
-         begin
-           let module R = Run
-               (Pbrs)
-               (struct
-                 let stop = Cmd.(defaults.steps)
-               end)
-               (struct
-                 let parse_react name lhs rhs l eta =
-                   match l with
-                   | `F f -> Pbrs.parse_react ~name ~lhs ~rhs f eta
-                   | _ -> assert false  (*BISECT-IGNORE*)
-               end)
-               (struct
-                 let f = Big_json.dtmc_to_json
-               end) in
-           R.run fmt Cmd.(defaults.colors) m exec_type
-         end
-       | Rs.SBRS ->
-         begin
-           let module R = Run
-               (Sbrs)
-               (struct
-                 let stop = Cmd.(defaults.time)
-               end)
-               (struct
-                 let parse_react name lhs rhs l eta =
-                   match l with
-                   | `F f -> Sbrs.parse_react ~name ~lhs ~rhs f eta
-                   |  _ -> assert false  (*BISECT-IGNORE*)
-               end)
-               (struct
-                 let f = Big_json.ctmc_to_json
-                end) in
-           R.run fmt Cmd.(defaults.colors) m exec_type
-         end
-       | Rs.NBRS ->
-         begin
-           let module R = Run
-               (Nbrs)
-               (struct
-                 let stop = Cmd.(defaults.steps)
-               end)
-               (struct
-                 let parse_react name lhs rhs l eta =
-                   match l with
-                   | `P p -> Nbrs.parse_react ~name ~lhs ~rhs p eta
-                   | _ -> assert false  (*BISECT-IGNORE*)
-               end)
-               (struct
-                 let f = Big_json.mdp_to_json
-               end) in
-           R.run fmt Cmd.(defaults.colors) m exec_type
-         end);
-    with
-    | Place.NOT_PRIME ->
-      (close_progress_bar ();
-       Format.(fprintf
-                 err_formatter
-                 "@[<v>@[%s: The parameter of a reaction rule is not prime.@]@."
-                 (Utils.err_opt Cmd.(defaults.colors)));
-       exit 1)
-    | Parser.Error ->
-       Format.(pp_print_flush fmt ();
-               fprintf err_formatter "@[<v>";
-               Loc.print_loc err_formatter
-                 Loc.{lstart = Lexing.(lexbuf.lex_start_p);
-                      lend = Lexing.(lexbuf.lex_curr_p)};
-               fprintf
-                 err_formatter
-                 "@[%s: Syntax error near token `%s'@]@."
-                 (Utils.err_opt Cmd.(defaults.colors))
-                 (Lexing.lexeme lexbuf);
-               exit 1)
-  with
-  | Lexer.ERROR (e, p) ->
-     Format.(fprintf err_formatter "@[<v>";
-             Loc.print_loc err_formatter p;
-             Lexer.report_error err_formatter
-               (Utils.err_opt Cmd.(defaults.colors))
-               e;
-             pp_print_newline err_formatter ();
-             exit 1)
-  | Sys_error s ->
-     Format.(fprintf err_formatter "@[%s: %s@]@."
-               (Utils.err_opt Cmd.(defaults.colors))
-               s;
-             exit 1)
-  | e ->
-     Format.(fprintf err_formatter "@[%s@,%s@]@."
-               (Printexc.to_string e) (Printexc.get_backtrace ());
-             exit 1)
+                    let parse_react ~name ~lhs ~rhs _ eta =
+                      parse_react ~name ~lhs ~rhs eta
+                  end)
+                  (struct
+                    let stop = Cmd.(defaults.steps)
+                  end)
+                  (struct
+                    let parse_react name lhs rhs _ eta =
+                      Brs.parse_react ~name ~lhs ~rhs eta
+                  end)
+                  (struct
+                    let f = Big_json.ts_to_json
+                  end)
+              in
+              R.run fmt Cmd.(defaults.colors) m exec_type
+          | Rs.PBRS ->
+              let module R =
+                Run
+                  (Pbrs)
+                  (struct
+                    let stop = Cmd.(defaults.steps)
+                  end)
+                  (struct
+                    let parse_react name lhs rhs l eta =
+                      match l with
+                      | `F f -> Pbrs.parse_react ~name ~lhs ~rhs f eta
+                      | _ -> assert false
+
+                    (*BISECT-IGNORE*)
+                  end)
+                  (struct
+                    let f = Big_json.dtmc_to_json
+                  end)
+              in
+              R.run fmt Cmd.(defaults.colors) m exec_type
+          | Rs.SBRS ->
+              let module R =
+                Run
+                  (Sbrs)
+                  (struct
+                    let stop = Cmd.(defaults.time)
+                  end)
+                  (struct
+                    let parse_react name lhs rhs l eta =
+                      match l with
+                      | `F f -> Sbrs.parse_react ~name ~lhs ~rhs f eta
+                      | _ -> assert false
+
+                    (*BISECT-IGNORE*)
+                  end)
+                  (struct
+                    let f = Big_json.ctmc_to_json
+                  end)
+              in
+              R.run fmt Cmd.(defaults.colors) m exec_type
+          | Rs.NBRS ->
+              let module R =
+                Run
+                  (Nbrs)
+                  (struct
+                    let stop = Cmd.(defaults.steps)
+                  end)
+                  (struct
+                    let parse_react name lhs rhs l eta =
+                      match l with
+                      | `P p -> Nbrs.parse_react ~name ~lhs ~rhs p eta
+                      | _ -> assert false
+
+                    (*BISECT-IGNORE*)
+                  end)
+                  (struct
+                    let f = Big_json.mdp_to_json
+                  end)
+              in
+              R.run fmt Cmd.(defaults.colors) m exec_type
+        with
+        | Place.NOT_PRIME ->
+            close_progress_bar ();
+            Format.(
+              fprintf err_formatter
+                "@[<v>@[%s: The parameter of a reaction rule is not \
+                 prime.@]@."
+                (Utils.err_opt Cmd.(defaults.colors)));
+            exit 1
+        | Parser.Error ->
+            Format.(
+              pp_print_flush fmt ();
+              fprintf err_formatter "@[<v>";
+              Loc.print_loc err_formatter
+                Loc.
+                  {
+                    lstart = Lexing.(lexbuf.lex_start_p);
+                    lend = Lexing.(lexbuf.lex_curr_p);
+                  };
+              fprintf err_formatter "@[%s: Syntax error near token `%s'@]@."
+                (Utils.err_opt Cmd.(defaults.colors))
+                (Lexing.lexeme lexbuf);
+              exit 1)
+      with
+      | Lexer.ERROR (e, p) ->
+          Format.(
+            fprintf err_formatter "@[<v>";
+            Loc.print_loc err_formatter p;
+            Lexer.report_error err_formatter
+              (Utils.err_opt Cmd.(defaults.colors))
+              e;
+            pp_print_newline err_formatter ();
+            exit 1)
+      | Sys_error s ->
+          Format.(
+            fprintf err_formatter "@[%s: %s@]@."
+              (Utils.err_opt Cmd.(defaults.colors))
+              s;
+            exit 1)
+      | e ->
+          Format.(
+            fprintf err_formatter "@[%s@,%s@]@." (Printexc.to_string e)
+              (Printexc.get_backtrace ());
+            exit 1) )

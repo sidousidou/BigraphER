@@ -2,12 +2,12 @@
 
     @author Michele Sevegnani *)
 
-(** The type of bigraphs.*)
 type t = {
   p : Place.t;  (** Place graph *)
   l : Link.Lg.t;  (** Link graph *)
   n : Nodes.t;  (** Node set *)
 }
+(** The type of bigraphs.*)
 
 (** The type of interfaces.*)
 type inter =
@@ -16,27 +16,27 @@ type inter =
 
 (** {2 Exceptions} *)
 
-(** Raised when the composition in a sharing expression fails. *)
 exception SHARING_ERROR
+(** Raised when the composition in a sharing expression fails. *)
 
-(** Raised when the composition fails. *)
 exception COMP_ERROR of inter * inter
+(** Raised when the composition fails. *)
 
+exception CTRL_ERROR of int * Link.Face.t
 (** Raised when the arity of a control does not match the cardinality of a
     face. The first element is the arity while the second is the mismatching
     face. *)
-exception CTRL_ERROR of int * Link.Face.t
 
+exception ISO_ERROR of int * int
 (** Raised when a {!type:Iso.t} is not total. The first element is the
     cardinality of the domain while the second is the cardinality of the
     isomorphism's domain of definition. *)
-exception ISO_ERROR of int * int
 
-(** Raised when there are no matches.*)
 exception NO_MATCH
+(** Raised when there are no matches.*)
 
-(** Raised when the matching pattern has no nodes. *)
 exception NODE_FREE
+(** Raised when the matching pattern has no nodes. *)
 
 (** {2 Functions on interfaces} *)
 
@@ -297,8 +297,8 @@ val equal : t -> t -> bool
 (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
     [false] otherwise. *)
 
-(** The type of bigraphs keys. *)
 type big_key = int
+(** The type of bigraphs keys. *)
 
 val key : t -> big_key
 (** Compute the key of a bigraph. The key is similar to a hash. Note that
@@ -311,9 +311,9 @@ val equal_opt : t -> t -> bool
 
 (** {2 Matching} *)
 
+type occ = Iso.t * Iso.t * Fun.t
 (** The type of occurrences: an isomorphism over nodes, an isomorphism over
     edges and a function over hyper-edges. *)
-type occ = Iso.t * Iso.t * Fun.t
 
 val occurs : target:t -> pattern:t -> bool
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]

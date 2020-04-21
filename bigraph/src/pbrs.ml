@@ -1,14 +1,13 @@
-type react =
-  { name : string;
-    rdx  : Big.t;
-    (* Redex   --- lhs   *)
-    rct  : Big.t;
-    (* Reactum --- rhs   *)
-    eta  : Fun.t option;
-    (* Instantiation map *)
-    w    : float
-    (* Weight *)
-  }
+type react = {
+  name : string;
+  rdx : Big.t;
+  (* Redex --- lhs *)
+  rct : Big.t;
+  (* Reactum --- rhs *)
+  eta : Fun.t option;
+  (* Instantiation map *)
+  w : float; (* Weight *)
+}
 
 module RT = struct
   type t = react
@@ -52,13 +51,14 @@ module RT = struct
      probability by subtracting the probability of the previous rule. *)
   let pick limit = function
     | [] -> None
-    | (_b, p, _rr) as head :: tail ->
-      let rec _pick limit (b', p', rr') = function
-        | (b, p, rr) as element :: tail ->
-          if p > limit then Some (b, p -. p', rr) else _pick limit element tail
-        | [] -> Some (b', p', rr')
-      in
-      if p > limit then Some head else _pick limit head tail
+    | ((_b, p, _rr) as head) :: tail ->
+        let rec _pick limit (b', p', rr') = function
+          | ((b, p, rr) as element) :: tail ->
+              if p > limit then Some (b, p -. p', rr)
+              else _pick limit element tail
+          | [] -> Some (b', p', rr')
+        in
+        if p > limit then Some head else _pick limit head tail
 
   let random_step b rules =
     let ss, m = step b rules in
@@ -75,13 +75,9 @@ module RT = struct
               ((b, cum_p', r) :: out, cum_p'))
             ([], 0.0)
         in
-        ss_sort ss
-        |> cumulative
-        |> fst
-        |> List.rev
+        ss_sort ss |> cumulative |> fst |> List.rev
         |> pick (Random.float 1.0)
-        |> (fun x -> (x, m))
-
+        |> fun x -> (x, m)
 end
 
 module R = RrType.Make (RT)
@@ -90,21 +86,22 @@ module PT = struct
   type t = R.t list
 
   let f_val _ = true
+
   (* TODO: Rules should not be applied unless the /normalised/ probability is 1,
    * which means we need the match first *)
   let f_r_val _ = true
 end
 
 module H_int = Base.H_int
-
 module H_predicate = Base.H_predicate
-
 module S_predicate = Base.S_predicate
 
-type graph = { v : (int * Big.t) H_int.t;
-               e : (int * R.label * string) H_int.t;
-               l : int H_predicate.t;
-               preds : S_predicate.t; }
+type graph = {
+  v : (int * Big.t) H_int.t;
+  e : (int * R.label * string) H_int.t;
+  l : int H_predicate.t;
+  preds : S_predicate.t;
+}
 
 module G = struct
   type t = graph

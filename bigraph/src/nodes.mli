@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-(** The type of a set of nodes. *)
 type t
+(** The type of a set of nodes. *)
 
 val add : int -> Ctrl.t -> t -> t
 (** Add a node to the set. *)

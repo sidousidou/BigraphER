@@ -3,9 +3,13 @@ module type G = sig
   type t
 
   type l
+
   val init : int -> Base.Predicate.t list -> t
+
   val states : t -> (int * Big.t) Base.H_int.t
-  val label : t -> (Base.S_predicate.t * int Base.H_predicate.t)
+
+  val label : t -> Base.S_predicate.t * int Base.H_predicate.t
+
   val edges : t -> (int * l * string) Base.H_int.t
 
   val string_of_l : l -> string
@@ -92,7 +96,10 @@ module type RS = sig
     s0:Big.t ->
     priorities:p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
-    max:int -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
+    max:int ->
+    iter_f:(int -> Big.t -> unit) ->
+    graph * Stats.t
+
   exception DEADLOCK of graph * Stats.t * limit
 
   exception LIMIT of graph * Stats.t
@@ -101,10 +108,17 @@ module type RS = sig
     s0:Big.t ->
     priorities:p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
-    init_size:int -> stop:limit -> iter_f:(int -> Big.t -> unit) -> graph * Stats.t
+    init_size:int ->
+    stop:limit ->
+    iter_f:(int -> Big.t -> unit) ->
+    graph * Stats.t
+
   val to_prism : graph -> string
+
   val to_state_rewards : graph -> string
+
   val to_transition_rewards : graph -> string
+
   val to_dot : graph -> path:string -> name:string -> string
 
   val to_lab : graph -> string
@@ -236,7 +250,9 @@ module Make
     s0:Big.t ->
     priorities:P.p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
-    max:int -> iter_f:(int -> Big.t -> unit) -> t * Stats.t
+    max:int ->
+    iter_f:(int -> Big.t -> unit) ->
+    t * Stats.t
 
   val sim :
     s0:Big.t ->

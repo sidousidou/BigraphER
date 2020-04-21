@@ -1,15 +1,17 @@
-type react =
-  { name   : string;
-    action : string;
-    reward : int;
-    rdx    : Big.t;                  (* Redex   --- lhs   *)
-    rct    : Big.t;                  (* Reactum --- rhs   *)
-    eta    : Fun.t option;           (* Instantiation map *)
-    w      : float                   (* Weight            *)
-  }
+type react = {
+  name : string;
+  action : string;
+  reward : int;
+  rdx : Big.t;
+  (* Redex --- lhs *)
+  rct : Big.t;
+  (* Reactum --- rhs *)
+  eta : Fun.t option;
+  (* Instantiation map *)
+  w : float; (* Weight *)
+}
 
 module RT = struct
-
   type t = react
 
   type label = string * int * float
@@ -22,12 +24,10 @@ module RT = struct
 
   let rhs r = r.rct
 
-  let l r = r.action, r.reward, r.w
+  let l r = (r.action, r.reward, r.w)
 
   let equal r r' =
-    r.action = r'.action
-    && Big.equal r.rdx r'.rdx
-    && Big.equal r.rct r'.rct
+    r.action = r'.action && Big.equal r.rdx r'.rdx && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
     && r.w = r'.w
 
@@ -44,117 +44,128 @@ module RT = struct
     Printf.sprintf "%s %d %-3g" action reward probability
 
   let parse ~name ~lhs ~rhs (action, reward, w) eta =
-    { name   = name;
-      action = action;
-      reward = reward;
-      rdx    = lhs;
-      rct    = rhs;
-      eta    = eta;
-      w      = w; }
+    { name; action; reward; rdx = lhs; rct = rhs; eta; w }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
     let normalise (l, n) =
-      let sum = List.fold_left (fun acc (_, (_, _, p), _) -> acc +. p) 0.0 l in
+      let sum =
+        List.fold_left (fun acc (_, (_, _, p), _) -> acc +. p) 0.0 l
+      in
       (List.map (fun (b, (a, rew, p), r) -> (b, (a, rew, p /. sum), r)) l, n)
     in
     let rec remove_duplicates = function
       | [] -> []
       | h :: t ->
-        let filtered = List.filter (fun x -> x <> h) t in
-        h :: remove_duplicates filtered
+          let filtered = List.filter (fun x -> x <> h) t in
+          h :: remove_duplicates filtered
     in
-    let different_actions = List.map (fun (_, _, r) -> action (List.hd r)) l
-                            |> remove_duplicates in
-    List.fold_left (fun acc act ->
-        let reaction_rules = List.filter
-            (fun (_, _, r) -> action (List.hd r) = act) l in
-        let (normalised, _) = normalise (reaction_rules, 0) in
-        normalised @ acc
-      ) [] different_actions, n
+    let different_actions =
+      List.map (fun (_, _, r) -> action (List.hd r)) l |> remove_duplicates
+    in
+    ( List.fold_left
+        (fun acc act ->
+          let reaction_rules =
+            List.filter (fun (_, _, r) -> action (List.hd r) = act) l
+          in
+          let normalised, _ = normalise (reaction_rules, 0) in
+          normalised @ acc)
+        [] different_actions,
+      n )
 
   let step b rules =
-    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
-    |> norm
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map |> norm
 
   (* Pick the first reaction rule with probability > limit, normalising its
      probability by subtracting the probability of the previous rule. *)
   let pick limit = function
-  | [] -> None
-  | (_b, (_a, _r, p), _rr) as head :: tail ->
-    let rec _pick limit (b', (a', r', p'), rr') = function
-      | (b, (a, r, p), rr) as element :: tail ->
-        if p > limit then Some (b, (a, r, p -. p'), rr)
-        else _pick limit element tail
-      | [] -> Some (b', (a', r', p'), rr')
-    in
-    if p > limit then Some head else _pick limit head tail
+    | [] -> None
+    | ((_b, (_a, _r, p), _rr) as head) :: tail ->
+        let rec _pick limit (b', (a', r', p'), rr') = function
+          | ((b, (a, r, p), rr) as element) :: tail ->
+              if p > limit then Some (b, (a, r, p -. p'), rr)
+              else _pick limit element tail
+          | [] -> Some (b', (a', r', p'), rr')
+        in
+        if p > limit then Some head else _pick limit head tail
 
   let random_step b rules =
-   let (ss, m) = step b rules in
+    let ss, m = step b rules in
     match ss with
     | [] -> (None, m)
     | _ ->
-      begin
         (* Sort transitions by normalised probability *)
-        let ss_sort =
-          List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
+        let ss_sort = List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
         (* Compute cumulative probability *)
         and cumulative =
-          List.fold_left (fun (out, cum_p) (b, (a, rew, p), r) ->
+          List.fold_left
+            (fun (out, cum_p) (b, (a, rew, p), r) ->
               let cum_p' = cum_p +. p in
               ((b, (a, rew, cum_p'), r) :: out, cum_p'))
             ([], 0.0)
         in
         let reaction_rules, cum_p = ss_sort ss |> cumulative in
-        List.rev reaction_rules
-        |> pick (Random.float cum_p)
-        |> (fun x -> (x, m))
-      end
+        List.rev reaction_rules |> pick (Random.float cum_p) |> fun x ->
+        (x, m)
 end
 
 module R = RrType.Make (RT)
 
 module PT = struct
   type t = R.t list
+
   let f_val _ = true
+
   (* TODO: Rules should not be applied unless the /normalised/ probability is 1,
    * which means we need the match first *)
   let f_r_val _ = true
 end
 
 module H_int = Base.H_int
-
 module H_predicate = Base.H_predicate
-
 module S_predicate = Base.S_predicate
 
-type graph = { v : (int * Big.t) H_int.t;
-               e : (int * R.label * string) H_int.t;
-               l : int H_predicate.t;
-               preds : S_predicate.t; }
+type graph = {
+  v : (int * Big.t) H_int.t;
+  e : (int * R.label * string) H_int.t;
+  l : int H_predicate.t;
+  preds : S_predicate.t;
+}
 
 module G = struct
   type t = graph
+
   type l = R.label
+
   let init n preds =
-    { v = H_int.create n;
+    {
+      v = H_int.create n;
       e = H_int.create n;
       l = H_predicate.create n;
-      preds = S_predicate.of_list preds; }
+      preds = S_predicate.of_list preds;
+    }
+
   let states g = g.v
+
   let label g = (g.preds, g.l)
+
   let edges g = g.e
+
   let string_of_l (action, reward, probability) =
     Printf.sprintf "%s %d %.4g" action reward probability
 end
 
 module L = struct
   type t = int
+
   type l = R.label
+
   let init = 0
+
   let increment t _ = t + 1
+
   let is_greater = ( > )
+
   let to_string = string_of_int
 end
 

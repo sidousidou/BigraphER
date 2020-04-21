@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-(** The type of probabilistic bigraphical reaction rules. *)
 type react
+(** The type of probabilistic bigraphical reaction rules. *)
 
 (** The type of priority classes, {e i.e.}, lists of probabilistic reaction
     rules. Intermediate states resulting from the application of reaction
@@ -12,15 +12,15 @@ type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list  (** Reducible priority class *)
 
-(** The type of Discrete Time Markov Chains (DTMC). *)
 type graph
+(** The type of Discrete Time Markov Chains (DTMC). *)
 
+type label = float
 (** The type of edge labels in Discrete Time Markov Chains (DTMC), {e i.e.},
     probabilities. *)
-type label = float
 
-(** Type of simulation limit {e i.e.}, number of execution steps. *)
 type limit = int
+(** Type of simulation limit {e i.e.}, number of execution steps. *)
 
 val typ : Rs.t
 (** Type of transition system: {{!Rs.t} [PBRS]}. *)
@@ -66,11 +66,11 @@ val is_valid_react : react -> bool
 val equal_react : react -> react -> bool
 (** Equality for reaction rules. *)
 
-(** The type of reaction validity errors. *)
 type react_error
+(** The type of reaction validity errors. *)
 
-(** Raised when a reaction rule is not valid. *)
 exception NOT_VALID of react_error
+(** Raised when a reaction rule is not valid. *)
 
 val is_valid_react_exn : react -> bool
 (** Same as {!is_valid_react} but an exception is raised when the rule is not
@@ -119,9 +119,9 @@ val rewrite : Big.t -> p_class list -> Big.t * int
 
 (** {2 Discrete Time Markov Chains} *)
 
+exception MAX of graph * Stats.t
 (** Raised when the size of the transition system reaches the maximum number
     of states. *)
-exception MAX of graph * Stats.t
 
 val bfs :
   s0:Big.t ->
@@ -143,12 +143,12 @@ val bfs :
 
 (** {2 Simulation traces} *)
 
-(** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * Stats.t * limit
+(** Raised when the simulation reaches a deadlock state. *)
 
+exception LIMIT of graph * Stats.t
 (** Raised when the simulation reaches the maximum number of simulation
     steps. *)
-exception LIMIT of graph * Stats.t
 
 val sim :
   s0:Big.t ->
