@@ -14,7 +14,7 @@ let int_literal s =
   - int_of_string ("-" ^ s)
 
 let read_int lexbuf =
-  let s = Lexing.lexeme lexbuf in	
+  let s = Lexing.lexeme lexbuf in
   try CINT (int_literal s) with
   | Failure _ -> raise (ERROR (Int_overflow s, Loc.curr lexbuf))
 
@@ -44,12 +44,12 @@ let string_literal = '\"' ['a'-'z' 'A'-'Z' '0'-'9' '-' '_' '\'']* '\"'
 let argv_sep = "\n"
 let const = ("--const" | "-c") argv_sep
 let format = ("--format" | "-f") argv_sep
-let path = [^'\r' '\n']+			    
+let path = [^'\r' '\n']+
 let big = path ".big"
 
 (* RULES *)
 
-rule token =  parse 
+rule token =  parse
   | blank+                  { token lexbuf }
   | (newline | comment)     { Lexing.new_line lexbuf; token lexbuf }
   | int_literal             { read_int lexbuf }
@@ -62,14 +62,14 @@ rule token =  parse
   | "("                     { LPAR }
   | ")"                     { RPAR }
   | "ctrl"                  { CTRL }
-  | "atomic"                { ATOMIC }     
-  | "big"                   { BIG } 
+  | "atomic"                { ATOMIC }
+  | "big"                   { BIG }
   | "react"                 { REACT }
   | "init"                  { INIT }
   | "int"                   { INT }
   | "float"                 { FLOAT }
   | "string"                { STRING }
-  | "fun"                   { FUN }  
+  | "fun"                   { FUN }
   | "action"                { ACTION }
   | "begin"                 { BEGIN }
   | "brs"		    { BRS }
@@ -87,14 +87,14 @@ rule token =  parse
   | "split"                 { SPLIT }
   | ":"                     { COLON }
   | ";"                     { SEMICOLON }
-  | "="                     { EQUAL }  
-  | ","                     { COMMA }    
+  | "="                     { EQUAL }
+  | ","                     { COMMA }
   | ("->" | "-->")          { ARR }
   | "-["                    { LARR }
   | "]->"                   { RARR }
   | "@"                     { AT }
-  | "."                     { DOT } 
-  | "||"                    { DPIPE }  
+  | "."                     { DOT }
+  | "||"                    { DPIPE }
   | "|"                     { PIPE }
   | "+"                     { PLUS }
   | "-"                     { MINUS }
@@ -116,7 +116,7 @@ let report_error fmt err = function
   | Unknown_char c ->
      fprintf fmt "@[%s: Unknown character `%c'@]" err c
   | Int_overflow s ->
-     fprintf fmt "@[%s: Integer out of bounds: %s is not in [%i, %i]@]" 
+     fprintf fmt "@[%s: Integer out of bounds: %s is not in [%i, %i]@]"
 	     err s min_int max_int
   | Invalid_assign s ->
      fprintf fmt "@[%s: Invalid constant assignments `%s'@]" err s

@@ -1,13 +1,16 @@
 type react =
   { name : string;
-    rdx  : Big.t;                  (* Redex   --- lhs   *)
-    rct  : Big.t;                  (* Reactum --- rhs   *)
-    eta  : Fun.t option;           (* Instantiation map *)
-    w    : float                   (* Weight            *)
+    rdx  : Big.t;
+    (* Redex   --- lhs   *)
+    rct  : Big.t;
+    (* Reactum --- rhs   *)
+    eta  : Fun.t option;
+    (* Instantiation map *)
+    w    : float
+    (* Weight *)
   }
 
 module RT = struct
-
   type t = react
 
   type label = float
@@ -21,8 +24,7 @@ module RT = struct
   let l r = r.w
 
   let equal r r' =
-    Big.equal r.rdx r'.rdx
-    && Big.equal r.rct r'.rct
+    Big.equal r.rdx r'.rdx && Big.equal r.rct r'.rct
     && Base.opt_equal Fun.equal r.eta r'.eta
     && r.w = r'.w
 
@@ -36,12 +38,7 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~name ~lhs ~rhs w eta =
-    { name = name;
-      rdx  = lhs;
-      rct  = rhs;
-      eta  = eta;
-      w    = w; }
+  let parse ~name ~lhs ~rhs w eta = { name; rdx = lhs; rct = rhs; eta; w }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
@@ -49,8 +46,7 @@ module RT = struct
     (List.map (fun (b, w, r) -> (b, w /. sum, r)) l, n)
 
   let step b rules =
-    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
-    |> norm
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map |> norm
 
   (* Pick the first reaction rule with probability > limit, normalising its
      probability by subtracting the probability of the previous rule. *)
@@ -65,17 +61,16 @@ module RT = struct
       if p > limit then Some head else _pick limit head tail
 
   let random_step b rules =
-    let (ss, m) = step b rules in
+    let ss, m = step b rules in
     match ss with
     | [] -> (None, m)
     | _ ->
-      begin
         (* Sort transitions by probability *)
-        let ss_sort =
-          List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
+        let ss_sort = List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
         (* Compute cumulative probability *)
         and cumulative =
-          List.fold_left (fun (out, cum_p) (b, p, r) ->
+          List.fold_left
+            (fun (out, cum_p) (b, p, r) ->
               let cum_p' = cum_p +. p in
               ((b, cum_p', r) :: out, cum_p'))
             ([], 0.0)
@@ -87,13 +82,13 @@ module RT = struct
         |> pick (Random.float 1.0)
         |> (fun x -> (x, m))
 
-      end
 end
 
 module R = RrType.Make (RT)
 
 module PT = struct
   type t = R.t list
+
   let f_val _ = true
   (* TODO: Rules should not be applied unless the /normalised/ probability is 1,
    * which means we need the match first *)
@@ -113,24 +108,37 @@ type graph = { v : (int * Big.t) H_int.t;
 
 module G = struct
   type t = graph
+
   type l = R.label
+
   let init n preds =
-    { v = H_int.create n;
+    {
+      v = H_int.create n;
       e = H_int.create n;
       l = H_predicate.create n;
-      preds = S_predicate.of_list preds; }
+      preds = S_predicate.of_list preds;
+    }
+
   let states g = g.v
+
   let label g = (g.preds, g.l)
+
   let edges g = g.e
+
   let string_of_l = Printf.sprintf "%.4g"
 end
 
 module L = struct
   type t = int
+
   type l = R.label
+
   let init = 0
+
   let increment t _ = t + 1
+
   let is_greater = ( > )
+
   let to_string = string_of_int
 end
 

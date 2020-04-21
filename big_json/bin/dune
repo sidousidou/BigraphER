@@ -1,4 +1,5 @@
 (executable
+ (package big_json)
  (name big_match)
  (public_name big_match)
  (libraries big_json))

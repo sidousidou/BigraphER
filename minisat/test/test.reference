@@ -1,0 +1,16 @@
+Solving ../files/1.formula...
+sat
+  a=false
+  b=false
+Solving ../files/2.formula...
+sat
+  v_2_1=false
+  v_2_3=true
+  v_2_0=false
+  v_1_2=true
+  v_1_3=false
+  v_1_1=true
+  v_1_0=true
+  v_2_2=false
+Solving ../files/3.formula...
+unsat

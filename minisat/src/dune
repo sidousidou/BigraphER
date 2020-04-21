@@ -1,0 +1,22 @@
+(library
+ (name minisat)
+ (public_name minisat)
+ (foreign_stubs
+  (language cxx)
+  (names stubs)
+  (flags
+   (:include flags.sexp)))
+ (c_library_flags
+  (:include libs.sexp))
+ (synopsis "OCaml bindings for the MiniSAT SAT solver"))
+
+(rule
+ (targets flags.sexp libs.sexp)
+ (deps
+  (:discover config/discover.exe))
+ (action
+  (run %{discover})))
+
+(documentation
+ (package minisat)
+ (mld_files (:standard)))

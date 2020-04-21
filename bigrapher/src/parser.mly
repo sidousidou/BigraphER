@@ -1,22 +1,22 @@
 %{
 
-open Loc 
+open Loc
 open Ast
 open Bigraph
 
 %}
 
 (* BIG *)
-   
+
 %token            EOF
 
 %token <string>   CIDE
-%token <string>   IDE       
+%token <string>   IDE
 %token <int>      CINT
 %token <float>    CFLOAT
 %token <string>   CSTRING
 
-%token 	          CTRL 
+%token 	          CTRL
 %token            ATOMIC
 %token            BIG
 %token            REACT
@@ -40,7 +40,7 @@ open Bigraph
 %token            SHARE
 %token            BY
 %token            IN
-%token            ID 
+%token            ID
 %token            ARR
 %token            LARR
 %token            RARR
@@ -54,13 +54,13 @@ open Bigraph
 %token            PAR
 %token            PPAR
 
-%token            LSBR RSBR LCBR RCBR LPAR RPAR 
-%token            COLON SEMICOLON COMMA 
+%token            LSBR RSBR LCBR RCBR LPAR RPAR
+%token            COLON SEMICOLON COMMA
 
 %token            PIPE DPIPE
-%token            DOT 
+%token            DOT
 
-%left  PIPE DPIPE 
+%left  PIPE DPIPE
 %left  PLUS MINUS
 %left  PROD SLASH
 %right CARET
@@ -77,7 +77,7 @@ model:
 
 dec_list:
   decs = nonempty_list(dec)                 { decs };
-     
+
 dec:
   | dec_int SEMICOLON                       { Dint $1    }
   | dec_float SEMICOLON                     { Dfloat $1  }
@@ -119,14 +119,14 @@ ctrl_exp:
 
 dec_big:
   | BIG IDE EQUAL bexp                      { Big_exp ($2, $4, loc $startpos $endpos)         }
-  | FUN BIG IDE LPAR ide_list_nonempty RPAR EQUAL bexp  
+  | FUN BIG IDE LPAR ide_list_nonempty RPAR EQUAL bexp
                                             { Big_fun_exp ($3, $5, $8, loc $startpos $endpos) };
 
 dec_react:
-  | REACT IDE EQUAL bexp arrow bexp eta_exp_opt 
+  | REACT IDE EQUAL bexp arrow bexp eta_exp_opt
       { React_exp ($2, "", 0, $4, $6, $5, $7, loc $startpos $endpos)           }
  | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt
-      { React_fun_exp ($3, "", 0, $5, $8, $10, $9, $11, loc $startpos $endpos) }
+      { React_fun_exp ($3, "", 0, $5, $8, $10, $9, $11, loc $startpos $endpos) };
 
 arrow:
   | ARR                   { None }
@@ -143,7 +143,7 @@ int_list:
 
 rs:
   | BEGIN rs_type params init rules preds END
-      { { dbrs_type = $2; 
+      { { dbrs_type = $2;
           dbrs_pri = $5;
 	  dbrs_init = $4;
 	  dbrs_params = $3;
@@ -251,7 +251,7 @@ rule_ide:
 bexp:
   | wire_exp LPAR bexp RPAR                 { Big_wire ($1, $3, loc $startpos $endpos)                   }
   | wire_exp ion_exp                        { Big_wire ($1, Big_ion $2, loc $startpos $endpos)           }
-  | wire_exp ion_exp DOT simple_bexp        { Big_wire ($1, Big_nest ($2, $4, loc $startpos $endpos), 
+  | wire_exp ion_exp DOT simple_bexp        { Big_wire ($1, Big_nest ($2, $4, loc $startpos $endpos),
 							    loc $startpos $endpos)                       }
   | wire_exp IDE                            { Big_wire ($1, Big_var ($2, loc $startpos $endpos),
                                                             loc $startpos $endpos)                       }
@@ -264,15 +264,15 @@ bexp:
   | bexp PIPE bexp                          { Big_par ($1, $3, loc $startpos $endpos)                    }
   | bexp DPIPE bexp                         { Big_ppar ($1, $3, loc $startpos $endpos)                   }
   | SHARE simple_bexp BY simple_bexp IN simple_bexp
-                                            { Big_share ($2, $4, $6, loc $startpos $endpos)              };  
+                                            { Big_share ($2, $4, $6, loc $startpos $endpos)              };
 
 simple_bexp:
   | LPAR bexp RPAR                          { $2                                          }
-  | LPAR bexp RPAR LPAR bexp RPAR           { Big_comp ($2, $5, loc $startpos $endpos)    }	
+  | LPAR bexp RPAR LPAR bexp RPAR           { Big_comp ($2, $5, loc $startpos $endpos)    }
   | id_exp                                  { Big_id $1                                   }
-  | merge_exp                               { $1                                          } 
+  | merge_exp                               { $1                                          }
   | split_exp                               { $1                                          }
-  | SLASH IDE                               { Big_close { cl_name = $2; 
+  | SLASH IDE                               { Big_close { cl_name = $2;
 					                  cl_loc = loc $startpos $endpos;}}
   | IDE SLASH LCBR ide_list_nonempty RCBR   { Big_sub { out_name = $1;
                                                         in_names = $4;
@@ -292,11 +292,11 @@ simple_bexp:
 id_exp:
   | ID o_delim_int_1                        { { id_place = $2;
 						id_link = [];
-						id_loc = loc $startpos $endpos; } } 
+						id_loc = loc $startpos $endpos; } }
   | ID LCBR ide_list_nonempty RCBR          { { id_place = 0;
 						id_link = $3;
 						id_loc = loc $startpos $endpos; } }
-  | ID LPAR CINT COMMA LCBR ide_list_nonempty RCBR RPAR  
+  | ID LPAR CINT COMMA LCBR ide_list_nonempty RCBR RPAR
                                             { { id_place = $3;
 						id_link = $6;
 						id_loc = loc $startpos $endpos; } };
@@ -324,14 +324,14 @@ ion_exp:
                                             { Big_ion_fun_exp ($1, $3, $6, loc $startpos $endpos) };
 
 place_exp:
-  | LPAR LSBR int_list_list RSBR COMMA CINT RPAR   
+  | LPAR LSBR int_list_list RSBR COMMA CINT RPAR
                                             { { plc_parents = $3;
 						plc_roots = $6;
 						plc_loc = loc $startpos $endpos; } };
 
 int_list_list
   : /* EMPTY */                             { [ ] }
-  | LCBR int_list RCBR                      { [ $2 ] }				
+  | LCBR int_list RCBR                      { [ $2 ] }
   | LCBR int_list RCBR COMMA int_list_list  { $2 :: $5 }
 
 
@@ -344,9 +344,9 @@ wire_exp:
                                                 m_cl_names = $3;
                                                 m_cl_loc = loc $startpos $endpos; }};
 
-closures: 
-  | cs = nonempty_list(closure)             { cs }; 
+closures:
+  | cs = nonempty_list(closure)             { cs };
 
 closure:
-  | SLASH IDE                               { { cl_name = $2; 
+  | SLASH IDE                               { { cl_name = $2;
 					        cl_loc = loc $startpos $endpos; } };

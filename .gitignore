@@ -1,0 +1,21 @@
+# Ignore dirs
+_build
+
+# Generated files
+*.opam
+*.install
+*.merlin
+*.tar.gz
+static-bin/bigrapher
+static-bin/big_match
+
+# temp files
+*~
+\#*\#
+.\#*
+*/*~
+*/\#*\#
+*/.\#*
+*.old
+
+.DS_Store

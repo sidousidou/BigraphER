@@ -1,13 +1,14 @@
 (executables
  (names test_parser)
- (libraries bigraph unix utils))
+ (libraries bigraph CI_utils unix utils))
 
 (rule
  (alias runtest)
  (deps
-     (glob_files ../examples/*.big)
-     (glob_files files/*.reference))
- (action (run %{exe:test_parser.exe}
-              %{bin:bigrapher}
-              %{dep:files/parser.in}
-               shippable/testresults parser-junit.xml)))
+  (:exe test_parser.exe)
+  (glob_files ../examples/*.big)
+  (glob_files files/*.reference)
+  (:list files/parser.in))
+ (action
+  (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
+    parser-junit.xml)))

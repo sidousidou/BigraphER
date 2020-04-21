@@ -1,7 +1,6 @@
 language: none
 
 env:
-  - OCAML_VERSION=4.06
   - OCAML_VERSION=4.07
   - OCAML_VERSION=4.08
   - OCAML_VERSION=4.09
@@ -14,13 +13,8 @@ build:
       pull: true
 
   ci:
-    - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install pkg-config m4 zlib1g-dev minisat graphviz
-    - sh -c "cd ~/opam-repository && git pull -q"
-    - opam repository add glasgow "http://www.dcs.gla.ac.uk/~michele/dcs-opam-repository/" && opam update -y -u && opam install -y dune minisat conf-graphviz menhir cmdliner jsonm && eval $(opam env)
+    - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install m4 zlib1g-dev minisat graphviz
+    - opam repo set-url --all-switches default https://opam.ocaml.org/ && opam update && opam install -y dune dune-configurator menhir cmdliner jsonm
     - eval $(opam env)
-    - mkdir -p shippable/testresults
-    - mkdir -p shippable/svg
-    - mkdir -p shippable/parser
-    - mkdir -p shippable/man
     - dune runtest --profile=release
-    - cp _build/default/bigraph/test/shippable/testresults/*.xml _build/default/bigrapher/tests/shippable/testresults/*.xml shippable/testresults/
+    - cp _build/default/shippable/testresults/*.xml shippable/testresults/

@@ -1,19 +1,32 @@
 (rule
-  (target bigrapher.1)
-  (action (with-stdout-to %{target} (run %{bin:bigrapher} --help=groff))))
+ (target bigrapher.1)
+ (action
+  (with-stdout-to
+   %{target}
+   (run %{bin:bigrapher} --help=groff))))
 
 (rule
-  (target bigrapher-sim.1)
-  (action (with-stdout-to %{target} (run %{bin:bigrapher} sim --help=groff))))
+ (target bigrapher-sim.1)
+ (action
+  (with-stdout-to
+   %{target}
+   (run %{bin:bigrapher} sim --help=groff))))
 
 (rule
-  (target bigrapher-full.1)
-  (action (with-stdout-to %{target} (run %{bin:bigrapher} full --help=groff))))
+ (target bigrapher-full.1)
+ (action
+  (with-stdout-to
+   %{target}
+   (run %{bin:bigrapher} full --help=groff))))
 
 (rule
-  (target bigrapher-validate.1)
-  (action (with-stdout-to %{target} (run %{bin:bigrapher} validate --help=groff))))
+ (target bigrapher-validate.1)
+ (action
+  (with-stdout-to
+   %{target}
+   (run %{bin:bigrapher} validate --help=groff))))
 
 (install
-  (section man)
-  (files bigrapher.1 bigrapher-validate.1 bigrapher-full.1 bigrapher-sim.1))
+ (package bigrapher)
+ (section man)
+ (files bigrapher.1 bigrapher-validate.1 bigrapher-full.1 bigrapher-sim.1))
