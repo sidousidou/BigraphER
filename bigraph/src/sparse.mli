@@ -5,10 +5,10 @@
 
     @author Michele Sevegnani *)
 
+type t
 (** The type of Boolean matrices. Only true values are stored in the matrix
     as row-column pairs. For example adding value ["(2, 1)"] means that the
     second element in the third row of the matrix is true. *)
-type t
 
 (** {2 Basic operations} *)
 

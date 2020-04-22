@@ -1,3 +1,7 @@
+###1.9.3 (2020-02-10): ###
+
+* Add support for application conditions on reaction rules
+
 ###1.9.2 (2020-02-25): ###
 
 * Add support for iterated operators par(n, bexp) and ppar(n, bexp) that repeat

@@ -297,8 +297,8 @@ val equal : t -> t -> bool
 (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
     [false] otherwise. *)
 
-(** The type of bigraphs keys. *)
 type big_key = int
+(** The type of bigraphs keys. *)
 
 val key : t -> big_key
 (** Compute the key of a bigraph. The key is similar to a hash. Note that
@@ -311,9 +311,9 @@ val equal_opt : t -> t -> bool
 
 (** {2 Matching} *)
 
+type occ = Iso.t * Iso.t * Fun.t
 (** The type of occurrences: an isomorphism over nodes, an isomorphism over
     edges and a function over hyper-edges. *)
-type occ = Iso.t * Iso.t * Fun.t
 
 val occurs : target:t -> pattern:t -> bool
 (** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]

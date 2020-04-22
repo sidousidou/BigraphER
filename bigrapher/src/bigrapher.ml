@@ -272,6 +272,7 @@ module Run
         string ->
         Big.t ->
         Big.t ->
+        ?conds:AppCond.t list ->
         [ `E of unit | `F of float ] ->
         Fun.t option ->
         T.react option
@@ -485,19 +486,19 @@ let () =
                 Run
                   (struct
                     include Brs
+                    let parse_react_unsafe ~name ~lhs ~rhs ?(conds = []) _
+                        eta =
+                      parse_react_unsafe ~name ~lhs ~rhs ~conds eta
 
-                    let parse_react_unsafe ~name ~lhs ~rhs _ eta =
-                      parse_react_unsafe ~name ~lhs ~rhs eta
-
-                    let parse_react ~name ~lhs ~rhs _ eta =
-                      parse_react ~name ~lhs ~rhs eta
+                    let parse_react ~name ~lhs ~rhs ?(conds = []) _ eta =
+                      parse_react ~name ~lhs ~rhs ~conds eta
                   end)
                   (struct
                     let stop = Cmd.(defaults.steps)
                   end)
                   (struct
-                    let parse_react name lhs rhs _ eta =
-                      Brs.parse_react ~name ~lhs ~rhs eta
+                    let parse_react name lhs rhs ?(conds = []) _ eta =
+                      Brs.parse_react ~name ~lhs ~rhs ~conds eta
                   end)
                   (struct
                     let f = Big_json.ts_to_json
@@ -512,9 +513,9 @@ let () =
                     let stop = Cmd.(defaults.steps)
                   end)
                   (struct
-                    let parse_react name lhs rhs l eta =
+                    let parse_react name lhs rhs ?(conds = []) l eta =
                       match l with
-                      | `F f -> Pbrs.parse_react ~name ~lhs ~rhs f eta
+                      | `F f -> Pbrs.parse_react ~name ~lhs ~rhs ~conds f eta
                       | _ -> assert false
 
                     (*BISECT-IGNORE*)
@@ -532,9 +533,9 @@ let () =
                     let stop = Cmd.(defaults.time)
                   end)
                   (struct
-                    let parse_react name lhs rhs l eta =
+                    let parse_react name lhs rhs ?(conds = []) l eta =
                       match l with
-                      | `F f -> Sbrs.parse_react ~name ~lhs ~rhs f eta
+                      | `F f -> Sbrs.parse_react ~name ~lhs ~rhs ~conds f eta
                       | _ -> assert false
 
                     (*BISECT-IGNORE*)

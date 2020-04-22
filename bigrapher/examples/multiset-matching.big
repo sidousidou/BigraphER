@@ -1,0 +1,26 @@
+# Using conditional bigraphs to check for the non existence of a particular
+# entity even in the presence of sites
+
+ctrl Set = 0;
+atomic ctrl Square = 0;
+atomic ctrl Circle = 0;
+atomic ctrl Star = 0;
+
+react appIfCircle =
+  Set.(Circle | id) --> Set.id;
+
+react appIfNoCircleNoSites =
+  Set.(Square | Star) --> Set.(Circle | Square | Star);
+
+react appIfNoCircle =
+  Set.id --> Set.(Circle | id)
+  if
+  !(Circle) in param;
+
+
+big s0 = Set.(Square | Circle | Star);
+
+begin brs
+  init s0;
+  rules = [{appIfCircle, appIfNoCircle, appIfNoCircleNoSites}];
+end

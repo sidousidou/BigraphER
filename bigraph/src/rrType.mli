@@ -10,6 +10,8 @@ module type R = sig
 
   val rhs : t -> Big.t
 
+  val conds : t -> AppCond.t list
+
   val l : t -> label
 
   val equal : t -> t -> bool
@@ -28,7 +30,13 @@ module type R = sig
   val string_of_label : label -> string
 
   val parse :
-    name:string -> lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:AppCond.t list ->
+    label ->
+    Fun.t option ->
+    t
 
   val step : Big.t -> t list -> (Big.t * label * t list) list * int
 
@@ -50,6 +58,8 @@ module type T = sig
 
   val rhs : t -> Big.t
 
+  val conds : t -> AppCond.t list
+
   val l : t -> label
 
   val equal : t -> t -> bool
@@ -62,7 +72,13 @@ module type T = sig
     Big.t * label * t list
 
   val parse :
-    name:string -> lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:AppCond.t list ->
+    label ->
+    Fun.t option ->
+    t
 
   val to_string : t -> string
 
@@ -102,6 +118,9 @@ module Make (R : R) : sig
   val rhs : t -> Big.t
   (** Return the right-hand side of a rewrite rule. *)
 
+  val conds : t -> AppCond.t list
+  (** Return application conditions for a rewrite rule. *)
+
   val l : t -> label
   (** Return the label of a rewrite rule. *)
 
@@ -118,7 +137,13 @@ module Make (R : R) : sig
   (** Merge two occurrences. *)
 
   val parse :
-    name:string -> lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:AppCond.t list ->
+    label ->
+    Fun.t option ->
+    t
   (** Creare a new reaction rule. *)
 
   val to_string : t -> string
@@ -172,6 +197,7 @@ val gen_step :
   rhs:('a -> Big.t) ->
   label:('a -> 'b) ->
   map:('a -> Fun.t option) ->
+  conds:('a -> AppCond.t list) ->
   (Big.t * 'b * 'a list) list * int
 (** Generic step function *)
 

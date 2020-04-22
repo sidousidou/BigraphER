@@ -153,6 +153,8 @@ module type RS = sig
 
   val rhs : react -> Big.t
 
+  val conds : react -> AppCond.t list
+
   val map : react -> Fun.t option
 
   val string_of_limit : limit -> string
@@ -222,12 +224,19 @@ module type RS = sig
   val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
 
   val parse_react_unsafe :
-    name:string -> lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> react
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:AppCond.t list ->
+    label ->
+    Fun.t option ->
+    react
 
   val parse_react :
     name:string ->
     lhs:Big.t ->
     rhs:Big.t ->
+    ?conds:AppCond.t list ->
     label ->
     Fun.t option ->
     react option
@@ -293,8 +302,8 @@ struct
 
   let parse_react_unsafe = R.parse
 
-  let parse_react ~name ~lhs ~rhs l f =
-    let r = R.parse ~name ~lhs ~rhs l f in
+  let parse_react ~name ~lhs ~rhs ?conds:(c = []) l f =
+    let r = R.parse ~name ~lhs ~rhs ~conds:c l f in
     if R.is_valid r then Some r else None
 
   let string_of_limit = L.to_string
@@ -313,6 +322,8 @@ struct
   let lhs = R.lhs
 
   let rhs = R.rhs
+
+  let conds = R.conds
 
   let map = R.map
 

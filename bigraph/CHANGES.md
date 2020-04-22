@@ -1,3 +1,8 @@
+###1.3.3 (2020-04-22): ###
+
+* Add support for application conditions
+* `Big.decomp` now returns a minimal paramter decomposition
+
 ###1.3.2 (2020-02-25): ###
 
 * Fix incorrect identity element for iterated operators

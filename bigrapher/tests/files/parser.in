@@ -13,3 +13,6 @@
 ../examples/string_params.big
 ../examples/iter-merge.big
 ../examples/norules.big
+../examples/unique_entities.big
+../examples/conditional_turn_taking.big
+../examples/multiset-matching.big

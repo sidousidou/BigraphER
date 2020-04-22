@@ -5,7 +5,9 @@ type react = {
   (* Redex --- lhs *)
   rct : Big.t;
   (* Reactum --- rhs *)
-  eta : Fun.t option; (* Instantiation map *)
+  eta : Fun.t option;
+  (* Instantiation map *)
+  conds : AppCond.t list; (* Application conditions *)
 }
 
 module RT = struct
@@ -18,6 +20,8 @@ module RT = struct
   let lhs r = r.rdx
 
   let rhs r = r.rct
+
+  let conds r = r.conds
 
   let l _ = ()
 
@@ -35,10 +39,11 @@ module RT = struct
 
   let string_of_label _ = ""
 
-  let parse ~name ~lhs ~rhs _ eta = { name; rdx = lhs; rct = rhs; eta }
+  let parse ~name ~lhs ~rhs ?conds:(c = []) _ eta =
+    { name; rdx = lhs; rct = rhs; eta; conds = c }
 
   let step b rules =
-    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
 
   let random_step b rules =
     (* Remove element with index i *)
@@ -47,21 +52,12 @@ module RT = struct
       | x :: l ->
           if i = i' then (x, l @ acc) else aux i (i' + 1) (x :: acc) l
     in
-    let t = Place.trans b.Big.p in
-    let rec _random_step s m = function
-      | [] -> (None, m)
-      | rs -> (
-          let r, rs' = aux (Random.int (List.length rs)) 0 [] rs in
-          match Big.occurrence ~target:s ~pattern:(lhs r) t with
-          | Some o ->
-              ( Some
-                  ( Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
-                    (),
-                    [ r ] ),
-                m + 1 )
-          | None -> _random_step s (m + 1) rs' )
-    in
-    _random_step b 0 rules
+    let ss, m = step b rules in
+    match ss with
+    | [] -> (None, m)
+    | _ ->
+        let s, _ = aux (Random.int (List.length ss)) 0 [] ss in
+        (Some s, m)
 end
 
 module R = RrType.Make (RT)
@@ -128,11 +124,8 @@ end
 
 include TsType.Make (R) (PriType.Make (R) (PT)) (L) (G) (T)
 
-let parse_react_unsafe ~name ~lhs ~rhs eta =
-  parse_react_unsafe ~name ~lhs ~rhs () eta
+let parse_react_unsafe ~name ~lhs ~rhs ?conds eta =
+  parse_react_unsafe ~name ~lhs ~rhs ?conds () eta
 
-(* Label is ignored *)
-
-let parse_react ~name ~lhs ~rhs eta = parse_react ~name ~lhs ~rhs () eta
-
-(* Label is ignored *)
+let parse_react ~name ~lhs ~rhs ?conds eta =
+  parse_react ~name ~lhs ~rhs ?conds () eta

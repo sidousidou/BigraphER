@@ -1,11 +1,10 @@
 # Bigraph - OCaml library for the manipulation of bigraphs and Bigraphical Reactive Systems
 
-Version 1.3.2
+Version 1.3.3
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele),
          Blair Archibald,
          Paulius Dilkas
-
 
 ----------------------------------------------------------------------------
 
@@ -16,6 +15,7 @@ with instantiation maps, parameterised controls, simulation, exhaustive state
 space exploration, export to probabilistic model checker [PRISM][prism], and
 predicate checking. It is based on an efficient matching engine based on SAT.
 
+<<<<<<< HEAD
 ### Documentation
 
 The documentation of the library can be accessed at
@@ -24,6 +24,7 @@ The documentation of the library can be accessed at
 ## References
 
 - [Robin Milner. *The space and motion of communicating agents*. Cambridge
+<<<<<<< HEAD
   University Press (2009).][milner]
 - [Michele Sevegnani and Muffy Calder. *Bigraphs with sharing*. Theoretical
   Computer Science 577 (2015): 43-73.][share]

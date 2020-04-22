@@ -238,21 +238,20 @@ let trans p = Sparse.trans p.nn
 (* Build the decomposition of target t given pattern p and isomorphism over
    nodes i: p -> t. The result is context c, id, d, and nodes in c and d
    expressed as rows of t. Pattern p is mono and epi. See page 76,
-   proposition 4.2.4. *)
+   proposition 4.2.4. Provides the minimum parameter *)
 let decomp ~target:t ~pattern:p iso =
   let trans_t_nn = trans t (* memoisation *)
   and iso' = Iso.inverse iso
   and v_p' = IntSet.of_list (Iso.codom iso) in
-  (* ancestors of v_p' not in v_p' *)
-  let v_c =
+  (* children of v_p' not in v_p' *)
+  let v_d =
     IntSet.diff
       (IntSet.fold
-         (fun i acc -> Sparse.prn trans_t_nn i |> IntSet.union acc)
+         (fun i acc -> Sparse.chl trans_t_nn i |> IntSet.union acc)
          v_p' IntSet.empty)
       v_p'
   in
-  (* all the other nodes *)
-  let v_d = IntSet.diff (IntSet.of_int t.n) (IntSet.union v_c v_p') in
+  let v_c = IntSet.diff (IntSet.of_int t.n) (IntSet.union v_d v_p') in
   (* fix numbering of nodes in c and d : t -> c and t -> d *)
   let iso_v_c = IntSet.fix v_c
   and iso_v_d = IntSet.fix v_d

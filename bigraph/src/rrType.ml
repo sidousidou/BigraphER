@@ -9,6 +9,8 @@ module type R = sig
 
   val rhs : t -> Big.t
 
+  val conds : t -> AppCond.t list
+
   val l : t -> label
 
   val equal : t -> t -> bool
@@ -27,7 +29,13 @@ module type R = sig
   val string_of_label : label -> string
 
   val parse :
-    name:string -> lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:AppCond.t list ->
+    label ->
+    Fun.t option ->
+    t
 
   val step : Big.t -> t list -> (Big.t * label * t list) list * int
 
@@ -49,6 +57,8 @@ module type T = sig
 
   val rhs : t -> Big.t
 
+  val conds : t -> AppCond.t list
+
   val l : t -> label
 
   val equal : t -> t -> bool
@@ -61,7 +71,13 @@ module type T = sig
     Big.t * label * t list
 
   val parse :
-    name:string -> lhs:Big.t -> rhs:Big.t -> label -> Fun.t option -> t
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:AppCond.t list ->
+    label ->
+    Fun.t option ->
+    t
 
   val to_string : t -> string
 
@@ -103,9 +119,14 @@ let filter_iso merge_occ l =
 let gen_step s rules
     (merge_occ :
       Big.t * 'b * 'c list -> Big.t * 'b * 'c list -> Big.t * 'b * 'c list)
-    ~lhs ~rhs ~label ~map =
+    ~lhs ~rhs ~label ~map ~conds =
+  let filter_conds r (i_n, i_e, f) =
+    let ctx, prm, _id = Big.decomp ~target:s ~pattern:(lhs r) ~i_n ~i_e f in
+    List.for_all (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
+  in
   let aux2 acc r =
     ( Big.occurrences ~target:s ~pattern:(lhs r)
+    |> List.filter (filter_conds r)
     (* Parmap.parmap *)
     |> List.map (fun o ->
            (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r), label r, [ r ]))
@@ -181,14 +202,37 @@ module Make (R : R) = struct
       else raise (NOT_VALID Lhs_nodes)
     else raise (NOT_VALID (Inter_eq_o (i, i')))
 
-  let is_enabled b r = Big.occurs ~target:b ~pattern:(lhs r)
+  let is_enabled b r =
+    let conds_valid (i_n, i_e, i_h) =
+      let ctx, prm, _ =
+        Big.decomp ~target:b ~pattern:(lhs r) ~i_n ~i_e i_h
+      in
+      List.for_all (fun cnd -> AppCond.check_cond cnd ctx prm) (conds r)
+    in
+    match
+      Big.occurrence ~target:b ~pattern:(lhs r) (Place.trans b.Big.p)
+    with
+    | Some o -> conds_valid o
+    | None -> false
 
   let apply b reacts =
     let apply_rule b r =
       match
         Big.occurrence ~target:b ~pattern:(lhs r) (Place.trans b.Big.p)
       with
-      | Some o -> Some (Big.rewrite o ~s:b ~r0:(lhs r) ~r1:(rhs r) (map r))
+      | Some (i_n, i_e, i_h) ->
+          let ctx, prm, _id =
+            Big.decomp ~target:b ~pattern:(lhs r) ~i_n ~i_e i_h
+          in
+          if
+            List.for_all
+              (fun cnd -> AppCond.check_cond cnd ctx prm)
+              (conds r)
+          then
+            Some
+              (Big.rewrite (i_n, i_e, i_h) ~s:b ~r0:(lhs r) ~r1:(rhs r)
+                 (map r))
+          else None
       | None -> None
     in
     List.fold_left
@@ -207,8 +251,19 @@ module Make (R : R) = struct
           | [] -> None
           | r :: rs -> (
               match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
-              | Some o ->
-                  Some (Big.rewrite o ~s ~r0:(lhs r) ~r1:(rhs r) (map r))
+              | Some (i_n, i_e, i_h) ->
+                  let ctx, prm, _id =
+                    Big.decomp ~target:s ~pattern:(lhs r) ~i_n ~i_e i_h
+                  in
+                  if
+                    List.for_all
+                      (fun cnd -> AppCond.check_cond cnd ctx prm)
+                      (conds r)
+                  then
+                    Some
+                      (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r) ~r1:(rhs r)
+                         (map r))
+                  else None
               | None -> _step s rs )
         in
         let rec _fix s rules i =

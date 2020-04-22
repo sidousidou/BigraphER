@@ -63,7 +63,7 @@ rule token =  parse
   | ")"                     { RPAR }
   | "ctrl"                  { CTRL }
   | "atomic"                { ATOMIC }
-  | "big"                   { BIG }
+  | "big"                   { BIG } 
   | "react"                 { REACT }
   | "init"                  { INIT }
   | "int"                   { INT }
@@ -92,7 +92,7 @@ rule token =  parse
   | "]->"                   { RARR }
   | "@"                     { AT }
   | "."                     { DOT }
-  | "||"                    { DPIPE }
+  | "||"                    { DPIPE }  
   | "|"                     { PIPE }
   | "+"                     { PLUS }
   | "-"                     { MINUS }
@@ -101,6 +101,10 @@ rule token =  parse
   | "^"                     { CARET }
   | "par"                   { PAR }
   | "ppar"                  { PPAR }
+  | "if"                    { IF }
+  | "ctx"                   { CTX }
+  | "param"                 { PARAM }
+  | "!"                     { BANG }
   | ctrl_identifier         { CIDE (Lexing.lexeme lexbuf) }
   | identifier              { IDE (Lexing.lexeme lexbuf) }
   | eof                     { EOF }

@@ -6,7 +6,9 @@ type react = {
   (* Reactum --- rhs *)
   eta : Fun.t option;
   (* Instantiation map *)
-  p : float; (* Probability *)
+  p : float;
+  (* Probability *)
+  conds : AppCond.t list; (* Application conditions *)
 }
 
 module RT = struct
@@ -19,6 +21,8 @@ module RT = struct
   let lhs r = r.rdx
 
   let rhs r = r.rct
+
+  let conds r = r.conds
 
   let l r = r.p
 
@@ -37,7 +41,8 @@ module RT = struct
 
   let string_of_label = Printf.sprintf "%-3g"
 
-  let parse ~name ~lhs ~rhs p eta = { name; rdx = lhs; rct = rhs; eta; p }
+  let parse ~name ~lhs ~rhs ?conds:(c = []) p eta =
+    { name; rdx = lhs; rct = rhs; eta; p; conds = c }
 
   (* Normalise a list of occurrences *)
   let norm (l, n) =
@@ -45,7 +50,7 @@ module RT = struct
     (List.map (fun (b, p, r) -> (b, p /. sum, r)) l, n)
 
   let step b rules =
-    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map |> norm
+    RrType.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds |> norm
 
   let random_step b rules =
     let ss, m = step b rules in

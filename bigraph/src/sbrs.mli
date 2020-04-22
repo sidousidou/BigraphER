@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-(** The type of stochastic bigraphical reaction rules.*)
 type react
+(** The type of stochastic bigraphical reaction rules.*)
 
 (** The type of priority classes, {e i.e.}, lists of stochastic reaction
     rules. Intermediate states resulting from the application of reaction
@@ -12,15 +12,15 @@ type p_class =
   | P_class of react list  (** Priority class *)
   | P_rclass of react list  (** Reducible priority class *)
 
-(** The type of Continuous Time Markov Chains (CTMC). *)
 type graph
+(** The type of Continuous Time Markov Chains (CTMC). *)
 
+type label = float
 (** The type of edge labels in Continuous Time Markov Chains (CTMC), {e
     i.e.}, stochastic rates. *)
-type label = float
 
-(** Type of simulation limit {e i.e.}, execution time. *)
 type limit = float
+(** Type of simulation limit {e i.e.}, execution time. *)
 
 val typ : Rs.t
 (** Type of transition system: {{!Rs.t} [SBRS]}. *)
@@ -29,13 +29,20 @@ val string_of_react : react -> string
 (** Same as {!val:Brs.string_of_react} for stochastic reaction rules. *)
 
 val parse_react_unsafe :
-  name:string -> lhs:Big.t -> rhs:Big.t -> float -> Fun.t option -> react
+  name:string ->
+  lhs:Big.t ->
+  rhs:Big.t ->
+  ?conds:AppCond.t list ->
+  float ->
+  Fun.t option ->
+  react
 (** Same as {!val:Brs.parse_react_unsafe} for stochastic reaction rules. *)
 
 val parse_react :
   name:string ->
   lhs:Big.t ->
   rhs:Big.t ->
+  ?conds:AppCond.t list ->
   float ->
   Fun.t option ->
   react option
@@ -49,6 +56,9 @@ val lhs : react -> Big.t
 
 val rhs : react -> Big.t
 (** The right-hand side (reactum) of a stochastic reaction rule. *)
+
+val conds : react -> AppCond.t list
+(** List of application conditions *)
 
 val map : react -> Fun.t option
 (** The instantiation map of a reaction rule. *)
@@ -66,11 +76,11 @@ val is_valid_react : react -> bool
 val equal_react : react -> react -> bool
 (** Equality for reaction rules. *)
 
-(** The type of reaction validity errors. *)
 type react_error
+(** The type of reaction validity errors. *)
 
-(** Raised when a reaction rule is not valid. *)
 exception NOT_VALID of react_error
+(** Raised when a reaction rule is not valid. *)
 
 val is_valid_react_exn : react -> bool
 (** Same as {!is_valid_react} but an exception is raised when the rule is not
@@ -122,9 +132,9 @@ val rewrite : Big.t -> p_class list -> Big.t * int
 
 (** {2 Continuous Time Markov Chains} *)
 
+exception MAX of graph * Stats.t
 (** Raised when the size of the transition system reaches the maximum number
     of states. *)
-exception MAX of graph * Stats.t
 
 val bfs :
   s0:Big.t ->
@@ -146,11 +156,11 @@ val bfs :
 
 (** {2 Stochastic simulation traces} *)
 
-(** Raised when the simulation reaches a deadlock state. *)
 exception DEADLOCK of graph * Stats.t * float
+(** Raised when the simulation reaches a deadlock state. *)
 
-(** Raised when the simulation reaches the maximum simulation time. *)
 exception LIMIT of graph * Stats.t
+(** Raised when the simulation reaches the maximum simulation time. *)
 
 val sim :
   s0:Big.t ->

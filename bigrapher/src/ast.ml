@@ -82,11 +82,20 @@ type big_exp =
   | Big_sub of sub_exp (* substitution *)
   | Big_wire of wire_exp * big_exp * Loc.t (* /x y/{y0, y1} /z A *)
   | Big_par_fn of exp * big_exp * Loc.t (* par(n,b) *)
-  | Big_ppar_fn of exp * big_exp * Loc.t
+  | Big_ppar_fn of exp * big_exp * Loc.t (* ppar(n,b) *)
 
-(* ppar(n,b) *)
+(* /x y/{y0, y1} /z A *)
 
 type eta_exp = int list * Loc.t
+
+type cond_where = Cond_Ctx | Cond_Param
+
+type cond_exp = {
+  neg : bool option;
+  pred : big_exp;
+  place : cond_where;
+  loc : Loc.t;
+}
 
 type dbig =
   | Big_exp of Id.t * big_exp * Loc.t
@@ -94,7 +103,13 @@ type dbig =
 
 type dreact =
   | React_exp of
-      Id.t * big_exp * big_exp * exp option * eta_exp option * Loc.t
+      Id.t
+      * big_exp
+      * big_exp
+      * exp option
+      * eta_exp option
+      * cond_exp list option
+      * Loc.t
   | React_fun_exp of
       Id.t
       * Id.t list
@@ -102,6 +117,7 @@ type dreact =
       * big_exp
       * exp option
       * eta_exp option
+      * cond_exp list option
       * Loc.t
 
 type dec =
@@ -170,13 +186,13 @@ let loc_of_ctrl_exp = function
 let id_of_dbig = function Big_exp (d, _, _) | Big_fun_exp (d, _, _, _) -> d
 
 let id_of_dreact = function
-  | React_exp (d, _, _, _, _, _) | React_fun_exp (d, _, _, _, _, _, _) -> d
+  | React_exp (d, _, _, _, _, _, _) | React_fun_exp (d, _, _, _, _, _, _, _) -> d
 
 let loc_of_dbig = function
   | Big_exp (_, _, l) | Big_fun_exp (_, _, _, l) -> l
 
 let loc_of_dreact = function
-  | React_exp (_, _, _, _, _, l) | React_fun_exp (_, _, _, _, _, _, l) -> l
+  | React_exp (_, _, _, _, _, _, l) | React_fun_exp (_, _, _, _, _, _, _, l) -> l
 
 let id_of_ion_exp = function
   | Big_ion_exp (id, _, _) | Big_ion_fun_exp (id, _, _, _) -> id

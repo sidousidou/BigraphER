@@ -1,0 +1,25 @@
+ctrl Controller = 0;
+ctrl Agent = 0;
+ctrl Place = 0;
+
+atomic ctrl Move = 0;
+atomic ctrl Act = 0;
+atomic ctrl Moved = 0;
+atomic ctrl Acted = 0;
+
+react act = Agent.Moved --> Agent.Acted if (Controller.Act) in ctx;
+react move =
+  Place.(id | Agent.Acted) || Place.id
+  -->
+  Place.id || Place.(Agent.Moved | id)
+  if (Controller.Move) in ctx;
+
+react switch_1 = Controller.Move --> Controller.Act if !(Agent.Acted) in ctx;
+react switch_2 = Controller.Act --> Controller.Move if !(Agent.Moved) in ctx;
+
+big s0 = Controller.Act | Place.(Agent.Acted | Agent.Acted) | Place.(Agent.Acted);
+
+begin brs
+  init s0;
+  rules = [ {act, move, switch_1, switch_2} ];
+end

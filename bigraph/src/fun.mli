@@ -2,8 +2,8 @@
 
     @author Michele Sevegnani *)
 
-(** Type of finite functions over integers. *)
 type t
+(** Type of finite functions over integers. *)
 
 (** {2 Standard map operations} *)
 
