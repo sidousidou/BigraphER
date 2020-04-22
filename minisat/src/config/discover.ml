@@ -8,6 +8,7 @@ let () =
           cflags =
             [
               "-pedantic";
+              "-fpermissive";
               "-fPIC";
               "-O3";
               "-std=c++11";

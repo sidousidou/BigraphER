@@ -1,15 +1,8 @@
-{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/19.09.tar.gz") {}
-, unstable ? import <nixpkgs> {} }:
-
-with pkgs;
-
 let
-  callPkgs = p: lib.callPackageWith (pkgs // ocamlPackages // local) p;
-  local = {
-    minisat = callPkgs ./nix/minisat.nix {};
-    camlminisat = callPkgs ./nix/camlminisat.nix {};
-  };
-in
+pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/20.03.tar.gz") {
+  overlays = [ (import ./nix/dune_2_5_overlay.nix) (import ./nix/minisat_overlay.nix) ];
+};
+in with pkgs;
 mkShell {
   buildInputs = [
     zlib

@@ -1,15 +1,10 @@
-{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/20.03-beta.tar.gz") {} }:
+{ pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/20.03.tar.gz")
+  {
+    overlays = [ (import ./nix/dune_2_5_overlay.nix) (import ./nix/minisat_overlay.nix) ];
+  }
+}:
 
 with pkgs;
-
-let
-  dune = dune_2;
-  callPkgs = p: lib.callPackageWith (pkgs // ocamlPackages // local) p;
-  local = {
-    minisat = callPkgs ./nix/minisat.nix { };
-    camlminisat = callPkgs ./nix/camlminisat.nix {};
-  };
-in
 
 ocamlPackages.buildOcaml rec {
     name = "bigrapher-${version}";
@@ -17,7 +12,7 @@ ocamlPackages.buildOcaml rec {
 
     src = lib.cleanSource ./.;
 
-    buildInputs = with ocamlPackages; [ local.camlminisat local.minisat menhir zlib jsonm cmdliner ];
+    buildInputs = with ocamlPackages; [ pkgs.minisat dune-configurator menhir zlib jsonm cmdliner ];
     nativeBuildInputs = [ dune_2 ];
 
     buildPhase = ''
