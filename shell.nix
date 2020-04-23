@@ -6,15 +6,17 @@ in with pkgs;
 mkShell {
   buildInputs = [
     zlib
+    minisat
+
     ocaml
+    ocamlformat
     ocamlPackages.dune_2
-    ocamlPackages.dune-configurator
     ocamlPackages.findlib
     ocamlPackages.utop
     ocamlPackages.menhir
     ocamlPackages.jsonm
     ocamlPackages.cmdliner
     ocamlPackages.odoc
-    minisat
+    ocamlPackages.dune-configurator
   ];
 }
