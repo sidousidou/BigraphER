@@ -1,7 +1,7 @@
-[36mType:[m          BRS
-[36mBindings:[m      12      
-[36m# of rules:[m    4       
-[36mMax # states:[m  140     
-[32mStates:[m        12      
-[32mTransitions:[m   16      
-[32mOccurrences:[m   20      
+Type:          BRS
+Bindings:      12      
+# of rules:    4       
+Max # states:  140     
+States:        12      
+Transitions:   16      
+Occurrences:   20      
