@@ -8,7 +8,7 @@ with pkgs;
 
 ocamlPackages.buildOcaml rec {
     name = "bigrapher-${version}";
-    version = "1.9.2";
+    version = "1.9.3";
 
     src = lib.cleanSource ./.;
 

@@ -3,7 +3,7 @@ set -e
 
 IMG_NAME=bigrapher:static
 CON_NAME=dummy
-VERSION=1.9.2
+VERSION=1.9.3
 
 cd ..
 docker build --tag $IMG_NAME -f static-bin/Dockerfile.static .

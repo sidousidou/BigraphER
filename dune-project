@@ -1,11 +1,10 @@
 (lang dune 2.5)
-(version 1.9.2)
-(name bigraph-tools)
 (source (uri https://bitbucket.org/uog-bigraph/bigraph-tools/))
 (license BSD-3-Clause)
 (authors "Michele Sevegnani" "Blair Archibald")
 (maintainers "michele.sevegnani@glasgow.ac.uk")
 (homepage "http://www.dcs.gla.ac.uk/~michele/bigrapher.html")
+(documentation "http://www.dcs.gla.ac.uk/~michele/doc/index.html")
 (generate_opam_files true)
 
 (using menhir 1.0)
@@ -22,7 +21,8 @@
 
 (package
   (name bigraph)
-  (version 1.3.2)
+  (version 1.3.3)
+  (authors "Michele Sevegnani" "Blair Archibald" "Paulius Dilkas")
   (synopsis "Library to programmatically manipulate bigraphs and Bigraphical Reactive Systems")
   (description "bigraph is a library to programmaticaly manipulate bigraphs, reaction rules and Bigraphical Reactive Systems (BRS). It supports both bigraphs and bigraphs with sharing, probabilistic and stochastic reaction rules, rule priorities, rules with instantiation maps, parameterised controls, simulation, exhaustive state space exploration, export to probabilistic model checker PRISM, and predicate checking.")
   (tags ("bigraphs" "rewriting" "org:dcs"))
@@ -51,6 +51,7 @@ the big_match command line tool.")
 
 (package
   (name bigrapher)
+  (version 1.9.3)
   (synopsis "Implementation of Bigraphical Reactive Systems (BRS)")
   (description "BigraphER is an efficient implementation of Bigraphical Reactive Systems (BRS)
 that supports bigraphs with sharing, stochastic and probabilistic reaction
@@ -60,6 +61,7 @@ exported to probabilistic model checker PRISM.")
   (depends
     (dune (and :build (>= 2.0.0)))
     (menhir :build)
+    (bigraph (>= 1.3.3))
     (big_json (>= 0.2.1))
     (cmdliner (>= 1.0.4))
     (odoc :with-doc)))
