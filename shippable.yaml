@@ -18,3 +18,7 @@ build:
     - eval $(opam env)
     - dune runtest --profile=release
     - cp _build/default/shippable/testresults/*.xml shippable/testresults/
+
+#  on_success:
+  always:
+    - if [[ "$GIT_TAG_NAME" =~ ^v* ]]; then ./static-bin/build-static-bins.sh $GIT_TAG_NAME; ls shippable/buildoutput; fi
