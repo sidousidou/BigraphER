@@ -3,7 +3,8 @@ set -e
 
 IMG_NAME=bigrapher:static
 CON_NAME=dummy
-VERSION=$(echo $1 | cut -c 3-)
+# tags are vn.n.n
+VERSION=$(echo $1 | cut -c 2-)
 OUT=shippable/buildoutput
 
 docker build --tag $IMG_NAME -f static-bin/Dockerfile.static .
