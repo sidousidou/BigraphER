@@ -4,7 +4,8 @@ FROM ocaml/opam2:ubuntu-20.04
 LABEL maintainer="michele.sevegnani@glasgow.ac.uk"
 
 # Install OS dependencies
-RUN sudo apt-get -qy --no-install-recommends install \
+RUN sudo apt-get update && \
+    sudo apt-get -qy --no-install-recommends install \
       m4 \
       zlib1g-dev \
       minisat \
