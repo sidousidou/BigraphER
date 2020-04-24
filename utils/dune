@@ -1,0 +1,5 @@
+(executable
+ (package bigraph) ;; TODO: Make a big_utils package
+ (name big_decomp)
+ (public_name big_decomp)
+ (libraries bigraph))
