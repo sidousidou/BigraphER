@@ -27,10 +27,12 @@ open Bigraph
 %token            FLOAT
 %token            STRING
 %token            FUN
+%token            ACTION
 %token            BEGIN
 %token            BRS
 %token            PBRS
 %token            SBRS
+%token            NBRS
 %token            END
 %token		  MERGE
 %token		  SPLIT
@@ -85,7 +87,8 @@ dec:
   | dec_str SEMICOLON                       { Dstr $1  }
   | dec_ctrl SEMICOLON                      { Dctrl $1   }
   | dec_big SEMICOLON                       { Dbig $1    }
-  | dec_react SEMICOLON                     { Dreact $1  };
+  | dec_react SEMICOLON                     { Dreact $1  }
+  | dec_action                              { Daction $1 }
 
 dec_gen:
   IDE EQUAL exp                          { { d_id = $1;
@@ -105,6 +108,13 @@ dec_ctrl:
   | ATOMIC ctrl_exp                         { Atomic ($2, loc $startpos $endpos)     }
   | ctrl_exp                                { Non_atomic ($1, loc $startpos $endpos) };
 
+dec_reacts:
+  | dec_react SEMICOLON                     { $1 }
+
+dec_action:
+  | ACTION IDE reward rules=nonempty_list(dec_reacts) END
+    { { action_id = $2; action_rules = rules; action_reward = $3 } };
+
 ctrl_exp:
   | CTRL CIDE EQUAL CINT                    { Ctrl_exp ($2, $4, loc $startpos $endpos)         }
   | FUN CTRL CIDE LPAR ide_list_nonempty RPAR EQUAL CINT
@@ -117,9 +127,9 @@ dec_big:
 
 dec_react:
   | REACT IDE EQUAL bexp arrow bexp eta_exp_opt option(conds)
-      { React_exp ($2, $4, $6, $5, $7, $8, loc $startpos $endpos)           }
+      { React_exp ($2, "", 0, $4, $6, $5, $7, $8, loc $startpos $endpos)           }
   | FUN REACT IDE LPAR ide_list_nonempty RPAR EQUAL bexp arrow bexp eta_exp_opt option(conds)
-      { React_fun_exp ($3, $5, $8, $10, $9, $11, $12, loc $startpos $endpos) };
+      { React_fun_exp ($3, "", 0, $5, $8, $10, $9, $11, $12, loc $startpos $endpos) };
 
 arrow:
   | ARR                   { None }
@@ -159,7 +169,8 @@ rs:
 rs_type:
   | BRS   { Rs.BRS }
   | PBRS  { Rs.PBRS }
-  | SBRS  { Rs.SBRS };
+  | SBRS  { Rs.SBRS }
+  | NBRS  { Rs.NBRS };
 
 preds:
   |					    { [ ] }
@@ -170,9 +181,13 @@ pred_list:
   l = separated_nonempty_list(COMMA, pred_ide)
                                             { l };
 
+reward:
+  |                                         { None    }
+  | LSBR exp RSBR                           { Some $2 };
+
 pred_ide:
-  | IDE                                     { Pred_id ($1, loc $startpos $endpos)         }
-  | IDE LPAR exp_list RPAR                  { Pred_id_fun ($1, $3, loc $startpos $endpos) };
+  | IDE reward                              { Pred_id ($1, $2, loc $startpos $endpos)         }
+  | IDE LPAR exp_list RPAR reward           { Pred_id_fun ($1, $3, $5, loc $startpos $endpos) };
 
 init:
   | INIT IDE SEMICOLON                      { Init ($2, loc $startpos $endpos)         }

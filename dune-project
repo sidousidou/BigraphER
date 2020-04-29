@@ -65,4 +65,3 @@ exported to probabilistic model checker PRISM.")
     (big_json (>= 0.2.1))
     (cmdliner (>= 1.0.4))
     (odoc :with-doc)))
-

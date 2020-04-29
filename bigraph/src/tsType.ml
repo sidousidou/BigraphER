@@ -3,11 +3,11 @@ module type G = sig
 
   type l
 
-  val init : int -> String.t list -> t
+  val init : int -> Base.Predicate.t list -> t
 
   val states : t -> (int * Big.t) Base.H_int.t
 
-  val label : t -> Base.S_string.t * int Base.H_string.t
+  val label : t -> Base.S_predicate.t * int Base.H_predicate.t
 
   val edges : t -> (int * l * string) Base.H_int.t
 
@@ -34,67 +34,242 @@ end
 
 (* Export functions for graphs *)
 module MakeE (G : G) = struct
-  let to_prism g =
-    let s, e = (Base.H_int.length (G.states g), Base.H_int.length (G.edges g))
-    and edges =
-      Base.H_int.fold (fun v u acc -> (v, u) :: acc) (G.edges g) []
+  (* Check if there are any edges with action labels *)
+  let is_mdp g =
+    Base.H_int.fold
+      (fun _ (_, label, _) answer ->
+        answer || String.contains (G.string_of_l label) ' ')
+      (G.edges g) false
+
+  (* Convert a hash table of edges into a sorted list of tuples with action
+     names and edge labels (with an empty slot for action IDs) *)
+  let list_of_edges g =
+    Base.H_int.fold
+      (fun vertex1 (vertex2, edge_label, _) acc ->
+        let action, reward, label =
+          match G.string_of_l edge_label with
+          | "" -> ("", "", "")
+          | s ->
+              if String.contains s ' ' then
+                let substrings = String.split_on_char ' ' s in
+                ( List.hd substrings,
+                  List.nth substrings 1,
+                  List.nth substrings 2 )
+              else ("", "", s)
+        in
+        (vertex1, vertex2, "", action, label, reward) :: acc)
+      (G.edges g) []
+    |> List.fast_sort
+         (fun (v11, v12, _, a1, _l1, _r1) (v21, v22, _, a2, _l2, _r2) ->
+           if v11 > v21 then 1
+           else if v11 < v21 then -1
+           else if a1 > a2 then 1
+           else if a1 < a2 then -1
+           else v12 - v22)
+
+  (* Add action IDs to the list of tuples. The first action of each vertex
+     gets ID 0, and so on. The list is assumed to be sorted. Also return the
+     number of choices, i.e., the sum of the numbers of distinct actions per
+     vertex. *)
+  let action_names_to_ints edges =
+    let previous_vertex = ref (-1) in
+    let previous_action = ref "!" in
+    let previous_number = ref (-1) in
+    let choices = ref 0 in
+    let edges =
+      List.map
+        (fun (vertex1, vertex2, _, action, label, reward) ->
+          if vertex1 <> !previous_vertex then (
+            previous_vertex := vertex1;
+            previous_action := "!";
+            previous_number := -1 );
+          if action <> !previous_action then (
+            previous_action := action;
+            previous_number := !previous_number + 1;
+            choices := !choices + 1 );
+          ( vertex1,
+            vertex2,
+            string_of_int !previous_number,
+            action,
+            label,
+            reward ))
+        edges
     in
-    List.fast_sort
-      (fun (v, (u, _, _)) (v', (u', _, _)) ->
-        Base.ints_compare (v, u) (v', u'))
+    (edges, !choices)
+
+  (* A generalisation of to_prism and to_transition_rewards. print_rewards
+     switches between the two modes. *)
+  let generate_transitions g print_rewards =
+    let mdp = is_mdp g in
+    let num_states = Base.H_int.length (G.states g) in
+    let edges = list_of_edges g in
+    let edges, num_choices =
+      if mdp then action_names_to_ints edges else (edges, 0)
+    in
+    let edges =
+      List.filter
+        (fun (_, _, _, _, _, reward) -> (not print_rewards) || reward <> "0")
+        edges
+    in
+    let num_rows = List.length edges in
+    List.map
+      (fun (vertex1, vertex2, action_id, action, label, reward) ->
+        let last_columns =
+          if print_rewards then " " ^ reward
+          else
+            (if label = "" then "" else " " ^ label)
+            ^ if action = "" then "" else " " ^ action
+        in
+        string_of_int vertex1
+        ^ (if action_id = "" then "" else " " ^ action_id)
+        ^ " " ^ string_of_int vertex2 ^ last_columns)
       edges
-    |> List.map (fun (v, (u1, u2, _)) ->
-           string_of_int v ^ " " ^ string_of_int u1
-           ^ match G.string_of_l u2 with "" -> "" | s -> " " ^ s)
-    |> List.append [ string_of_int s ^ " " ^ string_of_int e ]
+    |> List.append
+         [
+           string_of_int num_states
+           ^ (if mdp then " " ^ string_of_int num_choices else "")
+           ^ " " ^ string_of_int num_rows;
+         ]
     |> String.concat "\n"
 
-  let to_dot g ~path ~name =
-    let construct_edge_label label reaction_rules =
-      let label_string = G.string_of_l label in
-      let first_part =
-        if label_string = "" then "" else label_string ^ ", "
-      in
-      first_part ^ reaction_rules
-    in
-    let rank = "{ rank=source; 0 };\n" in
+  let to_prism g = generate_transitions g false
+
+  (* Calculate the total reward of a state *)
+  let total_reward g i =
     let preds, preds_to_states = G.label g in
+    let relevant_preds =
+      Base.S_predicate.filter
+        (fun pred ->
+          Base.H_predicate.find_all preds_to_states pred |> List.mem i)
+        preds
+    in
+    Base.S_predicate.fold
+      (fun (_, reward) sum -> reward + sum)
+      relevant_preds 0
+
+  let to_state_rewards g =
+    let states = G.states g in
+    let rewards =
+      Base.H_int.fold
+        (fun _ (i, _) acc ->
+          let reward = total_reward g i in
+          if reward = 0 then acc else Printf.sprintf "%d %d" i reward :: acc)
+        states []
+      |> List.fast_sort compare
+    in
+    List.append
+      [
+        Printf.sprintf "%d %d"
+          (Base.H_int.length states)
+          (List.length rewards);
+      ]
+      rewards
+    |> String.concat "\n"
+
+  let to_transition_rewards g = generate_transitions g true
+
+  let generate_reward_html reward =
+    let color, sign =
+      if reward > 0 then ("darkgreen", "+") else ("red", "")
+    in
+    if reward = 0 then ""
+    else Printf.sprintf "<br/><font color='%s'>%s%d</font>" color sign reward
+
+  (* Return a DOT string of action nodes of an MDP as well as edges to them,
+     and a hash table mapping (vertex, action) pairs to the IDs of the
+     actions *)
+  let construct_action_nodes g mdp =
+    let next_id = ref (Base.H_int.length (G.states g) - 1) in
+    let mapping = Hashtbl.create !next_id in
+    if mdp then
+      let nodes =
+        Base.H_int.fold
+          (fun vertex1 (_, label, _) acc ->
+            let substrings =
+              G.string_of_l label |> String.split_on_char ' '
+            in
+            let action = List.hd substrings in
+            let reward = List.nth substrings 1 |> int_of_string in
+            if Hashtbl.mem mapping (vertex1, action) then acc
+            else (
+              next_id := !next_id + 1;
+              Hashtbl.add mapping (vertex1, action) !next_id;
+              Printf.sprintf
+                "%d [ label=<%s%s>, fontsize=6.0, id=\"s%d_%s\", \
+                 fontname=\"monospace\", width=.40, height=.20, \
+                 style=\"filled\" fillcolor=\"grey75\" ]; \n\
+                 %d -> %d [ fontname=\"monospace\", fontsize=7.0, \
+                 arrowhead=\"vee\", arrowsize=0.5 ];\n"
+                !next_id action
+                (generate_reward_html reward)
+                vertex1 action vertex1 !next_id
+              :: acc ))
+          (G.edges g) []
+      in
+      (String.concat "" nodes, mapping)
+    else ("", mapping)
+
+  let construct_edge_label label reaction_rules =
+    (if label = "" then "" else label ^ ", ") ^ reaction_rules
+
+  let construct_node_label g i =
+    let preds, preds_to_states = G.label g in
+    let relevant_preds =
+      Base.S_predicate.filter
+        (fun pred ->
+          Base.H_predicate.find_all preds_to_states pred |> List.mem i)
+        preds
+    in
+    if Base.S_predicate.is_empty relevant_preds then string_of_int i
+    else
+      Base.S_predicate.elements relevant_preds
+      |> List.split |> fst |> String.concat ", "
+
+  let to_dot g ~path ~name =
+    let rank = "{ rank=source; 0 };\n" in
+    let mdp = is_mdp g in
+    let actions, mapping = construct_action_nodes g mdp in
     let states =
       Base.H_int.fold
         (fun _ (i, _) buff ->
           let bolding = if i = 0 then ", style=\"bold\"" else "" in
-          let relevant_preds =
-            Base.S_string.filter
-              (fun pred ->
-                let states_satisfying_pred =
-                  Base.H_string.find_all preds_to_states pred
-                in
-                List.mem i states_satisfying_pred)
-              preds
-          in
-          let label =
-            if Base.S_string.is_empty relevant_preds then string_of_int i
-            else Base.S_string.elements relevant_preds |> String.concat ", "
-          in
+          let label = construct_node_label g i in
           let filename = Printf.sprintf "%d.svg" i |> Filename.concat path in
+          let reward = total_reward g i |> generate_reward_html in
           Printf.sprintf
-            "%s%d [ label=\"%s\", URL=\"%s\", fontsize=9.0, id=\"s%d\", \
+            "%s%d [ label=<%s%s>, URL=\"%s\", fontsize=9.0, id=\"s%d\", \
              fontname=\"monospace\", width=.60, height=.30%s ];\n"
-            buff i label filename i bolding)
+            buff i label reward filename i bolding)
         (G.states g) ""
     and edges =
       Base.H_int.fold
-        (fun v (u1, u2, u3) buff ->
-          Printf.sprintf
-            "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", \
-             fontsize=7.0,arrowhead=\"vee\", arrowsize=0.5 ];\n"
-            buff v u1
-            (construct_edge_label u2 u3))
+        (fun vertex1 (vertex2, label, reaction_rules) buff ->
+          let label_str = G.string_of_l label in
+          if mdp then
+            let substrings = String.split_on_char ' ' label_str in
+            let action = List.hd substrings in
+            let probability = List.nth substrings 2 in
+            let action_node = Hashtbl.find mapping (vertex1, action) in
+            let edge_label =
+              construct_edge_label probability reaction_rules
+            in
+            Printf.sprintf
+              "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", \
+               fontsize=7.0,arrowhead=\"vee\", arrowsize=0.5 ];\n"
+              buff action_node vertex2 edge_label
+          else
+            let edge_label = construct_edge_label label_str reaction_rules in
+            Printf.sprintf
+              "%s%d -> %d [ label=\"%s\", fontname=\"monospace\", \
+               fontsize=7.0,arrowhead=\"vee\", arrowsize=0.5 ];\n"
+              buff vertex1 vertex2 edge_label)
         (G.edges g) ""
     in
     Printf.sprintf
-      "digraph \"%s\" {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s}" name
-      rank states edges
+      "digraph \"%s\" {\nstylesheet = \"style_sbrs.css\"\n%s%s\n%s\n%s}" name
+      rank states
+      (if mdp then actions else "")
+      edges
 
   let to_lab g =
     let sanitise s =
@@ -104,9 +279,9 @@ module MakeE (G : G) = struct
     in
     let preds, h = G.label g in
     let labs =
-      Base.S_string.fold
-        (fun p acc ->
-          ( match Base.H_string.find_all h p with
+      Base.S_predicate.fold
+        (fun (p, r) acc ->
+          ( match Base.H_predicate.find_all h (p, r) with
           | [] -> "false"
           | xs ->
               List.map (fun s -> "x = " ^ string_of_int s) xs
@@ -191,7 +366,7 @@ module type RS = sig
   val bfs :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
     iter_f:(int -> Big.t -> unit) ->
     graph * Stats.t
@@ -203,13 +378,17 @@ module type RS = sig
   val sim :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     init_size:int ->
     stop:limit ->
     iter_f:(int -> Big.t -> unit) ->
     graph * Stats.t
 
   val to_prism : graph -> string
+
+  val to_state_rewards : graph -> string
+
+  val to_transition_rewards : graph -> string
 
   val to_dot : graph -> path:string -> name:string -> string
 
@@ -365,7 +544,7 @@ struct
   (* Add labels for predicates *)
   let check (i, s) (_, h) =
     List.iter (fun (id, p) ->
-        if Big.occurs ~target:s ~pattern:p then Base.H_string.add h id i)
+        if Big.occurs ~target:s ~pattern:p then Base.H_predicate.add h id i)
 
   (* Number of states in a graph *)
   let size_s g = Base.H_int.length (G.states g)
@@ -414,7 +593,7 @@ struct
     let q = Queue.create () in
     (* Apply rewriting to s0 *)
     let s0', m = P.rewrite s0 priorities
-    and g = List.split predicates |> fst |> G.init max in
+    and g = List.map (fun (id, _) -> id) predicates |> G.init max in
     Queue.push (0, s0') q;
     (* Add initial state *)
     iter_f 0 s0';
@@ -452,7 +631,9 @@ struct
     Random.self_init ();
     (* Apply rewriting to s0 *)
     let s0', m = P.rewrite s0 priorities
-    and trace = List.split predicates |> fst |> G.init init_size in
+    and trace =
+      List.map (fun (id, _) -> id) predicates |> G.init init_size
+    in
     (* Add initial state *)
     iter_f 0 s0';
     Base.H_int.add (G.states trace) (Big.key s0') (0, s0');

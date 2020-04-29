@@ -4,11 +4,11 @@ module type G = sig
 
   type l
 
-  val init : int -> String.t list -> t
+  val init : int -> Base.Predicate.t list -> t
 
   val states : t -> (int * Big.t) Base.H_int.t
 
-  val label : t -> Base.S_string.t * int Base.H_string.t
+  val label : t -> Base.S_predicate.t * int Base.H_predicate.t
 
   val edges : t -> (int * l * string) Base.H_int.t
 
@@ -97,7 +97,7 @@ module type RS = sig
   val bfs :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
     iter_f:(int -> Big.t -> unit) ->
     graph * Stats.t
@@ -109,13 +109,17 @@ module type RS = sig
   val sim :
     s0:Big.t ->
     priorities:p_class list ->
-    predicates:(Base.H_string.key * Big.t) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     init_size:int ->
     stop:limit ->
     iter_f:(int -> Big.t -> unit) ->
     graph * Stats.t
 
   val to_prism : graph -> string
+
+  val to_state_rewards : graph -> string
+
+  val to_transition_rewards : graph -> string
 
   val to_dot : graph -> path:string -> name:string -> string
 
@@ -263,7 +267,7 @@ module Make
   val bfs :
     s0:Big.t ->
     priorities:P.p_class list ->
-    predicates:(string * Big.t) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
     iter_f:(int -> Big.t -> unit) ->
     t * Stats.t
@@ -271,13 +275,17 @@ module Make
   val sim :
     s0:Big.t ->
     priorities:P.p_class list ->
-    predicates:(string * Big.t) list ->
+    predicates:(Base.Predicate.t * Big.t) list ->
     init_size:int ->
     stop:limit ->
     iter_f:(int -> Big.t -> unit) ->
     t * Stats.t
 
   val to_prism : t -> string
+
+  val to_state_rewards : t -> string
+
+  val to_transition_rewards : t -> string
 
   val to_dot : t -> path:string -> name:string -> string
 

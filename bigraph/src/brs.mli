@@ -134,7 +134,7 @@ exception MAX of graph * Stats.t
 val bfs :
   s0:Big.t ->
   priorities:p_class list ->
-  predicates:(string * Big.t) list ->
+  predicates:(Base.Predicate.t * Big.t) list ->
   max:int ->
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
@@ -161,7 +161,7 @@ exception LIMIT of graph * Stats.t
 val sim :
   s0:Big.t ->
   priorities:p_class list ->
-  predicates:(string * Big.t) list ->
+  predicates:(Base.Predicate.t * Big.t) list ->
   init_size:int ->
   stop:limit ->
   iter_f:(int -> Big.t -> unit) ->
@@ -180,6 +180,14 @@ val sim :
 val to_prism : graph -> string
 (** Compute the string representation in PRISM [tra] format of a transition
     system. *)
+
+val to_state_rewards : graph -> string
+(** Compute the string representation in PRISM [rews] format of state
+    rewards. *)
+
+val to_transition_rewards : graph -> string
+(** Compute the string representation in PRISM [trew] format of transition
+    rewards. *)
 
 val to_dot : graph -> path:string -> name:string -> string
 (** Compute the string representation in [dot] format of a transition system. *)

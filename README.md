@@ -20,7 +20,7 @@ anlysing Bigraph models. It contains:
    system of a BRS and export it to the stochastic model checker [PRISM](prism)
    or to graphical form.
 
-3. *bigraph_json* - Big_json is a codec to encode and decode bigraphical
+3. *big_json* - Big_json is a codec to encode and decode bigraphical
   structures such as bigraphs and reaction rules to the [JSON](json) data
   format. The library provides a JSON interface to the matching engine of the
   *bigraph* library. This is also exposed by the `big_match` command line tool.

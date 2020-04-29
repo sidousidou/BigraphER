@@ -118,7 +118,7 @@ let print_max fmt =
     ]
 
 let print_max_sim fmt = function
-  | Rs.BRS | Rs.PBRS ->
+  | Rs.BRS | Rs.PBRS | Rs.NBRS ->
       print_table fmt
         [
           {
@@ -179,8 +179,8 @@ let format_map = function
   | Cmd.Json -> (Export.B.write_json, ".json")
   | Cmd.Txt -> (Export.B.write_txt, ".txt")
 
-let export_prism fmt msg f =
-  match Cmd.(defaults.export_prism) with
+let export_prism argument fmt msg f =
+  match argument with
   | None -> ()
   | Some file -> (
       print_msg fmt `yellow (msg ^ file ^ " ...");
@@ -273,7 +273,7 @@ module Run
         Big.t ->
         Big.t ->
         ?conds:AppCond.t list ->
-        [ `E of unit | `F of float ] ->
+        [ `E of unit | `F of float | `P of string * int * float ] ->
         Fun.t option ->
         T.react option
     end) (J : sig
@@ -354,9 +354,23 @@ struct
       ("Exporting " ^ Rs.to_string T.typ ^ " to ")
       (List.map format_map Cmd.(defaults.out_format));
     export_states fmt T.iter_states graph;
-    export_prism fmt
+    export_prism
+      Cmd.(defaults.export_prism)
+      fmt
       ("Exporting " ^ Rs.to_string T.typ ^ " in PRISM format to ")
       (E.write_prism graph);
+    export_prism
+      Cmd.(defaults.export_state_rewards)
+      fmt
+      ( "Exporting the state rewards of " ^ Rs.to_string T.typ
+      ^ " in PRISM format to " )
+      (E.write_state_rewards graph);
+    export_prism
+      Cmd.(defaults.export_transition_rewards)
+      fmt
+      ( "Exporting the transition rewards of " ^ Rs.to_string T.typ
+      ^ " in PRISM format to " )
+      (E.write_transition_rewards graph);
     export_csl fmt (E.write_lab graph);
     Format.(pp_print_flush err_formatter ());
     exit 0
@@ -542,6 +556,26 @@ let () =
                   end)
                   (struct
                     let f = Big_json.ctmc_to_json
+                  end)
+              in
+              R.run fmt Cmd.(defaults.colors) m exec_type
+          | Rs.NBRS ->
+              let module R =
+                Run
+                  (Nbrs)
+                  (struct
+                    let stop = Cmd.(defaults.steps)
+                  end)
+                  (struct
+                    let parse_react name lhs rhs ?(conds=[]) l eta =
+                      match l with
+                      | `P p -> Nbrs.parse_react ~name ~lhs ~rhs ~conds p eta
+                      | _ -> assert false
+
+                    (*BISECT-IGNORE*)
+                  end)
+                  (struct
+                    let f = Big_json.mdp_to_json
                   end)
               in
               R.run fmt Cmd.(defaults.colors) m exec_type

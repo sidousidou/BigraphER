@@ -104,6 +104,8 @@ type dbig =
 type dreact =
   | React_exp of
       Id.t
+      * Id.t
+      * int
       * big_exp
       * big_exp
       * exp option
@@ -112,6 +114,8 @@ type dreact =
       * Loc.t
   | React_fun_exp of
       Id.t
+      * Id.t
+      * int
       * Id.t list
       * big_exp
       * big_exp
@@ -120,6 +124,12 @@ type dreact =
       * cond_exp list option
       * Loc.t
 
+type daction = {
+  action_id : Id.t;
+  action_rules : dreact list;
+  action_reward : exp option;
+}
+
 type dec =
   | Dctrl of dctrl
   | Dint of dexp
@@ -127,6 +137,7 @@ type dec =
   | Dstr of dexp
   | Dbig of dbig
   | Dreact of dreact
+  | Daction of daction
 
 type init_exp = Init of Id.t * Loc.t | Init_fun of Id.t * exp list * Loc.t
 
@@ -154,8 +165,8 @@ type rul_id =
   | Rul_id_fun of Id.t * exp list * Loc.t
 
 type pred_id =
-  | Pred_id of Id.t * Loc.t
-  | Pred_id_fun of Id.t * exp list * Loc.t
+  | Pred_id of Id.t * exp option * Loc.t
+  | Pred_id_fun of Id.t * exp list * exp option * Loc.t
 
 type pr_exp = Pr_red of rul_id list * Loc.t | Pr of rul_id list * Loc.t
 
@@ -186,13 +197,17 @@ let loc_of_ctrl_exp = function
 let id_of_dbig = function Big_exp (d, _, _) | Big_fun_exp (d, _, _, _) -> d
 
 let id_of_dreact = function
-  | React_exp (d, _, _, _, _, _, _) | React_fun_exp (d, _, _, _, _, _, _, _) -> d
+  | React_exp (d, _, _, _, _, _, _, _, _)
+  | React_fun_exp (d, _, _, _, _, _, _, _, _, _) ->
+      d
 
 let loc_of_dbig = function
   | Big_exp (_, _, l) | Big_fun_exp (_, _, _, l) -> l
 
 let loc_of_dreact = function
-  | React_exp (_, _, _, _, _, _, l) | React_fun_exp (_, _, _, _, _, _, _, l) -> l
+  | React_exp (_, _, _, _, _, _, _, _, l)
+  | React_fun_exp (_, _, _, _, _, _, _, _, _, l) ->
+      l
 
 let id_of_ion_exp = function
   | Big_ion_exp (id, _, _) | Big_ion_fun_exp (id, _, _, _) -> id

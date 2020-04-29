@@ -84,6 +84,16 @@ module S_opt (S_lib : Set.S) (P : Pp with type t = S_lib.elt) = struct
     pp_close_box out ()
 end
 
+module Predicate = struct
+  type t = string * int
+
+  let compare = compare
+
+  let equal x y = x = y
+
+  let hash = Hashtbl.hash
+end
+
 module M_int =
   M_opt
     (Map.Make (struct
@@ -117,6 +127,8 @@ module S_string =
          let pp = Format.pp_print_string
        end)
 
+module S_predicate = Set.Make (Predicate)
+
 module H_int = struct
   include Hashtbl.Make (struct
     type t = int
@@ -137,6 +149,12 @@ module H_string = struct
 
     let hash = Hashtbl.hash
   end)
+
+  let find = find_opt
+end
+
+module H_predicate = struct
+  include Hashtbl.Make (Predicate)
 
   let find = find_opt
 end

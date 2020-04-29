@@ -7,6 +7,7 @@ type t =
   | BRS  (** Bigraphical Reactive Systems *)
   | PBRS  (** Probabilistic Bigraphical Reactive Systems *)
   | SBRS  (** Stochasrtic Bigraphical Reactive Systems *)
+  | NBRS  (** Nondeterministic Bigraphical Reactive Systems *)
 
 exception EXPORT_ERROR of string
 (** Raised when an export error occurs. *)

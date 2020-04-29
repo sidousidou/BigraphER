@@ -63,8 +63,8 @@ val conds : react -> AppCond.t list
 val map : react -> Fun.t option
 (** The instantiation map of a reaction rule. *)
 
-val prob : react -> float
-(** The probability of a reaction rule. *)
+val weight : react -> float
+(** The weight of a reaction rule. *)
 
 val string_of_limit : limit -> string
 (** String representation of a simulation limit. *)
@@ -90,10 +90,6 @@ val is_valid_react_exn : react -> bool
 
 val string_of_react_err : react_error -> string
 (** String representation of reaction validity errors. *)
-
-val is_determ : react -> bool
-(** Return [true] if a reaction rule is deterministic ({e i.e.} its
-    probability is one), [false] otherwise. *)
 
 val is_valid_priority : p_class -> bool
 (** Return [true] if all the reaction rules in a priority class are valid,
@@ -140,7 +136,7 @@ exception MAX of graph * Stats.t
 val bfs :
   s0:Big.t ->
   priorities:p_class list ->
-  predicates:(string * Big.t) list ->
+  predicates:(Base.Predicate.t * Big.t) list ->
   max:int ->
   iter_f:(int -> Big.t -> unit) ->
   graph * Stats.t
@@ -167,7 +163,7 @@ exception LIMIT of graph * Stats.t
 val sim :
   s0:Big.t ->
   priorities:p_class list ->
-  predicates:(string * Big.t) list ->
+  predicates:(Base.Predicate.t * Big.t) list ->
   init_size:int ->
   stop:limit ->
   iter_f:(int -> Big.t -> unit) ->
@@ -185,6 +181,14 @@ val sim :
 
 val to_prism : graph -> string
 (** Compute the string representation in PRISM [tra] format of a DTMC. *)
+
+val to_state_rewards : graph -> string
+(** Compute the string representation in PRISM [rews] format of state
+    rewards. *)
+
+val to_transition_rewards : graph -> string
+(** Compute the string representation in PRISM [trew] format of transition
+    rewards. *)
 
 val to_dot : graph -> path:string -> name:string -> string
 (** Compute the string representation in [dot] format of a DTMC. *)
