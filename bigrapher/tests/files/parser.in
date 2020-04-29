@@ -16,3 +16,6 @@
 ../examples/unique_entities.big
 ../examples/conditional_turn_taking.big
 ../examples/multiset-matching.big
+../examples/virus-simpl.big
+../examples/virus-multifirewall.big
+../examples/abrs-mobilesink.big
