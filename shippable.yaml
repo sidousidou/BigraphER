@@ -17,5 +17,5 @@ build:
     - opam repo set-url --all-switches default https://opam.ocaml.org/ && opam update && opam install -y dune dune-configurator menhir cmdliner jsonm
     - eval $(opam env)
     - dune runtest --profile=release
-    - dune build @speed
     - cp _build/default/shippable/testresults/*.xml shippable/testresults/
+    - dune build @speed
