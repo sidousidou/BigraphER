@@ -1,0 +1,48 @@
+# Simple virus model. Infected nodes probabibailstically try to attack
+# neighbours, if the attack is successful then the neighbour becomes infected,
+# else it remains safe.
+ctrl Safe = 0;
+ctrl Attacked = 0;
+ctrl Infected = 0;
+
+atomic ctrl N = 1; # Neighbour link
+
+float w_attack = 1;
+
+# 1 in 3 attacks are successful
+float w_infect = 1;
+float w_detect = 3;
+
+react attack =
+  Infected.(N{x} | id) || Safe.(N{x} | id)
+  -[w_attack]->
+  Infected.(N{x} | id) || Attacked.(N{x} | id);
+
+react infect = Attacked.id -[w_infect]-> Infected.id;
+react detect = Attacked.id -[w_detect]-> Safe.id;
+
+# Topologies
+big top_simpl = Infected.(N{x} | N{y}) | Safe.N{x} | Safe.(N{y} | N{z});
+
+# 6 7 8
+# 3 4 5
+# 0 1 2
+big top_3_3 =
+            # Top
+              Safe.(N{l_3_6} | N{l_6_7})
+            | Safe.(N{l_4_7} | N{l_6_7} | N{l_7_8})
+            | Safe.(N{l_5_8} | N{l_7_8})
+            # Mid
+            | Safe.(N{l_0_3} | N{l_3_4} | N{l_3_6})
+            | Safe.(N{l_3_4} | N{l_4_5} | N{l_1_4} | N{l_4_7})
+            | Safe.(N{l_4_5} | N{l_2_5} | N{l_5_8})
+            # Bottom
+            | Infected.(N{l_0_1} | N{l_0_3})
+            | Safe.(N{l_0_1} | N{l_1_2} | N{l_1_4})
+            | Safe.(N{l_1_2} | N{l_2_5});
+
+begin pbrs
+  #init top_simpl;
+  init top_3_3;
+  rules = [ { attack, infect, detect } ];
+end

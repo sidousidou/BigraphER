@@ -70,10 +70,12 @@ rule token =  parse
   | "float"                 { FLOAT }
   | "string"                { STRING }
   | "fun"                   { FUN }
+  | "action"                { ACTION }
   | "begin"                 { BEGIN }
   | "brs"		    { BRS }
   | "sbrs"		    { SBRS }
   | "pbrs"                  { PBRS }
+  | "nbrs"                  { NBRS }
   | "end"		    { END }
   | "rules"		    { RULES }
   | "preds"                 { PREDS }

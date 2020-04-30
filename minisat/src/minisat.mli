@@ -5,14 +5,14 @@
 
 (** {2 Datatypes & exceptions} *)
 
-(** The type of MiniSAT solvers. *)
 type s
+(** The type of MiniSAT solvers. *)
 
-(** The type of variables. *)
 type var = int
+(** The type of variables. *)
 
-(** The type of literals. *)
 type lit = int
+(** The type of literals. *)
 
 (** The type of variable values. *)
 type value = False | True | Unknown
@@ -20,16 +20,16 @@ type value = False | True | Unknown
 (** The type of MiniSAT solver solutions. *)
 type solution = SAT | UNSAT
 
-(** The type of MiniSAT solver statistics. *)
 type stat = {
   v : int;  (** Number of variables. *)
   c : int;  (** Number of clauses. *)
   mem : float;  (** Memory used in MB. *)
   cpu : float;  (** CPU time in seconds. *)
 }
+(** The type of MiniSAT solver statistics. *)
 
-(** Raised by {!Minisat.solver.value_of} when using an invalid argument. *)
 exception MINISAT of string
+(** Raised by {!Minisat.solver.value_of} when using an invalid argument. *)
 
 (** The class implementing MiniSAT solvers. *)
 class solver :

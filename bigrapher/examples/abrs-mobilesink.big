@@ -1,0 +1,219 @@
+# Send now or later model
+# Sink lives "in-the-middle" of the model and sensors move alongside (to model the sink moving through sensors)
+
+# Turns are set up such that a single sensor can take an action at a time (reducing the state space)
+
+# Non-Max/Min Layers
+float w_receive = 6;
+float w_receive_fail = 1;
+
+# Sinks don't do anything except exist
+atomic ctrl Sink = 0;
+
+# Sensors link to their action tokens
+ctrl Sensor = 0;
+atomic fun ctrl Buffer(x) = 0; # We model sensor buffers as int controls
+atomic fun ctrl Iden(x) = 0; # Sensor id
+
+# Distance spheres
+ctrl D = 0;
+
+# An area where the sensors live. Any out-of-range sensors will be top level in here.
+ctrl OutOfRange = 0;
+
+# Handling of turns
+ctrl Turns = 0;
+
+atomic ctrl Inc = 0;
+atomic ctrl Move_Phase = 0;
+atomic ctrl Send_Phase = 0;
+atomic fun ctrl T(i) = 0; # sensor turn
+
+# Handling state rewards
+ctrl Rewards = 0;
+atomic fun ctrl RecFailed(i) = 0;
+atomic fun ctrl SendClose(i) = 0;
+atomic fun ctrl SendMed(i) = 0;
+atomic fun ctrl SendFar(i) = 0;
+
+
+# Clean up state rewards
+action cleanRewards
+# We need rewards to last one cylce (to show up in the transition diagram) so they get removed at the end of the /next/ turn
+fun react gc_recfail_forward(i) =
+  Turns.(T(i+1) | Inc | id) || Rewards.(RecFailed(i) | id)
+  -[1.0]->
+  Turns.(T(i+1) | Inc | id) || Rewards.id;
+
+fun react gc_recfail_cycle(max_i) =
+  Turns.(T(0) | Inc | id) || Rewards.(RecFailed(max_i) | id)
+  -[1.0]->
+  Turns.(T(0) | Inc | id) || Rewards.id;
+
+fun react gc_sendclose_forward(i) =
+  Turns.(T(i+1) | Inc | id) || Rewards.(SendClose(i) | id)
+  -[1.0]->
+  Turns.(T(i+1) | Inc | id) || Rewards.id;
+
+fun react gc_sendclose_cycle(max_i) =
+  Turns.(T(0) | Inc | id) || Rewards.(SendClose(max_i) | id)
+  -[1.0]->
+  Turns.(T(0) | Inc | id) || Rewards.id;
+
+fun react gc_sendmed_forward(i) =
+  Turns.(T(i+1) | Inc | id) || Rewards.(SendMed(i) | id)
+  -[1.0]->
+  Turns.(T(i+1) | Inc | id) || Rewards.id;
+
+fun react gc_sendmed_cycle(max_i) =
+  Turns.(T(0) | Inc | id) || Rewards.(SendMed(max_i) | id)
+  -[1.0]->
+  Turns.(T(0) | Inc | id) || Rewards.id;
+
+fun react gc_sendfar_forward(i) =
+  Turns.(T(i+1) | Inc | id) || Rewards.(SendFar(i) | id)
+  -[1.0]->
+  Turns.(T(i+1) | Inc | id) || Rewards.id;
+
+fun react gc_sendfar_cycle(max_i) =
+  Turns.(T(0) | Inc | id) || Rewards.(SendFar(max_i) | id)
+  -[1.0]->
+  Turns.(T(0) | Inc | id) || Rewards.id;
+
+end # cleanRewards
+
+action turns
+# Inc signals the controller that an action has occured
+fun react next_turn(i) =
+  Turns.(T(i) | Inc | id)
+  -[1.0]->
+  Turns.(T(i+1) | id);
+
+fun react switch_phase_ms(i_max) =
+  Turns.(Move_Phase | T(i_max) | Inc)
+  -[1.0]->
+  Turns.(Send_Phase | T(0));
+
+fun react switch_phase_sm(i_max) =
+  Turns.(Send_Phase | T(i_max) | Inc)
+  -[1.0]->
+  Turns.(Move_Phase | T(0));
+end # turns
+
+# Initial bigraphs
+big s0 =  OutOfRange.(D.(Sensor.(Buffer(0) | Iden(0)) | Sensor.(Buffer(0) | Iden(1)) | D.D.Sink)) || Turns.(Move_Phase | T(0)) || Rewards.1;
+
+action move
+
+fun react down(i) =
+  D.(Sensor.(Iden(i) | id) | D.id | id) || Turns.(Move_Phase |  T(i) | id)
+  -[1.0]->
+  D.(D.(Sensor.(Iden(i) | id) | id) | id) || Turns.(Move_Phase |  T(i) | Inc | id );
+
+fun react down_from_area(i) =
+  OutOfRange.(Sensor.(Iden(i) | id) | D.id | id) || Turns.(Move_Phase |  T(i) | id)
+  -[1.0]->
+  OutOfRange.(D.(Sensor.(Iden(i) | id) | id) | id) || Turns.(Move_Phase |  T(i) | Inc | id );
+
+fun react up(i) =
+  D.(D.(Sensor.(Iden(i) | id) | id) | id) || Turns.(Move_Phase |  T(i) | id)
+  -[1.0]->
+  D.(Sensor.(Iden(i) | id) | D.id | id) || Turns.(Move_Phase |  T(i) | Inc | id );
+
+fun react up_to_area(i) =
+  OutOfRange.(D.(Sensor.(Iden(i) | id) | id) | id) || Turns.(Move_Phase |  T(i) | id)
+  -[1.0]->
+  OutOfRange.(Sensor.(Iden(i) | id) | D.id | id) || Turns.(Move_Phase |  T(i) | Inc | id );
+
+# fun react wait(i) =
+#   D.(Sensor.(Iden(i) | id) | D.id | id) || Turns.(Move_Phase |  T(i) | id)
+#   -[1.0]->
+#   D.(Sensor.(Iden(i) | id) | D.id | id) || Turns.(Move_Phase |  T(i) | Inc | id );
+
+# TODO check this does what I expect, i.e. Nothing
+fun react wait(i) =
+  Sensor.(Iden(i) | id) || Turns.(Move_Phase | T(i) | id)
+  -[1.0]->
+  Sensor.(Iden(i) | id) || Turns.(Move_Phase | T(i) | Inc | id);
+
+
+end # move
+
+action receive
+  fun react receive(x,i) =
+    Sensor.(Buffer(x) | Iden(i)) || Turns.(Send_Phase | T(i) | id )
+    -[w_receive]->
+    Sensor.(Buffer(x + 1) | Iden(i)) || Turns.(Send_Phase | T(i) | Inc | id );
+
+  fun react no_receive(x,i) =
+    Sensor.(Buffer(x) | Iden(i)) || Turns.(Send_Phase | T(i) | id )
+    -[w_receive_fail]->
+    Sensor.(Buffer(x) | Iden(i)) || Turns.(Send_Phase | T(i) | Inc | id );
+end # receive
+
+# Only applicable when recieve isn't such that sensors still only have two actions, send now, or later.
+action recieve_fail
+  fun react full_receive(b_max,i) =
+    Sensor.(Buffer(b_max) | Iden(i)) || Turns.(Send_Phase | T(i) | id ) || Rewards.id
+    -[w_receive]->
+    Sensor.(Buffer(b_max) | Iden(i)) || Turns.(Send_Phase | T(i) | Inc | id ) || Rewards.(RecFailed(i) | id);
+
+  fun react full_no_receive(b_max,i) =
+    Sensor.(Buffer(b_max) | Iden(i)) || Turns.(Send_Phase | T(i) | id )
+    -[w_receive_fail]->
+    Sensor.(Buffer(b_max) | Iden(i)) || Turns.(Send_Phase | T(i) | Inc | id );
+end # recieve_fail
+
+action send_close[1]
+  fun react send_close(n,i) =
+    D.(Sensor.(Buffer(n) | Iden(i)) | Sink | id) || Turns.(Send_Phase | T(i) | id ) || Rewards.id
+    -[1.0]->
+    D.(Sensor.(Buffer(0) | Iden(i)) | Sink | id) || Turns.(Send_Phase | T(i) | Inc | id ) || Rewards.(SendClose(i) | id);
+end # send
+
+action send_med[2]
+  fun react send_med(n,i) =
+    D.(Sensor.(Buffer(n) | Iden(i)) | D.Sink) || Turns.(Send_Phase | T(i) | id ) || Rewards.id
+    -[1.0]->
+    D.(Sensor.(Buffer(0) | Iden(i)) | D.Sink) || Turns.(Send_Phase | T(i) | Inc | id ) || Rewards.(SendMed(i) | id);
+end # send
+
+action send_far[3]
+  fun react send_far(n,i) =
+    D.(Sensor.(Buffer(n) | Iden(i)) | D.D.Sink) || Turns.(Send_Phase | T(i) | id ) || Rewards.id
+    -[1.0]->
+    D.(Sensor.(Buffer(0) | Iden(i)) | D.D.Sink) || Turns.(Send_Phase | T(i) | Inc | id ) || Rewards.(SendFar(i) | id);
+end # send
+
+fun big buffer_full(i) = Rewards.RecFailed(i);
+fun big send_close_big(i) = Rewards.SendClose(i);
+fun big send_med_big(i) = Rewards.SendMed(i);
+fun big send_far_big(i) = Rewards.SendFar(i);
+
+begin nbrs
+  int num_sensors = 2;
+  int b_max = 6;
+
+  int sensors = [0:1:num_sensors-1]; # Sensor Id's
+  int sensors' = [0:1:num_sensors-2]; # Incrementable Sensor Id's
+  int bs = [0:1:b_max-1];  # Incrementable Buffer levels
+  int bs' = [1:1:b_max]; # Sendable Buffer levels
+
+  init s0;
+  rules = [
+          (gc_recfail_forward(sensors'), gc_recfail_cycle(num_sensors - 1),
+           gc_sendclose_forward(sensors'), gc_sendclose_cycle(num_sensors - 1),
+           gc_sendmed_forward(sensors'), gc_sendmed_cycle(num_sensors - 1),
+           gc_sendfar_forward(sensors'), gc_sendfar_cycle(num_sensors - 1)),
+           (next_turn(sensors'), switch_phase_sm(num_sensors-1), switch_phase_ms(num_sensors-1)),
+           {down_from_area(sensors), down(sensors), up_to_area(sensors), up(sensors), wait(sensors),
+            receive(bs,sensors), no_receive(bs,sensors), full_receive(b_max,sensors), full_no_receive(b_max,sensors),
+            send_close(bs',sensors) , send_med(bs',sensors), send_far(bs',sensors)
+           }];
+  preds = {
+            buffer_full(sensors)[1]
+          , send_close_big(sensors)[1]
+          , send_med_big(sensors)[2]
+          , send_far_big(sensors)[3]
+          };
+end # nbrs

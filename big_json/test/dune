@@ -3,16 +3,8 @@
  (libraries bigraph big_json))
 
 (rule
+ (alias runtest)
  (deps
   (:exe test.exe))
  (action
-  (with-stdout-to
-   test.output
-   (run %{exe}))))
-
-(rule
- (alias runtest)
- (deps
-  (:ref test.reference))
- (action
-  (diff %{ref} test.output)))
+  (run %{exe})))

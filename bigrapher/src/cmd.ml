@@ -17,6 +17,8 @@ type settings = {
   mutable export_prism : file option;
   mutable export_states : path option;
   mutable export_states_flag : bool;
+  mutable export_state_rewards : path option;
+  mutable export_transition_rewards : path option;
   mutable help : bool;
   mutable max_states : int;
   mutable model : string option;
@@ -43,6 +45,8 @@ let defaults =
     export_prism = None;
     export_states = None;
     export_states_flag = false;
+    export_state_rewards = None;
+    export_transition_rewards = None;
     help = false;
     max_states = 1000;
     model = None;
@@ -130,6 +134,14 @@ let eval_config fmt () =
         ( "export_states_flag",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.export_states_flag
         );
+        ( "export_state_rewards",
+          fun fmt () ->
+            fprintf fmt "@[<hov>%s@]"
+              (string_of_file defaults.export_state_rewards) );
+        ( "export_transition_rewards",
+          fun fmt () ->
+            fprintf fmt "@[<hov>%s@]"
+              (string_of_file defaults.export_transition_rewards) );
         ("help", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.help);
         ( "max_states",
           fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.max_states );
@@ -245,8 +257,8 @@ let empty_to_none = function
   | Some _ as s -> s
   | None -> None
 
-let copts consts debug ext graph lbls prism quiet states verbose nocols rtime
-    =
+let copts consts debug ext graph lbls prism quiet states srew trew verbose
+    nocols rtime =
   defaults.consts <- consts;
   defaults.debug <- debug;
   defaults.out_format <- ext;
@@ -258,6 +270,8 @@ let copts consts debug ext graph lbls prism quiet states verbose nocols rtime
    * from export-ts if required *)
   defaults.export_states <- empty_to_none states;
   defaults.export_states_flag <- opt_if states;
+  defaults.export_state_rewards <- empty_to_none srew;
+  defaults.export_transition_rewards <- empty_to_none trew;
   defaults.verb <- verbose;
   defaults.colors <- not nocols;
   defaults.running_time <- rtime
@@ -304,6 +318,18 @@ let copts_t =
     in
     Arg.(value & opt_str & info [ "p"; "export-prism" ] ~docv:"FILE" ~doc)
   in
+  let srew =
+    let doc = "Export state rewards in PRISM srew format to $(docv)." in
+    Arg.(
+      value & opt_str
+      & info [ "r"; "export-state-rewards" ] ~docv:"FILE" ~doc)
+  in
+  let trew =
+    let doc = "Export transition rewards in PRISM srew format to $(docv)." in
+    Arg.(
+      value & opt_str
+      & info [ "R"; "export-transition-rewards" ] ~docv:"FILE" ~doc)
+  in
   let quiet =
     let doc = "Disable progress indicator." in
     let env = Arg.env_var "BIGQUIET" ~doc in
@@ -330,7 +356,7 @@ let copts_t =
   in
   Term.(
     const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
-    $ states $ verbose $ nocols $ rtime)
+    $ states $ srew $ trew $ verbose $ nocols $ rtime)
 
 (* Sim options *)
 let sim_opts time steps =

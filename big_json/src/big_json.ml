@@ -42,6 +42,16 @@ let quadruple e (n0, f0, v0) (n1, f1, v1) (n2, f2, v2) (n3, f3, v3) =
   field e n3 f3 v3;
   lexeme e `Oe
 
+let quintuple e (n0, f0, v0) (n1, f1, v1) (n2, f2, v2) (n3, f3, v3)
+    (n4, f4, v4) =
+  lexeme e `Os;
+  field e n0 f0 v0;
+  field e n1 f1 v1;
+  field e n2 f2 v2;
+  field e n3 f3 v3;
+  field e n4 f4 v4;
+  lexeme e `Oe
+
 let ctrl e (Ctrl.C (n, ps, a)) =
   triple e
     ("ctrl_name", string e, n)
@@ -142,8 +152,18 @@ let preact e r =
   field e "pbrs_name" (string e) (Pbrs.name r);
   field e "pbrs_lhs" (big e) (Pbrs.lhs r);
   field e "pbrs_rhs" (big e) (Pbrs.rhs r);
-  field e "pbrs_p" (float e) (Pbrs.prob r);
+  field e "pbrs_p" (float e) (Pbrs.weight r);
   field e "pbrs_eta" (option e eta) (Pbrs.map r);
+  lexeme e `Oe
+
+let nreact e r =
+  lexeme e `Os;
+  field e "nbrs_name" (string e) (Nbrs.name r);
+  field e "nbrs_action" (string e) (Nbrs.action r);
+  field e "nbrs_lhs" (big e) (Nbrs.lhs r);
+  field e "nbrs_rhs" (big e) (Nbrs.rhs r);
+  field e "nbrs_p" (float e) (Nbrs.weight r);
+  field e "nbrs_eta" (option e eta) (Nbrs.map r);
   lexeme e `Oe
 
 let occs e l =
@@ -154,6 +174,18 @@ let occs e l =
 let p_occs name e l =
   lexeme e `As;
   List.iter (fun (b, r) -> pair e ("state", big e, b) (name, float e, r)) l;
+  lexeme e `Ae
+
+let n_occs name1 name2 name3 e l =
+  lexeme e `As;
+  List.iter
+    (fun (b, (a, r, p)) ->
+      quadruple e
+        ("state", big e, b)
+        (name1, string e, a)
+        (name2, int e, r)
+        (name3, float e, p))
+    l;
   lexeme e `Ae
 
 let matches e l =
@@ -192,6 +224,17 @@ let pbrs e rs =
         ("probability", float e, l))
     e rs
 
+let nbrs e rs =
+  aux_graph "nbrs" Nbrs.iter_edges
+    (fun i j (a, r, p) ->
+      quintuple e
+        ("source", int e, i)
+        ("target", int e, j)
+        ("action", string e, a)
+        ("reward", int e, r)
+        ("probability", float e, p))
+    e rs
+
 let b_size = 65536
 
 let to_json ?(minify = true) f v =
@@ -209,11 +252,16 @@ let preact_to_json ?(minify = true) = to_json ~minify preact
 
 let sreact_to_json ?(minify = true) = to_json ~minify sreact
 
+let nreact_to_json ?(minify = true) = to_json ~minify nreact
+
 let occs_to_json ?(minify = true) = to_json ~minify occs
 
 let p_occs_to_json ?(minify = true) = to_json ~minify (p_occs "prob")
 
 let s_occs_to_json ?(minify = true) = to_json ~minify (p_occs "rate")
+
+let n_occs_to_json ?(minify = true) =
+  to_json ~minify (n_occs "action" "reward" "prob")
 
 let matches_to_json ?(minify = true) = to_json ~minify matches
 
@@ -222,6 +270,8 @@ let ts_to_json ?(minify = true) = to_json ~minify brs
 let dtmc_to_json ?(minify = true) = to_json ~minify pbrs
 
 let ctmc_to_json ?(minify = true) = to_json ~minify sbrs
+
+let mdp_to_json ?(minify = true) = to_json ~minify nbrs
 
 (* Decoder *)
 
@@ -344,6 +394,81 @@ let exp_quintuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) = function
           )
   | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
       Error (t, "5-tuple")
+
+let _exp_sextuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5) =
+  function
+  | `O
+      [
+        (n, v);
+        (n', v');
+        (n'', v'');
+        (n''', v''');
+        (n'''', v'''');
+        (n''''', v''''');
+      ] as t ->
+      if
+        n0 = n && n1 = n' && n2 = n'' && n3 = n''' && n4 = n''''
+        && n5 = n'''''
+      then
+        f0 v >>= fun v0 ->
+        f1 v' >>= fun v1 ->
+        f2 v'' >>= fun v2 ->
+        f3 v''' >>= fun v3 ->
+        f4 v'''' >>= fun v4 ->
+        f5 v''''' >>= fun v5 -> Ok (v0, v1, v2, v3, v4, v5)
+      else
+        Error
+          ( t,
+            err_cmp
+              [
+                (n0, n);
+                (n1, n');
+                (n2, n'');
+                (n3, n''');
+                (n4, n'''');
+                (n5, n''''');
+              ] )
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
+      Error (t, "6-tuple")
+
+let exp_septuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5)
+    (n6, f6) = function
+  | `O
+      [
+        (n, v);
+        (n', v');
+        (n'', v'');
+        (n''', v''');
+        (n'''', v'''');
+        (n''''', v''''');
+        (n'''''', v'''''');
+      ] as t ->
+      if
+        n0 = n && n1 = n' && n2 = n'' && n3 = n''' && n4 = n''''
+        && n5 = n''''' && n6 = n''''''
+      then
+        f0 v >>= fun v0 ->
+        f1 v' >>= fun v1 ->
+        f2 v'' >>= fun v2 ->
+        f3 v''' >>= fun v3 ->
+        f4 v'''' >>= fun v4 ->
+        f5 v''''' >>= fun v5 ->
+        f6 v'''''' >>= fun v6 -> Ok (v0, v1, v2, v3, v4, v5, v6)
+      else
+        Error
+          ( t,
+            err_cmp
+              [
+                (n0, n);
+                (n1, n');
+                (n2, n'');
+                (n3, n''');
+                (n4, n'''');
+                (n5, n''''');
+                (n6, n'''''');
+              ] )
+  | (`A _ | `Bool _ | `Float _ | `Null | `String _ | `O _) as t ->
+      Error (t, "7-tuple")
 
 let rec conv j msgs = function
   | [] -> Error (j, disj_type_err msgs)
@@ -476,6 +601,16 @@ let exp_preact (j : json) =
   >>= fun (name, lhs, rhs, p, e) ->
   Ok (Pbrs.parse_react_unsafe ~name ~lhs ~rhs p e)
 
+let exp_nreact (j : json) =
+  exp_septuple ("nbrs_name", exp_string)
+    ("nbrs_action", exp_string)
+    ("nbrs_reward", exp_int) ("nbrs_lhs", exp_big) ("nbrs_rhs", exp_big)
+    ("nbrs_p", exp_float)
+    ("nbrs_eta", exp_option exp_eta)
+    j
+  >>= fun (name, action, reward, lhs, rhs, p, e) ->
+  Ok (Nbrs.parse_react_unsafe ~name ~lhs ~rhs (action, reward, p) e)
+
 let parse_err = function
   | Ok _ as v -> v
   | Error (j, msg) -> Error (type_err j msg)
@@ -493,6 +628,8 @@ let preact_of_json ?(encoding = `UTF_8) s = of_json encoding s exp_preact
 
 let sreact_of_json ?(encoding = `UTF_8) s = of_json encoding s exp_sreact
 
+let nreact_of_json ?(encoding = `UTF_8) s = of_json encoding s exp_nreact
+
 (* INTERFACE TO MATCHING ENGINE *)
 
 let exp_step_input (j : json) =
@@ -506,19 +643,24 @@ let exp_step_input (j : json) =
   and aux_s (j : json) =
     aux "sreacts" (exp_array [ exp_sreact ]) j >>= fun (b, reacts) ->
     Ok (b, `S reacts)
+  and aux_n (j : json) =
+    aux "nreacts" (exp_array [ exp_nreact ]) j >>= fun (b, reacts) ->
+    Ok (b, `N reacts)
   in
-  conv j [] [ aux_r; aux_p; aux_s ]
+  conv j [] [ aux_r; aux_p; aux_s; aux_n ]
 
 let check_aux f reacts =
   try if List.for_all f reacts then Ok true else assert false with
   | Brs.NOT_VALID e -> Error (Brs.string_of_react_err e)
   | Pbrs.NOT_VALID e -> Error (Pbrs.string_of_react_err e)
   | Sbrs.NOT_VALID e -> Error (Sbrs.string_of_react_err e)
+  | Nbrs.NOT_VALID e -> Error (Nbrs.string_of_react_err e)
 
 let check_validity = function
   | `B reacts -> check_aux Brs.is_valid_react_exn reacts
   | `P reacts -> check_aux Pbrs.is_valid_react_exn reacts
   | `S reacts -> check_aux Sbrs.is_valid_react_exn reacts
+  | `N reacts -> check_aux Nbrs.is_valid_react_exn reacts
 
 let aux_step minify (b, reacts) =
   let wrapper func lst = List.map (fun (a, b, _) -> (a, b)) lst |> func in
@@ -528,6 +670,7 @@ let aux_step minify (b, reacts) =
   | `B rs -> aux Brs.step (wrapper (occs_to_json ~minify)) b rs
   | `P rs -> aux Pbrs.step (wrapper (p_occs_to_json ~minify)) b rs
   | `S rs -> aux Sbrs.step (wrapper (s_occs_to_json ~minify)) b rs
+  | `N rs -> aux Nbrs.step (wrapper (n_occs_to_json ~minify)) b rs
 
 let aux_string minify = function
   | Ok s -> s
