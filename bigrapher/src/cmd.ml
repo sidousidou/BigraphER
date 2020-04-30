@@ -8,22 +8,6 @@ type file = string
 
 type format_op = Dot | Svg | Txt | Json
 
-type opt =
-  | Const of Ast.const list
-  | Debug
-  | Ext of format_op list
-  | Graph of file
-  | Help
-  | Labels of file
-  | Max of int
-  | Prism of file
-  | Quiet
-  | States of path option
-  | Steps of int
-  | Time of float
-  | Verb
-  | No_colors
-
 type settings = {
   mutable consts : Ast.const list;
   mutable debug : bool;
@@ -44,6 +28,7 @@ type settings = {
   mutable time_flag : bool;
   mutable verb : bool;
   mutable colors : bool;
+  mutable running_time : bool;
 }
 
 let default_formats = [ Dot ]
@@ -69,6 +54,7 @@ let defaults =
     time_flag = false;
     verb = false;
     colors = true;
+    running_time = false;
   }
 
 type cmd_t = [ `check | `full | `sim | `exit ]
@@ -152,6 +138,8 @@ let eval_config fmt () =
             fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format)
         );
         ("quiet", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.quiet);
+        ( "running_time",
+          fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
         ("steps", fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.steps);
         ("time", fun fmt () -> fprintf fmt "@[<hov>%g@]" defaults.time);
         ("verb", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.verb);
@@ -257,7 +245,8 @@ let empty_to_none = function
   | Some _ as s -> s
   | None -> None
 
-let copts consts debug ext graph lbls prism quiet states verbose nocols =
+let copts consts debug ext graph lbls prism quiet states verbose nocols rtime
+    =
   defaults.consts <- consts;
   defaults.debug <- debug;
   defaults.out_format <- ext;
@@ -270,12 +259,14 @@ let copts consts debug ext graph lbls prism quiet states verbose nocols =
   defaults.export_states <- empty_to_none states;
   defaults.export_states_flag <- opt_if states;
   defaults.verb <- verbose;
-  defaults.colors <- not nocols
+  defaults.colors <- not nocols;
+  defaults.running_time <- rtime
 
 let copts_t =
   let opt_str = Arg.opt (Arg.some Arg.string) None in
   let vopt_str = Arg.opt ~vopt:(Some "") (Arg.some Arg.string) None in
   let debug = Arg.(value & flag & info [ "debug" ]) in
+  let rtime = Arg.(value & flag & info [ "running-time" ]) in
   let consts =
     let doc =
       "Specify a comma-separated list of variable assignments.\n\
@@ -339,7 +330,7 @@ let copts_t =
   in
   Term.(
     const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
-    $ states $ verbose $ nocols)
+    $ states $ verbose $ nocols $ rtime)
 
 (* Sim options *)
 let sim_opts time steps =

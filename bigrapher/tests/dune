@@ -1,5 +1,5 @@
 (executables
- (names test_parser)
+ (names test_parser test_speed)
  (libraries bigraph CI_utils unix utils))
 
 (rule
@@ -12,3 +12,19 @@
  (action
   (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
     parser-junit.xml)))
+
+(alias
+ (name speed)
+ (deps
+  (file ../examples/rts_cts.big)
+  (file ../examples/hospital.big)
+  (file ../examples/conditional_turn_taking.big)
+  (file ../examples/savannah-general.big))
+ (package bigrapher))
+
+(rule
+ (alias speed)
+ (deps
+  (:exe test_speed.exe))
+ (action
+  (run %{exe} %{bin:bigrapher})))

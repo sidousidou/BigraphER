@@ -18,7 +18,7 @@ type row = {
 }
 
 let print_msg fmt c msg =
-  if not Cmd.(defaults.debug) then
+  if not Cmd.(defaults.debug || defaults.running_time) then
     Format.fprintf fmt "@?@[%s@]@." (colorise c msg)
 
 let print_descr fmt (d, c) = Format.fprintf fmt "%s" (colorise c d)
@@ -63,12 +63,12 @@ let print_table fmt (rows : row list) =
         List.iter (pp_row fmt) rows;
         pp_close_tbox fmt ();
         pp_print_newline fmt ())
-  | _ -> assert false
+  | _ -> ()
 
 (*BISECT-IGNORE*)
 
 let print_header fmt () =
-  if not Cmd.(defaults.debug) then (
+  if not Cmd.(defaults.debug || defaults.running_time) then (
     Format.fprintf fmt "@[<v>@,%s@,%s@,"
       (colorise `bold "BigraphER: Bigraph Evaluator & Rewriting")
       "========================================";
@@ -113,7 +113,7 @@ let print_max fmt =
         descr = ("Max # states:", `cyan);
         value = `i Cmd.(defaults.max_states);
         pp_val = pp_int;
-        display = true;
+        display = not Cmd.defaults.running_time;
       };
     ]
 
@@ -125,7 +125,7 @@ let print_max_sim fmt = function
             descr = ("Max sim steps:", `cyan);
             value = `i Cmd.(defaults.steps);
             pp_val = pp_int;
-            display = true;
+            display = not Cmd.defaults.running_time;
           };
         ]
   | Rs.SBRS ->
@@ -135,16 +135,16 @@ let print_max_sim fmt = function
             descr = ("Max sim time:", `cyan);
             value = `f Cmd.(defaults.time);
             pp_val = pp_float "";
-            display = true;
+            display = not Cmd.defaults.running_time;
           };
         ]
 
 let open_progress_bar () =
-  if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
+  if not Cmd.(defaults.debug || defaults.quiet || defaults.running_time) then
     print_string "\n["
 
 let print_loop i _ =
-  if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
+  if not Cmd.(defaults.debug || defaults.quiet || defaults.running_time) then
     let m =
       if Cmd.(defaults.max_states) >= 1000 then
         Cmd.(defaults.max_states) / 1000
@@ -164,7 +164,7 @@ let print_loop i _ =
     | _ -> ()
 
 let close_progress_bar () =
-  if not (Cmd.(defaults.debug) || Cmd.(defaults.quiet)) then
+  if not Cmd.(defaults.debug || defaults.quiet || defaults.running_time) then
     print_string "]\n\n"
 
 (******** EXPORT FUNCTIONS *********)
@@ -331,15 +331,18 @@ struct
     |> print_table fmt
 
   let print_stats fmt stats =
-    Stats.descr stats
-    |> List.map (fun (descr, value, flag) ->
-           {
-             descr = (descr, `green);
-             value = `s value;
-             pp_val = pp_string;
-             display = (not Cmd.(defaults.debug)) || not flag;
-           })
-    |> print_table fmt
+    if Cmd.defaults.running_time then
+      Format.fprintf fmt "%a@." (pp_float "") (`f Stats.(stats.time))
+    else
+      Stats.descr stats
+      |> List.map (fun (descr, value, flag) ->
+             {
+               descr = (descr, `green);
+               value = `s value;
+               pp_val = pp_string;
+               display = not (Cmd.defaults.debug && flag);
+             })
+      |> print_table fmt
 
   let after fmt f (graph, stats) =
     f ();
@@ -423,7 +426,7 @@ struct
     try
       let env = S.init_env fmt c Cmd.(defaults.consts) in
       let s0, pri, preds, _ = S.eval_model fmt c m env in
-      print_stats_store fmt env pri;
+      if not Cmd.defaults.running_time then print_stats_store fmt env pri;
       run_aux fmt s0 pri preds exec_type
     with S.ERROR (e, p) ->
       Format.(
@@ -453,12 +456,17 @@ let open_lex model =
     };
   (lexbuf, file)
 
+(* Ignore mutually exlusive flags *)
+let ignore_flags () =
+  Cmd.(
+    if defaults.quiet then defaults.verb <- false;
+    if defaults.debug then (
+      defaults.running_time <- false;
+      defaults.colors <- false );
+    if defaults.running_time then defaults.colors <- false)
+
 let set_output_ch () =
-  if Cmd.(defaults.quiet) then (
-    Cmd.(defaults.verb <- false);
-    (* Ignore verbose flag *)
-    Format.str_formatter )
-  else Format.std_formatter
+  if Cmd.(defaults.quiet) then Format.str_formatter else Format.std_formatter
 
 let () =
   let exec_type = Cmd.parse_cmds in
@@ -466,7 +474,7 @@ let () =
   match exec_type with
   | `exit -> exit 1
   | _ -> (
-      ();
+      ignore_flags ();
       try
         let fmt = set_output_ch () in
         print_header fmt ();
@@ -486,6 +494,7 @@ let () =
                 Run
                   (struct
                     include Brs
+
                     let parse_react_unsafe ~name ~lhs ~rhs ?(conds = []) _
                         eta =
                       parse_react_unsafe ~name ~lhs ~rhs ~conds eta
