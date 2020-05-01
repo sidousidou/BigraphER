@@ -18,4 +18,6 @@ build:
     - eval $(opam env)
     - dune runtest --profile=release
     - cp _build/default/shippable/testresults/*.xml shippable/testresults/
+
+  on_success:
     - dune build @speed
