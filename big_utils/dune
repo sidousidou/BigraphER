@@ -1,0 +1,10 @@
+(executable
+ (package big_utils)
+ (name big_decomp)
+ (public_name big_decomp)
+ (modes exe)
+ (libraries bigraph))
+
+(documentation
+ (package big_utils)
+ (mld_files (:standard)))

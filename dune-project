@@ -65,3 +65,13 @@ exported to probabilistic model checker PRISM.")
     (big_json (>= 0.2.1))
     (cmdliner (>= 1.0.4))
     (odoc :with-doc)))
+
+(package
+  (name big_utils)
+  (version 0.1.0)
+  (synopsis "Command line tool to visualise the decompostions induced by a bigraph match.")
+  (tags ("bigraphs" "rewriting engine" "decomposition" "visualisation" "org:dcs"))
+  (depends
+    (dune (and :build (>= 2.0.0)))
+    (bigraph (>= 1.3.3))
+    (odoc :with-doc)))

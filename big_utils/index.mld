@@ -1,0 +1,8 @@
+{1 big_utils}
+
+Collection of command-line tools to manipulate and visualise bigraphs.
+It consists of 
+{ul 
+{- [big_decomp] to visualise the decompostions induced by a bigraph match.}}
+
+@author Blair Archibald

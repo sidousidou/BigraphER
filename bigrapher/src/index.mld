@@ -1,0 +1,10 @@
+{1 bigrapher}
+
+[bigrapher] is a command-line tool to compute or simulate the
+transition system of a BRS and export it to the stochastic model
+checker for verification. It supports bigraphs with sharing,
+stochastic and probabilistic reaction rules, rule priorities,
+graphical output and predicate checking.
+
+@author Michele Sevegnani
+@author Blair Archibald

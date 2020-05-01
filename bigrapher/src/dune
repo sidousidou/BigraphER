@@ -13,3 +13,7 @@
  (ocamlopt_flags
   (:standard -O3 -inline 100 -ccopt -ffast-math))
  (libraries bigraph big_json utils cmdliner))
+
+(documentation
+ (package bigrapher)
+ (mld_files (:standard)))
