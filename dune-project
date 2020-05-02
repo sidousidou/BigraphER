@@ -20,6 +20,16 @@
     (odoc :with-doc)))
 
 (package
+  (name minicard)
+  (version 0.1.0)
+  (synopsis "Bindings for the cardinality solver MiniCARD")
+  (tags ("Pseudo-boolean solver" "org:dcs"))
+  (depends
+    (dune (and :build (>= 2.0.0)))
+    (dune-configurator :build)
+    (odoc :with-doc)))
+
+(package
   (name bigraph)
   (version 1.3.3)
   (authors "Michele Sevegnani" "Blair Archibald" "Paulius Dilkas")

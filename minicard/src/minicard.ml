@@ -10,29 +10,32 @@ type solution = SAT | UNSAT
 
 type stat = { v : int; c : int; mem : float; cpu : float }
 
-external create : unit -> s = "ocaml_minisat_new"
+external create : unit -> s = "ocaml_minicard_new"
 
-external new_var : s -> var = "ocaml_minisat_new_var" [@@noalloc]
+external new_var : s -> var = "ocaml_minicard_new_var" [@@noalloc]
 
-external pos_lit : var -> lit = "ocaml_minisat_pos_lit" [@@noalloc]
+external pos_lit : var -> lit = "ocaml_minicard_pos_lit" [@@noalloc]
 
-external neg_lit : var -> lit = "ocaml_minisat_neg_lit" [@@noalloc]
+external neg_lit : var -> lit = "ocaml_minicard_neg_lit" [@@noalloc]
 
-external __add_clause : s -> lit list -> bool = "ocaml_minisat_add_clause"
+external __add_clause : s -> lit list -> bool = "ocaml_minicard_add_clause"
 
-external simplify : s -> bool = "ocaml_minisat_simplify"
+external __add_at_most : s -> lit list -> int -> bool
+  = "ocaml_minicard_at_most"
 
-external solve : s -> solution = "ocaml_minisat_solve"
+external simplify : s -> bool = "ocaml_minicard_simplify"
 
-external __value_of : s -> var -> int = "ocaml_minisat_value_of"
+external solve : s -> solution = "ocaml_minicard_solve"
 
-external n_vars : s -> int = "ocaml_minisat_n_vars" [@@noalloc]
+external __value_of : s -> var -> int = "ocaml_minicard_value_of"
 
-external n_clauses : s -> int = "ocaml_minisat_n_clauses" [@@noalloc]
+external n_vars : s -> int = "ocaml_minicard_n_vars" [@@noalloc]
 
-external __mem_used : unit -> float = "ocaml_minisat_mem_used" [@@noalloc]
+external n_clauses : s -> int = "ocaml_minicard_n_clauses" [@@noalloc]
 
-external __cpu_time : unit -> float = "ocaml_minisat_cpu_time" [@@noalloc]
+external __mem_used : unit -> float = "ocaml_minicard_mem_used" [@@noalloc]
+
+external __cpu_time : unit -> float = "ocaml_minicard_cpu_time" [@@noalloc]
 
 class solver =
   object (self)
@@ -42,6 +45,9 @@ class solver =
 
     method add_clause l =
       match l with [] -> () | _ -> ignore (__add_clause solver l)
+
+    method add_at_most l k =
+      match l with [] -> () | _ -> ignore (__add_at_most solver l k)
 
     method simplify = ignore (simplify solver)
 
@@ -54,7 +60,7 @@ class solver =
         | 1 -> True
         | 2 -> Unknown
         | _ -> assert false
-      with Failure _ -> invalid_arg "Minisat.value_of"
+      with Failure _ -> invalid_arg "Minicard.value_of"
 
     method get_stats =
       {

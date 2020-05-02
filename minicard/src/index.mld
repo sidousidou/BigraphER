@@ -1,0 +1,8 @@
+{1 Library minicard}
+
+Library providing a basic set of OCaml bindings for the
+{{:https://github.com/liffiton/minicard}MiniCARD} cardinality solver.
+
+Module {!Minicard} is the main entry point of the library.
+
+@author Michele Sevegnani

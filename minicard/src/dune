@@ -1,0 +1,22 @@
+(library
+ (name minicard)
+ (public_name minicard)
+ (foreign_stubs
+  (language cxx)
+  (names stubs)
+  (flags
+   (:include flags.sexp)))
+ (c_library_flags
+  (:include libs.sexp))
+ (synopsis "OCaml bindings for the MiniCARD cardinality solver"))
+
+(rule
+ (targets flags.sexp libs.sexp)
+ (deps
+  (:discover config/discover.exe))
+ (action
+  (run %{discover})))
+
+(documentation
+ (package minicard)
+ (mld_files (:standard)))
