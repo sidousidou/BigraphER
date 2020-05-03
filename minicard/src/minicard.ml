@@ -18,6 +18,8 @@ external pos_lit : var -> lit = "ocaml_minicard_pos_lit" [@@noalloc]
 
 external neg_lit : var -> lit = "ocaml_minicard_neg_lit" [@@noalloc]
 
+external negate : lit -> lit = "ocaml_minicard_negate" [@@noalloc]
+
 external __add_clause : s -> lit list -> bool = "ocaml_minicard_add_clause"
 
 external __add_at_most : s -> lit list -> int -> bool
@@ -48,6 +50,9 @@ class solver =
 
     method add_at_most l k =
       match l with [] -> () | _ -> ignore (__add_at_most solver l k)
+
+    method add_at_least l k =
+      self#add_at_most (List.map negate l) (List.length l - k)
 
     method simplify = ignore (simplify solver)
 

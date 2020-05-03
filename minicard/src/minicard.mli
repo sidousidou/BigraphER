@@ -5,13 +5,13 @@
 
 (** {2 Datatypes} *)
 
-type s
+type t
 (** The type of MiniCARD solvers. *)
 
-type var = int
+type var
 (** The type of variables. *)
 
-type lit = int
+type lit
 (** The type of literals. *)
 
 (** The type of variable values. *)
@@ -30,7 +30,7 @@ type stat = {
 (** The class implementing MiniCARD solvers. *)
 class solver :
   object
-    val solver : s
+    val solver : t
     (** MiniCARD instance.*)
 
     method add_clause : lit list -> unit
@@ -39,6 +39,10 @@ class solver :
 
     method add_at_most : lit list -> int -> unit
     (** Add an {i at most} cardinality constraint to the set of problem
+        constraints. A clause is represented as a list of literals. *)
+
+    method add_at_least : lit list -> int -> unit
+    (** Add an {i at least} cardinality constraint to the set of problem
         constraints. A clause is represented as a list of literals. *)
 
     method new_var : var

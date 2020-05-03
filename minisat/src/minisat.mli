@@ -4,13 +4,13 @@
 
 (** {2 Datatypes} *)
 
-type s
+type t
 (** The type of MiniSAT solvers. *)
 
-type var = int
+type var
 (** The type of variables. *)
 
-type lit = int
+type lit
 (** The type of literals. *)
 
 (** The type of variable values. *)
@@ -30,7 +30,7 @@ type stat = {
 (** The class implementing MiniSAT solvers. *)
 class solver :
   object
-    val solver : s
+    val solver : t
     (** MiniSAT instance.*)
 
     method add_clause : lit list -> unit

@@ -1,0 +1,9 @@
+# Unsatisfiable
+
+v a
+v b
+v c
+c a
+c -b
+c c
+@ 1 a b c

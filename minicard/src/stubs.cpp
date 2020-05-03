@@ -21,6 +21,7 @@ extern "C"
   CAMLprim value ocaml_minicard_new_var(value solver);
   CAMLprim value ocaml_minicard_pos_lit(value v);
   CAMLprim value ocaml_minicard_neg_lit(value v);
+  CAMLprim value ocaml_minicard_negate(value v);
   CAMLprim value ocaml_minicard_add_clause(value solver, value c);
   CAMLprim value ocaml_minicard_add_at_most(value solver, value c, value k);
   CAMLprim value ocaml_minicard_simplify(value solver);
@@ -92,6 +93,14 @@ CAMLprim value ocaml_minicard_neg_lit(value v) {
   Lit lit = mkLit(Int_val(v), true);
 
   CAMLreturn(Val_int(toInt(lit)));
+}
+
+CAMLprim value ocaml_minicard_negate(value l) {
+  CAMLparam1(v);
+
+  Lit lit = toLit(Int_val(Field(l, 0)));
+
+  CAMLreturn(Val_int(toInt(~lit)));
 }
 
 CAMLprim value ocaml_minicard_add_clause(value solver, value c) {

@@ -1,5 +1,5 @@
 open Printf
-open Minisat
+open Minicard
 
 (*
  * Returns the string obtained from [str] by dropping the first
@@ -71,6 +71,31 @@ let process_file solver file =
     solver#add_clause clause
   in
 
+  (* Processes a line containing an at-most constraint. *)
+  let process_at_most line =
+    let l = String.length line in
+    assert (l > 2);
+    assert (line.[1] = ' ');
+    let k, lits =
+      match split (drop line 2) ' ' with
+      | x :: xs ->
+          ( int_of_string x,
+            List.map
+              (fun lit ->
+                if lit.[0] = '-' then (false, drop lit 1) else (true, lit))
+              xs )
+      | [] -> (1, [])
+    in
+    let clause =
+      List.map
+        (fun (sign, name) ->
+          let var = Hashtbl.find vars name in
+          if sign then Minisat.pos_lit var else Minisat.neg_lit var)
+        lits
+    in
+    solver#add_at_most clause k
+  in
+
   (* Read a new line and processes its content. *)
   let rec process_line () =
     try
@@ -80,6 +105,7 @@ let process_file solver file =
         match line.[0] with
         | 'v' -> process_var line
         | 'c' -> process_clause line
+        | '@' -> process_at_most line
         | '#' -> ()
         | _ -> assert false );
       process_line ()
@@ -94,8 +120,8 @@ let solve file =
   let solver = new solver in
   let vars = process_file solver file in
   match solver#solve with
-  | Minisat.UNSAT -> printf "unsat\n"
-  | Minisat.SAT ->
+  | Minicard.UNSAT -> printf "unsat\n"
+  | Minicard.SAT ->
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->

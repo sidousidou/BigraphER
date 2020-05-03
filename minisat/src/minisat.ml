@@ -1,4 +1,4 @@
-type s
+type t
 
 type var = int
 
@@ -10,25 +10,25 @@ type solution = SAT | UNSAT
 
 type stat = { v : int; c : int; mem : float; cpu : float }
 
-external create : unit -> s = "ocaml_minisat_new"
+external create : unit -> t = "ocaml_minisat_new"
 
-external new_var : s -> var = "ocaml_minisat_new_var" [@@noalloc]
+external new_var : t -> var = "ocaml_minisat_new_var" [@@noalloc]
 
 external pos_lit : var -> lit = "ocaml_minisat_pos_lit" [@@noalloc]
 
 external neg_lit : var -> lit = "ocaml_minisat_neg_lit" [@@noalloc]
 
-external __add_clause : s -> lit list -> bool = "ocaml_minisat_add_clause"
+external __add_clause : t -> lit list -> bool = "ocaml_minisat_add_clause"
 
-external simplify : s -> bool = "ocaml_minisat_simplify"
+external simplify : t -> bool = "ocaml_minisat_simplify"
 
-external solve : s -> solution = "ocaml_minisat_solve"
+external solve : t -> solution = "ocaml_minisat_solve"
 
-external __value_of : s -> var -> int = "ocaml_minisat_value_of"
+external __value_of : t -> var -> int = "ocaml_minisat_value_of"
 
-external n_vars : s -> int = "ocaml_minisat_n_vars" [@@noalloc]
+external n_vars : t -> int = "ocaml_minisat_n_vars" [@@noalloc]
 
-external n_clauses : s -> int = "ocaml_minisat_n_clauses" [@@noalloc]
+external n_clauses : t -> int = "ocaml_minisat_n_clauses" [@@noalloc]
 
 external __mem_used : unit -> float = "ocaml_minisat_mem_used" [@@noalloc]
 

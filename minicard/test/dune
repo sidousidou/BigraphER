@@ -1,0 +1,20 @@
+(executables
+ (names test)
+ (libraries minicard))
+
+(rule
+ (deps
+  (:exe test.exe)
+  (:phi
+   (glob_files ../files/*.formula)))
+ (action
+  (with-stdout-to
+   test.output
+   (run %{exe} %{phi}))))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref test.reference))
+ (action
+  (diff %{ref} test.output)))
