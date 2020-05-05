@@ -1,5 +1,5 @@
 #define __STDC_LIMIT_MACROS
-#define __STDC_FORMAT_MACROS 
+#define __STDC_FORMAT_MACROS
 
 #include <minicard/Solver.h>
 #include <minisat/utils/System.h>
@@ -15,7 +15,7 @@ extern "C"
 }
 
 /* Declaring the functions which should be accessible on the C side. */
-extern "C" 
+extern "C"
 {
   CAMLprim value ocaml_minicard_new(value unit);
   CAMLprim value ocaml_minicard_new_var(value solver);
@@ -96,7 +96,7 @@ CAMLprim value ocaml_minicard_neg_lit(value v) {
 }
 
 CAMLprim value ocaml_minicard_negate(value l) {
-  CAMLparam1(v);
+  CAMLparam1(l);
 
   Lit lit = toLit(Int_val(Field(l, 0)));
 
@@ -116,7 +116,7 @@ CAMLprim value ocaml_minicard_add_clause(value solver, value c) {
 CAMLprim value ocaml_minicard_add_at_most(value solver, value c, value k) {
   CAMLparam3(solver, c, k);
 
-  int _k = Int_val(v);
+  int _k = Int_val(k);
   Solver* _solver = solver_val(solver);
   vec<Lit> clause;
   convert_literals(c, clause);

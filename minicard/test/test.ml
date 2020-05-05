@@ -65,7 +65,7 @@ let process_file solver file =
       List.map
         (fun (sign, name) ->
           let var = Hashtbl.find vars name in
-          if sign then Minisat.pos_lit var else Minisat.neg_lit var)
+          if sign then pos_lit var else neg_lit var)
         lits
     in
     solver#add_clause clause
@@ -90,7 +90,7 @@ let process_file solver file =
       List.map
         (fun (sign, name) ->
           let var = Hashtbl.find vars name in
-          if sign then Minisat.pos_lit var else Minisat.neg_lit var)
+          if sign then pos_lit var else neg_lit var)
         lits
     in
     solver#add_at_most clause k
@@ -125,8 +125,7 @@ let solve file =
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->
-          printf "  %s=%s\n" name
-            (Minisat.string_of_value (solver#value_of v)))
+          printf "  %s=%s\n" name (string_of_value (solver#value_of v)))
         vars
 
 (*

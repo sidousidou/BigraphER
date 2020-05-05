@@ -1,4 +1,4 @@
-type s
+type t
 
 type var = int
 
@@ -10,9 +10,9 @@ type solution = SAT | UNSAT
 
 type stat = { v : int; c : int; mem : float; cpu : float }
 
-external create : unit -> s = "ocaml_minicard_new"
+external create : unit -> t = "ocaml_minicard_new"
 
-external new_var : s -> var = "ocaml_minicard_new_var" [@@noalloc]
+external new_var : t -> var = "ocaml_minicard_new_var" [@@noalloc]
 
 external pos_lit : var -> lit = "ocaml_minicard_pos_lit" [@@noalloc]
 
@@ -20,20 +20,20 @@ external neg_lit : var -> lit = "ocaml_minicard_neg_lit" [@@noalloc]
 
 external negate : lit -> lit = "ocaml_minicard_negate" [@@noalloc]
 
-external __add_clause : s -> lit list -> bool = "ocaml_minicard_add_clause"
+external __add_clause : t -> lit list -> bool = "ocaml_minicard_add_clause"
 
-external __add_at_most : s -> lit list -> int -> bool
-  = "ocaml_minicard_at_most"
+external __add_at_most : t -> lit list -> int -> bool
+  = "ocaml_minicard_add_at_most"
 
-external simplify : s -> bool = "ocaml_minicard_simplify"
+external simplify : t -> bool = "ocaml_minicard_simplify"
 
-external solve : s -> solution = "ocaml_minicard_solve"
+external solve : t -> solution = "ocaml_minicard_solve"
 
-external __value_of : s -> var -> int = "ocaml_minicard_value_of"
+external __value_of : t -> var -> int = "ocaml_minicard_value_of"
 
-external n_vars : s -> int = "ocaml_minicard_n_vars" [@@noalloc]
+external n_vars : t -> int = "ocaml_minicard_n_vars" [@@noalloc]
 
-external n_clauses : s -> int = "ocaml_minicard_n_clauses" [@@noalloc]
+external n_clauses : t -> int = "ocaml_minicard_n_clauses" [@@noalloc]
 
 external __mem_used : unit -> float = "ocaml_minicard_mem_used" [@@noalloc]
 
