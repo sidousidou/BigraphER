@@ -18,6 +18,8 @@ external pos_lit : var -> lit = "ocaml_minisat_pos_lit" [@@noalloc]
 
 external neg_lit : var -> lit = "ocaml_minisat_neg_lit" [@@noalloc]
 
+external negate : lit -> lit = "ocaml_minisat_negate" [@@noalloc]
+
 external __add_clause : t -> lit list -> bool = "ocaml_minisat_add_clause"
 
 external simplify : t -> bool = "ocaml_minisat_simplify"

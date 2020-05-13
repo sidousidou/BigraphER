@@ -124,8 +124,8 @@ let equiv (m : lit) (clauses : lit list list) =
   in
   (pairs, l)
 
-(* input: X [ [Y0, Y1]; [Y2]; [Y3, Y4, Y5] ] output: X => (Y0 or Y1) X => Y2
-   X => (Y3 or Y4 or Y5) *)
+(* input: X [ [Y0, Y1]; [Y2]; [Y3, Y4, Y5] ] \ output: !X => (Y0 or Y1) \ !X
+   => Y2 \ !X => (Y3 or Y4 or Y5) *)
 let impl (m : lit) =
   List.map (fun c -> N_var m :: List.map (fun v -> P_var v) c)
 
@@ -396,23 +396,19 @@ let convert (z : Minisat.var array) (m : Minisat.var array array) = function
   | N_var (V_lit i) -> Minisat.neg_lit z.(i)
   | N_var (M_lit (i, j)) -> Minisat.neg_lit m.(i).(j)
 
+let rec list_n acc n f =
+  if n <= 0 then acc else list_n (f (n - 1) :: acc) (n - 1) f
+
 (* Initialise a vector of (auxiliary) variables. *)
 let init_aux_v n s =
-  let v = Array.make n 0 in
-  for i = 0 to n - 1 do
-    v.(i) <- s#new_var
-  done;
-  v
+  assert (n >= 0);
+  list_n [] n (fun _ -> s#new_var) |> Array.of_list
 
 (* Initialise a matrix of variables. *)
-let init_aux_m r c s =
-  let m = Array.make_matrix r c 0 in
-  for i = 0 to r - 1 do
-    for j = 0 to c - 1 do
-      m.(i).(j) <- s#new_var
-    done
-  done;
-  m
+let init_aux_m m n s =
+  assert (m >= 0);
+  assert (n >= 0);
+  list_n [] m (fun _ -> init_aux_v n s) |> Array.of_list
 
 (* Post conjunction of clauses to solver. All variables refer to the same
    vector. *)

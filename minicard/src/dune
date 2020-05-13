@@ -1,5 +1,20 @@
+(data_only_dirs minicard_c)
+
+(rule
+ (deps
+  (source_tree minicard_c))
+ (targets libminicard_c.a dllminicard_c.so)
+ (action
+  (progn
+   (chdir
+    minicard_c
+    (run make lr lsh))
+   (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a)
+   (run cp minicard_c/build/dynamic/lib/libminicard.so dllminicard_c.so))))
+
 (library
  (name minicard)
+ (foreign_archives minicard_c)
  (public_name minicard)
  (foreign_stubs
   (language cxx)
@@ -13,7 +28,9 @@
 (rule
  (targets flags.sexp libs.sexp)
  (deps
-  (:discover config/discover.exe))
+  (:discover config/discover.exe)
+  libminicard_c.a
+  dllminicard_c.so)
  (action
   (run %{discover})))
 

@@ -4,7 +4,14 @@ let () =
   C.main ~name:"foo" (fun c ->
       let default : C.Pkg_config.package_conf =
         {
-          libs = [ "-lstdc++"; "-lminicard"; "-lminisat"; "-lz" ];
+          libs =
+            [
+              "-Lminicard/src";
+              "-lstdc++";
+              "-lminicard_c";
+              "-lminisat";
+              "-lz";
+            ];
           cflags =
             [
               "-pedantic";
@@ -14,6 +21,7 @@ let () =
               "-std=c++11";
               "-Wno-reserved-user-defined-literal";
               "-Wno-zero-length-array";
+              "-Iminicard_c";
             ];
         }
       in

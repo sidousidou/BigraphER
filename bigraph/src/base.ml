@@ -204,3 +204,29 @@ let pp_list (out : Format.formatter) open_b pp_x sep l =
   open_b out;
   pp l;
   Format.pp_close_box out ()
+
+let list_of_rows m = Array.to_list m |> List.map Array.to_list
+
+let list_of_cols m =
+  let rec scan acc j i =
+    if i < 0 then acc else scan (m.(i).(j) :: acc) j (i - 1)
+  and i = Array.length m - 1 in
+  let rec scan2 acc j =
+    if j < 0 then acc else scan2 (scan [] j i :: acc) (j - 1)
+  in
+  scan2 [] (if i < 0 then -1 else Array.length m.(0) - 1)
+
+let fold_matrix m f acc =
+  Array.fold_left
+    (fun (i, acc) r ->
+      ( i + 1,
+        Array.fold_left (fun (j, acc) x -> (j + 1, f acc i j x)) (0, acc) r
+      )
+      |> snd)
+    (0, acc) m
+  |> snd
+
+let list_of_pair (a, b) = [ a; b ]
+
+let rec list_n acc n f =
+  if n <= 0 then acc else list_n (f (n - 1) :: acc) (n - 1) f

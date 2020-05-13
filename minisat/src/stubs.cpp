@@ -1,5 +1,5 @@
 #define __STDC_LIMIT_MACROS
-#define __STDC_FORMAT_MACROS 
+#define __STDC_FORMAT_MACROS
 
 #include <minisat/core/Solver.h>
 #include <minisat/utils/System.h>
@@ -21,6 +21,7 @@ extern "C"
   CAMLprim value ocaml_minisat_new_var(value solver);
   CAMLprim value ocaml_minisat_pos_lit(value v);
   CAMLprim value ocaml_minisat_neg_lit(value v);
+  CAMLprim value ocaml_minisat_negate(value v);
   CAMLprim value ocaml_minisat_add_clause(value solver, value c);
   CAMLprim value ocaml_minisat_simplify(value solver);
   CAMLprim value ocaml_minisat_solve(value solver);
@@ -91,6 +92,14 @@ CAMLprim value ocaml_minisat_neg_lit(value v) {
   Lit lit = mkLit(Int_val(v), true);
 
   CAMLreturn(Val_int(toInt(lit)));
+}
+
+CAMLprim value ocaml_minisat_negate(value l) {
+  CAMLparam1(l);
+
+  Lit lit = toLit(Int_val(Field(l, 0)));
+
+  CAMLreturn(Val_int(toInt(~lit)));
 }
 
 CAMLprim value ocaml_minisat_add_clause(value solver, value c) {

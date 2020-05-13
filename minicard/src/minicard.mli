@@ -79,4 +79,8 @@ external neg_lit : var -> lit = "ocaml_minicard_neg_lit"
   [@@noalloc]
 (** Return the negative literal for a variable. *)
 
+external negate : lit -> lit = "ocaml_minicard_negate"
+  [@@noalloc]
+(** Negate a literal. *)
+
 (**/**)
