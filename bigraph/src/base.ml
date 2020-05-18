@@ -226,6 +226,10 @@ let fold_matrix m f acc =
     (0, acc) m
   |> snd
 
+let is_square_matrix m =
+  let x = Array.length m in
+  Array.for_all (fun r -> Array.length r = x) m
+
 let list_of_pair (a, b) = [ a; b ]
 
 let rec list_n acc n f =
