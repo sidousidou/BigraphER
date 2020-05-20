@@ -572,7 +572,7 @@ let aux_match t p t_trans =
     add_c12 solver w iso_w_c w' iso_w'_c aux_bij_w_cols rc_w;
     (* Block unmatchable columns *)
     let unmatch_v =
-      IntSet.diff (IntSet.of_int m) (IntSet.union js0 (IntSet.union js1 js2))
+      IntSet.diff (IntSet.of_int m) (IntSet.union_list [js0 ;js1; js2])
     in
     add_c11 unmatch_v solver v aux_bij_v_cols rc_v;
     let vars =

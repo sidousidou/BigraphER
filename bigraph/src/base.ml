@@ -234,3 +234,9 @@ let list_of_pair (a, b) = [ a; b ]
 
 let rec list_n acc n f =
   if n <= 0 then acc else list_n (f (n - 1) :: acc) (n - 1) f
+
+let cartesian a b =
+  List.fold_left
+    (fun acc j ->
+      List.fold_left (fun acc j' -> (j, j') :: acc) acc b)
+    [] a

@@ -19,7 +19,7 @@ type solution = SAT | UNSAT
 (** Type of solver values. *)
 type value = False | True | Unknown
 
-val string_of_value : solver_t -> string
+val string_of_value : value -> string
 (** String representation of a solver value. *)
 
 (** External solver interface. *)
@@ -38,7 +38,7 @@ module type E = sig
 
   val add_at_least : t -> lit list -> int -> unit
 
-  val add_at_exactly : t -> lit list -> int -> unit
+  val add_exactly : t -> lit list -> int -> unit
 
   val new_var : t -> var
 
@@ -59,11 +59,12 @@ end
 
 (** Solver interface. *)
 module type S = sig
-  include E
 
   val solver_type : solver_t
 
   val string_of_solver_t : string
+
+  include E
 
   val new_var_vector : t -> int -> var array
 
@@ -99,6 +100,7 @@ module MC : S
 (** The type of a bigraph matching engine. *)
 module type M = sig
   exception NODE_FREE
+  exception NOT_TOTAL
 
   val solver_type : solver_t
 
@@ -120,4 +122,4 @@ module type M = sig
 end
 
 (** Bigraph mathing engine based on solver [S] *)
-module Match (S : S) : M
+module MatchSAT (S : S) : M
