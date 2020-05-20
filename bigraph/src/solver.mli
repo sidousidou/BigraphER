@@ -59,7 +59,6 @@ end
 
 (** Solver interface. *)
 module type S = sig
-
   val solver_type : solver_t
 
   val string_of_solver_t : string
@@ -100,6 +99,7 @@ module MC : S
 (** The type of a bigraph matching engine. *)
 module type M = sig
   exception NODE_FREE
+
   exception NOT_TOTAL
 
   val solver_type : solver_t

@@ -249,7 +249,8 @@ module Make (R : R) = struct
         let t_trans = Place.trans b.Big.p in
         let rec _step s = function
           | [] -> None
-          | r :: rs -> ( (* use occurrence_memo *)
+          | r :: rs -> (
+              (* use occurrence_memo *)
               match Big.occurrence ~target:s ~pattern:(lhs r) t_trans with
               | Some (i_n, i_e, i_h) ->
                   let ctx, prm, _id =

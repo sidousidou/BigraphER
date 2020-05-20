@@ -108,32 +108,34 @@ module MS_W : E = struct
       | [ a; b ] -> (a, b) :: acc
       | [ a; b; c ] -> (a, b) :: (a, c) :: (b, c) :: acc
       | [ a; b; c; d ] ->
-         (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
+          (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
       | [ a; b; c; d; e ] ->
-         (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
-         :: (c, d) :: (c, e) :: (d, e) :: acc
+          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
+          :: (c, d) :: (c, e) :: (d, e) :: acc
       | [ a; b; c; d; e; f ] ->
-         (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
-         :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e) :: (d, f)
-         :: (e, f) :: acc
+          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
+          :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
+          :: (d, f) :: (e, f) :: acc
       | x :: rest -> _at_most (List.map (fun y -> (x, y)) rest @ acc) rest
     in
-    List.iter (fun (a, b) -> add_clause s [negate a; negate b]) (_at_most [] l)
+    List.iter
+      (fun (a, b) -> add_clause s [ negate a; negate b ])
+      (_at_most [] l)
 
   (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
   module CMD = struct
-
     type group = lit list
 
     type cmd_tree = Leaf of group | Node of (lit * cmd_tree) list
 
-    (* Parameters t and g are used for configure the commander-variable encoding *)
-    type params = { t: int; g : int; }
+    (* Parameters t and g are used for configure the commander-variable
+       encoding *)
+    type params = { t : int; g : int }
 
-    let defaults = { t = 6 ; g = 3; }
+    let defaults = { t = 6; g = 3 }
 
-    (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then [0;1]
-   [2;3] to avoid singletons. Also if [0;1] [2] then [0;1;2] *)
+    (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then
+       [0;1] [2;3] to avoid singletons. Also if [0;1] [2] then [0;1;2] *)
     let group l n g =
       assert (g > 1);
       assert (n >= g);
@@ -158,53 +160,55 @@ module MS_W : E = struct
         else Some (x :: res)
 
     (* Build a tree of commander variables. Input is a tree, output split the
-   root and add a level of variables. *)
+       root and add a level of variables. *)
     let cmd_init l p s =
       let rec _cmd_init n g t =
         match t with
         | Node cmd_l -> (
-          match group cmd_l n g with
-          | Some cmd_l' ->
-             Node (List.fold_left
+            match group cmd_l n g with
+            | Some cmd_l' ->
+                Node
+                  (List.fold_left
                      (fun acc g -> (positive_lit (new_var s), Node g) :: acc)
                      [] cmd_l')
-             |> _cmd_init n g
-          (* Do not add an additional level of commander variables *)
-          | None -> t )
+                |> _cmd_init n g
+            (* Do not add an additional level of commander variables *)
+            | None -> t )
         | Leaf vars -> (
-          match group vars n g with
-          | Some cmd_l ->
-             Node (List.fold_left
+            match group vars n g with
+            | Some cmd_l ->
+                Node
+                  (List.fold_left
                      (fun acc g -> (positive_lit (new_var s), Leaf g) :: acc)
                      [] cmd_l)
-             |> _cmd_init n g
-          (* Do not add an additional level of commander variables *)
-          | None -> t ) in
+                |> _cmd_init n g
+            (* Do not add an additional level of commander variables *)
+            | None -> t )
+      in
       _cmd_init p.t p.g (Leaf l)
 
     (* Scan the tree and add constraints: 1. at most one TRUE in every group
-   2. if commander variable is TRUE then at least one TRUE in its group 3. if
-   commander variable is FALSE then no TRUE in its group 4. exactly one
-   commander variable is true. *)
+       2. if commander variable is TRUE then at least one TRUE in its group
+       3. if commander variable is FALSE then no TRUE in its group 4. exactly
+       one commander variable is true. *)
 
     (* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
     let rec add_cmd_c1 s = function
       | Leaf g -> add_at_most_naive s g
       | Node cmd_g ->
-         let cmd_vars, sub = List.split cmd_g in
-         add_at_most_naive s cmd_vars;
-         List.iter (fun t -> add_cmd_c1 s t) sub
+          let cmd_vars, sub = List.split cmd_g in
+          add_at_most_naive s cmd_vars;
+          List.iter (fun t -> add_cmd_c1 s t) sub
 
     (* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)
     let add_cmd_c2 s t =
       let rec aux = function
         | Leaf g -> g
         | Node cmd_g ->
-           List.iter
-             (fun (cmd_v, sub) ->
-               add_clause s ((negate cmd_v) :: (aux sub)))
-             cmd_g;
-           fst (List.split cmd_g)
+            List.iter
+              (fun (cmd_v, sub) -> add_clause s (negate cmd_v :: aux sub))
+              cmd_g;
+            fst (List.split cmd_g)
       in
       aux t |> ignore
 
@@ -213,46 +217,43 @@ module MS_W : E = struct
       let rec aux = function
         | Leaf g -> g
         | Node cmd_g ->
-           List.iter
-             (fun (cmd_v, sub) ->
-               aux sub
-               |> List.iter (fun l -> (add_clause s [cmd_v; negate l])))
-             cmd_g;
-           fst (List.split cmd_g)
+            List.iter
+              (fun (cmd_v, sub) ->
+                aux sub
+                |> List.iter (fun l -> add_clause s [ cmd_v; negate l ]))
+              cmd_g;
+            fst (List.split cmd_g)
       in
       aux t |> ignore
 
     let add_at_least_cmd s = function
       | Leaf g -> add_clause s g
       | Node cmd_g -> add_clause s (fst (List.split cmd_g))
-
   end
 
   (* Only base case implemented. *)
   let add_at_most s lits k =
     assert (k = 1);
-    CMD.(cmd_init lits defaults s
-         |> (fun t ->
-           add_cmd_c1 s t;
-           add_cmd_c2 s t;
-           add_cmd_c3 s t))
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t)
 
   (* Only base case implemented. *)
   let add_at_least s lits k =
     assert (k = 1);
-    CMD.(cmd_init lits defaults s
-         |> add_at_least_cmd s)
+    CMD.(cmd_init lits defaults s |> add_at_least_cmd s)
 
   (* Only base case implemented. *)
   let add_exactly s lits k =
     assert (k = 1);
-    CMD.(cmd_init lits defaults s
-         |> (fun t ->
-           add_cmd_c1 s t;
-           add_cmd_c2 s t;
-           add_cmd_c3 s t;
-           add_at_least_cmd s t))
-
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t;
+      add_at_least_cmd s t)
 end
 
 (* Wrapper for the Minicard module *)
@@ -306,7 +307,6 @@ module MC_W : E = struct
   let add_exactly s lits k =
     add_at_most s lits k;
     add_at_least s lits k
-
 end
 
 module type S = sig
@@ -345,14 +345,12 @@ module Make (ST : ST) (E : E) : S = struct
 
   let new_var_vector s n =
     assert (n >= 0);
-    Base.list_n [] n (fun _ -> new_var s)
-    |> Array.of_list
+    Base.list_n [] n (fun _ -> new_var s) |> Array.of_list
 
   let new_var_matrix s m n =
     assert (m >= 0);
     assert (n >= 0);
-    Base.list_n [] m (fun _ -> new_var_vector s n)
-    |> Array.of_list
+    Base.list_n [] m (fun _ -> new_var_vector s n) |> Array.of_list
 
   let add_clauses s = List.iter (fun c -> add_clause s c)
 
@@ -485,6 +483,7 @@ module MC =
 (* The type of a bigraph matching engine *)
 module type M = sig
   exception NODE_FREE
+
   exception NOT_TOTAL
 
   val solver_type : solver_t
@@ -513,7 +512,9 @@ module MatchSAT (S : S) : M = struct
   let string_of_solver_t = S.string_of_solver_t
 
   exception NODE_FREE
+
   exception NOT_TOTAL
+
   exception NO_MATCH
 
   type t = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
@@ -526,42 +527,47 @@ module MatchSAT (S : S) : M = struct
     hyp : S.var array array;
     map_hyp_r : Iso.t;
     map_hyp_c : Iso.t;
-    }
+  }
 
   let add_c11 unmatch_js solver m =
-    IntSet.iter (fun j ->
-        Array.iteri (fun i _ ->
-            S.add_clause solver [ S.negative_lit m.(i).(j) ]) m)
+    IntSet.iter
+      (fun j ->
+        Array.iteri
+          (fun i _ -> S.add_clause solver [ S.negative_lit m.(i).(j) ])
+          m)
       unmatch_js
 
   (* Place graph constraints *)
   module P = struct
-
     open Place
 
-    module H =
-      Hashtbl.Make (struct
-          type t = Ctrl.t * Ctrl.t
+    module H = Hashtbl.Make (struct
+      type t = Ctrl.t * Ctrl.t
 
-          let equal (a, b) (a', b') = Ctrl.equal a a' && Ctrl.equal b b'
+      let equal (a, b) (a', b') = Ctrl.equal a a' && Ctrl.equal b b'
 
-          let hash = Hashtbl.hash
-        end)
+      let hash = Hashtbl.hash
+    end)
 
-    (* Given an edge of control A -> B, find all the edges with the same type.
-   return a hash table (ctrl * ctrl) -> (int * int) *)
+    (* Given an edge of control A -> B, find all the edges with the same
+       type. return a hash table (ctrl * ctrl) -> (int * int) *)
     let partition_edges p n =
       let h = H.create (Sparse.entries p.nn) in
       Sparse.iter
         (fun i j ->
-          match (Base.safe @@ Nodes.get_ctrl i n, Base.safe @@ Nodes.get_ctrl j n) with
+          match
+            (Base.safe @@ Nodes.get_ctrl i n, Base.safe @@ Nodes.get_ctrl j n)
+          with
           | c, c' -> H.add h (c, c') (i, j))
         p.nn;
       h
 
     type deg =
-      | V of int      (* only vertices *)
-      | S of int      (* with sites or regions *)
+      | V of int
+      (* only vertices *)
+      | S of int
+
+    (* with sites or regions *)
 
     let indeg p i =
       assert (i >= 0);
@@ -583,7 +589,8 @@ module MatchSAT (S : S) : M = struct
       compat_deg (indeg t t_i) (indeg p p_i)
       && compat_deg (outdeg t t_i) (outdeg p p_i)
 
-    let eq t p t_i p_i = indeg t t_i = indeg p p_i && outdeg t t_i = outdeg p p_i
+    let eq t p t_i p_i =
+      indeg t t_i = indeg p p_i && outdeg t t_i = outdeg p p_i
 
     (* Match nodes in compatible DAG edges *)
     let match_cmp ~target:t ~pattern:p ~n_t ~n_p cmp s m =
@@ -591,24 +598,28 @@ module MatchSAT (S : S) : M = struct
       Sparse.fold
         (fun i j acc_c ->
           let a, b =
-            (Base.safe @@ Nodes.get_ctrl i n_p, Base.safe @@ Nodes.get_ctrl j n_p)
+            ( Base.safe @@ Nodes.get_ctrl i n_p,
+              Base.safe @@ Nodes.get_ctrl j n_p )
           in
-          match List.filter
-                  (fun (i', j') ->
-                    (* Degree check *)
-                    cmp t p i' i && compat t p j' j)
-                  (H.find_all h (a, b)) with
+          match
+            List.filter
+              (fun (i', j') ->
+                (* Degree check *)
+                cmp t p i' i && compat t p j' j)
+              (H.find_all h (a, b))
+          with
           | [] ->
-             (* No compatible edges found, break out from fold *)
-             raise_notrace NOT_TOTAL
-          | t_edges -> (
-            List.map
-              (fun (i', j') -> (S.positive_lit m.(i).(i'), S.positive_lit m.(j).(j')))
-              t_edges
-            |> S.add_conj_pairs s;
-            List.fold_left (fun acc (i', j') ->
-                IntSet.add j' (IntSet.add i' acc))
-              acc_c t_edges))
+              (* No compatible edges found, break out from fold *)
+              raise_notrace NOT_TOTAL
+          | t_edges ->
+              List.map
+                (fun (i', j') ->
+                  (S.positive_lit m.(i).(i'), S.positive_lit m.(j).(j')))
+                t_edges
+              |> S.add_conj_pairs s;
+              List.fold_left
+                (fun acc (i', j') -> IntSet.add j' (IntSet.add i' acc))
+                acc_c t_edges)
         p.nn IntSet.empty
 
     let add_c4 ~target:t ~pattern:p ~n_t ~n_p =
@@ -621,17 +632,15 @@ module MatchSAT (S : S) : M = struct
             let c = Base.safe @@ Nodes.get_ctrl i n_p in
             let compat_t = IntSet.inter (Nodes.find_all c n_t) l_t in
             if IntSet.is_empty compat_t then raise_notrace NOT_TOTAL
-            else
-              ( IntSet.fold
-                  (fun j acc -> (S.positive_lit m.(i).(j)) :: acc)
-                  compat_t []
-                |> S.add_clause s;
-                IntSet.union acc_c compat_t ))
-          l_p acc in
-      aux
-        (orphans p)
-        (orphans t)
-        (aux (leaves p) (leaves t) IntSet.empty)
+            else (
+              IntSet.fold
+                (fun j acc -> S.positive_lit m.(i).(j) :: acc)
+                compat_t []
+              |> S.add_clause s;
+              IntSet.union acc_c compat_t ))
+          l_p acc
+      in
+      aux (orphans p) (orphans t) (aux (leaves p) (leaves t) IntSet.empty)
 
     let add_c6 ~target:t ~pattern:p ~n_t ~n_p s m =
       (* Only ctrl and deg check *)
@@ -639,24 +648,26 @@ module MatchSAT (S : S) : M = struct
         Sparse.fold
           (fun i _ acc_c ->
             let js =
-              Base.(safe @@ Nodes.get_ctrl i n_p
-                    |> flip Nodes.find_all n_t
-                    |> IntSet.filter (fun j -> compat t p j i))
+              Base.(
+                safe @@ Nodes.get_ctrl i n_p
+                |> flip Nodes.find_all n_t
+                |> IntSet.filter (fun j -> compat t p j i))
             in
             if IntSet.is_empty js then raise_notrace NOT_TOTAL
             else
               IntSet.fold
-                (fun j acc -> (S.positive_lit m.(i).(j)) :: acc)
+                (fun j acc -> S.positive_lit m.(i).(j) :: acc)
                 js []
               |> S.add_clause s;
             IntSet.union js acc_c)
-          adj acc in
+          adj acc
+      in
       aux p.rn (aux p.ns IntSet.empty)
 
     (* Block unconnected pairs of nodes with sites and nodes with regions. *)
     let add_c10 ~target:t ~pattern:p s m =
-      let n_s = Sparse.dom p.ns       (* index i *)
-      and n_r = Sparse.codom p.rn in  (* index j *)
+      let n_s = Sparse.dom p.ns (* index i *) and n_r = Sparse.codom p.rn in
+      (* index j *)
       let n_s', n_r' =
         IntSet.fold
           (fun i (acc_s, acc_r) ->
@@ -672,10 +683,8 @@ module MatchSAT (S : S) : M = struct
             (fun i ->
               IntSet.iter
                 (fun j ->
-                  S.add_clause s [
-                      S.negative_lit m.(i).(i');
-                      S.negative_lit m.(j).(j');
-                ])
+                  S.add_clause s
+                    [ S.negative_lit m.(i).(i'); S.negative_lit m.(j).(j') ])
                 n_r')
             n_s')
         t.nn
@@ -698,28 +707,29 @@ module MatchSAT (S : S) : M = struct
             IntSet.fold
               (fun s acc ->
                 let prn_s = IntSet.apply iso (Sparse.prn p.ns s) in
-                if IntSet.subset prn_s prn_c then IntSet.union prn_s acc else acc)
+                if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
+                else acc)
               (IntSet.of_int p.s) IntSet.empty
           in
           (* Equality test *)
           IntSet.equal candidate prn_c)
         c_set
       && (* Sites *)
-        IntSet.for_all
-          (fun s ->
-            let prn_s = IntSet.inter v_p' (Sparse.prn t.ns s) in
-            (* Construct a candidate set of sites *)
-            let candidate =
-              IntSet.fold
-                (fun s acc ->
-                  let prn_s' = IntSet.apply iso (Sparse.prn p.ns s) in
-                  if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
-                  else acc)
-                (IntSet.of_int p.s) IntSet.empty
-            in
-            (* Equality test *)
-            IntSet.equal candidate prn_s)
-          s_set
+      IntSet.for_all
+        (fun s ->
+          let prn_s = IntSet.inter v_p' (Sparse.prn t.ns s) in
+          (* Construct a candidate set of sites *)
+          let candidate =
+            IntSet.fold
+              (fun s acc ->
+                let prn_s' = IntSet.apply iso (Sparse.prn p.ns s) in
+                if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
+                else acc)
+              (IntSet.of_int p.s) IntSet.empty
+          in
+          (* Equality test *)
+          IntSet.equal candidate prn_s)
+        s_set
 
     (* Dual *)
     let check_regions t p v_p' iso =
@@ -746,42 +756,45 @@ module MatchSAT (S : S) : M = struct
             IntSet.fold
               (fun r acc ->
                 let chl_r = IntSet.apply iso (Sparse.chl p.rn r) in
-                if IntSet.subset chl_r chl_p then IntSet.union chl_r acc else acc)
+                if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
+                else acc)
               (IntSet.of_int p.r) IntSet.empty
           in
           (* Equality test *)
           IntSet.equal candidate chl_p)
         p_set
       && (* Regions *)
-        IntSet.for_all
-          (fun x ->
-            let chl_r = IntSet.inter v_p' (Sparse.chl t.rn x) in
-            (* Construct a candidate set of regions *)
-            let candidate =
-              IntSet.fold
-                (fun r acc ->
-                  let chl_r' = IntSet.apply iso (Sparse.chl p.rn r) in
-                  if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
-                  else acc)
-                (IntSet.of_int p.r) IntSet.empty
-            in
-            (* Equality test *)
-            IntSet.equal candidate chl_r)
-          r_set
+      IntSet.for_all
+        (fun x ->
+          let chl_r = IntSet.inter v_p' (Sparse.chl t.rn x) in
+          (* Construct a candidate set of regions *)
+          let candidate =
+            IntSet.fold
+              (fun r acc ->
+                let chl_r' = IntSet.apply iso (Sparse.chl p.rn r) in
+                if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
+                else acc)
+              (IntSet.of_int p.r) IntSet.empty
+          in
+          (* Equality test *)
+          IntSet.equal candidate chl_r)
+        r_set
 
     (* check TRANS *)
     let check_trans t_trans v_p' c_set =
       (* check if there is a node child of co-domain, outside co-domain, such
-     that one of its children in trans is in co-domain *)
+         that one of its children in trans is in co-domain *)
       not
         (IntSet.exists
            (fun c ->
-             IntSet.exists (fun t -> IntSet.mem t v_p') (Sparse.chl t_trans c))
+             IntSet.exists
+               (fun t -> IntSet.mem t v_p')
+               (Sparse.chl t_trans c))
            c_set)
 
-    (* If there is an edge in the target between two nodes in the co-domain then
-   there must be an edge in the pattern between the corresponding nodes in
-   the domain. *)
+    (* If there is an edge in the target between two nodes in the co-domain
+       then there must be an edge in the pattern between the corresponding
+       nodes in the domain. *)
     let check_edges t p v_p' iso =
       let iso' = Iso.inverse iso in
       IntSet.fold
@@ -792,14 +805,17 @@ module MatchSAT (S : S) : M = struct
             acc)
         v_p' []
       |> List.for_all (fun (u, v) ->
-             Sparse.mem p.nn (Base.safe @@ Iso.apply iso' u) (Base.safe @@ Iso.apply iso' v))
+             Sparse.mem p.nn
+               (Base.safe @@ Iso.apply iso' u)
+               (Base.safe @@ Iso.apply iso' v))
 
     (* Check if iso i : p -> t is valid *)
     let check_match ~target:t ~pattern:p t_trans iso =
       let v_p' = IntSet.of_list (Iso.codom iso) in
       let c_set =
         IntSet.fold
-          (fun j acc -> IntSet.diff (Sparse.chl t.nn j) v_p' |> IntSet.union acc)
+          (fun j acc ->
+            IntSet.diff (Sparse.chl t.nn j) v_p' |> IntSet.union acc)
           v_p' IntSet.empty
       in
       check_sites t p v_p' c_set iso
@@ -833,7 +849,7 @@ module MatchSAT (S : S) : M = struct
               (Sparse.chl b.rn r)
           in
           IntSet.fold
-            (fun j acc -> (S.positive_lit m.(i).(j)) :: acc)
+            (fun j acc -> S.positive_lit m.(i).(j) :: acc)
             children []
           |> S.add_clause s)
         a.rn
@@ -849,24 +865,23 @@ module MatchSAT (S : S) : M = struct
               (Sparse.prn b.ns s)
           in
           IntSet.fold
-            (fun j acc -> (S.positive_lit m.(i).(j)) :: acc)
+            (fun j acc -> S.positive_lit m.(i).(j) :: acc)
             parents []
           |> S.add_clause solver)
         a.ns
-
   end
 
   (* Link graph constraints *)
   module L = struct
-
     open Link
 
     let comp_multi (c, n) (c', n') =
       match Ctrl.compare c c' with 0 -> Base.int_compare n n' | x -> x
 
     let ports_type p n =
-      Ports.fold (fun i mul acc ->
-          (Base.safe @@ Nodes.get_ctrl i n, mul) :: acc) p []
+      Ports.fold
+        (fun i mul acc -> (Base.safe @@ Nodes.get_ctrl i n, mul) :: acc)
+        p []
       |> List.fast_sort comp_multi
 
     let is_closed e = Face.is_empty e.i && Face.is_empty e.o
@@ -887,12 +902,13 @@ module MatchSAT (S : S) : M = struct
         ([], b) a
       |> fst |> List.fast_sort comp_multi
 
-    (* Two edges are compatible if they have the same number of ports with equal
-   control. *)
+    (* Two edges are compatible if they have the same number of ports with
+       equal control. *)
     let compat_edges e_p e_t n_t n_p = equal_types (e_p.p, n_p) (e_t.p, n_t)
 
-    (* Closed edges in p are matched to closed edges in t. Controls are checked
-   to exclude incompatible pairs. Return blocking pairs and blocking columns. *)
+    (* Closed edges in p are matched to closed edges in t. Controls are
+       checked to exclude incompatible pairs. Return blocking pairs and
+       blocking columns. *)
     let match_edges ~target ~pattern ~n_t ~n_p =
       let clauses, _, acc_c, acc_b =
         Lg.fold
@@ -911,7 +927,9 @@ module MatchSAT (S : S) : M = struct
           pattern ([], 0, [], [])
       in
       ( clauses,
-        IntSet.diff (IntSet.of_int (Lg.cardinal target)) (IntSet.of_list acc_c),
+        IntSet.diff
+          (IntSet.of_int (Lg.cardinal target))
+          (IntSet.of_list acc_c),
         acc_b )
 
     let add_c7 ~target ~pattern ~n_t ~n_p s w =
@@ -943,10 +961,11 @@ module MatchSAT (S : S) : M = struct
           pairs :: acc)
         i_a []
 
-    (* Nodes of matched edges are isomorphic. Indexes in clauses are for closed
-   edges. *)
+    (* Nodes of matched edges are isomorphic. Indexes in clauses are for
+       closed edges. *)
     let add_c8 ~target ~pattern ~n_t ~n_p solver v w clauses =
-      let a_t = Lg.elements target |> List.map (fun e -> e.p) |> Array.of_list
+      let a_t =
+        Lg.elements target |> List.map (fun e -> e.p) |> Array.of_list
       and a_p =
         Lg.elements pattern |> List.map (fun e -> e.p) |> Array.of_list
       in
@@ -962,8 +981,8 @@ module MatchSAT (S : S) : M = struct
       let p_l = ports_type p n_p and t_l = ports_type t n_t in
       inter p_l t_l = p_l
 
-    (* Return a list of clauses on row i of matrix t. Cnf.impl will process each
-   element *)
+    (* Return a list of clauses on row i of matrix t. Cnf.impl will process
+       each element *)
     let compat_clauses e_p i t h_t n_t n_p =
       let p = Ports.to_IntSet e_p.p in
       IntSet.fold
@@ -1002,18 +1021,18 @@ module MatchSAT (S : S) : M = struct
         List.filter
           (fun l ->
             let p_set =
-              List.fold_left (fun acc i -> Ports.sum acc p_a.(i).p) Ports.empty l
+              List.fold_left
+                (fun acc i -> Ports.sum acc p_a.(i).p)
+                Ports.empty l
             in
             not (sub_edge p_set t_edge.p n_t n_p))
           (subsets p_i_list)
       in
-      List.map
-        (fun l -> List.map (fun i -> (i, j)) l)
-        blocks
+      List.map (fun l -> List.map (fun i -> (i, j)) l) blocks
 
-    (* Generate constraints to block sets of edges in P that cannot be matched to
-   a link in T. Example: {A, B} -> [{A}, {B}, {A, B}] blocks [{A}, {A, B}],
-   [{B}, {A, B}] and [{A}, {B}, {A, B}] *)
+    (* Generate constraints to block sets of edges in P that cannot be
+       matched to a link in T. Example: {A, B} -> [{A}, {B}, {A, B}] blocks
+       [{A}, {A, B}], [{B}, {A, B}] and [{A}, {B}, {A, B}] *)
 
     (* 3 -> 0,2,4 *)
     (* !(0,3) | ! (4,3) | !(2,3) *)
@@ -1052,7 +1071,7 @@ module MatchSAT (S : S) : M = struct
       (l', iso)
 
     (* Peers in the pattern are peers in the target. Auxiliary variables are
-   introduced to model open edges matchings. They are stored in matrix t *)
+       introduced to model open edges matchings. They are stored in matrix t *)
     let add_c9 ~target ~pattern ~n_t ~n_p solver v =
       let open_p, iso_p =
         filter_iso
@@ -1095,12 +1114,13 @@ module MatchSAT (S : S) : M = struct
               (IntSet.diff c_s compat_t);
             (* Generate possible node matches for every edge assignment. *)
             List.iter
-              (fun ((l0,l1), r) ->
-                List.map (List.map (fun (a, b) ->
-                              S.positive_lit v.(a).(b))) r
+              (fun ((l0, l1), r) ->
+                List.map
+                  (List.map (fun (a, b) -> S.positive_lit v.(a).(b)))
+                  r
                 |> S.add_implication solver (S.positive_lit w.(l0).(l1)))
               (compat_clauses e_p i compat_t h n_t n_p);
-            i + 1))
+            i + 1 ))
         open_p 0
       |> ignore;
       compat_sub open_p non_empty_t f_e n_t n_p
@@ -1112,11 +1132,12 @@ module MatchSAT (S : S) : M = struct
     let add_c12 solver w iso_w w' iso_w' =
       (* T index -> W' index *)
       let inv_w' = Iso.inverse iso_w' in
-      let convert_j j = Base.safe (Iso.apply inv_w' (Base.safe (Iso.apply iso_w j)))
+      let convert_j j =
+        Base.safe (Iso.apply inv_w' (Base.safe (Iso.apply iso_w j)))
       and vars_of_col j m =
         snd
           (Array.fold_left
-             (fun (i, acc) _ -> (i + 1, (S.negative_lit m.(i).(j)) :: acc))
+             (fun (i, acc) _ -> (i + 1, S.negative_lit m.(i).(j) :: acc))
              (0, []) m)
       in
       let cols_w = Iso.dom iso_w in
@@ -1125,8 +1146,7 @@ module MatchSAT (S : S) : M = struct
           let vars_w = vars_of_col j w
           and vars_w' = vars_of_col (convert_j j) w' in
           Base.cartesian vars_w vars_w'
-          |> List.iter
-               (fun (j, j') -> S.add_clause solver [ j; j' ]))
+          |> List.iter (fun (j, j') -> S.add_clause solver [ j; j' ]))
         cols_w
 
     let edg_iso a b n_a n_b =
@@ -1136,15 +1156,15 @@ module MatchSAT (S : S) : M = struct
     let key e = (Face.cardinal e.i, Ports.cardinal e.p, Face.cardinal e.o)
 
     module H_3 = Hashtbl.Make (struct
-                     type t = int * int * int
+      type t = int * int * int
 
-                     let equal (x : int * int * int) y = x = y
+      let equal (x : int * int * int) y = x = y
 
-                     let hash = Hashtbl.hash
-                   end)
+      let hash = Hashtbl.hash
+    end)
 
-    (* Partition edges according to cardinalities of faces and port sets. Return
-   a hastbl : key -> (edge, index) *)
+    (* Partition edges according to cardinalities of faces and port sets.
+       Return a hastbl : key -> (edge, index) *)
     let partition_edg l =
       let h = H_3.create (Lg.cardinal l) in
       ignore
@@ -1157,13 +1177,14 @@ module MatchSAT (S : S) : M = struct
       h
 
     let block_rows rows m =
-      List.fold_left (fun acc i ->
-        Array.to_list m.(i)
-        |> List.map S.negative_lit
-        |> (Base.flip List.cons acc)) [] rows
+      List.fold_left
+        (fun acc i ->
+          Array.to_list m.(i)
+          |> List.map S.negative_lit |> Base.flip List.cons acc)
+        [] rows
 
-    (* P -> T Example constraint: [[(1, 2) or (1, 3) or (1, 4)]; [(2, 4)]; [(3,
-   4) or (3, 2)]] *)
+    (* P -> T Example constraint: [[(1, 2) or (1, 3) or (1, 4)]; [(2, 4)];
+       [(3, 4) or (3, 2)]] *)
     let match_list_eq p t n_p n_t solver v_l =
       let h = partition_edg t in
       let clauses, b, _ =
@@ -1173,9 +1194,7 @@ module MatchSAT (S : S) : M = struct
             let clause =
               List.fold_left
                 (fun acc (e_t, j) ->
-                  if edg_iso e_t e_p n_t n_p then
-                    (i, j) :: acc
-                  else acc)
+                  if edg_iso e_t e_p n_t n_p then (i, j) :: acc else acc)
                 [] t_edges
             in
             match clause with
@@ -1183,9 +1202,11 @@ module MatchSAT (S : S) : M = struct
             | _ -> (clause :: acc, block, i + 1))
           p ([], [], 0)
       in
-      S.add_clauses solver (
-          (List.map (List.map (fun (i, j) -> S.positive_lit v_l.(i).(j))) clauses) 
-          @ (block_rows b v_l));
+      S.add_clauses solver
+        ( List.map
+            (List.map (fun (i, j) -> S.positive_lit v_l.(i).(j)))
+            clauses
+        @ block_rows b v_l );
       clauses
 
     let match_ports_eq p t n_p n_t solver v w clauses =
@@ -1197,15 +1218,11 @@ module MatchSAT (S : S) : M = struct
           |> List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j)))
           |> S.add_implication solver (S.negative_lit w.(e_i).(e_j)))
         (List.flatten clauses)
-
   end
 
   let ban_solution solver vars =
     let aux m =
-      S.ban solver
-        ( Array.to_list m
-          |> List.map Array.to_list
-          |> List.flatten )
+      S.ban solver (Array.to_list m |> List.map Array.to_list |> List.flatten)
     in
     aux vars.nodes;
     aux vars.edges
@@ -1215,14 +1232,14 @@ module MatchSAT (S : S) : M = struct
     match S.solve solver with
     | UNSAT -> raise_notrace NO_MATCH
     | SAT ->
-       if
-         Big.(
-         P.check_match ~target:t.p ~pattern:p.p t_trans
-           (S.get_iso solver vars.nodes))
-       then (solver, vars)
-       else (
-         ban_solution solver vars;
-         filter_loop solver t p vars t_trans )
+        if
+          Big.(
+            P.check_match ~target:t.p ~pattern:p.p t_trans
+              (S.get_iso solver vars.nodes))
+        then (solver, vars)
+        else (
+          ban_solution solver vars;
+          filter_loop solver t p vars t_trans )
 
   (* Compute isos from nodes in the pattern to nodes in the target *)
   let aux_match t p t_trans =
@@ -1243,30 +1260,39 @@ module MatchSAT (S : S) : M = struct
         S.add_injection solver v;
         (* Add injection over closed edges *)
         S.add_injection solver w;
-        (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs. Return
-       list of vectors of auxiliary vars. *)
-        let js0 = P.add_c4 ~target:t.p ~pattern:p.p ~n_t:t.n ~n_p:p.n solver v
+        (* Add Tseitin C4: ctrl, edges and degrees in the palce graphs.
+           Return list of vectors of auxiliary vars. *)
+        let js0 =
+          P.add_c4 ~target:t.p ~pattern:p.p ~n_t:t.n ~n_p:p.n solver v
         (* Add C5: orphans and leaves matching in the place graphs. *)
-        and js1 = P.add_c5 ~target:t.p ~pattern:p.p ~n_t:t.n ~n_p:p.n solver v
+        and js1 =
+          P.add_c5 ~target:t.p ~pattern:p.p ~n_t:t.n ~n_p:p.n solver v
         (* Add C6: sites and regions in the place graphs. *)
-        and js2 = P.add_c6 ~target:t.p ~pattern:p.p ~n_t:t.n ~n_p:p.n solver v in
+        and js2 =
+          P.add_c6 ~target:t.p ~pattern:p.p ~n_t:t.n ~n_p:p.n solver v
+        in
         (* Add C7: edges in the pattern are matched to edges in the target. *)
-        L.add_c7 ~target:closed_t ~pattern:closed_p ~n_t:t.n ~n_p:p.n solver w
+        L.add_c7 ~target:closed_t ~pattern:closed_p ~n_t:t.n ~n_p:p.n solver
+          w
         (* Add C8: ports of matched closed edges have to be isomorphic. *)
-        |> L.add_c8 ~target:closed_t ~pattern:closed_p ~n_t:t.n ~n_p:p.n solver v w;
+        |> L.add_c8 ~target:closed_t ~pattern:closed_p ~n_t:t.n ~n_p:p.n
+             solver v w;
         (* Add C9: ports of matched open edges have to be isomorphic. Return
-       matrix from open edges in the pattern to non-empty edges in the
-       target. *)
+           matrix from open edges in the pattern to non-empty edges in the
+           target. *)
         let w', iso_w'_r, iso_w'_c =
           L.add_c9 ~target:t.l ~pattern:p.l ~n_t:t.n ~n_p:p.n solver v
         in
-        (* Add C10: block edges between unconnected nodes with sites and nodes
-       with regions. *)
+        (* Add C10: block edges between unconnected nodes with sites and
+           nodes with regions. *)
         P.add_c10 ~target:t.p ~pattern:p.p solver v;
         (* If an edge is in a match in w then forbid matches in w' *)
         L.add_c12 solver w iso_w_c w' iso_w'_c;
         (* Block unmatchable columns *)
-        add_c11 (IntSet.diff (IntSet.of_int m) (IntSet.union_list [js0; js1; js2])) solver v;
+        add_c11
+          (IntSet.diff (IntSet.of_int m)
+             (IntSet.union_list [ js0; js1; js2 ]))
+          solver v;
         let vars =
           {
             nodes = v;
@@ -1279,8 +1305,7 @@ module MatchSAT (S : S) : M = struct
           }
         in
         filter_loop solver t p vars t_trans
-      with
-      | NOT_TOTAL -> raise_notrace NO_MATCH)
+      with NOT_TOTAL -> raise_notrace NO_MATCH)
 
   (* True when p is not a match *)
   let quick_unsat t p =
@@ -1328,80 +1353,85 @@ module MatchSAT (S : S) : M = struct
     occurrence_memo ~target ~pattern (Place.trans target.p)
 
   let clause_of_iso iso m =
-    Base.fold_matrix m (fun acc i j v ->
-        if Base.safe (Iso.apply iso i) = j then (S.negative_lit v) :: acc
-        else (S.positive_lit v) :: acc)
+    Base.fold_matrix m
+      (fun acc i j v ->
+        if Base.safe (Iso.apply iso i) = j then S.negative_lit v :: acc
+        else S.positive_lit v :: acc)
       []
 
   (* compute non-trivial automorphisms of b *)
   let auto b =
-    Big.(let b_trans = Place.trans b.p
-         and rem_id res =
-           List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e)) res
-         in
-         rem_id
-           ( try
-               let s, vars = aux_match b b b_trans in
-               let rec loop_occur res =
-                 ban_solution s vars;
-                 try
-                   ignore (filter_loop s b b vars b_trans);
-                   loop_occur
-                     ( ( S.get_iso s vars.nodes,
-                         S.get_iso s vars.edges )
-                       :: res )
-                 with NO_MATCH -> res
-               in
-               loop_occur [ (S.get_iso s vars.nodes, S.get_iso s vars.edges) ]
-             with NO_MATCH -> [] ))
+    Big.(
+      let b_trans = Place.trans b.p
+      and rem_id res =
+        List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e)) res
+      in
+      rem_id
+        ( try
+            let s, vars = aux_match b b b_trans in
+            let rec loop_occur res =
+              ban_solution s vars;
+              try
+                ignore (filter_loop s b b vars b_trans);
+                loop_occur
+                  ((S.get_iso s vars.nodes, S.get_iso s vars.edges) :: res)
+              with NO_MATCH -> res
+            in
+            loop_occur [ (S.get_iso s vars.nodes, S.get_iso s vars.edges) ]
+          with NO_MATCH -> [] ))
 
   let occurrences ~target:t ~pattern:p =
-    Big.(if Nodes.size p.n = 0 then raise NODE_FREE
-         else if quick_unsat t p then []
-         else
-           try
-             let t_trans = Place.trans t.p in
-             let s, vars = aux_match t p t_trans in
-             let autos = auto p in
-             let rec loop_occur res =
-               ban_solution s vars;
-               (****************AUTOMORPHISMS****************)
-               List.combine
-                 (Iso.gen_isos (S.get_iso s vars.nodes) (List.map fst autos))
-                 (Iso.gen_isos (S.get_iso s vars.edges) (List.map snd autos))
-               |> List.iter
-                    (fun (iso_i, iso_e) ->
-                      S.add_clause s
-                        ( clause_of_iso iso_i vars.nodes
-                          @ clause_of_iso iso_e vars.edges ));
-               (*********************************************)
-               try
-                 ignore (filter_loop s t p vars t_trans);
-                 loop_occur
-                   ( {
-                       nodes = S.get_iso s vars.nodes;
-                       edges = S.get_iso s vars.edges
-                               |> Iso.transform ~iso_dom:vars.map_edges_r
-                                    ~iso_codom:vars.map_edges_c;
-                       hyper_edges = S.get_fun s vars.hyp
-                                     |> Fun.transform ~iso_dom:vars.map_hyp_r
-                                          ~iso_codom:vars.map_hyp_c; }
-                     :: res )
-               with NO_MATCH -> res
-             in
-             loop_occur
-               [
-                 {
-                   nodes = S.get_iso s vars.nodes;
-                   edges = S.get_iso s vars.edges
-                           |> Iso.transform ~iso_dom:vars.map_edges_r
-                                ~iso_codom:vars.map_edges_c;
-                   hyper_edges = S.get_fun s vars.hyp
-                                 |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
-                 };
-               ]
-           with NO_MATCH -> [])
-
+    Big.(
+      if Nodes.size p.n = 0 then raise NODE_FREE
+      else if quick_unsat t p then []
+      else
+        try
+          let t_trans = Place.trans t.p in
+          let s, vars = aux_match t p t_trans in
+          let autos = auto p in
+          let rec loop_occur res =
+            ban_solution s vars;
+            (****************AUTOMORPHISMS****************)
+            List.combine
+              (Iso.gen_isos (S.get_iso s vars.nodes) (List.map fst autos))
+              (Iso.gen_isos (S.get_iso s vars.edges) (List.map snd autos))
+            |> List.iter (fun (iso_i, iso_e) ->
+                   S.add_clause s
+                     ( clause_of_iso iso_i vars.nodes
+                     @ clause_of_iso iso_e vars.edges ));
+            (*********************************************)
+            try
+              ignore (filter_loop s t p vars t_trans);
+              loop_occur
+                ( {
+                    nodes = S.get_iso s vars.nodes;
+                    edges =
+                      S.get_iso s vars.edges
+                      |> Iso.transform ~iso_dom:vars.map_edges_r
+                           ~iso_codom:vars.map_edges_c;
+                    hyper_edges =
+                      S.get_fun s vars.hyp
+                      |> Fun.transform ~iso_dom:vars.map_hyp_r
+                           ~iso_codom:vars.map_hyp_c;
+                  }
+                :: res )
+            with NO_MATCH -> res
+          in
+          loop_occur
+            [
+              {
+                nodes = S.get_iso s vars.nodes;
+                edges =
+                  S.get_iso s vars.edges
+                  |> Iso.transform ~iso_dom:vars.map_edges_r
+                       ~iso_codom:vars.map_edges_c;
+                hyper_edges =
+                  S.get_fun s vars.hyp
+                  |> Fun.transform ~iso_dom:vars.map_hyp_r
+                       ~iso_codom:vars.map_hyp_c;
+              };
+            ]
+        with NO_MATCH -> [])
 
   let equal_SAT a b =
     Big.(
@@ -1414,7 +1444,8 @@ module MatchSAT (S : S) : M = struct
         S.add_bijection solver v_l;
         (* Place graph *)
         P.add_c4_eq a.p b.p a.n b.n solver v_n;
-        ignore (P.add_c5 ~target:b.p ~pattern:a.p ~n_t:b.n ~n_p:a.n solver v_n);
+        ignore
+          (P.add_c5 ~target:b.p ~pattern:a.p ~n_t:b.n ~n_p:a.n solver v_n);
         P.add_region_nodes a.p b.p a.n b.n solver v_n;
         P.add_nodes_sites a.p b.p a.n b.n solver v_n;
         (* Link graph *)
@@ -1437,10 +1468,10 @@ module MatchSAT (S : S) : M = struct
       && Nodes.equal a.n b.n
       && Sparse.equal a.p.Place.rs b.p.Place.rs
       &&
-        (* Placing or wiring *)
-        if Nodes.size b.n = 0 then
-          Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-        else equal_SAT a b)
+      (* Placing or wiring *)
+      if Nodes.size b.n = 0 then
+        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
+      else equal_SAT a b)
 
   (* Comparison over keys already performed and failed *)
   let equal_key a b =
@@ -1449,9 +1480,8 @@ module MatchSAT (S : S) : M = struct
       && P.deg_sites a.p = P.deg_sites b.p
       && Sparse.equal a.p.Place.rs b.p.Place.rs
       &&
-        (* Placing or wiring *)
-        if Nodes.size b.n = 0 then
-          Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-        else equal_SAT a b)
-
+      (* Placing or wiring *)
+      if Nodes.size b.n = 0 then
+        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
+      else equal_SAT a b)
 end
