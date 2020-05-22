@@ -9,7 +9,6 @@ let () =
               "-Lminicard/src";
               "-lstdc++";
               "-lminicard_c";
-              "-lminisat";
               "-lz";
             ];
           cflags =

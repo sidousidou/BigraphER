@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <stdio.h>
 
-#include <minisat/utils/ParseUtils.h>
+#include "utils/ParseUtils.h"
 #include "minicard/SolverTypes.h"
 
 namespace Minisat {

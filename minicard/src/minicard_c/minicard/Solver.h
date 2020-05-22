@@ -28,10 +28,10 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef Minisat_Solver_h
 #define Minisat_Solver_h
 
-#include <minisat/mtl/Vec.h>
-#include <minisat/mtl/Heap.h>
-#include <minisat/mtl/Alg.h>
-#include <minisat/utils/Options.h>
+#include "mtl/Vec.h"
+#include "mtl/Heap.h"
+#include "mtl/Alg.h"
+#include "utils/Options.h"
 #include "minicard/SolverTypes.h"
 
 #include <vector>
@@ -204,7 +204,7 @@ protected:
     int                 simpDB_assigns;   // Number of top-level assignments since last execution of 'simplify()'.
     int64_t             simpDB_props;     // Remaining number of propagations that must be made before next execution of 'simplify()'.
     vec<Lit>            assumptions;      // Current set of assumptions provided to solve by the user.
-    Heap<Var,VarOrderLt> order_heap;       // A priority queue of variables ordered with respect to the variable activity.
+    Heap<VarOrderLt>    order_heap;       // A priority queue of variables ordered with respect to the variable activity.
     double              progress_estimate;// Set by 'search()'.
     bool                remove_satisfied; // Indicates whether possibly inefficient linear scan for satisfied clauses should be performed in 'simplify'.
 

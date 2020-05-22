@@ -30,9 +30,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <signal.h>
 #include <zlib.h>
 
-#include <minisat/utils/System.h>
-#include <minisat/utils/ParseUtils.h>
-#include <minisat/utils/Options.h>
+#include "utils/System.h"
+#include "utils/ParseUtils.h"
+#include "utils/Options.h"
 #include "minicard/Dimacs.h"
 #include "minicard/opb.h"
 #include "minicard/Solver.h"

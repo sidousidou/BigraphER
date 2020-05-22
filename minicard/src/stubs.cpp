@@ -2,7 +2,7 @@
 #define __STDC_FORMAT_MACROS
 
 #include "minicard/Solver.h"
-#include <minisat/utils/System.h>
+#include "utils/System.h"
 
 
 extern "C"

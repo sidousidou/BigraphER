@@ -64,8 +64,8 @@ SOMAJOR=1
 SOMINOR=2
 SORELEASE?=.0#   Declare empty to leave out from library file name.
 
-MINISAT_CXXFLAGS = -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wno-parentheses -Wextra
-MINISAT_LDFLAGS  = -Wall -lz -lminisat
+MINISAT_CXXFLAGS = -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wextra
+MINISAT_LDFLAGS  = -Wall -lz
 
 ECHO=@echo
 ifeq ($(VERB),)
@@ -74,8 +74,8 @@ else
 VERB=
 endif
 
-SRCS = $(wildcard minicard/*.cc)
-HDRS = $(wildcard minicard/*.h)
+SRCS = $(wildcard minicard/*.cc) $(wildcard utils/*.cc)
+HDRS = $(wildcard minicard/*.h) $(wildcard mtl/*.h) $(wildcard utils/*.h)
 OBJS = $(filter-out %Main.o, $(SRCS:.cc=.o))
 
 r:	$(BUILD_DIR)/release/bin/$(MINISAT)
