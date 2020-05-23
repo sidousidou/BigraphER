@@ -28,7 +28,7 @@ MINISAT_RELSYM ?= -g
 
 # Sets of compile flags for different build types
 MINISAT_REL    ?= -O3 -D NDEBUG
-MINISAT_FPIC   ?= -fpic
+MINISAT_FPIC   ?= -fPIC
 
 # GNU Standard Install Prefix
 prefix         ?= /usr/local
@@ -64,7 +64,7 @@ SOMAJOR=1
 SOMINOR=2
 SORELEASE?=.0#   Declare empty to leave out from library file name.
 
-MINISAT_CXXFLAGS = -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wextra
+MINISAT_CXXFLAGS = --verbose -fPIC -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wextra
 MINISAT_LDFLAGS  = -Wall -lz
 
 ECHO=@echo
@@ -135,7 +135,6 @@ $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)\
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB)
 
 install:	install-headers install-lib install-bin
-install-debug:	install-headers install-lib-debug
 
 install-headers:
 #       Create directories

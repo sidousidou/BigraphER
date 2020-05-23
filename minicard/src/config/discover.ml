@@ -13,12 +13,10 @@ let () =
             ];
           cflags =
             [
-              "-pedantic";
-              "-fpermissive";
               "-fPIC";
+              "-fpermissive";
               "-O3";
               "-std=c++11";
-              "-Wno-reserved-user-defined-literal";
               "-Wno-zero-length-array";
               "-Iminicard_c";
             ];
