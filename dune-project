@@ -40,6 +40,7 @@
     (dune (and :build (>= 2.0.0)))
     (ocaml (> 4.05))
     (minisat (>= 0.5.3))
+    (minicard (>= 0.1.0))
     (odoc :with-doc))
   (conflicts
     (bigrapher (<= 1.6.1))))
