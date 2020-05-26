@@ -4,11 +4,33 @@
  (deps
   (source_tree minicard_c))
  (targets libminicard_c.a dllminicard_c.so)
+ (enabled_if
+  (and
+   (<> %{system} freebsd)
+   (<> %{system} netbsd)
+   (<> %{system} openbsd)))
  (action
   (progn
    (chdir
     minicard_c
     (run make lr lsh))
+   (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a)
+   (run cp minicard_c/build/dynamic/lib/libminicard.so dllminicard_c.so))))
+
+(rule
+ (deps
+  (source_tree minicard_c))
+ (targets libminicard_c.a dllminicard_c.so)
+ (enabled_if
+  (or
+   (= %{system} freebsd)
+   (= %{system} netbsd)
+   (= %{system} openbsd)))
+ (action
+  (progn
+   (chdir
+    minicard_c
+    (run gmake lr lsh))
    (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a)
    (run cp minicard_c/build/dynamic/lib/libminicard.so dllminicard_c.so))))
 
