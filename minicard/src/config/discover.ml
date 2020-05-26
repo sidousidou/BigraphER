@@ -6,18 +6,18 @@ let () =
         {
           libs =
             [
-              "-Lminicard/src";
               "-lstdc++";
+              "-Lminicard/src";
               "-lminicard_c";
-              "-lz";
+              (* "-lz"; *)
             ];
           cflags =
             [
               "-fPIC";
               "-fpermissive";
+              "-pedantic";
               "-O3";
               "-std=c++11";
-              "-Wno-zero-length-array";
               "-Iminicard_c";
             ];
         }
