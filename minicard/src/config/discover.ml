@@ -4,13 +4,7 @@ let () =
   C.main ~name:"foo" (fun c ->
       let default : C.Pkg_config.package_conf =
         {
-          libs =
-            [
-              "-lstdc++";
-              "-Lminicard/src";
-              "-lminicard_c";
-              (* "-lz"; *)
-            ];
+          libs = [ "-lstdc++"; "-Lminicard/src"; "-lminicard_c" ];
           cflags =
             [
               "-fPIC";
