@@ -1,6 +1,8 @@
-(** Type-dependent interface of rewrite rules. *)
+(** Input signature of the functor {!RrType.Make}. *)
 module type R = sig
   type t
+
+  type ac
 
   type label
 
@@ -10,7 +12,7 @@ module type R = sig
 
   val rhs : t -> Big.t
 
-  val conds : t -> AppCond.t list
+  val conds : t -> ac list
 
   val l : t -> label
 
@@ -29,11 +31,11 @@ module type R = sig
 
   val string_of_label : label -> string
 
-  val parse :
+  val make :
     name:string ->
     lhs:Big.t ->
     rhs:Big.t ->
-    ?conds:AppCond.t list ->
+    ?conds:ac list ->
     label ->
     Fun.t option ->
     t
@@ -43,68 +45,16 @@ module type R = sig
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
 
+(** Output signature of the functor {!RrType.Make}. *)
 module type T = sig
   type t
+  (** The type of reaction rules. *)
+
+  type ac
+  (** The type of application conditions. *)
 
   type label
-
-  type react_error
-
-  exception NOT_VALID of react_error
-
-  val name : t -> string
-
-  val lhs : t -> Big.t
-
-  val rhs : t -> Big.t
-
-  val conds : t -> AppCond.t list
-
-  val l : t -> label
-
-  val equal : t -> t -> bool
-
-  val map : t -> Fun.t option
-
-  val merge_occ :
-    Big.t * label * t list ->
-    Big.t * label * t list ->
-    Big.t * label * t list
-
-  val parse :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    t
-
-  val to_string : t -> string
-
-  val is_valid : t -> bool
-
-  val is_valid_exn : t -> bool
-
-  val string_of_react_err : react_error -> string
-
-  val is_enabled : Big.t -> t -> bool
-
-  val apply : Big.t -> t list -> Big.t option
-
-  val fix : Big.t -> t list -> Big.t * int
-
-  val step : Big.t -> t list -> (Big.t * label * t list) list * int
-
-  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
-end
-
-(** Module for the concrete implementation of basic operations on rewrite
-    rules. *)
-module Make (R : R) : sig
-  type t = R.t
-
-  type label = R.label
+  (** The type of reaction rule lables. *)
 
   type react_error
 
@@ -119,14 +69,14 @@ module Make (R : R) : sig
   val rhs : t -> Big.t
   (** Return the right-hand side of a rewrite rule. *)
 
-  val conds : t -> AppCond.t list
+  val conds : t -> ac list
   (** Return application conditions for a rewrite rule. *)
 
   val l : t -> label
   (** Return the label of a rewrite rule. *)
 
   val equal : t -> t -> bool
-  (** Eqaulity for reaction rules *)
+  (** Equality for reaction rules *)
 
   val map : t -> Fun.t option
   (** Return the instantition map of a rewrite rule. *)
@@ -137,15 +87,15 @@ module Make (R : R) : sig
     Big.t * label * t list
   (** Merge two occurrences. *)
 
-  val parse :
+  val make :
     name:string ->
     lhs:Big.t ->
     rhs:Big.t ->
-    ?conds:AppCond.t list ->
+    ?conds:ac list ->
     label ->
     Fun.t option ->
     t
-  (** Creare a new reaction rule. *)
+  (** Create a new reaction rule. *)
 
   val to_string : t -> string
   (** String representation of a rewrite rule. *)
@@ -184,22 +134,30 @@ module Make (R : R) : sig
   (** Random step. *)
 end
 
-val filter_iso :
-  (Big.t * 'a * 'b list -> Big.t * 'a * 'b list -> Big.t * 'a * 'b list) ->
-  (Big.t * 'a * 'b list) list ->
-  (Big.t * 'a * 'b list) list
-(** Merge isomorphic occurrences *)
+(** Functor building a concrete implementation of basic operations on rewrite
+    rules. *)
+module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AC.t) :
+  T with type t = R.t and type label = R.label and type ac = R.ac
 
-val gen_step :
-  Big.t ->
-  'a list ->
-  (Big.t * 'b * 'a list -> Big.t * 'b * 'a list -> Big.t * 'b * 'a list) ->
-  lhs:('a -> Big.t) ->
-  rhs:('a -> Big.t) ->
-  label:('a -> 'b) ->
-  map:('a -> Fun.t option) ->
-  conds:('a -> AppCond.t list) ->
-  (Big.t * 'b * 'a list) list * int
-(** Generic step function *)
+(** Functor building generic functions for rewrite rules. *)
+module Make_gen (S : Solver.M) (AC : AppCond.C) : sig
+  val filter_iso :
+    (Big.t * 'a * 'b list -> Big.t * 'a * 'b list -> Big.t * 'a * 'b list) ->
+    (Big.t * 'a * 'b list) list ->
+    (Big.t * 'a * 'b list) list
+  (** Merge isomorphic occurrences *)
+
+  val gen_step :
+    Big.t ->
+    'a list ->
+    (Big.t * 'b * 'a list -> Big.t * 'b * 'a list -> Big.t * 'b * 'a list) ->
+    lhs:('a -> Big.t) ->
+    rhs:('a -> Big.t) ->
+    label:('a -> 'b) ->
+    map:('a -> Fun.t option) ->
+    conds:('a -> AC.t list) ->
+    (Big.t * 'b * 'a list) list * int
+  (** Generic step function *)
+end
 
 (**/**)

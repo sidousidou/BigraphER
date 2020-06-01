@@ -174,96 +174,96 @@ val decomp_d : t -> int -> t * t * Iso.t * Iso.t
 
     @raise NOT_PRIME when some region is shared *)
 
-(** {2 Matching constraints} *)
-
-exception NOT_TOTAL
-(** Raised when a node in the pattern cannot be matched to any node in the
-    target. *)
-
-val match_list :
-  target:t ->
-  pattern:t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
-(** [match_list t p n_t n_p] computes constraints to match edges in pattern
-    [p] with compatible edges in target [t]. [n_t] and [n_p] are the node
-    sets of [t] and [p], respectively.
-
-    @raise NOT_TOTAL when there are nodes in the pattern that cannot be
-    matched. *)
-
-val match_leaves :
-  target:t ->
-  pattern:t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  Cnf.clause list * IntSet.t
-(** [match_leaves t p n_t n_p] computes constraints to match the leaves ({e
-    i.e.} nodes without children) in [p] with those in [t]. [n_t] and [n_p]
-    are defined as in {!val:match_list}.
-
-    @raise NOT_TOTAL when there are leaves in the pattern that cannot be
-    matched. *)
-
-val match_orphans :
-  target:t ->
-  pattern:t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  Cnf.clause list * IntSet.t
-(** Dual of {!val:match_leaves}.
-
-    @raise NOT_TOTAL when there are orphans in the pattern that cannot be
-    matched. *)
-
-val match_regions :
-  target:t ->
-  pattern:t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  Cnf.clause list * IntSet.t
-(** Compute constraints to match regions. Arguments are as in
-    {!val:match_list}. Only controls and degrees are checked. *)
-
-val match_sites :
-  target:t ->
-  pattern:t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  Cnf.clause list * IntSet.t
-(** Dual of {!val:match_regions}. *)
-
-val match_trans : target:t -> pattern:t -> Cnf.clause list
-(** Compute constraints to block matches between unconnected pairs of nodes
-    with sites and nodes with regions. *)
-
-val check_match : target:t -> pattern:t -> m -> Iso.t -> bool
-(** [check_match t p trans iso] checks if [iso] from [p] to [t] is a valid
-    match. *)
-
-val match_region_nodes :
-  t -> t -> Nodes.t -> Nodes.t -> Cnf.clause list * IntSet.t
-(** Compute constraints for equality: regions must have children with the
-    same controls. *)
-
-val match_nodes_sites :
-  t -> t -> Nodes.t -> Nodes.t -> Cnf.clause list * IntSet.t
-(** Dual of {!val:match_region_nodes}. *)
-
-val match_list_eq :
-  t ->
-  t ->
-  Nodes.t ->
-  Nodes.t ->
-  (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
-(** Compute constraints for equality. Similar to {!val:match_list}. *)
-
-val deg_regions : t -> int list
-(** Compute the outer degree of the regions of a place graph. *)
-
-val deg_sites : t -> int list
-(** Compute the inner degree of the sites of a place graph. *)
+(* (\** {2 Matching constraints} *\)
+ * 
+ * exception NOT_TOTAL
+ * (\** Raised when a node in the pattern cannot be matched to any node in the
+ *     target. *\)
+ * 
+ * val match_list :
+ *   target:t ->
+ *   pattern:t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
+ * (\** [match_list t p n_t n_p] computes constraints to match edges in pattern
+ *     [p] with compatible edges in target [t]. [n_t] and [n_p] are the node
+ *     sets of [t] and [p], respectively.
+ * 
+ *     @raise NOT_TOTAL when there are nodes in the pattern that cannot be
+ *     matched. *\)
+ * 
+ * val match_leaves :
+ *   target:t ->
+ *   pattern:t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   Cnf.clause list * IntSet.t
+ * (\** [match_leaves t p n_t n_p] computes constraints to match the leaves ({e
+ *     i.e.} nodes without children) in [p] with those in [t]. [n_t] and [n_p]
+ *     are defined as in {!val:match_list}.
+ * 
+ *     @raise NOT_TOTAL when there are leaves in the pattern that cannot be
+ *     matched. *\)
+ * 
+ * val match_orphans :
+ *   target:t ->
+ *   pattern:t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   Cnf.clause list * IntSet.t
+ * (\** Dual of {!val:match_leaves}.
+ * 
+ *     @raise NOT_TOTAL when there are orphans in the pattern that cannot be
+ *     matched. *\)
+ * 
+ * val match_regions :
+ *   target:t ->
+ *   pattern:t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   Cnf.clause list * IntSet.t
+ * (\** Compute constraints to match regions. Arguments are as in
+ *     {!val:match_list}. Only controls and degrees are checked. *\)
+ * 
+ * val match_sites :
+ *   target:t ->
+ *   pattern:t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   Cnf.clause list * IntSet.t
+ * (\** Dual of {!val:match_regions}. *\)
+ * 
+ * val match_trans : target:t -> pattern:t -> Cnf.clause list
+ * (\** Compute constraints to block matches between unconnected pairs of nodes
+ *     with sites and nodes with regions. *\)
+ * 
+ * val check_match : target:t -> pattern:t -> m -> Iso.t -> bool
+ * (\** [check_match t p trans iso] checks if [iso] from [p] to [t] is a valid
+ *     match. *\)
+ * 
+ * val match_region_nodes :
+ *   t -> t -> Nodes.t -> Nodes.t -> Cnf.clause list * IntSet.t
+ * (\** Compute constraints for equality: regions must have children with the
+ *     same controls. *\)
+ * 
+ * val match_nodes_sites :
+ *   t -> t -> Nodes.t -> Nodes.t -> Cnf.clause list * IntSet.t
+ * (\** Dual of {!val:match_region_nodes}. *\)
+ * 
+ * val match_list_eq :
+ *   t ->
+ *   t ->
+ *   Nodes.t ->
+ *   Nodes.t ->
+ *   (Cnf.clause * Cnf.b_clause list) list * Cnf.clause list * IntSet.t
+ * (\** Compute constraints for equality. Similar to {!val:match_list}. *\)
+ * 
+ * val deg_regions : t -> int list
+ * (\** Compute the outer degree of the regions of a place graph. *\)
+ * 
+ * val deg_sites : t -> int list
+ * (\** Compute the inner degree of the sites of a place graph. *\) *)
 
 val trans : t -> m
 (** Compute the transitive closure of the nodes X nodes matrix of a place

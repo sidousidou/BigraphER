@@ -10,16 +10,6 @@ all:	r lr lsh
 
 ## Configurable options ###########################################################################
 
-UNAME := $(shell uname -s)
-
-ifeq ($(UNAME),Darwin)
-	SONAME := -install_name
-else
-	STATIC := --static
-	SONAME := -soname
-endif
-
-
 # Directory to store object files, libraries, executables, and dependencies:
 BUILD_DIR      ?= build
 
@@ -64,8 +54,16 @@ SOMAJOR=1
 SOMINOR=2
 SORELEASE?=.0#   Declare empty to leave out from library file name.
 
-MINISAT_CXXFLAGS = --verbose -fPIC -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wextra
+MINISAT_CXXFLAGS = -fPIC -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wextra
 MINISAT_LDFLAGS  = -Wall -lz
+
+ifeq (Darwin,$(shell uname))
+   SHARED_LDFLAGS += --verbose -shared -Wl,-install_name,$(MINISAT_DLIB).$(SOMAJOR)
+   RELEASE_LDFLAGS +=
+else
+   SHARED_LDFLAGS += -shared -Wl,-soname,$(MINISAT_DLIB).$(SOMAJOR)
+   RELEASE_LDFLAGS += -static
+endif
 
 ECHO=@echo
 ifeq ($(VERB),)
@@ -89,7 +87,7 @@ $(BUILD_DIR)/release/%.o:			MINISAT_CXXFLAGS +=$(MINISAT_REL) $(MINISAT_RELSYM)
 $(BUILD_DIR)/dynamic/%.o:			MINISAT_CXXFLAGS +=$(MINISAT_REL) $(MINISAT_FPIC)
 
 ## Build-type Link-flags:
-$(BUILD_DIR)/release/bin/$(MINISAT):		MINISAT_LDFLAGS += $(STATIC) $(MINISAT_RELSYM)
+$(BUILD_DIR)/release/bin/$(MINISAT):		MINISAT_LDFLAGS += $(RELEASE_LDFLAGS) $(MINISAT_RELSYM)
 
 ## Executable dependencies
 $(BUILD_DIR)/release/bin/$(MINISAT):	 	$(BUILD_DIR)/release/minicard/Main.o $(BUILD_DIR)/release/lib/$(MINISAT_SLIB)
@@ -130,7 +128,7 @@ $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)\
  $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB):
 	$(ECHO) Linking Shared Library: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@ -shared -Wl,$(SONAME),$(MINISAT_DLIB).$(SOMAJOR) $^
+	$(VERB) $(CXX) $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@ $(SHARED_LDFLAGS) $^
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR)
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB)
 

@@ -484,8 +484,6 @@ module MC =
 module type M = sig
   exception NODE_FREE
 
-  exception NOT_TOTAL
-
   val solver_type : solver_t
 
   val string_of_solver_t : string
@@ -506,7 +504,7 @@ module type M = sig
 end
 
 (* Bigraph mathing engine based on solver S *)
-module MatchSAT (S : S) : M = struct
+module Make_SAT (S : S) : M = struct
   let solver_type = S.solver_type
 
   let string_of_solver_t = S.string_of_solver_t

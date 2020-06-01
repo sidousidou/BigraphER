@@ -1,6 +1,8 @@
 open Bigraph
 module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
+module S = Solver.Make_SAT (Solver.MS)
+module BRS = Brs.Make (S)
 
 (* Controls *)
 let a = Big.ion Link.Face.empty (Ctrl.C ("A", [], 0))
@@ -20,9 +22,9 @@ and e3 = e 3
 
 let check (a, r, b) =
   try
-    Brs.step a [ r ]
+    BRS.step a [ r ]
     |> (fun (s', _) -> List.hd s' |> fun (f, _, _) -> f)
-    |> Big.equal b
+    |> S.equal b
   with Big.COMP_ERROR (_, _) -> false
 
 (* Test 1 *)
@@ -36,7 +38,7 @@ and r1' = Big.par_of_list [ a; c ]
 
 and eta1 = Some (Fun.parse [ 0; 2 ])
 
-let rr1 = Brs.parse_react_unsafe ~name:"" ~lhs:r1 ~rhs:r1' eta1
+let rr1 = BRS.parse_react_unsafe ~name:"" ~lhs:r1 ~rhs:r1' () eta1
 
 (* Test 2 *)
 let b2 = Big.par_of_list [ Big.nest a e1; Big.nest b e2 ]
@@ -49,7 +51,7 @@ let r2' = r2
 
 and eta2 = Some (Fun.parse [ 1; 0 ])
 
-let rr2 = Brs.parse_react_unsafe ~name:"" ~lhs:r2 ~rhs:r2' eta2
+let rr2 = BRS.parse_react_unsafe ~name:"" ~lhs:r2 ~rhs:r2' () eta2
 
 (* Test 3 *)
 let b3 = Big.par_of_list [ Big.nest a e1; Big.nest b e2 ]
@@ -62,7 +64,7 @@ let r3' = b3'
 
 and eta3 = Some (Fun.parse [])
 
-let rr3 = Brs.parse_react_unsafe ~name:"" ~lhs:r3 ~rhs:r3' eta3
+let rr3 = BRS.parse_react_unsafe ~name:"" ~lhs:r3 ~rhs:r3' () eta3
 
 (* Tests *)
 let test = [ (b1, rr1, b1'); (b2, rr2, b2'); (b3, rr3, b3') ]
@@ -71,7 +73,7 @@ let () =
   let print_res (a, r, b) =
     ST.xml_block "system-out" []
       [
-        "a:\n" ^ Big.to_string a ^ "\nr:\n" ^ Brs.string_of_react r
+        "a:\n" ^ Big.to_string a ^ "\nr:\n" ^ BRS.string_of_react r
         ^ "\nb:\n" ^ Big.to_string b;
       ]
   in

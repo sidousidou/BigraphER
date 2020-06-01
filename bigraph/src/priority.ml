@@ -1,4 +1,4 @@
-module type P = sig
+module type Val_Check = sig
   type t
 
   val f_val : t -> bool
@@ -6,21 +6,61 @@ module type P = sig
   val f_r_val : t -> bool
 end
 
-module Make (R : RrType.T) (P : P with type t = R.t list) = struct
+module type P = sig
+  type r_t
+
+  type r_label
+
+  type p_class = P_class of r_t list | P_rclass of r_t list
+
+  val is_valid : p_class -> bool
+
+  val is_valid_list : p_class list -> bool
+
+  val cardinal : p_class list -> int
+
+  val rewrite : Big.t -> p_class list -> Big.t * int
+
+  val scan :
+    Big.t * int ->
+    part_f:
+      ((Big.t * r_label * r_t list) list ->
+      (int * (Big.t * r_label * r_t list)) list
+      * (int * r_label * r_t list) list
+      * int) ->
+    const_pri:p_class list ->
+    p_class list ->
+    ( (int * (Big.t * r_label * r_t list)) list
+    * (int * r_label * r_t list) list
+    * int )
+    * int
+
+  val scan_sim :
+    Big.t ->
+    const_pri:p_class list ->
+    p_class list ->
+    (Big.t * r_label * r_t list) option * int
+end
+
+module Make
+    (S : Solver.M)
+    (R : RrType.T)
+    (V : Val_Check with type t := R.t list) =
+struct
   type p_class = P_class of R.t list | P_rclass of R.t list
 
   let is_valid = function
     | P_class [] | P_rclass [] -> false
-    | P_class rr -> List.for_all R.is_valid rr && P.f_val rr
-    | P_rclass rr -> List.for_all R.is_valid rr && P.f_r_val rr
+    | P_class rr -> List.for_all R.is_valid rr && V.f_val rr
+    | P_rclass rr -> List.for_all R.is_valid rr && V.f_r_val rr
 
   let is_valid_list =
     List.exists (function P_class _ -> true | P_rclass _ -> false)
 
   let is_enabled b =
-    List.exists (fun r -> Big.occurs ~target:b ~pattern:(R.lhs r))
+    List.exists (fun r -> S.occurs ~target:b ~pattern:(R.lhs r))
 
-  let is_reducible = function P_class _ -> false | P_rclass _ -> true
+  (*let is_reducible = function P_class _ -> false | P_rclass _ -> true*)
 
   (* Stop when there are no more classes or when a non reducible class is
      enabled *)
@@ -53,7 +93,11 @@ module Make (R : RrType.T) (P : P with type t = R.t list) = struct
                   ((s', b, c) :: ss, l + l'))
                 ([], l) ss
               (* Merge isomorphic states *)
-              |> fun (ss, l) -> (RrType.filter_iso R.merge_occ ss, l)
+              |> fun (ss, l) ->
+              let open struct
+                module G = RrType.Make_gen (S) (AppCond.Make (S))
+              end in
+              (G.filter_iso R.merge_occ ss, l)
             in
             (part_f ss', matches + l')
       | P_rclass _ :: cs ->

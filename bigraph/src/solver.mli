@@ -99,27 +99,50 @@ module MC : S
 (** The type of a bigraph matching engine. *)
 module type M = sig
   exception NODE_FREE
-
-  exception NOT_TOTAL
+  (** Raised when the matching pattern has no nodes. *)
 
   val solver_type : solver_t
+  (** The type of the solver .*)
 
   val string_of_solver_t : string
+  (** String representation of a solver type. *)
 
-  type t = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
+  type t = {
+    nodes : Iso.t;  (** One-to-one mapping over nodes. *)
+    edges : Iso.t;  (** One-to-one mapping over edges. *)
+    hyper_edges : Fun.t;  (** Mapping over hyper-edges.*)
+  }
+  (** The type of occurrences. *)
 
   val occurs : target:Big.t -> pattern:Big.t -> bool
+  (** [occurs ~target ~pattern] returns [true] if the [~pattern] occurs in
+      the [~target], [false] otherwise. *)
 
   val occurrence : target:Big.t -> pattern:Big.t -> t option
+  (** [occurrence ~target ~pattern] returns an occurrence if the [~pattern]
+      occurs in the [~target].
+
+      @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
   val occurrence_memo : target:Big.t -> pattern:Big.t -> Sparse.t -> t option
+  (** [occurrence ~target ~pattern trans] same as {!Solver.M.occurrence} with
+      argument [trans] the transitive closure of the induced graph of the
+      [~target]. *)
 
   val occurrences : target:Big.t -> pattern:Big.t -> t list
+  (** [occurrences ~target ~pattern] returns a list of occurrences.
+
+      @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
   val equal : Big.t -> Big.t -> bool
+  (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
+      [false] otherwise. *)
 
   val equal_key : Big.t -> Big.t -> bool
+  (** Same as {!Solver.M.equal} but with fewer checks prior to the solver
+      invocation. This function is intended to be used after equality over
+      keys has already failed. *)
 end
 
-(** Bigraph mathing engine based on solver [S] *)
-module MatchSAT (S : S) : M
+(** Bigraph matching engine based on solver [S] *)
+module Make_SAT (S : S) : M

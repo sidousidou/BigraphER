@@ -1,4 +1,5 @@
-(* Labelled directed graphs *)
+(** Input signature of the functor {!TsType.Make} representing a directed
+    graph data structure. *)
 module type G = sig
   type t
 
@@ -15,7 +16,8 @@ module type G = sig
   val string_of_l : l -> string
 end
 
-(* Type of computation limit *)
+(** Input signature of the functor {!TsType.Make} representing the type of
+    computation limit. *)
 module type L = sig
   type t
 
@@ -30,69 +32,143 @@ module type L = sig
   val to_string : t -> string
 end
 
-(* Reactive system descriptions *)
+(** Input signature of the functor {!TsType.Make} describing the kind of
+    reactive system. *)
 module type T = sig
   val typ : Rs.t
 end
 
-(* Reactive systems *)
+(** Output signature of the functor {!TsType.Make}. *)
 module type RS = sig
   type react
+  (** The type of bigraphical reaction rules. *)
 
-  type p_class = P_class of react list | P_rclass of react list
+  type ac
+  (** The type of application conditions. *)
+
+  type p_class =
+    | P_class of react list
+    | P_rclass of react list  (** The type of priority classes. *)
 
   type graph
+  (** The type of transition systems. *)
 
   type label
+  (** The type of edge labels in BRSs. *)
 
   type limit
-
-  type react_error
+  (** Type of simulation limit {e i.e.}, number of execution steps. *)
 
   val typ : Rs.t
+  (** The kind of reactive system. *)
+
+  type react_error
+  (** The type of reaction validity errors. *)
 
   val string_of_react : react -> string
+  (** String representation of reaction rules. The representation of the
+      redex and the reactum are computed by {!val:Big.to_string}. *)
 
   val name : react -> string
+  (** The name of the reaction rule. *)
 
   val lhs : react -> Big.t
+  (** The left-hand side (redex) of a reaction rule. **)
 
   val rhs : react -> Big.t
+  (** The right-hand side (reactum) of a reaction rule. *)
 
-  val conds : react -> AppCond.t list
+  val label : react -> label
+  (** The right-hand side (reactum) of a reaction rule. *)
+
+  val conds : react -> ac list
+  (** List of application conditions *)
 
   val map : react -> Fun.t option
+  (** The instantiation map of a reaction rule. *)
+
+  val parse_react_unsafe :
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:ac list ->
+    label ->
+    Fun.t option ->
+    react
+  (** Create a new reaction rule. If [eta = None], the identity function is
+      used as instantiation map. No validity check is performed. *)
+
+  val parse_react :
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:ac list ->
+    label ->
+    Fun.t option ->
+    react option
+  (** Same as {!val:Brs.parse_react_unsafe} but returns [None] if it is
+      impossible to parse a valid reaction. *)
 
   val string_of_limit : limit -> string
+  (** String representation of a simulation limit. *)
 
   val is_valid_react : react -> bool
+  (** Return [true] if the inner (outer) interfaces of the redex (reactum)
+      are equal, the redex is solid and the instantiation map is total.
+      Return [false] otherwise. See {!val:Big.is_solid}. *)
 
   exception NOT_VALID of react_error
+  (** Raised when a reaction rule is not valid. *)
 
   val is_valid_react_exn : react -> bool
+  (** Same as {!is_valid_react} but an exception is raised when the rule is
+      not valid.
+
+      @raise NOT_VALID when the rule is not valid. *)
 
   val string_of_react_err : react_error -> string
+  (** String representation of reaction validity errors. *)
 
   val equal_react : react -> react -> bool
+  (** Equality for reaction rules. *)
 
   val is_valid_priority : p_class -> bool
+  (** Return [true] if a priority class is valid, [false] otherwise. *)
 
   val is_valid_priority_list : p_class list -> bool
+  (** Return [true] if a list of priority classes contains at least a non
+      reducible priority class, [false] otherwise.*)
 
   val cardinal : p_class list -> int
+  (** Return the total number of reaction rules in a list of priority
+      classes. *)
 
   val step : Big.t -> react list -> (Big.t * label * react list) list * int
+  (** Compute the set of reachable states in one step. Note that isomorphic
+      states are merged. The total number of occurrences is also returned. *)
 
   val random_step :
     Big.t -> react list -> (Big.t * label * react list) option * int
+  (** Compute a random state reachable in one step. The total number of
+      occurrences is also returned. *)
 
   val apply : Big.t -> react list -> Big.t option
+  (** Sequential application of a list of reaction rules. Non-enabled rules
+      are ignored. [None] is returned if no rewriting is performed {e i.e.},
+      when all the reaction rules are non-enabled. *)
 
   val fix : Big.t -> react list -> Big.t * int
+  (** Reduce a reducible class to the fixed point. The number of rewriting
+      steps is also returned. *)
 
   val rewrite : Big.t -> p_class list -> Big.t * int
+  (** Scan priority classes and reduce a state. Stop when no more rules can
+      be applied or when a non reducible priority class is enabled. Also
+      return the number of rewriting steps performed in the loop. *)
 
   exception MAX of graph * Stats.t
+  (** Raised when the size of the transition system reaches the maximum
+      number of states. *)
 
   val bfs :
     s0:Big.t ->
@@ -101,10 +177,22 @@ module type RS = sig
     max:int ->
     iter_f:(int -> Big.t -> unit) ->
     graph * Stats.t
+  (** [bfs ~s0 ~priorities ~max ~iter_f] computes the transition system of
+      the reactive system specified by initial state [s0] and priority
+      classes [priorities]. Arguments [~max] and [~iter_f] are the maximum
+      number of states of the transition system and a function to be applied
+      whenever a new state is discovered, respectively. Priority classes are
+      assumed to be sorted by priority, {e i.e.}, the first element in the
+      list is the class with the highest priority. List of predicates
+      [~predicates] is also checked for every state.
+
+      @raise Brs.MAX when the maximum number of states is reached. *)
 
   exception DEADLOCK of graph * Stats.t * limit
+  (** Raised when a simulation reaches a deadlock state. *)
 
   exception LIMIT of graph * Stats.t
+  (** Raised when a simulation reaches the simulation limit. *)
 
   val sim :
     s0:Big.t ->
@@ -114,188 +202,52 @@ module type RS = sig
     stop:limit ->
     iter_f:(int -> Big.t -> unit) ->
     graph * Stats.t
+  (** Simulate the raective system specified by initial state [s0] and
+      priority classes [priorities]. Arguments [init_size] and [stop] are the
+      initial size of the state set and the simulation limit, respectively.
+      Function [iter_f] is applied to every new state discovered during the
+      simulation.
+
+      @raise DEADLOCK when the simulation reaches a deadlock state.
+      @raise LIMIT when the simulation limit is exceeded. *)
 
   val to_prism : graph -> string
+  (** Compute the string representation in PRISM [tra] format of a transition
+      system. *)
 
   val to_state_rewards : graph -> string
+  (** Compute the string representation in PRISM [rews] format of state
+      rewards. *)
 
   val to_transition_rewards : graph -> string
+  (** Compute the string representation in PRISM [trew] format of transition
+      rewards. *)
 
   val to_dot : graph -> path:string -> name:string -> string
+  (** Compute the string representation in [dot] format of a transition
+      system. *)
 
   val to_lab : graph -> string
+  (** Compute the string representation in PRISM [lab] format of the
+      labelling function of a transition system. *)
 
   val iter_states : (int -> Big.t -> unit) -> graph -> unit
+  (** {2 Iterators} *)
 
   val fold_states : (int -> Big.t -> 'a -> 'a) -> graph -> 'a -> 'a
 
   val iter_edges : (int -> int -> label -> unit) -> graph -> unit
 
   val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
-
-  val parse_react_unsafe :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    react
-
-  val parse_react :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    react option
 end
 
+(** Functor building a concrete implementation of a reactive system. *)
 module Make
-    (R : RrType.T) (P : sig
-      type p_class = P_class of R.t list | P_rclass of R.t list
-
-      val is_valid : p_class -> bool
-
-      val is_valid_list : p_class list -> bool
-
-      val cardinal : p_class list -> int
-
-      val rewrite : Big.t -> p_class list -> Big.t * int
-
-      val scan :
-        Big.t * int ->
-        part_f:
-          ((Big.t * R.label * R.t list) list ->
-          (int * (Big.t * R.label * R.t list)) list
-          * (int * R.label * R.t list) list
-          * int) ->
-        const_pri:p_class list ->
-        p_class list ->
-        ( (int * (Big.t * R.label * R.t list)) list
-        * (int * R.label * R.t list) list
-        * int )
-        * int
-
-      val scan_sim :
-        Big.t ->
-        const_pri:p_class list ->
-        p_class list ->
-        (Big.t * R.label * R.t list) option * int
-    end)
+    (S : Solver.M)
+    (R : RrType.T)
+    (P : Priority.P with type r_t := R.t and type r_label := R.label)
     (L : L with type l = R.label)
     (G : G with type l = R.label)
-    (Ty : T) : sig
-  type t = G.t
+    (Ty : T) : RS with type label = R.label and type limit = L.t
 
-  type p_class = P.p_class = P_class of R.t list | P_rclass of R.t list
-
-  type limit = L.t
-
-  type label = R.label
-
-  type react_error = R.react_error
-
-  exception MAX of t * Stats.t
-
-  exception LIMIT of t * Stats.t
-
-  exception DEADLOCK of t * Stats.t * limit
-
-  exception NOT_VALID of react_error
-
-  val typ : Rs.t
-
-  val string_of_react : R.t -> string
-
-  val parse_react_unsafe :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    R.t
-
-  val parse_react :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    R.t option
-
-  val name : R.t -> string
-
-  val lhs : R.t -> Big.t
-
-  val rhs : R.t -> Big.t
-
-  val conds : R.t -> AppCond.t list
-
-  val map : R.t -> Fun.t option
-
-  val string_of_limit : limit -> string
-
-  val is_valid_react : R.t -> bool
-
-  val is_valid_react_exn : R.t -> bool
-
-  val equal_react : R.t -> R.t -> bool
-
-  val string_of_react_err : react_error -> string
-
-  val fix : Big.t -> R.t list -> Big.t * int
-
-  val step : Big.t -> R.t list -> (Big.t * R.label * R.t list) list * int
-
-  val random_step :
-    Big.t -> R.t list -> (Big.t * R.label * R.t list) option * int
-
-  val apply : Big.t -> R.t list -> Big.t option
-
-  val is_valid_priority : p_class -> bool
-
-  val is_valid_priority_list : p_class list -> bool
-
-  val cardinal : p_class list -> int
-
-  val rewrite : Big.t -> p_class list -> Big.t * int
-
-  val bfs :
-    s0:Big.t ->
-    priorities:P.p_class list ->
-    predicates:(Base.Predicate.t * Big.t) list ->
-    max:int ->
-    iter_f:(int -> Big.t -> unit) ->
-    t * Stats.t
-
-  val sim :
-    s0:Big.t ->
-    priorities:P.p_class list ->
-    predicates:(Base.Predicate.t * Big.t) list ->
-    init_size:int ->
-    stop:limit ->
-    iter_f:(int -> Big.t -> unit) ->
-    t * Stats.t
-
-  val to_prism : t -> string
-
-  val to_state_rewards : t -> string
-
-  val to_transition_rewards : t -> string
-
-  val to_dot : t -> path:string -> name:string -> string
-
-  val to_lab : t -> string
-
-  val iter_states : (int -> Big.t -> unit) -> t -> unit
-
-  val fold_states : (int -> Big.t -> 'a -> 'a) -> t -> 'a -> 'a
-
-  val iter_edges : (int -> int -> label -> unit) -> t -> unit
-
-  val fold_edges : (int -> int -> label -> 'a -> 'a) -> t -> 'a -> 'a
-end
+(**/**)

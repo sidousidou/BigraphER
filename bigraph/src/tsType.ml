@@ -308,6 +308,8 @@ end
 module type RS = sig
   type react
 
+  type ac
+
   type p_class = P_class of react list | P_rclass of react list
 
   type graph
@@ -316,9 +318,9 @@ module type RS = sig
 
   type limit
 
-  type react_error
-
   val typ : Rs.t
+
+  type react_error
 
   val string_of_react : react -> string
 
@@ -328,9 +330,29 @@ module type RS = sig
 
   val rhs : react -> Big.t
 
-  val conds : react -> AppCond.t list
+  val label : react -> label
+
+  val conds : react -> ac list
 
   val map : react -> Fun.t option
+
+  val parse_react_unsafe :
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:ac list ->
+    label ->
+    Fun.t option ->
+    react
+
+  val parse_react :
+    name:string ->
+    lhs:Big.t ->
+    rhs:Big.t ->
+    ?conds:ac list ->
+    label ->
+    Fun.t option ->
+    react option
 
   val string_of_limit : limit -> string
 
@@ -401,76 +423,35 @@ module type RS = sig
   val iter_edges : (int -> int -> label -> unit) -> graph -> unit
 
   val fold_edges : (int -> int -> label -> 'a -> 'a) -> graph -> 'a -> 'a
-
-  val parse_react_unsafe :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    react
-
-  val parse_react :
-    name:string ->
-    lhs:Big.t ->
-    rhs:Big.t ->
-    ?conds:AppCond.t list ->
-    label ->
-    Fun.t option ->
-    react option
 end
 
 module Make
-    (R : RrType.T) (P : sig
-      type p_class = P_class of R.t list | P_rclass of R.t list
-
-      val is_valid : p_class -> bool
-
-      val is_valid_list : p_class list -> bool
-
-      val rewrite : Big.t -> p_class list -> Big.t * int
-
-      val cardinal : p_class list -> int
-
-      val scan :
-        Big.t * int ->
-        part_f:
-          ((Big.t * R.label * R.t list) list ->
-          (int * (Big.t * R.label * R.t list)) list
-          * (int * R.label * R.t list) list
-          * int) ->
-        const_pri:p_class list ->
-        p_class list ->
-        ( (int * (Big.t * R.label * R.t list)) list
-        * (int * R.label * R.t list) list
-        * int )
-        * int
-
-      val scan_sim :
-        Big.t ->
-        const_pri:p_class list ->
-        p_class list ->
-        (Big.t * R.label * R.t list) option * int
-    end)
+    (S : Solver.M)
+    (R : RrType.T)
+    (P : Priority.P with type r_t := R.t and type r_label := R.label)
     (L : L with type l = R.label)
     (G : G with type l = R.label)
     (Ty : T) =
 struct
-  type t = G.t
+  type react = R.t
 
-  include P
-  include Ty
+  type ac = R.ac
 
-  type limit = L.t
+  type p_class = P.p_class = P_class of R.t list | P_rclass of R.t list
+
+  type graph = G.t
 
   type label = R.label
 
-  exception MAX of t * Stats.t
+  type limit = L.t
 
-  exception LIMIT of t * Stats.t
+  include Ty
 
-  exception DEADLOCK of t * Stats.t * limit
+  exception MAX of graph * Stats.t
+
+  exception LIMIT of graph * Stats.t
+
+  exception DEADLOCK of graph * Stats.t * limit
 
   (* Override some functions *)
   type react_error = R.react_error
@@ -479,10 +460,10 @@ struct
 
   let string_of_react = R.to_string
 
-  let parse_react_unsafe = R.parse
+  let parse_react_unsafe = R.make
 
   let parse_react ~name ~lhs ~rhs ?conds:(c = []) l f =
-    let r = R.parse ~name ~lhs ~rhs ~conds:c l f in
+    let r = R.make ~name ~lhs ~rhs ~conds:c l f in
     if R.is_valid r then Some r else None
 
   let string_of_limit = L.to_string
@@ -502,6 +483,8 @@ struct
 
   let rhs = R.rhs
 
+  let label = R.l
+
   let conds = R.conds
 
   let map = R.map
@@ -514,14 +497,18 @@ struct
 
   let random_step = R.random_step
 
-  let is_valid_priority = is_valid
+  let is_valid_priority = P.is_valid
 
-  let is_valid_priority_list = is_valid_list
+  let is_valid_priority_list = P.is_valid_list
+
+  let cardinal = P.cardinal
+
+  let rewrite = P.rewrite
 
   let is_new b v =
     let k_buket = Base.H_int.find_all v (Big.key b) in
     try
-      let old, _ = List.find (fun (_, b') -> Big.equal_opt b b') k_buket in
+      let old, _ = List.find (fun (_, b') -> S.equal_key b b') k_buket in
       Some old
       (* Is_new? FALSE *)
     with Not_found -> None
@@ -544,7 +531,7 @@ struct
   (* Add labels for predicates *)
   let check (i, s) (_, h) =
     List.iter (fun (id, p) ->
-        if Big.occurs ~target:s ~pattern:p then Base.H_predicate.add h id i)
+        if S.occurs ~target:s ~pattern:p then Base.H_predicate.add h id i)
 
   (* Number of states in a graph *)
   let size_s g = Base.H_int.length (G.states g)

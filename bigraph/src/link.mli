@@ -328,61 +328,61 @@ val decomp :
 val prime_components : Lg.t -> Iso.t list -> Lg.t list
 (** Compute the prime components of a link graph. See {!val:Place.decomp}. *)
 
-(** {2 Matching constraints} *)
-
-exception NOT_TOTAL
-
-val match_edges :
-  target:Lg.t ->
-  pattern:Lg.t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  Cnf.clause list * IntSet.t * Cnf.clause list
-(** Compute constraints to match closed edges in the pattern to closed edges
-    in the target. Controls are checked to exclude incompatible pairs. The
-    output is a list of clauses a set of blocked columns and a set of
-    blocking pairs.
-
-    @raise NOT_TOTAL when no matches are found. *)
-
-val match_ports :
-  target:Lg.t ->
-  pattern:Lg.t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  Cnf.clause list ->
-  Cnf.clause list list
-(** Compute constraints to match isomorphic port sets in closed edges. *)
-
-val match_peers :
-  target:Lg.t ->
-  pattern:Lg.t ->
-  n_t:Nodes.t ->
-  n_p:Nodes.t ->
-  int
-  * int
-  * Cnf.clause list list
-  * (int * int) list
-  * Cnf.clause list
-  * Iso.t
-  * Iso.t
-(** Compute constraints to match peers in the pattern with peers in the
-    target. Auxiliary variables are introduced to handle matches with open
-    edges.
-
-    @raise NOT_TOTAL when no matches are found. *)
-
-val match_list_eq :
-  Lg.t -> Lg.t -> Nodes.t -> Nodes.t -> Cnf.clause list * Cnf.clause list
-(** Similar to {!val:Link.match_edges} but constraints are for equality. *)
-
-val match_ports_eq :
-  Lg.t ->
-  Lg.t ->
-  Nodes.t ->
-  Nodes.t ->
-  Cnf.clause list ->
-  Cnf.clause list list
-(** Similar to {!val:Link.match_ports} but constraints are for equality. *)
+(* (\** {2 Matching constraints} *\)
+ * 
+ * exception NOT_TOTAL
+ * 
+ * val match_edges :
+ *   target:Lg.t ->
+ *   pattern:Lg.t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   Cnf.clause list * IntSet.t * Cnf.clause list
+ * (\** Compute constraints to match closed edges in the pattern to closed edges
+ *     in the target. Controls are checked to exclude incompatible pairs. The
+ *     output is a list of clauses a set of blocked columns and a set of
+ *     blocking pairs.
+ * 
+ *     @raise NOT_TOTAL when no matches are found. *\)
+ * 
+ * val match_ports :
+ *   target:Lg.t ->
+ *   pattern:Lg.t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   Cnf.clause list ->
+ *   Cnf.clause list list
+ * (\** Compute constraints to match isomorphic port sets in closed edges. *\)
+ * 
+ * val match_peers :
+ *   target:Lg.t ->
+ *   pattern:Lg.t ->
+ *   n_t:Nodes.t ->
+ *   n_p:Nodes.t ->
+ *   int
+ *   * int
+ *   * Cnf.clause list list
+ *   * (int * int) list
+ *   * Cnf.clause list
+ *   * Iso.t
+ *   * Iso.t
+ * (\** Compute constraints to match peers in the pattern with peers in the
+ *     target. Auxiliary variables are introduced to handle matches with open
+ *     edges.
+ * 
+ *     @raise NOT_TOTAL when no matches are found. *\)
+ * 
+ * val match_list_eq :
+ *   Lg.t -> Lg.t -> Nodes.t -> Nodes.t -> Cnf.clause list * Cnf.clause list
+ * (\** Similar to {!val:Link.match_edges} but constraints are for equality. *\)
+ * 
+ * val match_ports_eq :
+ *   Lg.t ->
+ *   Lg.t ->
+ *   Nodes.t ->
+ *   Nodes.t ->
+ *   Cnf.clause list ->
+ *   Cnf.clause list list
+ * (\** Similar to {!val:Link.match_ports} but constraints are for equality. *\) *)
 
 (**/**)

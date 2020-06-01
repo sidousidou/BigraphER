@@ -3,6 +3,7 @@ open Printf
 open Bigraph
 module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
+module S = Solver.Make_SAT (Solver.MS)
 
 type test = {
   target : Big.t;
@@ -33,9 +34,10 @@ let check_res res exp_res =
       (fun ((i0, j0), (i1, j1)) -> Iso.equal i0 i1 && Iso.equal j0 j1)
       (List.combine (sort_res res) (sort_res exp_res))
 
-let test_decomposition t p (i_n, i_e, f_e) =
+let test_decomposition t p { S.nodes = i_n; edges = i_e; hyper_edges = f_e }
+    =
   let c, d, id_big = Big.decomp ~target:t ~pattern:p ~i_n ~i_e f_e in
-  Big.(equal (comp c (comp (tens p id_big) d)) t)
+  Big.(S.equal (comp c (comp (tens p id_big) d)) t)
 
 let attr_match =
   [ ("type", "ASSERT_MATCH"); ("message", "No occurrence of pattern") ]
@@ -65,7 +67,7 @@ let do_tests =
         [
           "Decompositions:\n"
           ^ ( List.mapi
-                (fun i (i_n, i_e, f_e) ->
+                (fun i { S.nodes = i_n; edges = i_e; hyper_edges = f_e } ->
                   let c, d, id_big =
                     Big.decomp ~target:t.target ~pattern:t.pattern ~i_n ~i_e
                       f_e
@@ -94,8 +96,8 @@ let do_tests =
         sprintf "Malformed %s decompositions of %s." t.p_name t.t_name
       in
       try
-        let occs = Big.occurrences ~target:t.target ~pattern:t.pattern in
-        t.res <- List.map (fun (a, b, _) -> (a, b)) occs;
+        let occs = S.occurrences ~target:t.target ~pattern:t.pattern in
+        t.res <- List.map (fun o -> S.(o.nodes, o.edges)) occs;
         if check_res t.res t.exp_res then
           if
             List.for_all
@@ -105,7 +107,7 @@ let do_tests =
           else failure_decomp t decomp_fail_msg occs
         else failure_occ t default_fail_msg
       with
-      | Big.NODE_FREE -> (
+      | S.NODE_FREE -> (
           (* tests 23 and 16 are special cases *)
           match (t.t_name, t.p_name) with
           | "T13", "P23" | "T10", "P16" -> success t
@@ -161,7 +163,7 @@ let do_equality_tests l ts =
     (fun (n, b) ->
       let s = n ^ " = " ^ n in
       try
-        if Big.equal b b then success s "Bigraphs are equal"
+        if S.equal b b then success s "Bigraphs are equal"
         else failure s "Bigraphs are not equal" (sprintf "%s != %s" n n)
       with _ ->
         ( s,
@@ -173,7 +175,7 @@ let do_equality_tests l ts =
       (fun t ->
         let s = t.t_name ^ " = " ^ t.p_name in
         try
-          if Big.equal t.target t.pattern then
+          if S.equal t.target t.pattern then
             match (t.t_name, t.p_name) with
             | "T16", "T16" -> success s "Bigraphs are equal"
             | _ -> failure s "Bigraphs are equal" s
@@ -209,7 +211,7 @@ let do_to_string_tests =
       let s = n ^ " = Big.of_string(Big.to_string(" ^ n ^ "))"
       and s_b = Big.to_string b in
       try
-        if Big.equal b (Big.of_string s_b) then
+        if S.equal b (Big.of_string s_b) then
           success s "Bigraph parsed correctly"
         else
           failure s "Parse error"

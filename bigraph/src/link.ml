@@ -87,21 +87,21 @@ module Ports = struct
   let of_nodes ns =
     Nodes.fold (fun n c acc -> M_int.add n (Ctrl.arity c) acc) ns empty
 
-  let comp_multi (c, n) (c', n') =
-    match Ctrl.compare c c' with 0 -> int_compare n n' | x -> x
+  (* let comp_multi (c, n) (c', n') =
+   *   match Ctrl.compare c c' with 0 -> int_compare n n' | x -> x *)
 
-  let ports_type p n =
-    M_int.bindings p
-    |> List.map (fun (i, mul) ->
-           match Nodes.get_ctrl i n with
-           | None -> failwith "Ports.ports_type" (*BISECT-IGNORE*)
-           | Some c -> (c, mul))
-    |> List.fast_sort comp_multi
+  (* let ports_type p n =
+   *   M_int.bindings p
+   *   |> List.map (fun (i, mul) ->
+   *          match Nodes.get_ctrl i n with
+   *          | None -> failwith "Ports.ports_type" (\*BISECT-IGNORE*\)
+   *          | Some c -> (c, mul))
+   *   |> List.fast_sort comp_multi *)
 
-  let equal_types (p, n) (p', n') =
-    Base.list_equal
-      (fun (c, n) (c', n') -> Ctrl.equal c c' && n = n')
-      (ports_type p n) (ports_type p' n')
+  (* let equal_types (p, n) (p', n') =
+   *   Base.list_equal
+   *     (fun (c, n) (c', n') -> Ctrl.equal c c' && n = n')
+   *     (ports_type p n) (ports_type p' n') *)
 
   let to_IntSet ps = fold (fun i _ res -> IntSet.add i res) ps IntSet.empty
 
@@ -115,23 +115,23 @@ module Ports = struct
 
   let arity ps i = M_int.find i ps
 
-  let compat_list (a : t) (b : t) n_a n_b =
-    let i_a = to_IntSet a and i_b = to_IntSet b in
-    IntSet.fold
-      (fun i acc ->
-        let ar_i = safe @@ arity a i
-        and c_i = safe @@ Nodes.get_ctrl i n_a in
-        let pairs =
-          IntSet.filter
-            (fun j ->
-              ar_i = safe @@ arity b j
-              && Ctrl.equal c_i (safe @@ Nodes.get_ctrl j n_b))
-            i_b
-          |> IntSet.elements
-          |> List.map (fun j -> Cnf.M_lit (i, j))
-        in
-        pairs :: acc)
-      i_a []
+  (* let compat_list (a : t) (b : t) n_a n_b =
+   *   let i_a = to_IntSet a and i_b = to_IntSet b in
+   *   IntSet.fold
+   *     (fun i acc ->
+   *       let ar_i = safe @@ arity a i
+   *       and c_i = safe @@ Nodes.get_ctrl i n_a in
+   *       let pairs =
+   *         IntSet.filter
+   *           (fun j ->
+   *             ar_i = safe @@ arity b j
+   *             && Ctrl.equal c_i (safe @@ Nodes.get_ctrl j n_b))
+   *           i_b
+   *         |> IntSet.elements
+   *         |> List.map (fun j -> Cnf.M_lit (i, j))
+   *       in
+   *       pairs :: acc)
+   *     i_a [] *)
 
   let offset ps n = fold (fun i ar acc -> M_int.add (i + n) ar acc) ps empty
 
@@ -155,21 +155,21 @@ module Ports = struct
     in
     fold (fun v ar acc -> rep ar f v acc)
 
-  let multi_ctrl ps ns =
-    M_int.bindings ps
-    |> List.map (fun (i, ar) -> (safe @@ Nodes.get_ctrl i ns, ar))
-    |> List.fast_sort comp_multi
-
-  let inter a b =
-    List.fold_left
-      (fun (acc, b') (c, n) ->
-        match
-          List.partition (fun (c', n') -> Ctrl.equal c c' && n' >= n) b'
-        with
-        | [], _ -> (acc, b')
-        | _ :: l, l' -> ((c, n) :: acc, l @ l'))
-      ([], b) a
-    |> fst |> List.fast_sort comp_multi
+  (* let multi_ctrl ps ns =
+   *   M_int.bindings ps
+   *   |> List.map (fun (i, ar) -> (safe @@ Nodes.get_ctrl i ns, ar))
+   *   |> List.fast_sort comp_multi
+   * 
+   * let inter a b =
+   *   List.fold_left
+   *     (fun (acc, b') (c, n) ->
+   *       match
+   *         List.partition (fun (c', n') -> Ctrl.equal c c' && n' >= n) b'
+   *       with
+   *       | [], _ -> (acc, b')
+   *       | _ :: l, l' -> ((c, n) :: acc, l @ l'))
+   *     ([], b) a
+   *   |> fst |> List.fast_sort comp_multi *)
 end
 
 let string_of_name (Name s) = s
@@ -777,256 +777,256 @@ let closed_edges_iso l =
   (* Iso from closed link graph to full link graph *)
   filter_iso is_closed l
 
-(* Two edges are compatible if they have the same number of ports with equal
-   control. *)
-let compat_edges e_p e_t n_t n_p = Ports.equal_types (e_p.p, n_p) (e_t.p, n_t)
-
-exception NOT_TOTAL
-
-(* Closed edges in p are matched to closed edges in t. Controls are checked
-   to exclude incompatible pairs. Return blocking pairs and blocking columns. *)
-let match_edges ~target ~pattern ~n_t ~n_p =
-  let clauses, _, acc_c, acc_b =
-    Lg.fold
-      (fun e_p (acc, i, acc_c, acc_b) ->
-        let clause, js, b, _ =
-          Lg.fold
-            (fun e_t (acc, js, b, j) ->
-              if compat_edges e_p e_t n_t n_p then
-                (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j :: js, b, j + 1)
-              else (acc, js, (i, j) :: b, j + 1))
-            target ([], [], [], 0)
-        in
-        match js with
-        | [] -> raise_notrace NOT_TOTAL (* No compatible edges found *)
-        | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b))
-      pattern ([], 0, [], [])
-  in
-  ( clauses,
-    IntSet.diff (IntSet.of_int (Lg.cardinal target)) (IntSet.of_list acc_c),
-    Cnf.blocking_pairs acc_b )
-
-let _match_ports (target : Ports.t array) (pattern : Ports.t array) n_t n_p
-    clauses : Cnf.clause list list =
-  (* printf "-------------------- _match_ports -------------------\n"; *)
-  List.fold_left
-    (fun acc e_match ->
-      let e_i, e_j = Cnf.to_ij e_match in
-      let formulas = Ports.compat_list pattern.(e_i) target.(e_j) n_p n_t in
-      let res = Cnf.impl (Cnf.M_lit (e_i, e_j)) formulas in
-      (* printf "%s\n" (String.concat "\n" (List.map (fun f -> *)
-      (* sprintf "(%d, %d) -> (%s)" e_i e_j *)
-      (* (String.concat "or" (List.map (fun l -> *)
-      (* match l with *)
-      (* | Cnf.M_lit (i, j) -> sprintf "(%d, %d)" i j *)
-      (* | Cnf.V_lit _ -> assert false *)
-      (* ) f) *)
-      (* ) *)
-      (* ) formulas)); *)
-      res :: acc)
-    [] (List.flatten clauses)
-
-(* Nodes of matched edges are isomorphic. Indexes in clauses are for closed
-   edges. *)
-let match_ports ~target ~pattern ~n_t ~n_p clauses : Cnf.clause list list =
-  let a_t = Lg.elements target |> List.map (fun e -> e.p) |> Array.of_list
-  and a_p =
-    Lg.elements pattern |> List.map (fun e -> e.p) |> Array.of_list
-  in
-  _match_ports a_t a_p n_t n_p clauses
-
-(* Is p sub-hyperedge of t? *)
-let sub_edge p t n_t n_p =
-  let p_l = Ports.multi_ctrl p n_p and t_l = Ports.multi_ctrl t n_t in
-  Ports.inter p_l t_l = p_l
-
-(* Return a list of clauses on row i of matrix t. Cnf.impl will process each
-   element *)
-let compat_clauses e_p i t h_t n_t n_p =
-  let p = Ports.to_IntSet e_p.p in
-  IntSet.fold
-    (fun j acc ->
-      let e_t = safe @@ H_int.find h_t j in
-      let clauses : Cnf.lit list list =
-        IntSet.fold
-          (fun v acc ->
-            let c_v = safe @@ Nodes.get_ctrl v n_p
-            and arity_v = safe @@ Ports.arity e_p.p v
-            and p_t = Ports.to_IntSet e_t.p in
-            (* find nodes in e_t that are compatible with v *)
-            let compat_t =
-              IntSet.filter
-                (fun u ->
-                  Ctrl.equal c_v (safe @@ Nodes.get_ctrl u n_t)
-                  && arity_v <= safe @@ Ports.arity e_t.p u)
-                p_t
-            in
-            let nodes_assign =
-              IntSet.fold (fun j acc -> Cnf.M_lit (v, j) :: acc) compat_t []
-            in
-            nodes_assign :: acc)
-          p []
-      in
-      (Cnf.M_lit (i, j), clauses) :: acc)
-    t []
-
-let port_subsets p_i_list j p_a t_edge n_t n_p : Cnf.clause list =
-  let subsets xs =
-    List.fold_right
-      (fun x rest -> rest @ List.map (fun ys -> x :: ys) rest)
-      xs [ [] ]
-  in
-  let blocks =
-    List.filter
-      (fun l ->
-        let p_set =
-          List.fold_left (fun acc i -> Ports.sum acc p_a.(i).p) Ports.empty l
-        in
-        not (sub_edge p_set t_edge.p n_t n_p))
-      (subsets p_i_list)
-  in
-  List.map
-    (fun l -> List.map (fun i -> Cnf.N_var (Cnf.M_lit (i, j))) l)
-    blocks
-
-(* Generate constraints to block sets of edges in P that cannot be matched to
-   a link in T. Example: {A, B} -> [{A}, {B}, {A, B}] blocks [{A}, {A, B}],
-   [{B}, {A, B}] and [{A}, {B}, {A, B}] *)
-
-(* 3 -> 0,2,4 *)
-(* !(0,3) | ! (4,3) | !(2,3) *)
-(* !(0,3) | ! (4,3) *)
-(* !(2,3) | ! (4,3) *)
-
-let compat_sub p t f_e n_t n_p =
-  let p_a = Array.of_list (Lg.elements p)
-  and t_a = Array.of_list (Lg.elements t) in
-  H_int.fold
-    (fun j _ (acc, marked) ->
-      if List.mem j marked then (acc, marked)
-      else
-        let p_i_list = H_int.find_all f_e j in
-        let p_set =
-          List.fold_left
-            (fun acc i -> Ports.sum acc p_a.(i).p)
-            Ports.empty p_i_list
-        in
-        if sub_edge p_set t_a.(j).p n_t n_p then (acc, marked)
-        else
-          let clauses = port_subsets p_i_list j p_a t_a.(j) n_t n_p in
-          (clauses @ acc, j :: marked))
-    f_e ([], [])
-  |> fst
-
-(* Peers in the pattern are peers in the target. Auxiliary variables are
-   introduced to model open edges matchings. They are stored in matrix t *)
-let match_peers ~target ~pattern ~n_t ~n_p =
-  let open_p, iso_p =
-    filter_iso
-      (fun e -> (not (Ports.is_empty e.p)) && not (is_closed e))
-      pattern
-  and non_empty_t, iso_open =
-    filter_iso (fun e -> not (Ports.is_empty e.p)) target
-  in
-  let h = H_int.create (Lg.cardinal non_empty_t) in
-  ignore
-    (Lg.fold
-       (fun e i ->
-         H_int.add h i e;
-         i + 1)
-       non_empty_t 0);
-  let r = Lg.cardinal open_p and c = Lg.cardinal non_empty_t in
-  let f_e = H_int.create (r * c) in
-  (* T -> P *)
-  let c_s = IntSet.of_int c in
-  let f, block, _ =
-    Lg.fold
-      (fun e_p (acc, block, i) ->
-        (* Find compatible edges in the target *)
-        let _, compat_t =
-          Lg.fold
-            (fun e_t (j, acc) ->
-              if sub_edge e_p.p e_t.p n_t n_p then (
-                H_int.add f_e j i;
-                (j + 1, IntSet.add j acc) )
-              else (j + 1, acc))
-            non_empty_t (0, IntSet.empty)
-        in
-        (* No compatible edges found *)
-        if IntSet.is_empty compat_t then raise_notrace NOT_TOTAL
-        else
-          (* Generate possible node matches for every edge assignment. *)
-          let clauses =
-            List.map
-              (fun (l, r) -> Cnf.impl l r)
-              (compat_clauses e_p i compat_t h n_t n_p)
-          (* Blockig pairs *)
-          and b =
-            IntSet.fold
-              (fun j acc -> (i, j) :: acc)
-              (IntSet.diff c_s compat_t)
-              []
-          in
-          (clauses @ acc, b @ block, i + 1))
-      open_p ([], [], 0)
-  in
-  let block_f = compat_sub open_p non_empty_t f_e n_t n_p in
-  (r, c, f, block, block_f, iso_p, iso_open)
-
-let edg_iso a b n_a n_b =
-  Face.equal a.i b.i && Face.equal a.o b.o
-  && Ports.equal_types (a.p, n_a) (b.p, n_b)
-
-let key e = (Face.cardinal e.i, Ports.cardinal e.p, Face.cardinal e.o)
-
-module H_3 = Hashtbl.Make (struct
-  type t = int * int * int
-
-  let equal (x : int * int * int) y = x = y
-
-  let hash = Hashtbl.hash
-end)
-
-(* Partition edges according to cardinalities of faces and port sets. Return
-   a hastbl : key -> (edge, index) *)
-let partition_edg l =
-  let h = H_3.create (Lg.cardinal l) in
-  ignore
-    (Lg.fold
-       (fun e i ->
-         let k = key e in
-         H_3.add h k (e, i);
-         i + 1)
-       l 0);
-  h
-
-(* P -> T Example constraint: [[(1, 2) or (1, 3) or (1, 4)]; [(2, 4)]; [(3,
-   4) or (3, 2)]] *)
-let match_list_eq p t n_p n_t : Cnf.clause list * Cnf.clause list =
-  let h = partition_edg t in
-  let clauses, b, _ =
-    Lg.fold
-      (fun e_p (acc, block, i) ->
-        let t_edges = H_3.find_all h (key e_p) in
-        let clause =
-          List.fold_left
-            (fun acc (e_t, j) ->
-              if edg_iso e_t e_p n_t n_p then
-                Cnf.P_var (Cnf.M_lit (i, j)) :: acc
-              else acc)
-            [] t_edges
-        in
-        match clause with
-        | [] -> (acc, i :: block, i + 1)
-        | _ -> (clause :: acc, block, i + 1))
-      p ([], [], 0)
-  in
-  (clauses, Cnf.block_rows b (Lg.cardinal t))
-
-let match_ports_eq p t n_p n_t clauses : Cnf.clause list list =
-  let array_t = Array.of_list (List.map (fun e -> e.p) (Lg.elements t))
-  and array_p = Array.of_list (List.map (fun e -> e.p) (Lg.elements p)) in
-  _match_ports array_t array_p n_t n_p clauses
+(* (\* Two edges are compatible if they have the same number of ports with equal
+ *    control. *\)
+ * let compat_edges e_p e_t n_t n_p = Ports.equal_types (e_p.p, n_p) (e_t.p, n_t)
+ * 
+ * exception NOT_TOTAL
+ * 
+ * (\* Closed edges in p are matched to closed edges in t. Controls are checked
+ *    to exclude incompatible pairs. Return blocking pairs and blocking columns. *\)
+ * let match_edges ~target ~pattern ~n_t ~n_p =
+ *   let clauses, _, acc_c, acc_b =
+ *     Lg.fold
+ *       (fun e_p (acc, i, acc_c, acc_b) ->
+ *         let clause, js, b, _ =
+ *           Lg.fold
+ *             (fun e_t (acc, js, b, j) ->
+ *               if compat_edges e_p e_t n_t n_p then
+ *                 (Cnf.P_var (Cnf.M_lit (i, j)) :: acc, j :: js, b, j + 1)
+ *               else (acc, js, (i, j) :: b, j + 1))
+ *             target ([], [], [], 0)
+ *         in
+ *         match js with
+ *         | [] -> raise_notrace NOT_TOTAL (\* No compatible edges found *\)
+ *         | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b))
+ *       pattern ([], 0, [], [])
+ *   in
+ *   ( clauses,
+ *     IntSet.diff (IntSet.of_int (Lg.cardinal target)) (IntSet.of_list acc_c),
+ *     Cnf.blocking_pairs acc_b )
+ * 
+ * let _match_ports (target : Ports.t array) (pattern : Ports.t array) n_t n_p
+ *     clauses : Cnf.clause list list =
+ *   (\* printf "-------------------- _match_ports -------------------\n"; *\)
+ *   List.fold_left
+ *     (fun acc e_match ->
+ *       let e_i, e_j = Cnf.to_ij e_match in
+ *       let formulas = Ports.compat_list pattern.(e_i) target.(e_j) n_p n_t in
+ *       let res = Cnf.impl (Cnf.M_lit (e_i, e_j)) formulas in
+ *       (\* printf "%s\n" (String.concat "\n" (List.map (fun f -> *\)
+ *       (\* sprintf "(%d, %d) -> (%s)" e_i e_j *\)
+ *       (\* (String.concat "or" (List.map (fun l -> *\)
+ *       (\* match l with *\)
+ *       (\* | Cnf.M_lit (i, j) -> sprintf "(%d, %d)" i j *\)
+ *       (\* | Cnf.V_lit _ -> assert false *\)
+ *       (\* ) f) *\)
+ *       (\* ) *\)
+ *       (\* ) formulas)); *\)
+ *       res :: acc)
+ *     [] (List.flatten clauses)
+ * 
+ * (\* Nodes of matched edges are isomorphic. Indexes in clauses are for closed
+ *    edges. *\)
+ * let match_ports ~target ~pattern ~n_t ~n_p clauses : Cnf.clause list list =
+ *   let a_t = Lg.elements target |> List.map (fun e -> e.p) |> Array.of_list
+ *   and a_p =
+ *     Lg.elements pattern |> List.map (fun e -> e.p) |> Array.of_list
+ *   in
+ *   _match_ports a_t a_p n_t n_p clauses
+ * 
+ * (\* Is p sub-hyperedge of t? *\)
+ * let sub_edge p t n_t n_p =
+ *   let p_l = Ports.multi_ctrl p n_p and t_l = Ports.multi_ctrl t n_t in
+ *   Ports.inter p_l t_l = p_l
+ * 
+ * (\* Return a list of clauses on row i of matrix t. Cnf.impl will process each
+ *    element *\)
+ * let compat_clauses e_p i t h_t n_t n_p =
+ *   let p = Ports.to_IntSet e_p.p in
+ *   IntSet.fold
+ *     (fun j acc ->
+ *       let e_t = safe @@ H_int.find h_t j in
+ *       let clauses : Cnf.lit list list =
+ *         IntSet.fold
+ *           (fun v acc ->
+ *             let c_v = safe @@ Nodes.get_ctrl v n_p
+ *             and arity_v = safe @@ Ports.arity e_p.p v
+ *             and p_t = Ports.to_IntSet e_t.p in
+ *             (\* find nodes in e_t that are compatible with v *\)
+ *             let compat_t =
+ *               IntSet.filter
+ *                 (fun u ->
+ *                   Ctrl.equal c_v (safe @@ Nodes.get_ctrl u n_t)
+ *                   && arity_v <= safe @@ Ports.arity e_t.p u)
+ *                 p_t
+ *             in
+ *             let nodes_assign =
+ *               IntSet.fold (fun j acc -> Cnf.M_lit (v, j) :: acc) compat_t []
+ *             in
+ *             nodes_assign :: acc)
+ *           p []
+ *       in
+ *       (Cnf.M_lit (i, j), clauses) :: acc)
+ *     t []
+ * 
+ * let port_subsets p_i_list j p_a t_edge n_t n_p : Cnf.clause list =
+ *   let subsets xs =
+ *     List.fold_right
+ *       (fun x rest -> rest @ List.map (fun ys -> x :: ys) rest)
+ *       xs [ [] ]
+ *   in
+ *   let blocks =
+ *     List.filter
+ *       (fun l ->
+ *         let p_set =
+ *           List.fold_left (fun acc i -> Ports.sum acc p_a.(i).p) Ports.empty l
+ *         in
+ *         not (sub_edge p_set t_edge.p n_t n_p))
+ *       (subsets p_i_list)
+ *   in
+ *   List.map
+ *     (fun l -> List.map (fun i -> Cnf.N_var (Cnf.M_lit (i, j))) l)
+ *     blocks
+ * 
+ * (\* Generate constraints to block sets of edges in P that cannot be matched to
+ *    a link in T. Example: {A, B} -> [{A}, {B}, {A, B}] blocks [{A}, {A, B}],
+ *    [{B}, {A, B}] and [{A}, {B}, {A, B}] *\)
+ * 
+ * (\* 3 -> 0,2,4 *\)
+ * (\* !(0,3) | ! (4,3) | !(2,3) *\)
+ * (\* !(0,3) | ! (4,3) *\)
+ * (\* !(2,3) | ! (4,3) *\)
+ * 
+ * let compat_sub p t f_e n_t n_p =
+ *   let p_a = Array.of_list (Lg.elements p)
+ *   and t_a = Array.of_list (Lg.elements t) in
+ *   H_int.fold
+ *     (fun j _ (acc, marked) ->
+ *       if List.mem j marked then (acc, marked)
+ *       else
+ *         let p_i_list = H_int.find_all f_e j in
+ *         let p_set =
+ *           List.fold_left
+ *             (fun acc i -> Ports.sum acc p_a.(i).p)
+ *             Ports.empty p_i_list
+ *         in
+ *         if sub_edge p_set t_a.(j).p n_t n_p then (acc, marked)
+ *         else
+ *           let clauses = port_subsets p_i_list j p_a t_a.(j) n_t n_p in
+ *           (clauses @ acc, j :: marked))
+ *     f_e ([], [])
+ *   |> fst
+ * 
+ * (\* Peers in the pattern are peers in the target. Auxiliary variables are
+ *    introduced to model open edges matchings. They are stored in matrix t *\)
+ * let match_peers ~target ~pattern ~n_t ~n_p =
+ *   let open_p, iso_p =
+ *     filter_iso
+ *       (fun e -> (not (Ports.is_empty e.p)) && not (is_closed e))
+ *       pattern
+ *   and non_empty_t, iso_open =
+ *     filter_iso (fun e -> not (Ports.is_empty e.p)) target
+ *   in
+ *   let h = H_int.create (Lg.cardinal non_empty_t) in
+ *   ignore
+ *     (Lg.fold
+ *        (fun e i ->
+ *          H_int.add h i e;
+ *          i + 1)
+ *        non_empty_t 0);
+ *   let r = Lg.cardinal open_p and c = Lg.cardinal non_empty_t in
+ *   let f_e = H_int.create (r * c) in
+ *   (\* T -> P *\)
+ *   let c_s = IntSet.of_int c in
+ *   let f, block, _ =
+ *     Lg.fold
+ *       (fun e_p (acc, block, i) ->
+ *         (\* Find compatible edges in the target *\)
+ *         let _, compat_t =
+ *           Lg.fold
+ *             (fun e_t (j, acc) ->
+ *               if sub_edge e_p.p e_t.p n_t n_p then (
+ *                 H_int.add f_e j i;
+ *                 (j + 1, IntSet.add j acc) )
+ *               else (j + 1, acc))
+ *             non_empty_t (0, IntSet.empty)
+ *         in
+ *         (\* No compatible edges found *\)
+ *         if IntSet.is_empty compat_t then raise_notrace NOT_TOTAL
+ *         else
+ *           (\* Generate possible node matches for every edge assignment. *\)
+ *           let clauses =
+ *             List.map
+ *               (fun (l, r) -> Cnf.impl l r)
+ *               (compat_clauses e_p i compat_t h n_t n_p)
+ *           (\* Blockig pairs *\)
+ *           and b =
+ *             IntSet.fold
+ *               (fun j acc -> (i, j) :: acc)
+ *               (IntSet.diff c_s compat_t)
+ *               []
+ *           in
+ *           (clauses @ acc, b @ block, i + 1))
+ *       open_p ([], [], 0)
+ *   in
+ *   let block_f = compat_sub open_p non_empty_t f_e n_t n_p in
+ *   (r, c, f, block, block_f, iso_p, iso_open)
+ * 
+ * let edg_iso a b n_a n_b =
+ *   Face.equal a.i b.i && Face.equal a.o b.o
+ *   && Ports.equal_types (a.p, n_a) (b.p, n_b)
+ * 
+ * let key e = (Face.cardinal e.i, Ports.cardinal e.p, Face.cardinal e.o)
+ * 
+ * module H_3 = Hashtbl.Make (struct
+ *   type t = int * int * int
+ * 
+ *   let equal (x : int * int * int) y = x = y
+ * 
+ *   let hash = Hashtbl.hash
+ * end)
+ * 
+ * (\* Partition edges according to cardinalities of faces and port sets. Return
+ *    a hastbl : key -> (edge, index) *\)
+ * let partition_edg l =
+ *   let h = H_3.create (Lg.cardinal l) in
+ *   ignore
+ *     (Lg.fold
+ *        (fun e i ->
+ *          let k = key e in
+ *          H_3.add h k (e, i);
+ *          i + 1)
+ *        l 0);
+ *   h
+ * 
+ * (\* P -> T Example constraint: [[(1, 2) or (1, 3) or (1, 4)]; [(2, 4)]; [(3,
+ *    4) or (3, 2)]] *\)
+ * let match_list_eq p t n_p n_t : Cnf.clause list * Cnf.clause list =
+ *   let h = partition_edg t in
+ *   let clauses, b, _ =
+ *     Lg.fold
+ *       (fun e_p (acc, block, i) ->
+ *         let t_edges = H_3.find_all h (key e_p) in
+ *         let clause =
+ *           List.fold_left
+ *             (fun acc (e_t, j) ->
+ *               if edg_iso e_t e_p n_t n_p then
+ *                 Cnf.P_var (Cnf.M_lit (i, j)) :: acc
+ *               else acc)
+ *             [] t_edges
+ *         in
+ *         match clause with
+ *         | [] -> (acc, i :: block, i + 1)
+ *         | _ -> (clause :: acc, block, i + 1))
+ *       p ([], [], 0)
+ *   in
+ *   (clauses, Cnf.block_rows b (Lg.cardinal t))
+ * 
+ * let match_ports_eq p t n_p n_t clauses : Cnf.clause list list =
+ *   let array_t = Array.of_list (List.map (fun e -> e.p) (Lg.elements t))
+ *   and array_p = Array.of_list (List.map (fun e -> e.p) (Lg.elements p)) in
+ *   _match_ports array_t array_p n_t n_p clauses *)
 
 (* Prime components decomposition *)
 let prime_components lg =

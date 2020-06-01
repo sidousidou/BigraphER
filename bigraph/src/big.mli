@@ -32,11 +32,11 @@ exception ISO_ERROR of int * int
     cardinality of the domain while the second is the cardinality of the
     isomorphism's domain of definition. *)
 
-exception NO_MATCH
-(** Raised when there are no matches.*)
+(* exception NO_MATCH
+ * (\** Raised when there are no matches.*\) *)
 
-exception NODE_FREE
-(** Raised when the matching pattern has no nodes. *)
+(* exception NODE_FREE
+ * (\** Raised when the matching pattern has no nodes. *\) *)
 
 (** {2 Functions on interfaces} *)
 
@@ -291,11 +291,11 @@ val decomp :
     [f_e] is a total function from links in the pattern to links in the
     target. *)
 
-(** {2 Comparison} *)
-
-val equal : t -> t -> bool
-(** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
-    [false] otherwise. *)
+(* (\** {2 Comparison} *\)
+ * 
+ * val equal : t -> t -> bool
+ * (\** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
+ *     [false] otherwise. *\) *)
 
 type big_key = int
 (** The type of bigraphs keys. *)
@@ -304,42 +304,43 @@ val key : t -> big_key
 (** Compute the key of a bigraph. The key is similar to a hash. Note that
     different bigraphs can have the same key. *)
 
-val equal_opt : t -> t -> bool
-(** Same as {!Big.equal} but with fewer checks prior to the SAT solver
-    invocation. This function is intended to be used after equality over keys
-    has already failed. *)
-
-(** {2 Matching} *)
-
-type occ = Iso.t * Iso.t * Fun.t
-(** The type of occurrences: an isomorphism over nodes, an isomorphism over
-    edges and a function over hyper-edges. *)
-
-val occurs : target:t -> pattern:t -> bool
-(** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]
-    otherwise. *)
-
-val occurrence : target:t -> pattern:t -> Sparse.t -> occ option
-(** [occurrence t p trans] returns a pair of isomorphisms [(i,j)] if pattern
-    [p] occurs in target [t]. Isos [i] and [j] are defined over nodes and
-    edges, respectively. Argument [trans] is the transitive closure of the
-    induced graph of [t].
-
-    @raise NODE_FREE when [p] has an empty node set. *)
-
-val occurrences : target:t -> pattern:t -> occ list
-(** [occurrences t p] returns a list of occurrences.
-
-    @raise NODE_FREE when [p] has an empty node set. *)
+(* val equal_opt : t -> t -> bool
+ * (\** Same as {!Big.equal} but with fewer checks prior to the SAT solver
+ *     invocation. This function is intended to be used after equality over keys
+ *     has already failed. *\)
+ * 
+ * (\** {2 Matching} *\)
+ * 
+ * type occ = Iso.t * Iso.t * Fun.t
+ * (\** The type of occurrences: an isomorphism over nodes, an isomorphism over
+ *     edges and a function over hyper-edges. *\)
+ * 
+ * val occurs : target:t -> pattern:t -> bool
+ * (\** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]
+ *     otherwise. *\)
+ * 
+ * val occurrence : target:t -> pattern:t -> Sparse.t -> occ option
+ * (\** [occurrence t p trans] returns a pair of isomorphisms [(i,j)] if pattern
+ *     [p] occurs in target [t]. Isos [i] and [j] are defined over nodes and
+ *     edges, respectively. Argument [trans] is the transitive closure of the
+ *     induced graph of [t].
+ * 
+ *     @raise NODE_FREE when [p] has an empty node set. *\)
+ * 
+ * val occurrences : target:t -> pattern:t -> occ list
+ * (\** [occurrences t p] returns a list of occurrences.
+ * 
+ *     @raise NODE_FREE when [p] has an empty node set. *\) *)
 
 (* (\** [auto b] computes the non-trivial automorphisms of bigraph [b]. 
  * 
  *     @raise NODE_FREE when [p] has an empty node set. *\)
  * val auto : t -> (Iso.t * Iso.t) list *)
 
-val rewrite : occ -> s:t -> r0:t -> r1:t -> Fun.t option -> t
-(** [rewrite o s r0 r1 eta] computes a bigraph obtained by replacing the
-    occurrence of [r0] (specified by occurrence [o]) in [s] with [eta r1],
+val rewrite :
+  Iso.t * Iso.t * Fun.t -> s:t -> r0:t -> r1:t -> Fun.t option -> t
+(** [rewrite o ~s ~r0 ~r1 eta] computes a bigraph obtained by replacing the
+    occurrence of [~r0] (specified by occurrence [o]) in [~s] with [eta ~r1],
     where [eta] is a valid (no check performed) instantiation map.
 
     @raise Place.NOT_PRIME when [b] is not prime decomposable. *)

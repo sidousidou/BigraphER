@@ -2,10 +2,11 @@
 open Bigraph
 module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
+module S = Solver.Make_SAT (Solver.MS)
 
 let test_prime_decomposition b =
   let comps = List.map fst (Place.prime_components b.Big.p) in
-  Big.(equal b { n = b.n; p = Place.tens_of_list comps; l = b.l })
+  Big.(S.equal b { n = b.n; p = Place.tens_of_list comps; l = b.l })
 
 let attr_decomp =
   [ ("type", "ASSERT_DECOMP"); ("message", "Bigraphs are not equal") ]
