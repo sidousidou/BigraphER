@@ -2,6 +2,8 @@
 open Bigraph
 open Printf
 
+module S = Solver.Make_SAT (Solver.MS)
+
 let b_in_ch = ref stdin
 
 let m_in_ch = ref stdin
@@ -31,14 +33,14 @@ let () =
   let bigraph = really_input_string !b_in_ch (in_channel_length !b_in_ch) in
   let match_ = really_input_string !m_in_ch (in_channel_length !m_in_ch) in
   let occs =
-    Big.occurrences ~target:(Big.of_string bigraph)
+    S.occurrences ~target:(Big.of_string bigraph)
       ~pattern:(Big.of_string match_)
   in
   if List.length occs > 0 then (
-    let i_n, i_e, i_h = List.hd occs in
+    let o = List.hd occs in
     let c, d, id_ =
       Big.decomp ~target:(Big.of_string bigraph)
-        ~pattern:(Big.of_string match_) ~i_n ~i_e i_h
+        ~pattern:(Big.of_string match_) ~i_n:o.nodes ~i_e:o.edges o.hyper_edges
     in
     write_dot (Big.of_string bigraph) "bigraph";
     write_dot c "ctx";
