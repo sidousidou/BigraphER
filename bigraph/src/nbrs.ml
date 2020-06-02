@@ -1,3 +1,13 @@
+module type T = sig
+  include
+    TsType.RS with type label = string * int * float and type limit = int
+
+  val action : react -> string
+
+  val weight : react -> float
+
+end
+
 module Make (S : Solver.M) = struct
   module AC = AppCond.Make (S)
 

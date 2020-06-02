@@ -1,3 +1,5 @@
+module type T = TsType.RS with type label = unit and type limit = int
+
 module Make (S : Solver.M) = struct
   module AC = AppCond.Make (S)
 
