@@ -1,7 +1,6 @@
 (* Decompose a bigraph based on a given match *)
 open Bigraph
 open Printf
-
 module S = Solver.Make_SAT (Solver.MS)
 
 let b_in_ch = ref stdin
@@ -40,7 +39,8 @@ let () =
     let o = List.hd occs in
     let c, d, id_ =
       Big.decomp ~target:(Big.of_string bigraph)
-        ~pattern:(Big.of_string match_) ~i_n:o.nodes ~i_e:o.edges o.hyper_edges
+        ~pattern:(Big.of_string match_) ~i_n:o.nodes ~i_e:o.edges
+        o.hyper_edges
     in
     write_dot (Big.of_string bigraph) "bigraph";
     write_dot c "ctx";

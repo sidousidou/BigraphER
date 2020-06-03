@@ -22,6 +22,13 @@ type value = False | True | Unknown
 val string_of_value : value -> string
 (** String representation of a solver value. *)
 
+type occ = {
+  nodes : Iso.t;  (** One-to-one mapping over nodes. *)
+  edges : Iso.t;  (** One-to-one mapping over edges. *)
+  hyper_edges : Fun.t;  (** Mapping over hyper-edges.*)
+}
+(** The type of occurrences. *)
+
 (** External solver interface. *)
 module type E = sig
   type t
@@ -107,29 +114,23 @@ module type M = sig
   val string_of_solver_t : string
   (** String representation of a solver type. *)
 
-  type t = {
-    nodes : Iso.t;  (** One-to-one mapping over nodes. *)
-    edges : Iso.t;  (** One-to-one mapping over edges. *)
-    hyper_edges : Fun.t;  (** Mapping over hyper-edges.*)
-  }
-  (** The type of occurrences. *)
-
   val occurs : target:Big.t -> pattern:Big.t -> bool
   (** [occurs ~target ~pattern] returns [true] if the [~pattern] occurs in
       the [~target], [false] otherwise. *)
 
-  val occurrence : target:Big.t -> pattern:Big.t -> t option
+  val occurrence : target:Big.t -> pattern:Big.t -> occ option
   (** [occurrence ~target ~pattern] returns an occurrence if the [~pattern]
       occurs in the [~target].
 
       @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
-  val occurrence_memo : target:Big.t -> pattern:Big.t -> Sparse.t -> t option
+  val occurrence_memo :
+    target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
   (** [occurrence ~target ~pattern trans] same as {!Solver.M.occurrence} with
       argument [trans] the transitive closure of the induced graph of the
       [~target]. *)
 
-  val occurrences : target:Big.t -> pattern:Big.t -> t list
+  val occurrences : target:Big.t -> pattern:Big.t -> occ list
   (** [occurrences ~target ~pattern] returns a list of occurrences.
 
       @raise NODE_FREE when the [~pattern] has an empty node set. *)

@@ -136,7 +136,7 @@ end
 
 (** Functor building a concrete implementation of basic operations on rewrite
     rules. *)
-module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AC.t) :
+module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   T with type t = R.t and type label = R.label and type ac = R.ac
 
 (** Functor building generic functions for rewrite rules. *)
@@ -155,7 +155,7 @@ module Make_gen (S : Solver.M) (AC : AppCond.C) : sig
     rhs:('a -> Big.t) ->
     label:('a -> 'b) ->
     map:('a -> Fun.t option) ->
-    conds:('a -> AC.t list) ->
+    conds:('a -> AppCond.t list) ->
     (Big.t * 'b * 'a list) list * int
   (** Generic step function *)
 end

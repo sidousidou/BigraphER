@@ -1,11 +1,36 @@
+type react = {
+  name : string;
+  action : string;
+  reward : int;
+  rdx : Big.t;
+  (* Redex --- lhs *)
+  rct : Big.t;
+  (* Reactum --- rhs *)
+  eta : Fun.t option;
+  (* Instantiation map *)
+  w : float;
+  (* Weight *)
+  conds : AppCond.t list; (* Application conditions *)
+}
+
+type graph = {
+  v : (int * Big.t) Base.H_int.t;
+  e : (int * (string * int * float) * string) Base.H_int.t;
+  l : int Base.H_predicate.t;
+  preds : Base.S_predicate.t;
+}
+
 module type T = sig
   include
-    TsType.RS with type label = string * int * float and type limit = int
+    TsType.RS
+      with type react = react
+       and type label = string * int * float
+       and type graph = graph
+       and type limit = int
 
   val action : react -> string
 
   val weight : react -> float
-
 end
 
 module Make (S : Solver.M) = struct
@@ -14,22 +39,9 @@ module Make (S : Solver.M) = struct
   module R = struct
     include RrType.Make (S) (AC)
               (struct
-                type ac = AC.t
+                type ac = AppCond.t
 
-                type t = {
-                  name : string;
-                  action : string;
-                  reward : int;
-                  rdx : Big.t;
-                  (* Redex --- lhs *)
-                  rct : Big.t;
-                  (* Reactum --- rhs *)
-                  eta : Fun.t option;
-                  (* Instantiation map *)
-                  w : float;
-                  (* Weight *)
-                  conds : ac list; (* Application conditions *)
-                }
+                type t = react
 
                 type label = string * int * float
 
@@ -168,12 +180,7 @@ module Make (S : Solver.M) = struct
       end)
 
   module G = struct
-    type t = {
-      v : (int * Big.t) Base.H_int.t;
-      e : (int * R.label * string) Base.H_int.t;
-      l : int Base.H_predicate.t;
-      preds : Base.S_predicate.t;
-    }
+    type t = graph
 
     type l = R.label
 

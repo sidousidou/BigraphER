@@ -1,4 +1,29 @@
-module type T = TsType.RS with type label = unit and type limit = int
+(* Reaction rules *)
+type react = {
+  name : string;
+  rdx : Big.t;
+  (* Redex --- lhs *)
+  rct : Big.t;
+  (* Reactum --- rhs *)
+  eta : Fun.t option;
+  (* Instantiation map *)
+  conds : AppCond.t list; (* Application conditions *)
+}
+
+type graph = {
+  v : (int * Big.t) Base.H_int.t;
+  e : (int * unit * string) Base.H_int.t;
+  (* drop unit? *)
+  l : int Base.H_predicate.t;
+  preds : Base.S_predicate.t;
+}
+
+module type T =
+  TsType.RS
+    with type react = react
+     and type label = unit
+     and type graph = graph
+     and type limit = int
 
 module Make (S : Solver.M) = struct
   module AC = AppCond.Make (S)
@@ -6,19 +31,10 @@ module Make (S : Solver.M) = struct
   module R =
     RrType.Make (S) (AC)
       (struct
-        type ac = AC.t
+        type ac = AppCond.t
 
         (* Reaction rules *)
-        type t = {
-          name : string;
-          rdx : Big.t;
-          (* Redex --- lhs *)
-          rct : Big.t;
-          (* Reactum --- rhs *)
-          eta : Fun.t option;
-          (* Instantiation map *)
-          conds : ac list; (* Application conditions *)
-        }
+        type t = react
 
         type label = unit
 
@@ -81,12 +97,7 @@ module Make (S : Solver.M) = struct
 
   (* Transition system graph data structure *)
   module G = struct
-    type t = {
-      v : (int * Big.t) Base.H_int.t;
-      e : (int * R.label * string) Base.H_int.t;
-      l : int Base.H_predicate.t;
-      preds : Base.S_predicate.t;
-    }
+    type t = graph
 
     type l = R.label
 

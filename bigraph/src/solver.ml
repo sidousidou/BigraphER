@@ -13,17 +13,14 @@ type value = False | True | Unknown
 
 type solution = SAT | UNSAT
 
-type stats = {
-  v : int;  (** Number of variables. *)
-  c : int;  (** Number of clauses. *)
-  mem : float;  (** Memory used in MB. *)
-  cpu : float;  (** CPU time in seconds. *)
-}
+type stats = { v : int; c : int; mem : float; cpu : float }
 
 let string_of_value = function
   | False -> "false"
   | True -> "true"
   | Unknown -> "unknown"
+
+type occ = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
 (* External solver interface *)
 module type E = sig
@@ -488,15 +485,14 @@ module type M = sig
 
   val string_of_solver_t : string
 
-  type t = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
-
   val occurs : target:Big.t -> pattern:Big.t -> bool
 
-  val occurrence : target:Big.t -> pattern:Big.t -> t option
+  val occurrence : target:Big.t -> pattern:Big.t -> occ option
 
-  val occurrence_memo : target:Big.t -> pattern:Big.t -> Sparse.t -> t option
+  val occurrence_memo :
+    target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
 
-  val occurrences : target:Big.t -> pattern:Big.t -> t list
+  val occurrences : target:Big.t -> pattern:Big.t -> occ list
 
   val equal : Big.t -> Big.t -> bool
 
@@ -514,8 +510,6 @@ module Make_SAT (S : S) : M = struct
   exception NOT_TOTAL
 
   exception NO_MATCH
-
-  type t = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
   type sat_vars = {
     nodes : S.var array array;

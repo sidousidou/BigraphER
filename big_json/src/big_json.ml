@@ -1,4 +1,10 @@
 open Bigraph
+module Default_S = Solver.Make_SAT (Solver.MS) (* Minisat *)
+
+module BRS = Brs.Make (Default_S)
+module SBRS = Sbrs.Make (Default_S)
+module PBRS = Pbrs.Make (Default_S)
+module NBRS = Nbrs.Make (Default_S)
 
 (* Encoder *)
 
@@ -133,42 +139,42 @@ let iso e i =
 
 let react e r =
   quadruple e
-    ("brs_name", string e, Brs.name r)
-    ("brs_lhs", big e, Brs.lhs r)
-    ("brs_rhs", big e, Brs.rhs r)
-    ("brs_eta", option e eta, Brs.map r)
+    ("brs_name", string e, BRS.name r)
+    ("brs_lhs", big e, BRS.lhs r)
+    ("brs_rhs", big e, BRS.rhs r)
+    ("brs_eta", option e eta, BRS.map r)
 
 let sreact e r =
   lexeme e `Os;
-  field e "sbrs_name" (string e) (Sbrs.name r);
-  field e "sbrs_lhs" (big e) (Sbrs.lhs r);
-  field e "sbrs_rhs" (big e) (Sbrs.rhs r);
-  field e "sbrs_rate" (float e) (Sbrs.rate r);
-  field e "sbrs_eta" (option e eta) (Sbrs.map r);
+  field e "sbrs_name" (string e) (SBRS.name r);
+  field e "sbrs_lhs" (big e) (SBRS.lhs r);
+  field e "sbrs_rhs" (big e) (SBRS.rhs r);
+  field e "sbrs_rate" (float e) (SBRS.rate r);
+  field e "sbrs_eta" (option e eta) (SBRS.map r);
   lexeme e `Oe
 
 let preact e r =
   lexeme e `Os;
-  field e "pbrs_name" (string e) (Pbrs.name r);
-  field e "pbrs_lhs" (big e) (Pbrs.lhs r);
-  field e "pbrs_rhs" (big e) (Pbrs.rhs r);
-  field e "pbrs_p" (float e) (Pbrs.weight r);
-  field e "pbrs_eta" (option e eta) (Pbrs.map r);
+  field e "pbrs_name" (string e) (PBRS.name r);
+  field e "pbrs_lhs" (big e) (PBRS.lhs r);
+  field e "pbrs_rhs" (big e) (PBRS.rhs r);
+  field e "pbrs_p" (float e) (PBRS.weight r);
+  field e "pbrs_eta" (option e eta) (PBRS.map r);
   lexeme e `Oe
 
 let nreact e r =
   lexeme e `Os;
-  field e "nbrs_name" (string e) (Nbrs.name r);
-  field e "nbrs_action" (string e) (Nbrs.action r);
-  field e "nbrs_lhs" (big e) (Nbrs.lhs r);
-  field e "nbrs_rhs" (big e) (Nbrs.rhs r);
-  field e "nbrs_p" (float e) (Nbrs.weight r);
-  field e "nbrs_eta" (option e eta) (Nbrs.map r);
+  field e "nbrs_name" (string e) (NBRS.name r);
+  field e "nbrs_action" (string e) (NBRS.action r);
+  field e "nbrs_lhs" (big e) (NBRS.lhs r);
+  field e "nbrs_rhs" (big e) (NBRS.rhs r);
+  field e "nbrs_p" (float e) (NBRS.weight r);
+  field e "nbrs_eta" (option e eta) (NBRS.map r);
   lexeme e `Oe
 
 let occs e l =
   lexeme e `As;
-  List.iter (fun (b, _) -> big e b) l;
+  List.iter (fun b -> big e b) l;
   lexeme e `Ae
 
 let p_occs name e l =
@@ -190,10 +196,9 @@ let n_occs name1 name2 name3 e l =
 
 let matches e l =
   lexeme e `As;
-  List.iter
-    (fun (i, i', f) ->
-      triple e ("iso_n", iso e, i) ("iso_e", iso e, i') ("f_e", eta e, f))
-    l;
+  List.map (fun o -> Solver.(o.nodes, o.edges, o.hyper_edges)) l
+  |> List.iter (fun (i, i', f) ->
+         triple e ("iso_n", iso e, i) ("iso_e", iso e, i') ("f_e", eta e, f));
   lexeme e `Ae
 
 let aux_graph l f_i f e g =
@@ -205,18 +210,18 @@ let aux_graph l f_i f e g =
     g
 
 let brs e rs =
-  aux_graph "brs" Brs.iter_edges
+  aux_graph "brs" BRS.iter_edges
     (fun i j _ -> pair e ("source", int e, i) ("target", int e, j))
     e rs
 
 let sbrs e rs =
-  aux_graph "sbrs" Sbrs.iter_edges
+  aux_graph "sbrs" SBRS.iter_edges
     (fun i j l ->
       triple e ("source", int e, i) ("target", int e, j) ("rate", float e, l))
     e rs
 
 let pbrs e rs =
-  aux_graph "pbrs" Pbrs.iter_edges
+  aux_graph "pbrs" PBRS.iter_edges
     (fun i j l ->
       triple e
         ("source", int e, i)
@@ -225,7 +230,7 @@ let pbrs e rs =
     e rs
 
 let nbrs e rs =
-  aux_graph "nbrs" Nbrs.iter_edges
+  aux_graph "nbrs" NBRS.iter_edges
     (fun i j (a, r, p) ->
       quintuple e
         ("source", int e, i)
@@ -583,7 +588,7 @@ let exp_react (j : json) =
     ("brs_eta", exp_option exp_eta)
     j
   >>= fun (name, lhs, rhs, e) ->
-  Ok (Brs.parse_react_unsafe ~name ~lhs ~rhs e)
+  Ok (BRS.parse_react_unsafe ~name ~lhs ~rhs () e)
 
 let exp_sreact (j : json) =
   exp_quintuple ("sbrs_name", exp_string) ("sbrs_lhs", exp_big)
@@ -591,7 +596,7 @@ let exp_sreact (j : json) =
     ("sbrs_eta", exp_option exp_eta)
     j
   >>= fun (name, lhs, rhs, r, e) ->
-  Ok (Sbrs.parse_react_unsafe ~name ~lhs ~rhs r e)
+  Ok (SBRS.parse_react_unsafe ~name ~lhs ~rhs r e)
 
 let exp_preact (j : json) =
   exp_quintuple ("pbrs_name", exp_string) ("pbrs_lhs", exp_big)
@@ -599,7 +604,7 @@ let exp_preact (j : json) =
     ("pbrs_eta", exp_option exp_eta)
     j
   >>= fun (name, lhs, rhs, p, e) ->
-  Ok (Pbrs.parse_react_unsafe ~name ~lhs ~rhs p e)
+  Ok (PBRS.parse_react_unsafe ~name ~lhs ~rhs p e)
 
 let exp_nreact (j : json) =
   exp_septuple ("nbrs_name", exp_string)
@@ -609,7 +614,7 @@ let exp_nreact (j : json) =
     ("nbrs_eta", exp_option exp_eta)
     j
   >>= fun (name, action, reward, lhs, rhs, p, e) ->
-  Ok (Nbrs.parse_react_unsafe ~name ~lhs ~rhs (action, reward, p) e)
+  Ok (NBRS.parse_react_unsafe ~name ~lhs ~rhs (action, reward, p) e)
 
 let parse_err = function
   | Ok _ as v -> v
@@ -651,37 +656,89 @@ let exp_step_input (j : json) =
 
 let check_aux f reacts =
   try if List.for_all f reacts then Ok true else assert false with
-  | Brs.NOT_VALID e -> Error (Brs.string_of_react_err e)
-  | Pbrs.NOT_VALID e -> Error (Pbrs.string_of_react_err e)
-  | Sbrs.NOT_VALID e -> Error (Sbrs.string_of_react_err e)
-  | Nbrs.NOT_VALID e -> Error (Nbrs.string_of_react_err e)
+  | BRS.NOT_VALID e -> Error (BRS.string_of_react_err e)
+  | PBRS.NOT_VALID e -> Error (PBRS.string_of_react_err e)
+  | SBRS.NOT_VALID e -> Error (SBRS.string_of_react_err e)
+  | NBRS.NOT_VALID e -> Error (NBRS.string_of_react_err e)
 
 let check_validity = function
-  | `B reacts -> check_aux Brs.is_valid_react_exn reacts
-  | `P reacts -> check_aux Pbrs.is_valid_react_exn reacts
-  | `S reacts -> check_aux Sbrs.is_valid_react_exn reacts
-  | `N reacts -> check_aux Nbrs.is_valid_react_exn reacts
+  | `B reacts -> check_aux BRS.is_valid_react_exn reacts
+  | `P reacts -> check_aux PBRS.is_valid_react_exn reacts
+  | `S reacts -> check_aux SBRS.is_valid_react_exn reacts
+  | `N reacts -> check_aux NBRS.is_valid_react_exn reacts
 
-let aux_step minify (b, reacts) =
-  let wrapper func lst = List.map (fun (a, b, _) -> (a, b)) lst |> func in
-  let aux s_f j_f b rs = Ok (s_f b rs) >>= fun (occs, _) -> Ok (j_f occs) in
+let aux_step minify solver (b, reacts) =
+  let solver_t =
+    match solver with
+    | "MSAT" -> Solver.MSAT
+    | "MCARD" -> Solver.MCARD
+    | s -> failwith ("Solver " ^ s ^ " not supported")
+  in
+  let wrapper1 func lst = List.map (fun (a, _, _) -> a) lst |> func
+  and wrapper func lst = List.map (fun (a, b, _) -> (a, b)) lst |> func
+  and aux s_f j_f b rs = Ok (s_f b rs) >>= fun (occs, _) -> Ok (j_f occs) in
   check_validity reacts >>= fun _ ->
   match reacts with
-  | `B rs -> aux Brs.step (wrapper (occs_to_json ~minify)) b rs
-  | `P rs -> aux Pbrs.step (wrapper (p_occs_to_json ~minify)) b rs
-  | `S rs -> aux Sbrs.step (wrapper (s_occs_to_json ~minify)) b rs
-  | `N rs -> aux Nbrs.step (wrapper (n_occs_to_json ~minify)) b rs
+  | `B rs -> (
+      match solver_t with
+      | Solver.MSAT ->
+          let open struct
+            module BRS = Brs.Make (Solver.Make_SAT (Solver.MS))
+          end in
+          aux BRS.step (wrapper1 (occs_to_json ~minify)) b rs
+      | Solver.MCARD ->
+          let open struct
+            module BRS = Brs.Make (Solver.Make_SAT (Solver.MC))
+          end in
+          aux BRS.step (wrapper1 (occs_to_json ~minify)) b rs )
+  | `P rs -> (
+      match solver_t with
+      | Solver.MSAT ->
+          let open struct
+            module PBRS = Pbrs.Make (Solver.Make_SAT (Solver.MS))
+          end in
+          aux PBRS.step (wrapper (p_occs_to_json ~minify)) b rs
+      | Solver.MCARD ->
+          let open struct
+            module PBRS = Pbrs.Make (Solver.Make_SAT (Solver.MC))
+          end in
+          aux PBRS.step (wrapper1 (occs_to_json ~minify)) b rs )
+  | `S rs -> (
+      match solver_t with
+      | Solver.MSAT ->
+          let open struct
+            module SBRS = Sbrs.Make (Solver.Make_SAT (Solver.MS))
+          end in
+          aux SBRS.step (wrapper (s_occs_to_json ~minify)) b rs
+      | Solver.MCARD ->
+          let open struct
+            module SBRS = Sbrs.Make (Solver.Make_SAT (Solver.MC))
+          end in
+          aux SBRS.step (wrapper (s_occs_to_json ~minify)) b rs )
+  | `N rs -> (
+      match solver_t with
+      | Solver.MSAT ->
+          let open struct
+            module NBRS = Nbrs.Make (Solver.Make_SAT (Solver.MS))
+          end in
+          aux NBRS.step (wrapper (n_occs_to_json ~minify)) b rs
+      | Solver.MCARD ->
+          let open struct
+            module NBRS = Nbrs.Make (Solver.Make_SAT (Solver.MC))
+          end in
+          aux NBRS.step (wrapper (n_occs_to_json ~minify)) b rs )
 
 let aux_string minify = function
   | Ok s -> s
   | Error s -> to_json ~minify (fun e -> singleton e "error" (string e)) s
 
-let step ?(encoding = `UTF_8) ?(minify = true) s =
-  of_json encoding s exp_step_input >>= aux_step minify |> aux_string minify
+let step ?(encoding = `UTF_8) ?(minify = true) ?(solver = "MSAT") s =
+  of_json encoding s exp_step_input
+  >>= aux_step minify solver |> aux_string minify
 
-let big_match ?(minify = true) in_ch out_ch =
+let big_match ?(minify = true) ?(solver = "MSAT") in_ch out_ch =
   ( match json_of_src (`Channel in_ch) with
   | `Error (r, e) -> Error (dec_err r e)
   | `JSON j -> parse_err @@ exp_step_input j )
-  >>= aux_step minify |> aux_string minify
+  >>= aux_step minify solver |> aux_string minify
   |> fun s -> output_string out_ch s

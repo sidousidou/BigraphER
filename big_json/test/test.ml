@@ -1,6 +1,11 @@
 (* Run some tests *)
 open Big_json
 open Bigraph
+module Default_S = Solver.Make_SAT (Solver.MS) (* Minisat *)
+
+module BRS = Brs.Make (Default_S)
+module SBRS = Sbrs.Make (Default_S)
+module PBRS = Pbrs.Make (Default_S)
 
 let c0 = Ctrl.C ("Park", [], 3)
 
@@ -40,14 +45,15 @@ let big_test =
   let open Big in
   { p = place_test; n = nodes_test; l = link_test }
 
-let r_test = Brs.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test None
+let r_test =
+  BRS.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test () None
 
 let pr_test =
-  Pbrs.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test 0.476 None
+  PBRS.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test 0.476 None
 
 let sr_test =
   let eta = Fun.of_list [ (0, 1); (1, 1) ] in
-  Sbrs.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test 8.031
+  SBRS.parse_react_unsafe ~name:"" ~lhs:big_test ~rhs:big_test 8.031
     (Some eta)
 
 let test v e d eq f =
@@ -80,29 +86,29 @@ let () =
   print_endline "Testing s_occs_to_json:\n";
   print_endline
   @@ s_occs_to_json ~minify:false
-  @@ drop_third_element (fst @@ Sbrs.step big_test [ sr_test ]);
+  @@ drop_third_element (fst @@ SBRS.step big_test [ sr_test ]);
   print_newline ();
   print_endline "Testing matches_to_json:\n";
   print_endline
   @@ matches_to_json ~minify:false
-  @@ Big.occurrences ~target:big_test ~pattern:big_test;
+  @@ Default_S.occurrences ~target:big_test ~pattern:big_test;
   print_newline ();
   print_endline "DECODING";
   print_string "Testing big_of_json: ";
   print_endline
-  @@ test big_test big_to_json big_of_json Big.equal Big.to_string;
+  @@ test big_test big_to_json big_of_json Default_S.equal Big.to_string;
   print_string "Testing react_of_json: ";
   print_endline
-  @@ test r_test react_to_json react_of_json Brs.equal_react
-       Brs.string_of_react;
+  @@ test r_test react_to_json react_of_json BRS.equal_react
+       BRS.string_of_react;
   print_string "Testing preact_of_json: ";
   print_endline
-  @@ test pr_test preact_to_json preact_of_json Pbrs.equal_react
-       Pbrs.string_of_react;
+  @@ test pr_test preact_to_json preact_of_json PBRS.equal_react
+       PBRS.string_of_react;
   print_string "Testing sreact_of_json: ";
   print_endline
-  @@ test sr_test sreact_to_json sreact_of_json Sbrs.equal_react
-       Sbrs.string_of_react;
+  @@ test sr_test sreact_to_json sreact_of_json SBRS.equal_react
+       SBRS.string_of_react;
   print_newline ();
   print_endline "MATCHING ENGINE";
   print_string "Testing Brs.step:\n";

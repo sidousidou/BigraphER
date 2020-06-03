@@ -233,11 +233,9 @@ val sreact_to_json : ?minify:bool -> Bigraph.Sbrs.react -> String.t
 (* Encoder for non-deterministic reaction rules *)
 val nreact_to_json : ?minify:bool -> Bigraph.Nbrs.react -> String.t
 
-val occs_to_json :
-  ?minify:bool -> (Bigraph.Big.t * Bigraph.Brs.label) list -> String.t
+val occs_to_json : ?minify:bool -> Bigraph.Big.t list -> String.t
 
-val p_occs_to_json :
-  ?minify:bool -> (Bigraph.Big.t * Bigraph.Pbrs.label) list -> String.t
+val p_occs_to_json : ?minify:bool -> (Bigraph.Big.t * float) list -> String.t
 (** Similar to {!val:Big_json.occs_to_json} but for probabilistic reactive
     systems. Below is an example output:
 
@@ -250,8 +248,7 @@ val p_occs_to_json :
       ]
     ]} *)
 
-val s_occs_to_json :
-  ?minify:bool -> (Bigraph.Big.t * Bigraph.Sbrs.label) list -> String.t
+val s_occs_to_json : ?minify:bool -> (Bigraph.Big.t * float) list -> String.t
 (** Similar to {!val:Big_json.occs_to_json} but for stochastic reactive
     systems. Below is an example output:
 
@@ -268,7 +265,10 @@ val s_occs_to_json :
       ]
     ]} *)
 
-val matches_to_json : ?minify:bool -> Bigraph.Big.occ list -> String.t
+val n_occs_to_json :
+  ?minify:bool -> (Bigraph.Big.t * (string * int * float)) list -> String.t
+
+val matches_to_json : ?minify:bool -> Bigraph.Solver.occ list -> String.t
 (** Encoder for bigraphical matches. Below is an example output:
 
     {[
@@ -378,9 +378,16 @@ val nreact_of_json :
 
 (** {2:match Interface to the matching engine} *)
 
-val step : ?encoding:Jsonm.encoding -> ?minify:bool -> String.t -> String.t
-(** [step encoding j] computes the set of states reachable in one rewriting
-    step. [j] is assumed to be in the following JSON format:
+val step :
+  ?encoding:Jsonm.encoding ->
+  ?minify:bool ->
+  ?solver:String.t ->
+  String.t ->
+  String.t
+(** [step encoding solver j] computes the set of states reachable in one
+    rewriting step. [solver] is a string taking values ["MSAT"] and ["MCARD"]
+    for MiniSAT and MiniCARD solvers, respectively. [j] is assumed to be in
+    the following JSON format:
 
     {[
       {
@@ -410,7 +417,8 @@ val step : ?encoding:Jsonm.encoding -> ?minify:bool -> String.t -> String.t
     {!val:Bigraph.Sbrs.step} for more details on how reachable states are
     computed. *)
 
-val big_match : ?minify:bool -> in_channel -> out_channel -> unit
+val big_match :
+  ?minify:bool -> ?solver:String.t -> in_channel -> out_channel -> unit
 (** Similar to {!val:Big_json.step} but input and output are channels. *)
 
 (**/**)

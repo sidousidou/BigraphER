@@ -38,7 +38,7 @@
   (tags ("bigraphs" "rewriting" "org:dcs"))
   (depends
     (dune (and :build (>= 2.0.0)))
-    (ocaml (> 4.05))
+    (ocaml (>= 4.07))
     (minisat (>= 0.5.3))
     (minicard (>= 0.1.0))
     (odoc :with-doc))

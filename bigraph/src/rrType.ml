@@ -128,9 +128,9 @@ module Make_gen (S : Solver.M) (AC : AppCond.C) = struct
     let filter_conds r o =
       let ctx, param, _id =
         Big.decomp ~target:s ~pattern:(lhs r)
-          ~i_n:S.(o.nodes)
-          ~i_e:S.(o.edges)
-          S.(o.hyper_edges)
+          ~i_n:Solver.(o.nodes)
+          ~i_e:Solver.(o.edges)
+          Solver.(o.hyper_edges)
       in
       List.for_all (fun cnd -> AC.check_cond cnd ~ctx ~param) (conds r)
     in
@@ -140,7 +140,7 @@ module Make_gen (S : Solver.M) (AC : AppCond.C) = struct
       (* Parmap.parmap *)
       |> List.map (fun o ->
              ( Big.rewrite
-                 S.(o.nodes, o.edges, o.hyper_edges)
+                 Solver.(o.nodes, o.edges, o.hyper_edges)
                  ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
                label r,
                [ r ] )) )
@@ -150,7 +150,7 @@ module Make_gen (S : Solver.M) (AC : AppCond.C) = struct
     (filter_iso merge_occ l, List.length l)
 end
 
-module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AC.t) :
+module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   T with type t = R.t and type label = R.label and type ac = R.ac = struct
   include R
 
@@ -225,7 +225,7 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AC.t) :
       List.for_all (fun cnd -> AC.check_cond cnd ~ctx ~param) (conds r)
     in
     match S.occurrence ~target:b ~pattern:(lhs r) with
-    | Some o -> conds_valid S.(o.nodes, o.edges, o.hyper_edges)
+    | Some o -> conds_valid Solver.(o.nodes, o.edges, o.hyper_edges)
     | None -> false
 
   let apply b reacts =

@@ -248,6 +248,11 @@ module Make
     (P : Priority.P with type r_t := R.t and type r_label := R.label)
     (L : L with type l = R.label)
     (G : G with type l = R.label)
-    (Ty : T) : RS with type label = R.label and type limit = L.t
+    (Ty : T) :
+  RS
+    with type react = R.t
+     and type label = R.label
+     and type graph = G.t
+     and type limit = L.t
 
 (**/**)

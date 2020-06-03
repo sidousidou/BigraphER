@@ -34,8 +34,8 @@ let check_res res exp_res =
       (fun ((i0, j0), (i1, j1)) -> Iso.equal i0 i1 && Iso.equal j0 j1)
       (List.combine (sort_res res) (sort_res exp_res))
 
-let test_decomposition t p { S.nodes = i_n; edges = i_e; hyper_edges = f_e }
-    =
+let test_decomposition t p
+    { Solver.nodes = i_n; edges = i_e; hyper_edges = f_e } =
   let c, d, id_big = Big.decomp ~target:t ~pattern:p ~i_n ~i_e f_e in
   Big.(S.equal (comp c (comp (tens p id_big) d)) t)
 
@@ -67,7 +67,7 @@ let do_tests =
         [
           "Decompositions:\n"
           ^ ( List.mapi
-                (fun i { S.nodes = i_n; edges = i_e; hyper_edges = f_e } ->
+                (fun i { Solver.nodes = i_n; edges = i_e; hyper_edges = f_e } ->
                   let c, d, id_big =
                     Big.decomp ~target:t.target ~pattern:t.pattern ~i_n ~i_e
                       f_e
@@ -97,7 +97,7 @@ let do_tests =
       in
       try
         let occs = S.occurrences ~target:t.target ~pattern:t.pattern in
-        t.res <- List.map (fun o -> S.(o.nodes, o.edges)) occs;
+        t.res <- List.map (fun o -> Solver.(o.nodes, o.edges)) occs;
         if check_res t.res t.exp_res then
           if
             List.for_all
