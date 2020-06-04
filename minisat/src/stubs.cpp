@@ -97,7 +97,7 @@ CAMLprim value ocaml_minisat_neg_lit(value v) {
 CAMLprim value ocaml_minisat_negate(value l) {
   CAMLparam1(l);
 
-  Lit lit = toLit(Int_val(Field(l, 0)));
+  Lit lit = toLit(Int_val(l));
 
   CAMLreturn(Val_int(toInt(~lit)));
 }
