@@ -35,7 +35,7 @@ extern "C"
 
 #define solver_val(v) (*((Solver**) Data_custom_val(v)))
 
-using namespace Minisat;
+using namespace MiniCard;
 
 static inline void convert_literals(value l, vec<Lit> &r) {
   while(Int_val(l) != 0) {

@@ -18,13 +18,13 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 **************************************************************************************************/
 
 
-#ifndef Minisat_Alloc_h
-#define Minisat_Alloc_h
+#ifndef MiniCard_Alloc_h
+#define MiniCard_Alloc_h
 
 #include "mtl/XAlloc.h"
 #include "mtl/Vec.h"
 
-namespace Minisat {
+namespace MiniCard {
 
 //=================================================================================================
 // Simple Region-based memory allocator:

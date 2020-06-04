@@ -26,8 +26,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 **************************************************************************************************/
 
 
-#ifndef Minisat_SolverTypes_h
-#define Minisat_SolverTypes_h
+#ifndef MiniCard_SolverTypes_h
+#define MiniCard_SolverTypes_h
 
 #include <assert.h>
 
@@ -37,7 +37,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include "mtl/Map.h"
 #include "mtl/Alloc.h"
 
-namespace Minisat {
+namespace MiniCard {
 
 //=================================================================================================
 // Variables, literals, lifted booleans, clauses:

@@ -25,15 +25,15 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
-#ifndef Minisat_Dimacs_h
-#define Minisat_Dimacs_h
+#ifndef MiniCard_Dimacs_h
+#define MiniCard_Dimacs_h
 
 #include <stdio.h>
 
 #include "utils/ParseUtils.h"
 #include "minicard/SolverTypes.h"
 
-namespace Minisat {
+namespace MiniCard {
 
 //=================================================================================================
 // DIMACS Parser:

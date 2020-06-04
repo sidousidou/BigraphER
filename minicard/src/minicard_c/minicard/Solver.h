@@ -25,8 +25,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
-#ifndef Minisat_Solver_h
-#define Minisat_Solver_h
+#ifndef MiniCard_Solver_h
+#define MiniCard_Solver_h
 
 #include "mtl/Vec.h"
 #include "mtl/Heap.h"
@@ -36,7 +36,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include <vector>
 
-namespace Minisat {
+namespace MiniCard {
 
 //=================================================================================================
 // Solver -- the main class:
@@ -76,7 +76,7 @@ public:
     bool    solve        (Lit p, Lit q, Lit r);     // Search for a model that respects three assumptions.
     bool    okay         () const;                  // FALSE means solver is in a conflicting state
 
-    // Adopted from newer version of Minisat
+    // Adopted from newer version of MiniCard
     bool    implies      (const vec<Lit>& assumps, vec<Lit>& out, bool all);
 
     void    toDimacs     (FILE* f, const vec<Lit>& assumps);            // Write CNF to file in DIMACS-format.
