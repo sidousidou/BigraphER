@@ -27,19 +27,13 @@ let pp_float unit fmt = function
   | `f f -> Format.fprintf fmt "@[<h>%-3g%s@]" f unit
   | `i _ | `s _ -> assert false
 
-(*BISECT-IGNORE*)
-
 let pp_string fmt = function
   | `s s -> Format.fprintf fmt "@[<h>%s@]" s
   | `i _ | `f _ -> assert false
 
-(*BISECT-IGNORE*)
-
 let pp_int fmt = function
   | `i i -> Format.fprintf fmt "@[<h>%-8d@]" i
   | `f _ | `s _ -> assert false
-
-(*BISECT-IGNORE*)
 
 let print_table fmt (rows : row list) =
   let pp_row fmt r =
@@ -64,8 +58,6 @@ let print_table fmt (rows : row list) =
         pp_close_tbox fmt ();
         pp_print_newline fmt ())
   | _ -> ()
-
-(*BISECT-IGNORE*)
 
 let print_header fmt () =
   if not Cmd.(defaults.debug || defaults.running_time) then (
@@ -212,7 +204,7 @@ let export_csl fmt f =
 let export_states fmt f g =
   if Cmd.(defaults.export_states_flag) then
     match Cmd.(defaults.export_states) with
-    | None -> assert false (*BISECT-IGNORE*)
+    | None -> assert false
     | Some path ->
         print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
         f
@@ -265,7 +257,7 @@ let check fmt =
   exit 0
 
 module Run
-    (T : TsType.RS) (L : sig
+    (T : TsType.RS with type ac := AppCond.t) (L : sig
       val stop : T.limit
     end) (P : sig
       val parse_react :
@@ -291,21 +283,21 @@ struct
       Cmd.(defaults.colors)
       (print_fun fmt `white Cmd.(defaults.verb))
 
-  let export_ml fmt path m =
-    print_msg fmt `yellow ("Exporting OCaml declarations to " ^ path ^ " ...");
-    try
-      Export.write_string
-        ( match Cmd.(defaults.model) with
-        | None -> "stdin.big"
-        | Some s -> s |> S.ml_of_model m )
-        ~name:(Filename.basename path) ~path:(Filename.dirname path)
-      |> print_fun fmt `white Cmd.(defaults.verb) path
-    with Export.ERROR e ->
-      Format.(
-        pp_print_flush fmt ();
-        fprintf err_formatter "@[<v>@[%s: %s@]@."
-          (Utils.err_opt Cmd.(defaults.colors))
-          (Export.report_error e))
+  (* let export_ml fmt path m =
+   *   print_msg fmt `yellow ("Exporting OCaml declarations to " ^ path ^ " ...");
+   *   try
+   *     Export.write_string
+   *       ( match Cmd.(defaults.model) with
+   *       | None -> "stdin.big"
+   *       | Some s -> s |> S.ml_of_model m )
+   *       ~name:(Filename.basename path) ~path:(Filename.dirname path)
+   *     |> print_fun fmt `white Cmd.(defaults.verb) path
+   *   with Export.ERROR e ->
+   *     Format.(
+   *       pp_print_flush fmt ();
+   *       fprintf err_formatter "@[<v>@[%s: %s@]@."
+   *         (Utils.err_opt Cmd.(defaults.colors))
+   *         (Export.report_error e)) *)
 
   let print_stats_store fmt env priorities =
     [
@@ -504,24 +496,16 @@ let () =
           close_in file;
           match m.model_rs.dbrs_type with
           | Rs.BRS ->
+              let module BRS = Brs.Make (Solver.Make_SAT (Solver.MS)) in
               let module R =
                 Run
-                  (struct
-                    include Brs
-
-                    let parse_react_unsafe ~name ~lhs ~rhs ?(conds = []) _
-                        eta =
-                      parse_react_unsafe ~name ~lhs ~rhs ~conds eta
-
-                    let parse_react ~name ~lhs ~rhs ?(conds = []) _ eta =
-                      parse_react ~name ~lhs ~rhs ~conds eta
-                  end)
+                  (BRS)
                   (struct
                     let stop = Cmd.(defaults.steps)
                   end)
                   (struct
                     let parse_react name lhs rhs ?(conds = []) _ eta =
-                      Brs.parse_react ~name ~lhs ~rhs ~conds eta
+                      BRS.parse_react ~name ~lhs ~rhs ~conds () eta
                   end)
                   (struct
                     let f = Big_json.ts_to_json
@@ -529,19 +513,18 @@ let () =
               in
               R.run fmt Cmd.(defaults.colors) m exec_type
           | Rs.PBRS ->
+              let module PBRS = Pbrs.Make (Solver.Make_SAT (Solver.MS)) in
               let module R =
                 Run
-                  (Pbrs)
+                  (PBRS)
                   (struct
                     let stop = Cmd.(defaults.steps)
                   end)
                   (struct
                     let parse_react name lhs rhs ?(conds = []) l eta =
                       match l with
-                      | `F f -> Pbrs.parse_react ~name ~lhs ~rhs ~conds f eta
+                      | `F f -> PBRS.parse_react ~name ~lhs ~rhs ~conds f eta
                       | _ -> assert false
-
-                    (*BISECT-IGNORE*)
                   end)
                   (struct
                     let f = Big_json.dtmc_to_json
@@ -549,19 +532,18 @@ let () =
               in
               R.run fmt Cmd.(defaults.colors) m exec_type
           | Rs.SBRS ->
+              let module SBRS = Sbrs.Make (Solver.Make_SAT (Solver.MS)) in
               let module R =
                 Run
-                  (Sbrs)
+                  (SBRS)
                   (struct
                     let stop = Cmd.(defaults.time)
                   end)
                   (struct
                     let parse_react name lhs rhs ?(conds = []) l eta =
                       match l with
-                      | `F f -> Sbrs.parse_react ~name ~lhs ~rhs ~conds f eta
+                      | `F f -> SBRS.parse_react ~name ~lhs ~rhs ~conds f eta
                       | _ -> assert false
-
-                    (*BISECT-IGNORE*)
                   end)
                   (struct
                     let f = Big_json.ctmc_to_json
@@ -569,19 +551,18 @@ let () =
               in
               R.run fmt Cmd.(defaults.colors) m exec_type
           | Rs.NBRS ->
+              let module NBRS = Nbrs.Make (Solver.Make_SAT (Solver.MS)) in
               let module R =
                 Run
-                  (Nbrs)
+                  (NBRS)
                   (struct
                     let stop = Cmd.(defaults.steps)
                   end)
                   (struct
                     let parse_react name lhs rhs ?(conds = []) l eta =
                       match l with
-                      | `P p -> Nbrs.parse_react ~name ~lhs ~rhs ~conds p eta
+                      | `P p -> NBRS.parse_react ~name ~lhs ~rhs ~conds p eta
                       | _ -> assert false
-
-                    (*BISECT-IGNORE*)
                   end)
                   (struct
                     let f = Big_json.mdp_to_json

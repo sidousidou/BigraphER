@@ -435,8 +435,6 @@ module Make
 struct
   type react = R.t
 
-  type ac = R.ac
-
   type p_class = P.p_class = P_class of R.t list | P_rclass of R.t list
 
   type graph = G.t

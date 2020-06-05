@@ -251,6 +251,7 @@ module Make
     (Ty : T) :
   RS
     with type react = R.t
+     and type ac := R.ac
      and type label = R.label
      and type graph = G.t
      and type limit = L.t

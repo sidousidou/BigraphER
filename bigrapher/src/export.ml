@@ -88,7 +88,7 @@ module B = struct
 end
 
 module T
-    (S : Bigraph.TsType.RS) (F : sig
+    (S : Bigraph.TsType.RS with type ac := Bigraph.AppCond.t) (F : sig
       val f : ?minify:bool -> S.graph -> String.t
     end) =
 struct

@@ -25,6 +25,7 @@ type graph = {
 module type T =
   TsType.RS
     with type react = react
+     and type ac := AppCond.t
      and type label = unit
      and type graph = graph
      and type limit = int

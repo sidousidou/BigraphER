@@ -31,6 +31,7 @@ type settings = {
   mutable verb : bool;
   mutable colors : bool;
   mutable running_time : bool;
+  mutable solver : Bigraph.Solver.solver_t;
 }
 
 let default_formats = [ Dot ]
@@ -59,6 +60,7 @@ let defaults =
     verb = false;
     colors = true;
     running_time = false;
+    solver = Bigraph.Solver.MSAT (* MiniSAT *);
   }
 
 type cmd_t = [ `check | `full | `sim | `exit ]
@@ -92,9 +94,6 @@ let print_table fmt rows ?(offset = 0) f_l f_r =
       List.iter (pp_row fmt) rows;
       pp_close_tbox fmt ()
   | _ -> assert false
-
-(* Assumed always non-empty *)
-(*BISECT-IGNORE*)
 
 let string_of_format f =
   List.map
@@ -152,6 +151,13 @@ let eval_config fmt () =
         ("quiet", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.quiet);
         ( "running_time",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
+        ( "solver",
+          fun fmt () ->
+            fprintf fmt "@[<hov>%s@]"
+              Bigraph.Solver.(
+                match defaults.solver with
+                | MSAT -> "MiniSAT"
+                | MCARD -> "MiniCARD") );
         ("steps", fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.steps);
         ("time", fun fmt () -> fprintf fmt "@[<hov>%g@]" defaults.time);
         ("verb", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.verb);
@@ -258,7 +264,7 @@ let empty_to_none = function
   | None -> None
 
 let copts consts debug ext graph lbls prism quiet states srew trew verbose
-    nocols rtime =
+    nocols rtime solver =
   defaults.consts <- consts;
   defaults.debug <- debug;
   defaults.out_format <- ext;
@@ -274,7 +280,12 @@ let copts consts debug ext graph lbls prism quiet states srew trew verbose
   defaults.export_transition_rewards <- empty_to_none trew;
   defaults.verb <- verbose;
   defaults.colors <- not nocols;
-  defaults.running_time <- rtime
+  defaults.running_time <- rtime;
+  defaults.solver <-
+    ( match solver with
+    | "MiniCARD" -> Bigraph.Solver.MCARD
+    | "MiniSAT" -> Bigraph.Solver.MSAT
+    | _ -> Bigraph.Solver.MSAT (* Defaults to MiniSAT *) )
 
 let copts_t =
   let opt_str = Arg.opt (Arg.some Arg.string) None in
@@ -294,7 +305,7 @@ let copts_t =
   let ext =
     let doc =
       "A comma-separated list of output formats.\n\
-      \    Supported formats are `dot', `json', `svg' and `txt'."
+      \               Supported formats are `dot', `json', `svg' and `txt'."
     in
     let env = Arg.env_var "BIGFORMAT" ~doc in
     Arg.(
@@ -354,9 +365,18 @@ let copts_t =
     let env = Arg.env_var "BIGNOCOLORS" ~doc in
     Arg.(value & flag & info [ "n"; "no-colors" ] ~doc ~env)
   in
+  let solver =
+    let doc =
+      "Select solver for matching engine.\n\
+      \               Supported solvers are `MSAT' (MiniSAT) and `MCARD' \
+       (MiniCARD)."
+    in
+    let env = Arg.env_var "BIGSOLVER" ~doc in
+    Arg.(value & opt string "MSAT" & info [ "S"; "solver" ] ~doc ~env)
+  in
   Term.(
     const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
-    $ states $ srew $ trew $ verbose $ nocols $ rtime)
+    $ states $ srew $ trew $ verbose $ nocols $ rtime $ solver)
 
 (* Sim options *)
 let sim_opts time steps =

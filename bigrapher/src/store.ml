@@ -4,7 +4,7 @@ open Unify
 open Bigraph
 
 module Make
-    (T : TsType.RS) (P : sig
+    (T : TsType.RS with type ac := AppCond.t) (P : sig
       val parse_react :
         string ->
         Big.t ->
@@ -1246,240 +1246,240 @@ struct
 
   (**************** EXPORT TO ML ********************)
 
-  let ml_of_dec id params exp =
-    match params with
-    (* "let id =" *)
-    | [] -> "let " ^ id ^ " =\n  " ^ exp
-    (* "let id a b c =" *)
-    | params -> "let " ^ id ^ " " ^ String.concat " " params ^ " =\n  " ^ exp
-
-  let ml_of_ctrl exp =
-    let aux id params c ar =
-      ml_of_dec ("ctrl_" ^ id) params "Ctrl.C ("
-      ^ c ^ ", [" ^ String.concat "; " params ^ "], " ^ string_of_int ar
-      ^ ")"
-    in
-    match exp with
-    | Ctrl_exp (id, ar, _) -> aux id [] ("\"" ^ id ^ "\"") ar
-    | Ctrl_fun_exp (id, params, ar, _) -> aux id params ("\"" ^ id ^ "\"") ar
-
-  let ml_of_list f l = "[" ^ String.concat "; " (List.map f l) ^ "]"
-
-  let ml_of_ids = ml_of_list (fun x -> "\"" ^ x ^ "\"")
-
-  let ml_of_ints = ml_of_list string_of_int
-
-  let ml_of_var = function Var (id, _) -> id
-
-  let ml_of_str = function Str_val (v, _) -> v
-
-  (* TO BE FIXED *)
-  let ml_of_num = function
-    | Num_int_val (v, _) -> string_of_int v
-    | Num_float_val (v, _) -> string_of_float v
-
-  let ml_of_op = function
-    | Plus (_, _, _) -> " + "
-    | Minus (_, _, _) -> " - "
-    | UMinus (_, _) -> "-"
-    | Prod (_, _, _) -> " * "
-    | Div (_, _, _) -> " / "
-    | Pow (_, _, _) -> " ^ "
-
-  let ml_of_params p =
-    List.map
-      (fun e ->
-        match e with
-        | ENum n -> ml_of_num n
-        | EStr s -> ml_of_str s
-        | EVar v -> ml_of_var v
-        | EOp op -> ml_of_op op)
-      p
-    |> String.concat " "
-
-  let ml_of_exp = function
-    | ENum n -> ml_of_num n
-    | EStr s -> ml_of_str s
-    | EVar v -> ml_of_var v
-    | EOp op -> ml_of_op op
-
-  let ml_of_face = function
-    | [] -> "Link.Face.empty"
-    | [ n ] -> "Link.Face.singleton (Link.Name \"" ^ n ^ "\")"
-    | names -> "Link.parse_face " ^ ml_of_ids names
-
-  let rec ml_of_big = function
-    | Big_var (id, _) -> (id : string)
-    | Big_var_fun (id, params, _) ->
-        (id : string) ^ " " ^ ml_of_params params
-    | Big_new_name (n, _) -> "Big.intro (" ^ ml_of_face [ n ] ^ ")"
-    | Big_num (v, _) -> (
-        match v with 0 -> "Big.zero" | 1 -> "Big.one" | _ -> assert false )
-    | Big_id exp ->
-        "Big.id (Big.Inter ("
-        ^ string_of_int exp.id_place
-        ^ ", " ^ ml_of_face exp.id_link ^ "))"
-    | Big_merge (n, _) -> "Big.merge " ^ string_of_int n
-    | Big_split (n, _) -> "Big.split " ^ string_of_int n
-    | Big_close exp -> "Big.closure (" ^ ml_of_face [ exp.cl_name ] ^ ")"
-    | Big_sub exp ->
-        "Big.sub (" ^ ml_of_face exp.in_names ^ ") ("
-        ^ ml_of_face [ exp.out_name ]
-        ^ ")"
-    | Big_comp (a, b, _) ->
-        "Big.comp\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
-    | Big_tens (a, b, _) ->
-        "Big.tens\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
-    | Big_par (a, b, _) ->
-        "Big.par\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
-    | Big_ppar (a, b, _) ->
-        "Big.ppar\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
-    | Big_share (a, psi, b, _) ->
-        "Big.share\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big psi ^ ")\n("
-        ^ ml_of_big b ^ ")"
-    | Big_plc exp ->
-        "Big.placing "
-        ^ ml_of_list ml_of_ints exp.plc_parents
-        ^ " "
-        ^ string_of_int exp.plc_roots
-        ^ " Link.Face.empty"
-    | Big_ion (Big_ion_exp (id, names, _)) ->
-        "Big.ion (" ^ ml_of_face names ^ ") ctrl_" ^ id
-    | Big_ion (Big_ion_fun_exp (id, params, names, _)) ->
-        "Big.ion (" ^ ml_of_face names ^ ") " ^ "(ctrl_" ^ id ^ " "
-        ^ ml_of_params params ^ ")"
-    | Big_nest (i, b, _) ->
-        "Big.nest\n(" ^ ml_of_big (Big_ion i) ^ ")\n(" ^ ml_of_big b ^ ")"
-    | Big_wire (c, b, _) -> (
-        match c with
-        | Close_exp cs ->
-            "Big.close\n("
-            ^ ml_of_face (names_of_closures cs)
-            ^ ")\n(" ^ ml_of_big b ^ ")"
-        | Sub_exp s ->
-            "Big.rename ~inner:(" ^ ml_of_face s.in_names ^ ") ~outer:("
-            ^ ml_of_face [ s.out_name ]
-            ^ ") (" ^ ml_of_big b ^ ")"
-        | Merge_close_exp cs ->
-            let outer = ml_of_face [ "~0" ] in
-            "Big.rename ~inner:(" ^ ml_of_face cs.m_cl_names ^ ") ~" ^ outer
-            ^ " (" ^ ml_of_big b ^ ") |> Big.close " ^ outer )
-    | Big_par_fn (n, b, _) ->
-        "Big.par_seq ~start:0 ~stop:" ^ ml_of_exp n ^ "(fun _ -> "
-        ^ ml_of_big b ^ ")"
-    | Big_ppar_fn (n, b, _) ->
-        "Big.ppar_seq ~start:0 ~stop:" ^ ml_of_exp n ^ "(fun _ -> "
-        ^ ml_of_big b ^ ")"
-
-  let ml_of_eta = function
-    | Some (l, _) -> "Some (Fun.parse " ^ ml_of_ints l ^ ")"
-    | None -> "None"
-
-  let ml_of_react action reward lhs rhs l eta _conds =
-    match T.typ with
-    | Rs.BRS ->
-        "Brs.parse_react_unsafe\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
-        ^ ml_of_big rhs ^ ")\n(" ^ ml_of_eta eta ^ ")"
-    | Rs.PBRS ->
-        "Pbrs.parse_react_unsafe\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
-        ^ ml_of_big rhs ^ ")\n("
-        ^ (ml_of_exp @@ Base.safe l)
-        ^ ")\n(" ^ ml_of_eta eta ^ ")"
-    | Rs.SBRS ->
-        "Sbrs.parse_react_unsafe\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
-        ^ ml_of_big rhs ^ ")\n("
-        ^ (ml_of_exp @@ Base.safe l)
-        ^ ")\n(" ^ ml_of_eta eta ^ ")"
-    | Rs.NBRS ->
-        "Nbrs.parse_react_unsafe\n~action:(" ^ action ^ ")\n~reward:("
-        ^ string_of_int reward ^ ")\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
-        ^ ml_of_big rhs ^ ")\n("
-        ^ (ml_of_exp @@ Base.safe l)
-        ^ ")\n(" ^ ml_of_eta eta ^ ")"
-
-  let ml_of_pred = function
-    | Pred_id (id, _, _) -> (id : string)
-    | Pred_id_fun (id, params, _, _) ->
-        (id : string) ^ " " ^ ml_of_params params
-
-  let ml_of_init = function
-    | Init (id, _) -> (id : string)
-    | Init_fun (id, params, _) -> (id : string) ^ " " ^ ml_of_params params
-
-  let ml_of_rul = function
-    | Rul_id (id, _) -> (id : string)
-    | Rul_id_fun (id, params, _) -> (id : string) ^ " " ^ ml_of_params params
-
-  let ml_of_rules ids = List.map ml_of_rul ids |> String.concat "; "
-
-  let ml_of_pri = function
-    | Pr_red (ids, _) ->
-        Rs.module_id T.typ ^ ".P_rclass [" ^ ml_of_rules ids ^ "]"
-    | Pr (ids, _) ->
-        Rs.module_id T.typ ^ ".P_class [" ^ ml_of_rules ids ^ "]"
-
-  (* TO BE FIXED *)
-  let ml_of_param = function
-    | Param_int (ids, Param_int_val (exp, _), _) ->
-        List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
-        |> String.concat " in\n"
-    | Param_int (_, Param_int_range (_, _, _, _), _) -> ""
-    | Param_int (_, Param_int_set (_, _), _) -> ""
-    | Param_float (_, Param_float_val (_, _), _) -> ""
-    | Param_float (_, Param_float_range (_, _, _, _), _) -> ""
-    | Param_float (ids, Param_float_set (exps, _), _) ->
-        List.map
-          (fun (id : string) -> ml_of_dec id [] (ml_of_list ml_of_exp exps))
-          ids
-        |> String.concat " in\n"
-    | Param_str (ids, Param_str_val (exp, _), _) ->
-        List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
-        |> String.concat " in\n"
-    | Param_str (_, Param_str_set (_, _), _) -> ""
-
-  let ml_of_dec = function
-    | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) -> ml_of_ctrl exp
-    | Dbig (Big_exp (id, exp, _)) -> ml_of_dec id [] (ml_of_big exp)
-    | Dbig (Big_fun_exp (id, params, exp, _)) ->
-        ml_of_dec id params (ml_of_big exp)
-    | Dreact (React_exp (id, action, reward, lhs, rhs, l, eta, conds, _)) ->
-        ml_of_dec id [] (ml_of_react action reward lhs rhs l eta conds)
-    | Dreact
-        (React_fun_exp
-          (id, action, reward, params, lhs, rhs, l, eta, conds, _)) ->
-        ml_of_dec id params (ml_of_react action reward lhs rhs l eta conds)
-    | Dint exp ->
-        ml_of_dec exp.d_id [] ("Ctrl.I (" ^ ml_of_exp exp.d_exp ^ ")")
-    | Dfloat exp ->
-        ml_of_dec exp.d_id [] ("Ctrl.F (" ^ ml_of_exp exp.d_exp ^ ")")
-    | Dstr exp ->
-        ml_of_dec exp.d_id [] ("Ctrl.S (" ^ ml_of_exp exp.d_exp ^ ")")
-    | Daction _ -> ""
-
-  (*TODO*)
-
-  let ml_of_model m file =
-    let file_id = Filename.basename file |> Filename.chop_extension in
-    "(* Generated by BigraphER " ^ Version.version ^ " *)\n(* " ^ file
-    ^ " *)\n\
-       open Bigraph\n\n\
-       let int_of_param = function\n\
-      \  | Ctrl.I i -> i\n\
-      \  | Ctrl.F _ | Ctrl.S _ -> failwith \"cast error\"\n\n\
-       let float_of_param = function\n\
-      \  | Ctrl.F f -> f\n\
-      \  | Ctrl.I _ | Ctrl.S _ -> failwith \"Cast error\"\n\n\
-       let string_of_parm = function\n\
-      \  | Ctrl.S s -> s\n\
-      \  | Ctrl.I _ | Ctrl.F _ -> failwith \"Cast error\"\n\n"
-    ^ ( List.map ml_of_dec m.model_decs
-        @ List.map ml_of_param m.model_rs.dbrs_params
-      |> String.concat "\n\n" )
-    ^ "\n\nlet preds_" ^ file_id ^ "_big =\n  " ^ "[ "
-    ^ (List.map ml_of_pred m.model_rs.dbrs_preds |> String.concat "; ")
-    ^ " ]\n\n" ^ "let init_" ^ file_id ^ "_big =\n  "
-    ^ ml_of_init m.model_rs.dbrs_init
-    ^ "\n\n" ^ "let pri_" ^ file_id ^ "_big =\n  " ^ "[ "
-    ^ (List.map ml_of_pri m.model_rs.dbrs_pri |> String.concat ";\n")
-    ^ "\n]\n"
+  (*  let ml_of_dec id params exp =
+   *   match params with
+   *   (\* "let id =" *\)
+   *   | [] -> "let " ^ id ^ " =\n  " ^ exp
+   *   (\* "let id a b c =" *\)
+   *   | params -> "let " ^ id ^ " " ^ String.concat " " params ^ " =\n  " ^ exp
+   * 
+   * let ml_of_ctrl exp =
+   *   let aux id params c ar =
+   *     ml_of_dec ("ctrl_" ^ id) params "Ctrl.C ("
+   *     ^ c ^ ", [" ^ String.concat "; " params ^ "], " ^ string_of_int ar
+   *     ^ ")"
+   *   in
+   *   match exp with
+   *   | Ctrl_exp (id, ar, _) -> aux id [] ("\"" ^ id ^ "\"") ar
+   *   | Ctrl_fun_exp (id, params, ar, _) -> aux id params ("\"" ^ id ^ "\"") ar
+   * 
+   * let ml_of_list f l = "[" ^ String.concat "; " (List.map f l) ^ "]"
+   * 
+   * let ml_of_ids = ml_of_list (fun x -> "\"" ^ x ^ "\"")
+   * 
+   * let ml_of_ints = ml_of_list string_of_int
+   * 
+   * let ml_of_var = function Var (id, _) -> id
+   * 
+   * let ml_of_str = function Str_val (v, _) -> v
+   * 
+   * (\* TO BE FIXED *\)
+   * let ml_of_num = function
+   *   | Num_int_val (v, _) -> string_of_int v
+   *   | Num_float_val (v, _) -> string_of_float v
+   * 
+   * let ml_of_op = function
+   *   | Plus (_, _, _) -> " + "
+   *   | Minus (_, _, _) -> " - "
+   *   | UMinus (_, _) -> "-"
+   *   | Prod (_, _, _) -> " * "
+   *   | Div (_, _, _) -> " / "
+   *   | Pow (_, _, _) -> " ^ "
+   * 
+   * let ml_of_params p =
+   *   List.map
+   *     (fun e ->
+   *       match e with
+   *       | ENum n -> ml_of_num n
+   *       | EStr s -> ml_of_str s
+   *       | EVar v -> ml_of_var v
+   *       | EOp op -> ml_of_op op)
+   *     p
+   *   |> String.concat " "
+   * 
+   * let ml_of_exp = function
+   *   | ENum n -> ml_of_num n
+   *   | EStr s -> ml_of_str s
+   *   | EVar v -> ml_of_var v
+   *   | EOp op -> ml_of_op op
+   * 
+   * let ml_of_face = function
+   *   | [] -> "Link.Face.empty"
+   *   | [ n ] -> "Link.Face.singleton (Link.Name \"" ^ n ^ "\")"
+   *   | names -> "Link.parse_face " ^ ml_of_ids names
+   * 
+   * let rec ml_of_big = function
+   *   | Big_var (id, _) -> (id : string)
+   *   | Big_var_fun (id, params, _) ->
+   *       (id : string) ^ " " ^ ml_of_params params
+   *   | Big_new_name (n, _) -> "Big.intro (" ^ ml_of_face [ n ] ^ ")"
+   *   | Big_num (v, _) -> (
+   *       match v with 0 -> "Big.zero" | 1 -> "Big.one" | _ -> assert false )
+   *   | Big_id exp ->
+   *       "Big.id (Big.Inter ("
+   *       ^ string_of_int exp.id_place
+   *       ^ ", " ^ ml_of_face exp.id_link ^ "))"
+   *   | Big_merge (n, _) -> "Big.merge " ^ string_of_int n
+   *   | Big_split (n, _) -> "Big.split " ^ string_of_int n
+   *   | Big_close exp -> "Big.closure (" ^ ml_of_face [ exp.cl_name ] ^ ")"
+   *   | Big_sub exp ->
+   *       "Big.sub (" ^ ml_of_face exp.in_names ^ ") ("
+   *       ^ ml_of_face [ exp.out_name ]
+   *       ^ ")"
+   *   | Big_comp (a, b, _) ->
+   *       "Big.comp\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
+   *   | Big_tens (a, b, _) ->
+   *       "Big.tens\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
+   *   | Big_par (a, b, _) ->
+   *       "Big.par\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
+   *   | Big_ppar (a, b, _) ->
+   *       "Big.ppar\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big b ^ ")"
+   *   | Big_share (a, psi, b, _) ->
+   *       "Big.share\n(" ^ ml_of_big a ^ ")\n(" ^ ml_of_big psi ^ ")\n("
+   *       ^ ml_of_big b ^ ")"
+   *   | Big_plc exp ->
+   *       "Big.placing "
+   *       ^ ml_of_list ml_of_ints exp.plc_parents
+   *       ^ " "
+   *       ^ string_of_int exp.plc_roots
+   *       ^ " Link.Face.empty"
+   *   | Big_ion (Big_ion_exp (id, names, _)) ->
+   *       "Big.ion (" ^ ml_of_face names ^ ") ctrl_" ^ id
+   *   | Big_ion (Big_ion_fun_exp (id, params, names, _)) ->
+   *       "Big.ion (" ^ ml_of_face names ^ ") " ^ "(ctrl_" ^ id ^ " "
+   *       ^ ml_of_params params ^ ")"
+   *   | Big_nest (i, b, _) ->
+   *       "Big.nest\n(" ^ ml_of_big (Big_ion i) ^ ")\n(" ^ ml_of_big b ^ ")"
+   *   | Big_wire (c, b, _) -> (
+   *       match c with
+   *       | Close_exp cs ->
+   *           "Big.close\n("
+   *           ^ ml_of_face (names_of_closures cs)
+   *           ^ ")\n(" ^ ml_of_big b ^ ")"
+   *       | Sub_exp s ->
+   *           "Big.rename ~inner:(" ^ ml_of_face s.in_names ^ ") ~outer:("
+   *           ^ ml_of_face [ s.out_name ]
+   *           ^ ") (" ^ ml_of_big b ^ ")"
+   *       | Merge_close_exp cs ->
+   *           let outer = ml_of_face [ "~0" ] in
+   *           "Big.rename ~inner:(" ^ ml_of_face cs.m_cl_names ^ ") ~" ^ outer
+   *           ^ " (" ^ ml_of_big b ^ ") |> Big.close " ^ outer )
+   *   | Big_par_fn (n, b, _) ->
+   *       "Big.par_seq ~start:0 ~stop:" ^ ml_of_exp n ^ "(fun _ -> "
+   *       ^ ml_of_big b ^ ")"
+   *   | Big_ppar_fn (n, b, _) ->
+   *       "Big.ppar_seq ~start:0 ~stop:" ^ ml_of_exp n ^ "(fun _ -> "
+   *       ^ ml_of_big b ^ ")"
+   * 
+   * let ml_of_eta = function
+   *   | Some (l, _) -> "Some (Fun.parse " ^ ml_of_ints l ^ ")"
+   *   | None -> "None"
+   * 
+   * let ml_of_react action reward lhs rhs l eta _conds =
+   *   match T.typ with
+   *   | Rs.BRS ->
+   *       "Brs.parse_react_unsafe\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
+   *       ^ ml_of_big rhs ^ ")\n(" ^ ml_of_eta eta ^ ")"
+   *   | Rs.PBRS ->
+   *       "Pbrs.parse_react_unsafe\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
+   *       ^ ml_of_big rhs ^ ")\n("
+   *       ^ (ml_of_exp @@ Base.safe l)
+   *       ^ ")\n(" ^ ml_of_eta eta ^ ")"
+   *   | Rs.SBRS ->
+   *       "Sbrs.parse_react_unsafe\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
+   *       ^ ml_of_big rhs ^ ")\n("
+   *       ^ (ml_of_exp @@ Base.safe l)
+   *       ^ ")\n(" ^ ml_of_eta eta ^ ")"
+   *   | Rs.NBRS ->
+   *       "Nbrs.parse_react_unsafe\n~action:(" ^ action ^ ")\n~reward:("
+   *       ^ string_of_int reward ^ ")\n~lhs:(" ^ ml_of_big lhs ^ ")\n~rhs:("
+   *       ^ ml_of_big rhs ^ ")\n("
+   *       ^ (ml_of_exp @@ Base.safe l)
+   *       ^ ")\n(" ^ ml_of_eta eta ^ ")"
+   * 
+   * let ml_of_pred = function
+   *   | Pred_id (id, _, _) -> (id : string)
+   *   | Pred_id_fun (id, params, _, _) ->
+   *       (id : string) ^ " " ^ ml_of_params params
+   * 
+   * let ml_of_init = function
+   *   | Init (id, _) -> (id : string)
+   *   | Init_fun (id, params, _) -> (id : string) ^ " " ^ ml_of_params params
+   * 
+   * let ml_of_rul = function
+   *   | Rul_id (id, _) -> (id : string)
+   *   | Rul_id_fun (id, params, _) -> (id : string) ^ " " ^ ml_of_params params
+   * 
+   * let ml_of_rules ids = List.map ml_of_rul ids |> String.concat "; "
+   * 
+   * let ml_of_pri = function
+   *   | Pr_red (ids, _) ->
+   *       Rs.module_id T.typ ^ ".P_rclass [" ^ ml_of_rules ids ^ "]"
+   *   | Pr (ids, _) ->
+   *       Rs.module_id T.typ ^ ".P_class [" ^ ml_of_rules ids ^ "]"
+   * 
+   * (\* TO BE FIXED *\)
+   * let ml_of_param = function
+   *   | Param_int (ids, Param_int_val (exp, _), _) ->
+   *       List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
+   *       |> String.concat " in\n"
+   *   | Param_int (_, Param_int_range (_, _, _, _), _) -> ""
+   *   | Param_int (_, Param_int_set (_, _), _) -> ""
+   *   | Param_float (_, Param_float_val (_, _), _) -> ""
+   *   | Param_float (_, Param_float_range (_, _, _, _), _) -> ""
+   *   | Param_float (ids, Param_float_set (exps, _), _) ->
+   *       List.map
+   *         (fun (id : string) -> ml_of_dec id [] (ml_of_list ml_of_exp exps))
+   *         ids
+   *       |> String.concat " in\n"
+   *   | Param_str (ids, Param_str_val (exp, _), _) ->
+   *       List.map (fun (id : string) -> ml_of_dec id [] (ml_of_exp exp)) ids
+   *       |> String.concat " in\n"
+   *   | Param_str (_, Param_str_set (_, _), _) -> ""
+   * 
+   * let ml_of_dec = function
+   *   | Dctrl (Atomic (exp, _)) | Dctrl (Non_atomic (exp, _)) -> ml_of_ctrl exp
+   *   | Dbig (Big_exp (id, exp, _)) -> ml_of_dec id [] (ml_of_big exp)
+   *   | Dbig (Big_fun_exp (id, params, exp, _)) ->
+   *       ml_of_dec id params (ml_of_big exp)
+   *   | Dreact (React_exp (id, action, reward, lhs, rhs, l, eta, conds, _)) ->
+   *       ml_of_dec id [] (ml_of_react action reward lhs rhs l eta conds)
+   *   | Dreact
+   *       (React_fun_exp
+   *         (id, action, reward, params, lhs, rhs, l, eta, conds, _)) ->
+   *       ml_of_dec id params (ml_of_react action reward lhs rhs l eta conds)
+   *   | Dint exp ->
+   *       ml_of_dec exp.d_id [] ("Ctrl.I (" ^ ml_of_exp exp.d_exp ^ ")")
+   *   | Dfloat exp ->
+   *       ml_of_dec exp.d_id [] ("Ctrl.F (" ^ ml_of_exp exp.d_exp ^ ")")
+   *   | Dstr exp ->
+   *       ml_of_dec exp.d_id [] ("Ctrl.S (" ^ ml_of_exp exp.d_exp ^ ")")
+   *   | Daction _ -> ""
+   * 
+   * (\*TODO*\)
+   * 
+   * let ml_of_model m file =
+   *   let file_id = Filename.basename file |> Filename.chop_extension in
+   *   "(\* Generated by BigraphER " ^ Version.version ^ " *\)\n(\* " ^ file
+   *   ^ " *\)\n\
+   *      open Bigraph\n\n\
+   *      let int_of_param = function\n\
+   *     \  | Ctrl.I i -> i\n\
+   *     \  | Ctrl.F _ | Ctrl.S _ -> failwith \"cast error\"\n\n\
+   *      let float_of_param = function\n\
+   *     \  | Ctrl.F f -> f\n\
+   *     \  | Ctrl.I _ | Ctrl.S _ -> failwith \"Cast error\"\n\n\
+   *      let string_of_parm = function\n\
+   *     \  | Ctrl.S s -> s\n\
+   *     \  | Ctrl.I _ | Ctrl.F _ -> failwith \"Cast error\"\n\n"
+   *   ^ ( List.map ml_of_dec m.model_decs
+   *       @ List.map ml_of_param m.model_rs.dbrs_params
+   *     |> String.concat "\n\n" )
+   *   ^ "\n\nlet preds_" ^ file_id ^ "_big =\n  " ^ "[ "
+   *   ^ (List.map ml_of_pred m.model_rs.dbrs_preds |> String.concat "; ")
+   *   ^ " ]\n\n" ^ "let init_" ^ file_id ^ "_big =\n  "
+   *   ^ ml_of_init m.model_rs.dbrs_init
+   *   ^ "\n\n" ^ "let pri_" ^ file_id ^ "_big =\n  " ^ "[ "
+   *   ^ (List.map ml_of_pri m.model_rs.dbrs_pri |> String.concat ";\n")
+   *   ^ "\n]\n" *)
 end

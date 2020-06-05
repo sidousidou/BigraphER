@@ -22,6 +22,7 @@ module type T = sig
   include
     TsType.RS
       with type react = react
+       and type ac := AppCond.t
        and type label = float
        and type graph = graph
        and type limit = float

@@ -4,6 +4,7 @@ open Bigraph
 
 (* Using MiniCARD *)
 module Default_S = Solver.Make_SAT (Solver.MC)
+
 let s_type = "MCARD"
 
 module BRS = Brs.Make (Default_S)
@@ -115,11 +116,14 @@ let () =
   print_newline ();
   print_endline "MATCHING ENGINE";
   print_string "Testing Brs.step:\n";
-  print_endline @@ step ~minify:false ~solver:s_type
+  print_endline
+  @@ step ~minify:false ~solver:s_type
   @@ input big_test [ r_test ] "reacts" (react_to_json ~minify:true);
   print_string "Testing Pbrs.step:\n";
-  print_endline @@ step ~minify:false ~solver:s_type
+  print_endline
+  @@ step ~minify:false ~solver:s_type
   @@ input big_test [ pr_test ] "preacts" (preact_to_json ~minify:true);
   print_string "Testing Sbrs.step:\n";
-  print_endline @@ step ~minify:false ~solver:s_type
+  print_endline
+  @@ step ~minify:false ~solver:s_type
   @@ input big_test [ sr_test ] "sreacts" (sreact_to_json ~minify:true)
