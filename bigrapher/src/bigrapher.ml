@@ -494,81 +494,101 @@ let () =
         try
           let m = Parser.model Lexer.token lexbuf in
           close_in file;
-          match m.model_rs.dbrs_type with
-          | Rs.BRS ->
-              let module BRS = Brs.Make (Solver.Make_SAT (Solver.MS)) in
-              let module R =
-                Run
-                  (BRS)
-                  (struct
-                    let stop = Cmd.(defaults.steps)
-                  end)
-                  (struct
-                    let parse_react name lhs rhs ?(conds = []) _ eta =
-                      BRS.parse_react ~name ~lhs ~rhs ~conds () eta
-                  end)
-                  (struct
-                    let f = Big_json.ts_to_json
-                  end)
-              in
-              R.run fmt Cmd.(defaults.colors) m exec_type
-          | Rs.PBRS ->
-              let module PBRS = Pbrs.Make (Solver.Make_SAT (Solver.MS)) in
-              let module R =
-                Run
-                  (PBRS)
-                  (struct
-                    let stop = Cmd.(defaults.steps)
-                  end)
-                  (struct
-                    let parse_react name lhs rhs ?(conds = []) l eta =
-                      match l with
-                      | `F f -> PBRS.parse_react ~name ~lhs ~rhs ~conds f eta
-                      | _ -> assert false
-                  end)
-                  (struct
-                    let f = Big_json.dtmc_to_json
-                  end)
-              in
-              R.run fmt Cmd.(defaults.colors) m exec_type
-          | Rs.SBRS ->
-              let module SBRS = Sbrs.Make (Solver.Make_SAT (Solver.MS)) in
-              let module R =
-                Run
-                  (SBRS)
-                  (struct
-                    let stop = Cmd.(defaults.time)
-                  end)
-                  (struct
-                    let parse_react name lhs rhs ?(conds = []) l eta =
-                      match l with
-                      | `F f -> SBRS.parse_react ~name ~lhs ~rhs ~conds f eta
-                      | _ -> assert false
-                  end)
-                  (struct
-                    let f = Big_json.ctmc_to_json
-                  end)
-              in
-              R.run fmt Cmd.(defaults.colors) m exec_type
-          | Rs.NBRS ->
-              let module NBRS = Nbrs.Make (Solver.Make_SAT (Solver.MS)) in
-              let module R =
-                Run
-                  (NBRS)
-                  (struct
-                    let stop = Cmd.(defaults.steps)
-                  end)
-                  (struct
-                    let parse_react name lhs rhs ?(conds = []) l eta =
-                      match l with
-                      | `P p -> NBRS.parse_react ~name ~lhs ~rhs ~conds p eta
-                      | _ -> assert false
-                  end)
-                  (struct
-                    let f = Big_json.mdp_to_json
-                  end)
-              in
-              R.run fmt Cmd.(defaults.colors) m exec_type
+          let module Selector (T : sig
+            val rs_type : Bigraph.Rs.t
+          end)
+          (M : Solver.M) =
+          struct
+            let run fmt colors m exec_type =
+              match T.rs_type with
+              | Rs.BRS ->
+                  let module BRS = Brs.Make (M) in
+                  let module R =
+                    Run
+                      (BRS)
+                      (struct
+                        let stop = Cmd.(defaults.steps)
+                      end)
+                      (struct
+                        let parse_react name lhs rhs ?(conds = []) _ eta =
+                          BRS.parse_react ~name ~lhs ~rhs ~conds () eta
+                      end)
+                      (struct
+                        let f = Big_json.ts_to_json
+                      end)
+                  in
+                  R.run fmt colors m exec_type
+              | Rs.PBRS ->
+                  let module PBRS = Pbrs.Make (M) in
+                  let module R =
+                    Run
+                      (PBRS)
+                      (struct
+                        let stop = Cmd.(defaults.steps)
+                      end)
+                      (struct
+                        let parse_react name lhs rhs ?(conds = []) l eta =
+                          match l with
+                          | `F f ->
+                              PBRS.parse_react ~name ~lhs ~rhs ~conds f eta
+                          | _ -> assert false
+                      end)
+                      (struct
+                        let f = Big_json.dtmc_to_json
+                      end)
+                  in
+                  R.run fmt colors m exec_type
+              | Rs.SBRS ->
+                  let module SBRS = Sbrs.Make (M) in
+                  let module R =
+                    Run
+                      (SBRS)
+                      (struct
+                        let stop = Cmd.(defaults.time)
+                      end)
+                      (struct
+                        let parse_react name lhs rhs ?(conds = []) l eta =
+                          match l with
+                          | `F f ->
+                              SBRS.parse_react ~name ~lhs ~rhs ~conds f eta
+                          | _ -> assert false
+                      end)
+                      (struct
+                        let f = Big_json.ctmc_to_json
+                      end)
+                  in
+                  R.run fmt colors m exec_type
+              | Rs.NBRS ->
+                  let module NBRS = Nbrs.Make (M) in
+                  let module R =
+                    Run
+                      (NBRS)
+                      (struct
+                        let stop = Cmd.(defaults.steps)
+                      end)
+                      (struct
+                        let parse_react name lhs rhs ?(conds = []) l eta =
+                          match l with
+                          | `P p ->
+                              NBRS.parse_react ~name ~lhs ~rhs ~conds p eta
+                          | _ -> assert false
+                      end)
+                      (struct
+                        let f = Big_json.mdp_to_json
+                      end)
+                  in
+                  R.run fmt colors m exec_type
+          end in
+          let module T = struct
+            let rs_type = m.model_rs.dbrs_type
+          end in
+          match Cmd.(defaults.solver) with
+          | Bigraph.Solver.MSAT ->
+              let module S = Selector (T) (Solver.Make_SAT (Solver.MS)) in
+              S.run fmt Cmd.(defaults.colors) m exec_type
+          | Bigraph.Solver.MCARD ->
+              let module S = Selector (T) (Solver.Make_SAT (Solver.MC)) in
+              S.run fmt Cmd.(defaults.colors) m exec_type
         with
         | Place.NOT_PRIME ->
             close_progress_bar ();

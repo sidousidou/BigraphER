@@ -372,7 +372,7 @@ let copts_t =
        (MiniCARD)."
     in
     let env = Arg.env_var "BIGSOLVER" ~doc in
-    Arg.(value & opt string "MSAT" & info [ "S"; "solver" ] ~doc ~env)
+    Arg.(value & opt string "MSAT" & info [ "solver" ] ~doc ~env)
   in
   Term.(
     const copts $ consts $ debug $ ext $ graph $ lbls $ prism $ quiet
