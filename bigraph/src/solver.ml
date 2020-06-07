@@ -521,6 +521,28 @@ module Make_SAT (S : S) : M = struct
     map_hyp_c : Iso.t;
   }
 
+  let print_dump solver vars =
+    let aux s m descr =
+      (descr ^ "\n" ^ (
+         Array.map (fun row ->
+             Array.map (fun x ->
+                 match S.value_of s x with
+                 | True -> "t"
+                 | False -> "f"
+                 | Unknown -> "-"
+               ) row
+             |> Array.to_list
+             |> String.concat "") m
+         |> Array.to_list
+         |> String.concat "\n"
+       ))
+      |> print_endline in
+    let stats = S.get_stats solver in
+    print_endline ("Solver stats: vars=" ^ (string_of_int stats.v) ^ "  clauses=" ^ (string_of_int stats.c));
+    aux solver vars.nodes "nodes=";
+    aux solver vars.edges "edges=";
+    aux solver vars.hyp "hyp="
+
   let add_c11 unmatch_js solver m =
     IntSet.iter
       (fun j ->
@@ -1296,6 +1318,8 @@ module Make_SAT (S : S) : M = struct
             map_hyp_c = iso_w'_c;
           }
         in
+        print_endline "Solver.aux_match"; (* Debug *)
+        print_dump solver vars; (* Debug *)
         filter_loop solver t p vars t_trans
       with NOT_TOTAL -> raise_notrace NO_MATCH)
 
