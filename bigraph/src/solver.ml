@@ -32,6 +32,8 @@ module type E = sig
 
   val create : unit -> t
 
+  val set_verbosity : t -> int -> unit
+
   val add_clause : t -> lit list -> unit
 
   val add_at_most : t -> lit list -> int -> unit
@@ -66,6 +68,8 @@ module MS_W : E = struct
   type lit = Minisat.lit
 
   let create () = Minisat.(new solver)
+
+  let set_verbosity s verb = s#set_verbosity verb
 
   let add_clause s lits = s#add_clause lits
 
@@ -262,6 +266,8 @@ module MC_W : E = struct
   type lit = Minicard.lit
 
   let create () = Minicard.(new solver)
+
+  let set_verbosity s verb = s#set_verbosity verb
 
   let add_clause s lits = s#add_clause lits
 
@@ -522,26 +528,16 @@ module Make_SAT (S : S) : M = struct
   }
 
   let print_dump solver vars =
-    let aux s m descr =
-      (descr ^ "\n" ^ (
-         Array.map (fun row ->
-             Array.map (fun x ->
-                 match S.value_of s x with
-                 | True -> "t"
-                 | False -> "f"
-                 | Unknown -> "-"
-               ) row
-             |> Array.to_list
-             |> String.concat "") m
-         |> Array.to_list
-         |> String.concat "\n"
-       ))
-      |> print_endline in
     let stats = S.get_stats solver in
-    print_endline ("Solver stats: vars=" ^ (string_of_int stats.v) ^ "  clauses=" ^ (string_of_int stats.c));
-    aux solver vars.nodes "nodes=";
-    aux solver vars.edges "edges=";
-    aux solver vars.hyp "hyp="
+    print_endline @@
+      "=================================================================================\n"
+      ^ "Solver stats: vars=" ^ string_of_int stats.v ^ "  clauses="
+      ^ string_of_int stats.c ;
+    print_endline @@ "nodes=" ^ (S.get_iso solver vars.nodes |> Iso.to_string);
+    print_endline @@ "edges=" ^ (S.get_iso solver vars.edges |> Iso.to_string);
+    print_endline @@ "hyp=" ^ (S.get_fun solver vars.hyp |> Fun.to_string);
+    print_string
+      "=================================================================================\n"
 
   let add_c11 unmatch_js solver m =
     IntSet.iter
@@ -1246,6 +1242,10 @@ module Make_SAT (S : S) : M = struct
     match S.solve solver with
     | UNSAT -> raise_notrace NO_MATCH
     | SAT ->
+        print_endline "Solver.filter_loop";
+        (* Debug *)
+        print_dump solver vars;
+        (* Debug *)
         if
           Big.(
             P.check_match ~target:t.p ~pattern:p.p t_trans
@@ -1318,8 +1318,6 @@ module Make_SAT (S : S) : M = struct
             map_hyp_c = iso_w'_c;
           }
         in
-        print_endline "Solver.aux_match"; (* Debug *)
-        print_dump solver vars; (* Debug *)
         filter_loop solver t p vars t_trans
       with NOT_TOTAL -> raise_notrace NO_MATCH)
 

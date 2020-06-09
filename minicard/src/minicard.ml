@@ -12,13 +12,15 @@ type stat = { v : int; c : int; mem : float; cpu : float }
 
 external create : unit -> t = "ocaml_minicard_new"
 
-external new_var : t -> var = "ocaml_minicard_new_var" [@@noalloc]
+external set_verbosity : t -> int -> unit = "ocaml_minicard_set_verbosity"
 
-external pos_lit : var -> lit = "ocaml_minicard_pos_lit" [@@noalloc]
+external new_var : t -> var = "ocaml_minicard_new_var"
 
-external neg_lit : var -> lit = "ocaml_minicard_neg_lit" [@@noalloc]
+external pos_lit : var -> lit = "ocaml_minicard_pos_lit"
 
-external negate : lit -> lit = "ocaml_minicard_negate" [@@noalloc]
+external neg_lit : var -> lit = "ocaml_minicard_neg_lit"
+
+external negate : lit -> lit = "ocaml_minicard_negate"
 
 external __add_clause : t -> lit list -> bool = "ocaml_minicard_add_clause"
 
@@ -31,19 +33,21 @@ external solve : t -> solution = "ocaml_minicard_solve"
 
 external __value_of : t -> var -> int = "ocaml_minicard_value_of"
 
-external n_vars : t -> int = "ocaml_minicard_n_vars" [@@noalloc]
+external n_vars : t -> int = "ocaml_minicard_n_vars"
 
-external n_clauses : t -> int = "ocaml_minicard_n_clauses" [@@noalloc]
+external n_clauses : t -> int = "ocaml_minicard_n_clauses"
 
-external __mem_used : unit -> float = "ocaml_minicard_mem_used" [@@noalloc]
+external __mem_used : unit -> float = "ocaml_minicard_mem_used"
 
-external __cpu_time : unit -> float = "ocaml_minicard_cpu_time" [@@noalloc]
+external __cpu_time : unit -> float = "ocaml_minicard_cpu_time"
 
 class solver =
   object (self)
     val solver = create ()
 
     method new_var = new_var solver
+
+    method set_verbosity = set_verbosity solver
 
     method add_clause l =
       match l with [] -> () | _ -> ignore (__add_clause solver l)

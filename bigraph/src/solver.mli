@@ -39,6 +39,8 @@ module type E = sig
 
   val create : unit -> t
 
+  val set_verbosity : t -> int -> unit
+
   val add_clause : t -> lit list -> unit
 
   val add_at_most : t -> lit list -> int -> unit

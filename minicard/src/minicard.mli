@@ -37,6 +37,9 @@ class solver :
     (** Add a clause (i.e. disjunction of literals) to the set of problem
         constraints. A clause is represented as a list of literals. *)
 
+    method set_verbosity : int -> unit
+    (** Set verbosity level (0=silent, 1=some, 2=more). *)
+
     method add_at_most : lit list -> int -> unit
     (** Add an {i at most} cardinality constraint to the set of problem
         constraints. A clause is represented as a list of literals. *)
@@ -57,30 +60,30 @@ class solver :
     (** Find a solution to the current sat problem. *)
 
     method value_of : var -> value
-    (** Return the value associated to a variable.
+    (** Return the value associated to a variable. {b Note}, this method can
+        only be invoked after [solve] returned [SAT].
 
         @raise Invalid_argument when the input variable is not a valid index. *)
 
     method get_stats : stat
-    (** Return some current statistics. *)
+    (** Return some current statistics. {b Note}, this method can only be
+        invoked after [solve] has been invoked.*)
 
     method print_stats : unit
-    (** Print some current statistics to standard output. *)
+    (** Print some current statistics to standard output. {b Note}, this
+        method can only be invoked after [solve] has been invoked.*)
   end
 
 val string_of_value : value -> string
 (** Convert a value to a string. *)
 
 external pos_lit : var -> lit = "ocaml_minicard_pos_lit"
-  [@@noalloc]
 (** Return the positive literal for a variable. *)
 
 external neg_lit : var -> lit = "ocaml_minicard_neg_lit"
-  [@@noalloc]
 (** Return the negative literal for a variable. *)
 
 external negate : lit -> lit = "ocaml_minicard_negate"
-  [@@noalloc]
 (** Negate a literal. *)
 
 (**/**)

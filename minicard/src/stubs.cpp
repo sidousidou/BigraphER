@@ -18,6 +18,7 @@ extern "C"
 extern "C"
 {
   CAMLprim value ocaml_minicard_new(value unit);
+  void ocaml_minicard_set_verbosity(value solver, value verb);
   CAMLprim value ocaml_minicard_new_var(value solver);
   CAMLprim value ocaml_minicard_pos_lit(value v);
   CAMLprim value ocaml_minicard_neg_lit(value v);
@@ -72,11 +73,21 @@ CAMLprim value ocaml_minicard_new(value unit) {
   CAMLreturn(result);
 }
 
+void ocaml_minicard_set_verbosity(value solver, value verb) {
+  CAMLparam2 (solver,verb);
+
+  Solver* _solver = solver_val(solver);
+  _solver->verbosity = Int_val(verb);
+
+  CAMLreturn0;
+}
 
 CAMLprim value ocaml_minicard_new_var(value solver) {
   CAMLparam1(solver);
 
-  CAMLreturn(Val_int(solver_val(solver)->newVar()));
+  Solver* _solver = solver_val(solver);
+
+  CAMLreturn(Val_int(_solver->newVar()));
 }
 
 CAMLprim value ocaml_minicard_pos_lit(value v) {
@@ -152,10 +163,12 @@ CAMLprim value ocaml_minicard_value_of(value solver, value v) {
   CAMLlocal1 (result);
 
   Var var = Int_val(v);
-  if (var >= solver_val(solver)->model.size()){
+  Solver* _solver = solver_val(solver);
+
+  if (var >= _solver->model.size()){
     caml_invalid_argument("index out of bounds");
   }
-  lbool val = solver_val(solver)->model[var];
+  lbool val = _solver->model[var];
 
   if(val == l_False) {
     result = Val_int(0);
@@ -173,13 +186,17 @@ CAMLprim value ocaml_minicard_value_of(value solver, value v) {
 CAMLprim value ocaml_minicard_n_vars(value solver) {
   CAMLparam1 (solver);
 
-  CAMLreturn(Val_int(solver_val(solver)->nVars()));
+  Solver* _solver = solver_val(solver);
+
+  CAMLreturn(Val_int(_solver->nVars()));
 }
 
 CAMLprim value ocaml_minicard_n_clauses(value solver) {
   CAMLparam1 (solver);
 
-  CAMLreturn(Val_int(solver_val(solver)->nClauses()));
+  Solver* _solver = solver_val(solver);
+
+  CAMLreturn(Val_int(_solver->nClauses()));
 }
 
 CAMLprim value ocaml_minicard_mem_used(value unit) {
