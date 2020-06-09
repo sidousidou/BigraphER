@@ -221,8 +221,7 @@ let fold_matrix m f acc =
     (fun (i, acc) r ->
       ( i + 1,
         Array.fold_left (fun (j, acc) x -> (j + 1, f acc i j x)) (0, acc) r
-      )
-      |> snd)
+        |> snd ))
     (0, acc) m
   |> snd
 
