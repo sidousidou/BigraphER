@@ -49,7 +49,7 @@ val of_list : (int * int) list -> t
 val to_string : t -> string
 (** Return the string representation of an isomorphism. Example:
 
-    ["\{(1, 1), (2, 3), (5, 2)\}"]. *)
+    {[ "{(1, 1), (2, 3), (5, 2)}" ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)

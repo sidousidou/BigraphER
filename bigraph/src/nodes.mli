@@ -37,7 +37,7 @@ val norm : t -> string list
 (** Compute the norm of a set. The norm is a defined as a sorted list of
     controls. Example:
 
-    [\["A"; "A(4)"; "C"; "D(3,6.2)"; "T"\]]. *)
+    {[ [ "A"; "A(4)"; "C"; "D(3,6.2)"; "T" ] ]} *)
 
 val not_sub : t -> t -> bool
 (** [not_sub a b] returns [true] when node set [a] is not a subset of node
@@ -57,7 +57,7 @@ val tens : t -> t -> t
 val to_string : t -> string
 (** Return a string representation of a node set. Example:
 
-    ["\{(2, Ready:0),(0, A(1,4):1),(3, Fun:0),(1, Snd:2)\}"]. *)
+    {[ "{(2, Ready:0),(0, A(1,4):1),(3, Fun:0),(1, Snd:2)}" ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)

@@ -25,9 +25,7 @@ val equal : t -> t -> bool
 val long_name : t -> string
 (** Return a string containing the name of a control and the values of its
     parameters. For example, [long_name (C (S,\[I 3;F 4.6\],3))] produces the
-    following string:
-
-    ["S(3,4.6)"] *)
+    string ["S(3,4.6)"]. *)
 
 val name : t -> string
 (** [name c] returns the name of control [c]. *)

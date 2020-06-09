@@ -58,7 +58,9 @@ val union : t -> t -> t
 (** {2 Additional functions} *)
 
 val to_string : t -> string
-(** Return the string representation of a set. Example: ["\{1,4,7\}"]. *)
+(** Return the string representation of a set. Example:
+
+    {[ "{1,4,7}" ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)
@@ -67,15 +69,14 @@ val of_list : int list -> t
 (** Return a set containing the elements of a list. *)
 
 val of_int : int -> t
-(** [of_int n] returns a set [{0, 1, ...., n - 1}]. *)
+(** [of_int n] returns set [{0, 1, ...., n - 1}]. *)
 
 val off : int -> t -> t
 (** [off i s] adds offset [i] to all the elements of set [s]. *)
 
 val fix : t -> Iso.t
 (** Compute an isomorphism to fix the numbering of a set. For example, the
-    isomorphism for set ["\{2, 5, 6, 7\}"] is
-    ["\{(2,0), (5,1), (6,2), (7,3)\}"]. *)
+    isomorphism for set ["{2, 5, 6, 7}"] is ["{(2,0), (5,1), (6,2), (7,3)}"]. *)
 
 val apply : Iso.t -> t -> t
 (** [apply iso s] applies [iso] to each element of [s]. Elements not mapped

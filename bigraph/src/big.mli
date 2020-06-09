@@ -32,12 +32,6 @@ exception ISO_ERROR of int * int
     cardinality of the domain while the second is the cardinality of the
     isomorphism's domain of definition. *)
 
-(* exception NO_MATCH
- * (\** Raised when there are no matches.*\) *)
-
-(* exception NODE_FREE
- * (\** Raised when the matching pattern has no nodes. *\) *)
-
 (** {2 Functions on interfaces} *)
 
 val inter_equal : inter -> inter -> bool
@@ -60,8 +54,16 @@ val face_of_inter : inter -> Link.Face.t
 val to_string : t -> string
 (** Compute the string representation of a bigraph. Example:
 
-    ["{(0, A:3),(1, A:3)} 2 2 0 10 10 01 00 ({}, {}, {(0, 1), (1, 2)}) ({},
-    {}, {(0, 2), (1, 1)})"] *)
+    {[
+      "{(0, A:3),(1, A:3)}\n\
+      \ 2 2 0\n\
+      \ 10\n\
+      \ 10\n\
+      \ 01\n\
+      \ 00\n\
+      \ ({}, {}, {(0, 1), (1, 2)})\n\
+      \ ({}, {}, {(0, 2), (1, 1)})"
+    ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)
@@ -75,7 +77,7 @@ val of_string : string -> t
 val parse : string -> t
 (** Parse a bigraph. Example input format:
 
-    ["2 2 0 2 A A 10 10 01 00 1 1 2 f 1 2 2 f"]
+    {[ "2 2 0 2\n A A\n 10\n 10\n 01\n 00\n 1 1 2 f\n 1 2 2 f" ]}
 
     The first line specifies the number of regions, nodes, sites, and links
     in the displayed order. The second line lists the controls of the nodes.
@@ -291,51 +293,12 @@ val decomp :
     [f_e] is a total function from links in the pattern to links in the
     target. *)
 
-(* (\** {2 Comparison} *\)
- * 
- * val equal : t -> t -> bool
- * (\** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
- *     [false] otherwise. *\) *)
-
 type big_key = int
 (** The type of bigraphs keys. *)
 
 val key : t -> big_key
 (** Compute the key of a bigraph. The key is similar to a hash. Note that
     different bigraphs can have the same key. *)
-
-(* val equal_opt : t -> t -> bool
- * (\** Same as {!Big.equal} but with fewer checks prior to the SAT solver
- *     invocation. This function is intended to be used after equality over keys
- *     has already failed. *\)
- * 
- * (\** {2 Matching} *\)
- * 
- * type occ = Iso.t * Iso.t * Fun.t
- * (\** The type of occurrences: an isomorphism over nodes, an isomorphism over
- *     edges and a function over hyper-edges. *\)
- * 
- * val occurs : target:t -> pattern:t -> bool
- * (\** [occurs t p] returns [true] if pattern [p] occurs in target [t], [false]
- *     otherwise. *\)
- * 
- * val occurrence : target:t -> pattern:t -> Sparse.t -> occ option
- * (\** [occurrence t p trans] returns a pair of isomorphisms [(i,j)] if pattern
- *     [p] occurs in target [t]. Isos [i] and [j] are defined over nodes and
- *     edges, respectively. Argument [trans] is the transitive closure of the
- *     induced graph of [t].
- * 
- *     @raise NODE_FREE when [p] has an empty node set. *\)
- * 
- * val occurrences : target:t -> pattern:t -> occ list
- * (\** [occurrences t p] returns a list of occurrences.
- * 
- *     @raise NODE_FREE when [p] has an empty node set. *\) *)
-
-(* (\** [auto b] computes the non-trivial automorphisms of bigraph [b]. 
- * 
- *     @raise NODE_FREE when [p] has an empty node set. *\)
- * val auto : t -> (Iso.t * Iso.t) list *)
 
 val rewrite :
   Iso.t * Iso.t * Fun.t -> s:t -> r0:t -> r1:t -> Fun.t option -> t

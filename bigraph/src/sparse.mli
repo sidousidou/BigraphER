@@ -22,7 +22,8 @@ val compare : t -> t -> int
 (** Matrix comparison. *)
 
 val to_string : t -> string
-(** Return the string representation of a matrix. '0' = false and 1 = true *)
+(** Return the string representation of a matrix. ["0" = false] and
+    ["1" = true]. *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer *)
