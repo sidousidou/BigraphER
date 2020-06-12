@@ -2,10 +2,10 @@
 open Big_json
 open Bigraph
 
-(* Using MiniCARD *)
-module Default_S = Solver.Make_SAT (Solver.MC)
+(* Using MiniSAT *)
+module Default_S = Solver.Make_SAT (Solver.MS)
 
-let s_type = "MCARD"
+let s_type = "MSAT"
 
 module BRS = Brs.Make (Default_S)
 module SBRS = Sbrs.Make (Default_S)
