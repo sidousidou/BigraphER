@@ -164,8 +164,7 @@ let safe = function Some v -> v | None -> assert false
 let ints_compare (i0, p0) (i1, p1) =
   match i0 - i1 with 0 -> p0 - p1 | x -> x
 
-let string_of_ints a b =
-  "(" ^ (string_of_int a) ^ "," ^ (string_of_int b) ^ ")"
+let string_of_ints a b = "(" ^ string_of_int a ^ "," ^ string_of_int b ^ ")"
 
 let opt_equal eq a b =
   match (a, b) with
@@ -177,8 +176,7 @@ let flip f x y = f y x
 
 let flip2 f a b c = f a c b
 
-let list_equal f a b =
-  List.length a = List.length b && List.for_all2 f a b
+let list_equal f a b = List.length a = List.length b && List.for_all2 f a b
 
 (* "\n12\n4\n678\n" -> ["12"; "4"; "678"] "01234\n" -> ["01234"] "0123" ->
    ["0123"] *)

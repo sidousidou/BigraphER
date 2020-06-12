@@ -57,15 +57,20 @@ let do_tests =
         [
           "Result: " ^ print_res t.res ^ "\nExpected result: "
           ^ print_res t.exp_res ^ "\nTarget:\n" ^ Big.to_string t.target
-          ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\n";
+          ^ "\n dot:\n"
+          ^ Big.(to_dot t.target "target")
+          ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\n dot:\n"
+          ^ Big.(to_dot t.pattern "pattern")
+          ^ "\n";
         ],
       [ ST.xml_block "failure" attr_match [ msg ] ] )
-  and failure_decomp t msg occs =
+  and failure_decomp t msg occs total =
     ( t.t_name ^ " &gt; " ^ t.p_name,
       module_name,
       ST.xml_block "system-out" []
         [
-          "Decompositions:\n"
+          (List.length occs |> string_of_int)
+          ^ " errors out of " ^ string_of_int total ^ "\nDecompositions:\n"
           ^ ( List.mapi
                 (fun i { Solver.nodes = i_n; edges = i_e; hyper_edges = f_e } ->
                   let c, d, id_big =
@@ -73,14 +78,21 @@ let do_tests =
                       f_e
                   in
                   "Occurrence " ^ string_of_int i ^ ":\nTarget:\n"
-                  ^ Big.to_string t.target ^ "\nPattern:\n"
-                  ^ Big.to_string t.pattern ^ "\n" ^ Big.to_string c
-                  ^ "\nD:\n" ^ Big.to_string d ^ "\nTensor:\n"
+                  ^ Big.to_string t.target ^ "\n dot:\n"
+                  ^ Big.(to_dot t.target "target")
+                  ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\nC:\n"
+                  ^ Big.to_string c ^ "\nD:\n" ^ Big.to_string d
+                  ^ "\nTensor:\n"
                   ^ Big.(to_string (tens t.pattern id_big))
                   ^ "\nComposition D:\n"
                   ^ Big.(to_string (comp (tens t.pattern id_big) d))
                   ^ "\nComposition C:\n"
-                  ^ Big.(to_string (comp c (comp (tens t.pattern id_big) d))))
+                  ^ Big.(to_string (comp c (comp (tens t.pattern id_big) d)))
+                  ^ "\n dot:\n"
+                  ^ Big.(
+                      to_dot
+                        (comp c (comp (tens t.pattern id_big) d))
+                        ("occ_" ^ string_of_int i)))
                 occs
             |> String.concat "\n" );
         ],
@@ -99,12 +111,13 @@ let do_tests =
         let occs = S.occurrences ~target:t.target ~pattern:t.pattern in
         t.res <- List.map (fun o -> Solver.(o.nodes, o.edges)) occs;
         if check_res t.res t.exp_res then
-          if
-            List.for_all
-              (fun o -> test_decomposition t.target t.pattern o)
+          match
+            List.filter
+              (fun o -> not (test_decomposition t.target t.pattern o))
               occs
-          then success t
-          else failure_decomp t decomp_fail_msg occs
+          with
+          | [] -> success t
+          | l -> failure_decomp t decomp_fail_msg l (List.length occs)
         else failure_occ t default_fail_msg
       with
       | S.NODE_FREE -> (
@@ -178,7 +191,11 @@ let do_equality_tests l ts =
           if S.equal t.target t.pattern then
             match (t.t_name, t.p_name) with
             | "T16", "T16" -> success s "Bigraphs are equal"
-            | _ -> failure s "Bigraphs are equal" s
+            | _ ->
+                failure s "Bigraphs are equal"
+                  ( Big.to_dot t.target t.t_name
+                  ^ "\n"
+                  ^ Big.to_dot t.pattern t.p_name )
           else success s "Bigraphs are not equal"
         with _ ->
           ( s,
@@ -630,10 +647,10 @@ let tests bgs =
 (* Args: PATH PATH-out*)
 let () =
   Printexc.record_backtrace true;
-  let bg_strings =
+  let bgs =
     IO.parse_all Sys.argv.(1) (fun x -> Filename.check_suffix x ".big")
+    |> List.map (fun (n, ls) -> (n, Big.parse ls))
   in
-  let bgs = List.map (fun (n, ls) -> (n, Big.parse ls)) bg_strings in
   let ts = tests bgs in
   let testcases_match = do_tests ts
   and testcases_eq = do_equality_tests bgs ts

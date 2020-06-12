@@ -188,10 +188,11 @@ module MS_W : E = struct
       in
       _cmd_init p.t p.g (Leaf l)
 
-    (* Scan the tree and add constraints: 1. at most one TRUE in every group
-       2. if commander variable is TRUE then at least one TRUE in its group
-       3. if commander variable is FALSE then no TRUE in its group 4. exactly
-       one commander variable is true. *)
+    (* Scan the tree and add constraints:
+     *  1. at most one TRUE in every group
+     *  2. if commander variable is TRUE then at least one TRUE in its group
+     *  3. if commander variable is FALSE then no TRUE in its group 4. exactly
+     *     one commander variable is true. *)
 
     (* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
     let rec add_cmd_c1 s = function
@@ -419,13 +420,15 @@ module Make (ST : ST) (E : E) : S = struct
     Base.list_of_rows m
     |> List.iter (fun c -> add_exactly s (List.map positive_lit c) 1)
 
-  (* 1. One true per row 2. At most one true per column *)
+  (* 1. One true per row
+   * 2. At most one true per column *)
   let add_injection s m =
     add_fun s m;
     Base.list_of_cols m
     |> List.iter (fun c -> add_at_most s (List.map positive_lit c) 1)
 
-  (* 1. One true per row 2. One true per column *)
+  (* 1. One true per row
+   * 2. One true per column *)
   let add_bijection s m =
     assert (Base.is_square_matrix m);
     add_fun s m;
@@ -527,12 +530,31 @@ module Make_SAT (S : S) : M = struct
     map_hyp_c : Iso.t;
   }
 
-  let print_dump solver vars =
+  let _print_dump solver vars =
+    let aux s m descr =
+      descr ^ "\n"
+      ^ ( Array.map
+            (fun row ->
+              Array.map
+                (fun x ->
+                  match S.value_of s x with
+                  | True -> "t"
+                  | False -> "f"
+                  | Unknown -> "-")
+                row
+              |> Array.to_list |> String.concat "")
+            m
+        |> Array.to_list |> String.concat "\n" )
+      |> print_endline
+    in
     let stats = S.get_stats solver in
-    print_endline @@
-      "=================================================================================\n"
-      ^ "Solver stats: vars=" ^ string_of_int stats.v ^ "  clauses="
-      ^ string_of_int stats.c ;
+    print_endline
+    @@ "=================================================================================\n"
+    ^ "Solver stats: vars=" ^ string_of_int stats.v ^ "  clauses="
+    ^ string_of_int stats.c;
+    aux solver vars.nodes "nodes=";
+    aux solver vars.edges "edges=";
+    aux solver vars.hyp "hyp=";
     print_endline @@ "nodes=" ^ (S.get_iso solver vars.nodes |> Iso.to_string);
     print_endline @@ "edges=" ^ (S.get_iso solver vars.edges |> Iso.to_string);
     print_endline @@ "hyp=" ^ (S.get_fun solver vars.hyp |> Fun.to_string);
@@ -595,13 +617,6 @@ module Make_SAT (S : S) : M = struct
       | V d -> ( match t with V d' -> d = d' | S _ -> false )
       | S d -> ( match t with V d' -> d' >= d | S d' -> d' >= d )
 
-    let compat t p t_i p_i =
-      compat_deg (indeg t t_i) (indeg p p_i)
-      && compat_deg (outdeg t t_i) (outdeg p p_i)
-
-    let eq t p t_i p_i =
-      indeg t t_i = indeg p p_i && outdeg t t_i = outdeg p p_i
-
     (* Match nodes in compatible DAG edges *)
     let match_cmp ~target:t ~pattern:p ~n_t ~n_p cmp s m =
       let h = partition_edges t n_t in
@@ -615,7 +630,7 @@ module Make_SAT (S : S) : M = struct
             List.filter
               (fun (i', j') ->
                 (* Degree check *)
-                cmp t p i' i && compat t p j' j)
+                cmp t p i' i && cmp t p j' j)
               (H.find_all h (a, b))
           with
           | [] ->
@@ -631,6 +646,13 @@ module Make_SAT (S : S) : M = struct
                 (fun acc (i', j') -> IntSet.add j' (IntSet.add i' acc))
                 acc_c t_edges)
         p.nn IntSet.empty
+
+    let compat t p t_i p_i =
+      compat_deg (indeg t t_i) (indeg p p_i)
+      && compat_deg (outdeg t t_i) (outdeg p p_i)
+
+    let eq t p t_i p_i =
+      indeg t t_i = indeg p p_i && outdeg t t_i = outdeg p p_i
 
     let add_c4 ~target:t ~pattern:p ~n_t ~n_p =
       match_cmp ~target:t ~pattern:p ~n_t ~n_p compat
@@ -650,7 +672,7 @@ module Make_SAT (S : S) : M = struct
               IntSet.union acc_c compat_t ))
           l_p acc
       in
-      aux (orphans p) (orphans t) (aux (leaves p) (leaves t) IntSet.empty)
+      aux (leaves p) (leaves t) IntSet.empty |> aux (orphans p) (orphans t)
 
     let add_c6 ~target:t ~pattern:p ~n_t ~n_p s m =
       (* Only ctrl and deg check *)
@@ -847,7 +869,7 @@ module Make_SAT (S : S) : M = struct
 
     (* match_list_eq *)
     let add_c4_eq a b n_a n_b s m =
-      ignore (match_cmp ~target:a ~pattern:b ~n_t:n_a ~n_p:n_b eq s m)
+      ignore (match_cmp ~target:b ~pattern:a ~n_t:n_b ~n_p:n_a eq s m)
 
     let add_region_nodes a b n_a n_b s m =
       Sparse.iter
@@ -983,7 +1005,7 @@ module Make_SAT (S : S) : M = struct
         (fun (e_i, e_j) ->
           compat_list a_p.(e_i) a_t.(e_j) n_p n_t
           |> List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j)))
-          |> S.add_implication solver (S.negative_lit w.(e_i).(e_j)))
+          |> S.add_implication solver (S.positive_lit w.(e_i).(e_j)))
         (List.flatten clauses)
 
     (* Is p sub-hyperedge of t? *)
@@ -991,8 +1013,7 @@ module Make_SAT (S : S) : M = struct
       let p_l = ports_type p n_p and t_l = ports_type t n_t in
       inter p_l t_l = p_l
 
-    (* Return a list of clauses on row i of matrix t. Cnf.impl will process
-       each element *)
+    (* Return a list of clauses on row i of matrix t. *)
     let compat_clauses e_p i t h_t n_t n_p =
       let p = Ports.to_IntSet e_p.p in
       IntSet.fold
@@ -1190,7 +1211,8 @@ module Make_SAT (S : S) : M = struct
       List.fold_left
         (fun acc i ->
           Array.to_list m.(i)
-          |> List.map S.negative_lit |> Base.flip List.cons acc)
+          |> List.map (fun v -> [ S.negative_lit v ])
+          |> Base.flip List.rev_append acc)
         [] rows
 
     (* P -> T Example constraint: [[(1, 2) or (1, 3) or (1, 4)]; [(2, 4)];
@@ -1220,13 +1242,14 @@ module Make_SAT (S : S) : M = struct
       clauses
 
     let match_ports_eq p t n_p n_t solver v w clauses =
-      let a_t = Array.of_list (List.map (fun e -> e.p) (Lg.elements t))
-      and a_p = Array.of_list (List.map (fun e -> e.p) (Lg.elements p)) in
+      (* replace with add_c8 *)
+      let a_t = Lg.elements t |> List.map (fun e -> e.p) |> Array.of_list
+      and a_p = Lg.elements p |> List.map (fun e -> e.p) |> Array.of_list in
       List.iter
         (fun (e_i, e_j) ->
           compat_list a_p.(e_i) a_t.(e_j) n_p n_t
           |> List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j)))
-          |> S.add_implication solver (S.negative_lit w.(e_i).(e_j)))
+          |> S.add_implication solver (S.positive_lit w.(e_i).(e_j)))
         (List.flatten clauses)
   end
 
@@ -1242,10 +1265,6 @@ module Make_SAT (S : S) : M = struct
     match S.solve solver with
     | UNSAT -> raise_notrace NO_MATCH
     | SAT ->
-        print_endline "Solver.filter_loop";
-        (* Debug *)
-        print_dump solver vars;
-        (* Debug *)
         if
           Big.(
             P.check_match ~target:t.p ~pattern:p.p t_trans
