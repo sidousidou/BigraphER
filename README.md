@@ -27,6 +27,9 @@ anlysing Bigraph models. It contains:
 
 4. *minisat* - Minisat provides bindings to the [MiniSAT](minisat) SAT solver.
 
+5. *minicard* - Minicard provides bindings to the [MiniCARD](minicard)
+  cardinality solver.
+
 ----------------------------------------------------------------------------
 
 ### Building the Tools
@@ -54,6 +57,7 @@ dune install --profile=release
 - [OPAM: OCaml package manager][opam]
 - [PRISM: probabilistic model checker][prism]
 - [MiniSAT: a minimalistic and high-performance SAT solver][minisat]
+- [MiniCARD cardinality solver][minicard]
 
 [milner]:  <http://dl.acm.org/citation.cfm?id=1540607> "Robin Milner. *The space and motion of communicating agents*. Cambridge University Press (2009)."
 [share]:   <http://doi.org/10.1016/j.tcs.2015.02.011> "Michele Sevegnani and Muffy Calder. *Bigraphs with sharing*. Theoretical Computer Science 577 (2015): 43-73."
@@ -62,6 +66,7 @@ dune install --profile=release
            "T. Bray Ed. The JavaScript Object Notation (JSON) Data Interchange Format, 2014"
 [prism]:   <http://www.prismmodelchecker.org/> "PRISM: probabilistic model checker"
 [minisat]: <https://github.com/niklasso/minisat> "MiniSAT: a minimalistic and high-performance SAT solver"
+[minicard]: <https://github.com/liffiton/minicard> "MiniCARD is a cardinality solver based on MiniSAT"
 [opam]:    <https://opam.ocaml.org/> "OPAM: OCaml package manager"
 
 
