@@ -427,7 +427,7 @@ end
 
 module Make
     (S : Solver.M)
-    (R : RrType.T)
+    (R : React.T)
     (P : Priority.P with type r_t := R.t and type r_label := R.label)
     (L : L with type l = R.label)
     (G : G with type l = R.label)

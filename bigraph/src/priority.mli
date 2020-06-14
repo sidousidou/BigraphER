@@ -51,7 +51,7 @@ end
 (** Functor building a concrete implementation of priority classes. *)
 module Make
     (S : Solver.M)
-    (R : RrType.T)
+    (R : React.T)
     (V : Val_Check with type t := R.t list) :
   P with type r_t := R.t and type r_label := R.label
 

@@ -44,7 +44,7 @@ end
 
 module Make
     (S : Solver.M)
-    (R : RrType.T)
+    (R : React.T)
     (V : Val_Check with type t := R.t list) =
 struct
   type p_class = P_class of R.t list | P_rclass of R.t list
@@ -95,7 +95,7 @@ struct
               (* Merge isomorphic states *)
               |> fun (ss, l) ->
               let open struct
-                module G = RrType.Make_gen (S) (AppCond.Make (S))
+                module G = React.Make_gen (S) (AppCond.Make (S))
               end in
               (G.filter_iso R.merge_occ ss, l)
             in

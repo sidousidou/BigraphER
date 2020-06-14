@@ -34,7 +34,7 @@ module Make (S : Solver.M) = struct
   module AC = AppCond.Make (S)
 
   module R = struct
-    include RrType.Make (S) (AC)
+    include React.Make (S) (AC)
               (struct
                 type ac = AppCond.t
 
@@ -73,7 +73,7 @@ module Make (S : Solver.M) = struct
 
                 let step b rules =
                   let open struct
-                    module G = RrType.Make_gen (S) (AC)
+                    module G = React.Make_gen (S) (AC)
                   end in
                   G.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
 

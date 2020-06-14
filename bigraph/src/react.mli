@@ -1,4 +1,4 @@
-(** Input signature of the functor {!RrType.Make}. *)
+(** Input signature of the functor {!React.Make}. *)
 module type R = sig
   type t
 
@@ -45,7 +45,7 @@ module type R = sig
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 end
 
-(** Output signature of the functor {!RrType.Make}. *)
+(** Output signature of the functor {!React.Make}. *)
 module type T = sig
   type t
   (** The type of reaction rules. *)
