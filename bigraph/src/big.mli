@@ -55,14 +55,14 @@ val to_string : t -> string
 (** Compute the string representation of a bigraph. Example:
 
     {[
-      "{(0, A:3),(1, A:3)}\n\
-      \ 2 2 0\n\
-      \ 10\n\
-      \ 10\n\
-      \ 01\n\
-      \ 00\n\
-      \ ({}, {}, {(0, 1), (1, 2)})\n\
-      \ ({}, {}, {(0, 2), (1, 1)})"
+      {(0, A:3),(1, A:3)}
+      2 2 0
+      10
+      10
+      01
+      00
+      ({}, {}, {(0, 1), (1, 2)})
+      ({}, {}, {(0, 2), (1, 1)})
     ]} *)
 
 val pp : Format.formatter -> t -> unit
@@ -77,7 +77,14 @@ val of_string : string -> t
 val parse : string -> t
 (** Parse a bigraph. Example input format:
 
-    {[ "2 2 0 2\n A A\n 10\n 10\n 01\n 00\n 1 1 2 f\n 1 2 2 f" ]}
+    {[ 2 2 0 2
+       A A
+       10
+       10
+       01
+       00
+       1 1 2 f
+       1 2 2 f ]}
 
     The first line specifies the number of regions, nodes, sites, and links
     in the displayed order. The second line lists the controls of the nodes.

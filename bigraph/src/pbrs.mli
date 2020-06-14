@@ -4,8 +4,7 @@
 
 type react = {
   name : string;  (** Name. *)
-  rdx : Big.t;
-      (** Redex, {e i.e.} the left-hand side of a reaction rule. **)
+  rdx : Big.t;  (** Redex, {e i.e.} the left-hand side of a reaction rule. *)
   rct : Big.t;
       (** Reactum, {e i.e.} the right-hand side of a reaction rule. *)
   eta : Fun.t option;  (** Instantiation map. *)

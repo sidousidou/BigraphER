@@ -52,7 +52,7 @@ val parse : int list -> t
 val to_string : t -> string
 (** Return the string representation of a function. Example:
 
-    {[ "{(1, 2), (2, 3), (3, 3)}" ]} *)
+    {[ {(1, 2), (2, 3), (3, 3)} ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)

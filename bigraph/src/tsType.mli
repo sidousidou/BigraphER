@@ -46,9 +46,10 @@ module type RS = sig
   type ac
   (** The type of application conditions. *)
 
+  (** The type of priority classes. *)
   type p_class =
-    | P_class of react list
-    | P_rclass of react list  (** The type of priority classes. *)
+    | P_class of react list  (** Priority class. *)
+    | P_rclass of react list  (** Reducing priority class. *)
 
   type graph
   (** The type of transition systems. *)

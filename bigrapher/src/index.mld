@@ -6,5 +6,13 @@ checker for verification. It supports bigraphs with sharing,
 stochastic and probabilistic reaction rules, rule priorities,
 graphical output and predicate checking.
 
+{3 References}
+{ul
+{- M. Sevegnani and M. Calder {e
+{{:http://doi.org/10.1016/j.tcs.2015.02.011}Bigraphs with sharing}, Theoretical
+Computer Science, Volume 577, pp 43-73, Elsevier, 2015}}
+{- M. Sevegnani and M. Calder {e
+{{:http://doi.org/10.1007/978-3-319-41540-6_27}BigraphER: rewriting and analysis engine for bigraphs}, in proceedings of Computer Aided Verification (CAV 2016), Lecture Notes in Computer Science, Volume 9780 Part II, pp 494-501, Springer, Toronto, Canada, July 2016}}}
+
 @author Michele Sevegnani
 @author Blair Archibald

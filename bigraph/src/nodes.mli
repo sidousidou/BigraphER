@@ -57,7 +57,7 @@ val tens : t -> t -> t
 val to_string : t -> string
 (** Return a string representation of a node set. Example:
 
-    {[ "{(2, Ready:0),(0, A(1,4):1),(3, Fun:0),(1, Snd:2)}" ]} *)
+    {[ {(2, Ready:0),(0, A(1,4):1),(3, Fun:0),(1, Snd:2)} ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)

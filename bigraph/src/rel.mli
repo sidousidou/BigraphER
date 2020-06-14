@@ -42,7 +42,7 @@ val of_list : (int * int list) list -> t
 val to_string : t -> string
 (** Return the string representation of a binary relation. Example:
 
-    {[ "{(1, {1, 2, 3}), (2, {3, 4})}" ]} *)
+    {[ {(1, {1, 2, 3}), (2, {3, 4})} ]} *)
 
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)
