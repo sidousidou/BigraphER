@@ -324,9 +324,9 @@ struct
 
   let print_stats fmt stats =
     if Cmd.defaults.running_time then
-      Format.fprintf fmt "%a@." (pp_float "") (`f Stats.(stats.time))
+      Format.fprintf fmt "%a@." (pp_float "") (`f TsType.(stats.time))
     else
-      Stats.descr stats
+      TsType.stats_descr stats
       |> List.map (fun (descr, value, flag) ->
              {
                descr = (descr, `green);

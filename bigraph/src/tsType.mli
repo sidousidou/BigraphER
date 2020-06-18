@@ -1,3 +1,29 @@
+(** This module defines reactive systems.
+
+    @author Michele Sevegnani *)
+
+type stats = {
+    time : float;  (** Build time *)
+    states : int;  (** Number of states *)
+    trans : int;  (** Number of transitions *)
+    occs : int;  (** Number of occurrences *)
+  }
+(** The type of Execution statistics for reactive systems. *)
+
+(** Return a description consisting of list of triples in the form
+   [(description, value, run_dependant)]. *)
+val stats_descr : stats -> (string * string * bool) list
+
+val string_of_stats : stats -> string
+(** Return a string representation of execution statistics. Example:
+
+     {[
+        Build time:    0.964225
+        States:        128
+        Transitions:   154
+        Occurrences:   430
+     ]} *)
+
 (** Input signature of the functor {!TsType.Make} representing a directed
     graph data structure. *)
 module type G = sig
@@ -167,7 +193,7 @@ module type RS = sig
       be applied or when a non reducible priority class is enabled. Also
       return the number of rewriting steps performed in the loop. *)
 
-  exception MAX of graph * Stats.t
+  exception MAX of graph * stats
   (** Raised when the size of the transition system reaches the maximum
       number of states. *)
 
@@ -177,7 +203,7 @@ module type RS = sig
     predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
     iter_f:(int -> Big.t -> unit) ->
-    graph * Stats.t
+    graph * stats
   (** [bfs ~s0 ~priorities ~max ~iter_f] computes the transition system of
       the reactive system specified by initial state [s0] and priority
       classes [priorities]. Arguments [~max] and [~iter_f] are the maximum
@@ -189,10 +215,10 @@ module type RS = sig
 
       @raise Brs.MAX when the maximum number of states is reached. *)
 
-  exception DEADLOCK of graph * Stats.t * limit
+  exception DEADLOCK of graph * stats * limit
   (** Raised when a simulation reaches a deadlock state. *)
 
-  exception LIMIT of graph * Stats.t
+  exception LIMIT of graph * stats
   (** Raised when a simulation reaches the simulation limit. *)
 
   val sim :
@@ -202,7 +228,7 @@ module type RS = sig
     init_size:int ->
     stop:limit ->
     iter_f:(int -> Big.t -> unit) ->
-    graph * Stats.t
+    graph * stats
   (** Simulate the raective system specified by initial state [s0] and
       priority classes [priorities]. Arguments [init_size] and [stop] are the
       initial size of the state set and the simulation limit, respectively.

@@ -1,3 +1,21 @@
+type stats = { time : float; states : int; trans : int; occs : int }
+
+let stats_init ~t0 ~states ~trans ~occs =
+  { time = Unix.gettimeofday () -. t0; states; trans; occs }
+
+let stats_descr stats =
+  [
+    ("Build time:", Printf.sprintf "%-3g" stats.time, true);
+    ("States:", Printf.sprintf "%-8d" stats.states, false);
+    ("Transitions:", Printf.sprintf "%-8d" stats.trans, false);
+    ("Occurrences:", Printf.sprintf "%-8d" stats.occs, false);
+  ]
+
+let string_of_stats stats =
+  stats_descr stats
+  |> List.map (fun (d, v, _) -> d ^ "\t" ^ v)
+  |> String.concat "\n"
+
 module type G = sig
   type t
 
@@ -383,7 +401,7 @@ module type RS = sig
 
   val rewrite : Big.t -> p_class list -> Big.t * int
 
-  exception MAX of graph * Stats.t
+  exception MAX of graph * stats
 
   val bfs :
     s0:Big.t ->
@@ -391,11 +409,11 @@ module type RS = sig
     predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
     iter_f:(int -> Big.t -> unit) ->
-    graph * Stats.t
+    graph * stats
 
-  exception DEADLOCK of graph * Stats.t * limit
+  exception DEADLOCK of graph * stats * limit
 
-  exception LIMIT of graph * Stats.t
+  exception LIMIT of graph * stats
 
   val sim :
     s0:Big.t ->
@@ -404,7 +422,7 @@ module type RS = sig
     init_size:int ->
     stop:limit ->
     iter_f:(int -> Big.t -> unit) ->
-    graph * Stats.t
+    graph * stats
 
   val to_prism : graph -> string
 
@@ -445,11 +463,11 @@ struct
 
   include Ty
 
-  exception MAX of graph * Stats.t
+  exception MAX of graph * stats
 
-  exception LIMIT of graph * Stats.t
+  exception LIMIT of graph * stats
 
-  exception DEADLOCK of graph * Stats.t * limit
+  exception DEADLOCK of graph * stats * limit
 
   (* Override some functions *)
   type react_error = R.react_error
@@ -547,7 +565,7 @@ struct
       if i > max then
         raise
           (MAX
-             (g, Stats.init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m))
+             (g, stats_init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m))
       else
         let v, curr = Queue.pop q in
         let (new_s, old_s, i'), m' =
@@ -572,7 +590,7 @@ struct
           old_s;
         (* recursive call *)
         _bfs g q i' (m + m') t0 priorities predicates max iter_f )
-    else (g, Stats.init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m)
+    else (g, stats_init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m)
 
   let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
     let q = Queue.create () in
@@ -591,7 +609,7 @@ struct
       raise
         (LIMIT
            ( trace,
-             Stats.init ~t0 ~states:(size_s trace) ~trans:(size_t trace)
+             stats_init ~t0 ~states:(size_s trace) ~trans:(size_t trace)
                ~occs:m ))
     else
       match P.scan_sim s ~const_pri:priorities priorities with
@@ -599,7 +617,7 @@ struct
           raise
             (DEADLOCK
                ( trace,
-                 Stats.init ~t0 ~states:(size_s trace) ~trans:(size_t trace)
+                 stats_init ~t0 ~states:(size_s trace) ~trans:(size_t trace)
                    ~occs:(m + m'),
                  t_sim ))
       | Some (s', l, r), m' ->

@@ -84,8 +84,8 @@ let () =
        in
        ( "brs",
          __MODULE__,
-         print_res @@ Stats.descr stats,
-         failures Stats.(ass_list stats.states stats.trans stats.occs) ));
+         print_res @@ TsType.stats_descr stats,
+         failures TsType.(ass_list stats.states stats.trans stats.occs) ));
       (let stats =
          try
            snd
@@ -95,11 +95,11 @@ let () =
        in
        ( "sim_brs",
          __MODULE__,
-         print_res @@ Stats.descr stats,
+         print_res @@ TsType.stats_descr stats,
          failures
            [
-             ("States", states_reference, Stats.(stats.states));
-             ("Reactions", reacts_reference, Stats.(stats.trans));
+             ("States", states_reference, TsType.(stats.states));
+             ("Reactions", reacts_reference, TsType.(stats.trans));
              (* ("Occurrences", 31, stats.Brs.occs) *)
              (* RANDOM *)
            ] ));
@@ -112,8 +112,8 @@ let () =
        in
        ( "sbrs",
          __MODULE__,
-         print_res @@ Stats.descr stats,
-         failures Stats.(ass_list stats.states stats.trans stats.occs) ));
+         print_res @@ TsType.stats_descr stats,
+         failures TsType.(ass_list stats.states stats.trans stats.occs) ));
       (let stats =
          try
            snd
@@ -123,8 +123,8 @@ let () =
        in
        ( "sim_sbrs",
          __MODULE__,
-         print_res @@ Stats.descr stats,
-         failures Stats.(ass_list stats.states stats.trans stats.occs) ));
+         print_res @@ TsType.stats_descr stats,
+         failures TsType.(ass_list stats.states stats.trans stats.occs) ));
     ]
   in
   print_endline "OK";
