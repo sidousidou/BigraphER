@@ -10,8 +10,10 @@
   (glob_files files/*.reference)
   (:list files/parser.in))
  (action
-  (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
-    parser-junit.xml)))
+  (progn
+   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
+   (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
+     parser-junit.xml))))
 
 (alias
  (name speed)

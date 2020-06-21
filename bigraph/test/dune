@@ -8,7 +8,9 @@
   (:exe test_match.exe)
   (glob_files ../files/*.big))
  (action
-  (run %{exe} ../files %{project_root}/shippable/testresults)))
+  (progn
+   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
+   (run %{exe} ../files %{project_root}/shippable/testresults))))
 
 (rule
  (alias runtest)
@@ -16,15 +18,19 @@
   (:exe test_decomp.exe)
   (glob_files ../files/*.big))
  (action
-  (run %{exe} ../files/ %{project_root}/shippable/testresults
-    decomp-junit.xml)))
+  (progn
+   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
+   (run %{exe} ../files/ %{project_root}/shippable/testresults
+     decomp-junit.xml))))
 
 (rule
  (alias runtest)
  (deps
   (:exe test_brs.exe))
  (action
-  (run %{exe} %{project_root}/shippable/testresults brs-junit.xml)))
+  (progn
+   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
+   (run %{exe} %{project_root}/shippable/testresults brs-junit.xml))))
 
 (rule
  (alias runtest)
