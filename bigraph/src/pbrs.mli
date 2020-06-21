@@ -24,7 +24,7 @@ type graph = {
 (** Output signature of the functor {!Pbrs.Make}. *)
 module type T = sig
   include
-    TsType.RS
+    Rs.RS
       with type react = react
        and type ac := AppCond.t
        and type label = float

@@ -22,7 +22,7 @@ type graph = {
 
 (** Output signature of the functor {!Brs.Make}. *)
 module type T =
-  TsType.RS
+  Rs.RS
     with type react = react
      and type ac := AppCond.t
      and type label = unit

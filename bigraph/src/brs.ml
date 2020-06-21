@@ -19,7 +19,7 @@ type graph = {
 }
 
 module type T =
-  TsType.RS
+  Rs.RS
     with type react = react
      and type ac := AppCond.t
      and type label = unit
@@ -136,12 +136,12 @@ module Make (S : Solver.M) = struct
   end
 
   (* Reactive system type *)
-  module T = struct
+  module K = struct
     let typ = Rs.BRS
   end
 
-  include TsType.Make (S) (R) (P) ((L : TsType.L with type l = R.label))
+  include Rs.Make (S) (R) (P) ((L : Rs.L with type l = R.label))
             ((
-            G : TsType.G with type l = R.label ))
-            (T)
+            G : Rs.G with type l = R.label ))
+            (K)
 end

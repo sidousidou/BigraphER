@@ -4,7 +4,7 @@ open Unify
 open Bigraph
 
 module Make
-    (T : TsType.RS with type ac := AppCond.t) (P : sig
+    (T : Rs.RS with type ac := AppCond.t) (P : sig
       val parse_react :
         string ->
         Big.t ->
@@ -30,7 +30,7 @@ struct
     | `param `string -> "string param"
 
   let dom_of_lambda = function
-    | `core_val _ | `big_val _ | `param _ -> assert false (*BISECT-IGNORE*)
+    | `core_val _ | `big_val _ | `param _ -> assert false
     | `lambda t -> fst t
 
   let resolve_t (env : store_t) = function
@@ -392,8 +392,6 @@ struct
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
 
-  (*BISECT-IGNORE*)
-
   let eval_minus (a : store_val) (b : store_val) p =
     match (a, b) with
     | Float f, Float g -> Float (f -. g)
@@ -465,8 +463,6 @@ struct
         raise
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
-
-  (*BISECT-IGNORE*)
 
   let eval_pow (a : store_val) (b : store_val) p =
     match (a, b) with
@@ -553,8 +549,7 @@ struct
         | React _
         | React_fun (_, _, _, _, _, _, _, _)
         | Int_param _ | Str_param _ | Float_param _ ->
-            assert false
-        (*BISECT-IGNORE*))
+            assert false)
       exps
     |> List.split
 
@@ -580,7 +575,7 @@ struct
           | React _
           | React_fun (_, _, _, _, _, _, _, _)
           | Int_param _ | Float_param _ | Str_param _ ->
-              assert false (*BISECT-IGNORE*))
+              assert false)
         nums
     in
     Ctrl.C (id, params, arity)
@@ -798,8 +793,6 @@ struct
     | React_fun (_, _, _, _, _, _, _, _), _, _ ->
         assert false
 
-  (*BISECT-IGNORE*)
-
   let is_param id env p =
     match Base.H_string.find env id with
     | None -> raise (ERROR (Unbound_variable id, p))
@@ -909,7 +902,7 @@ struct
         List.map
           (function
             | (Int _ | Float _ | Str _) as v -> string_of_store_val v
-            | _ -> assert false) (*BISECT-IGNORE*)
+            | _ -> assert false)
           exps
       in
       id ^ "(" ^ String.concat "," exp_s ^ ")"

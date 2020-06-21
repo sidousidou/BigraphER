@@ -20,7 +20,7 @@ type graph = {
 
 module type T = sig
   include
-    TsType.RS
+    Rs.RS
       with type react = react
        and type ac := AppCond.t
        and type label = float
@@ -163,14 +163,14 @@ module Make (S : Solver.M) = struct
     let to_string = string_of_int
   end
 
-  module T = struct
+  module K = struct
     let typ = Rs.PBRS
   end
 
-  include TsType.Make (S) (R) (P) ((L : TsType.L with type l = R.label))
+  include Rs.Make (S) (R) (P) ((L : Rs.L with type l = R.label))
             ((
-            G : TsType.G with type l = R.label ))
-            (T)
+            G : Rs.G with type l = R.label ))
+            (K)
 
   let weight = label
 end

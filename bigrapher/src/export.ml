@@ -88,35 +88,37 @@ module B = struct
 end
 
 module T
-    (S : Bigraph.TsType.RS with type ac := Bigraph.AppCond.t) (F : sig
+    (S : Bigraph.Rs.RS with type ac := Bigraph.AppCond.t) (F : sig
       val f : ?minify:bool -> S.graph -> String.t
     end) =
 struct
+  exception EXPORT_ERROR of string
+
   let write_svg g ~name ~path =
     try write_svg (S.to_dot g ~path ~name) ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 
   let write_prism g ~name ~path =
     try write_string (S.to_prism g) ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 
   let write_state_rewards g ~name ~path =
     try write_string (S.to_state_rewards g) ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 
   let write_transition_rewards g ~name ~path =
     try write_string (S.to_transition_rewards g) ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 
   let write_lab g ~name ~path =
     try write_string (S.to_lab g) ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 
   let write_dot g ~name ~path =
     try write_string (S.to_dot g ~path ~name) ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 
   let write_json g ~name ~path =
     try F.f ~minify:false g |> write_string ~name ~path
-    with ERROR e -> failwith @@ report_error e
+    with ERROR e -> raise @@ EXPORT_ERROR (report_error e)
 end

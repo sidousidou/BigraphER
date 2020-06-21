@@ -159,8 +159,6 @@ let close_progress_bar () =
   if not Cmd.(defaults.debug || defaults.quiet || defaults.running_time) then
     print_string "]\n\n"
 
-(******** EXPORT FUNCTIONS *********)
-
 let print_fun fmt c verb fname i =
   if verb then
     print_msg fmt c (string_of_int i ^ " bytes written to `" ^ fname ^ "'")
@@ -171,93 +169,13 @@ let format_map = function
   | Cmd.Json -> (Export.B.write_json, ".json")
   | Cmd.Txt -> (Export.B.write_txt, ".txt")
 
-let export_prism argument fmt msg f =
-  match argument with
-  | None -> ()
-  | Some file -> (
-      print_msg fmt `yellow (msg ^ file ^ " ...");
-      try
-        f ~name:(Filename.basename file) ~path:(Filename.dirname file)
-        |> print_fun fmt `white Cmd.(defaults.verb) file
-      with Rs.EXPORT_ERROR e ->
-        Format.(
-          pp_print_flush fmt ();
-          fprintf err_formatter "@[<v>@[%s: %s@]@."
-            (Utils.err_opt Cmd.(defaults.colors))
-            e) )
-
-let export_csl fmt f =
-  match Cmd.(defaults.export_lab) with
-  | None -> ()
-  | Some file -> (
-      print_msg fmt `yellow ("Exporting properties to " ^ file ^ " ...");
-      try
-        f ~name:(Filename.basename file) ~path:(Filename.dirname file)
-        |> print_fun fmt `white Cmd.(defaults.verb) file
-      with Rs.EXPORT_ERROR e ->
-        Format.(
-          pp_print_flush fmt ();
-          fprintf err_formatter "@[<v>@[%s: %s@]@."
-            (Utils.err_opt Cmd.(defaults.colors))
-            e) )
-
-let export_states fmt f g =
-  if Cmd.(defaults.export_states_flag) then
-    match Cmd.(defaults.export_states) with
-    | None -> assert false
-    | Some path ->
-        print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
-        f
-          (fun i s ->
-            let aux i s f ext =
-              let fname = string_of_int i ^ ext in
-              try
-                f s ~name:fname ~path
-                |> print_fun fmt `white
-                     Cmd.(defaults.verb)
-                     (Filename.concat path fname)
-              with Failure msg ->
-                Format.(
-                  pp_print_flush fmt ();
-                  fprintf err_formatter "@[<v>@[%s: %s@]@."
-                    (Utils.err_opt Cmd.(defaults.colors))
-                    msg)
-            in
-            Cmd.(defaults.out_format)
-            |> List.map format_map
-            |> List.iter (fun (f, ext) -> aux i s f ext))
-          g
-
-let export_ts fmt msg formats =
-  match Cmd.(defaults.export_graph) with
-  | None -> ()
-  | Some file ->
-      let name =
-        let n = Filename.basename file in
-        try Filename.chop_extension n with Invalid_argument _ -> n
-      and path = Filename.dirname file in
-      List.iter
-        (fun (f, ext) ->
-          try
-            let file' = Filename.concat path (name ^ ext) in
-            print_msg fmt `yellow (msg ^ file' ^ " ...");
-            f ~name:(name ^ ext) ~path
-            |> print_fun fmt `white Cmd.(defaults.verb) file
-          with Rs.EXPORT_ERROR e ->
-            Format.(
-              pp_print_flush fmt ();
-              fprintf err_formatter "@[<v>@[%s: %s@]@."
-                (Utils.err_opt Cmd.(defaults.colors))
-                e))
-        formats
-
 let check fmt =
   print_msg fmt `yellow "Model file parsed correctly";
   Format.(pp_print_flush err_formatter ());
   exit 0
 
 module Run
-    (T : TsType.RS with type ac := AppCond.t) (L : sig
+    (T : Rs.RS with type ac := AppCond.t) (L : sig
       val stop : T.limit
     end) (P : sig
       val parse_react :
@@ -275,6 +193,8 @@ struct
   module S = Store.Make (T) (P)
   module E = Export.T (T) (J)
 
+  (******** EXPORT FUNCTIONS *********)
+
   let export_decs fmt path m env env_t =
     print_msg fmt `yellow ("Exporting declarations to " ^ path ^ " ...");
     S.export m.model_decs env env_t path
@@ -283,27 +203,91 @@ struct
       Cmd.(defaults.colors)
       (print_fun fmt `white Cmd.(defaults.verb))
 
-  (* let export_ml fmt path m =
-   *   print_msg fmt `yellow ("Exporting OCaml declarations to " ^ path ^ " ...");
-   *   try
-   *     Export.write_string
-   *       ( match Cmd.(defaults.model) with
-   *       | None -> "stdin.big"
-   *       | Some s -> s |> S.ml_of_model m )
-   *       ~name:(Filename.basename path) ~path:(Filename.dirname path)
-   *     |> print_fun fmt `white Cmd.(defaults.verb) path
-   *   with Export.ERROR e ->
-   *     Format.(
-   *       pp_print_flush fmt ();
-   *       fprintf err_formatter "@[<v>@[%s: %s@]@."
-   *         (Utils.err_opt Cmd.(defaults.colors))
-   *         (Export.report_error e)) *)
+  let export_prism argument fmt msg f =
+    match argument with
+    | None -> ()
+    | Some file -> (
+        print_msg fmt `yellow (msg ^ file ^ " ...");
+        try
+          f ~name:(Filename.basename file) ~path:(Filename.dirname file)
+          |> print_fun fmt `white Cmd.(defaults.verb) file
+        with E.EXPORT_ERROR e ->
+          Format.(
+            pp_print_flush fmt ();
+            fprintf err_formatter "@[<v>@[%s: %s@]@."
+              (Utils.err_opt Cmd.(defaults.colors))
+              e) )
+
+  let export_csl fmt f =
+    match Cmd.(defaults.export_lab) with
+    | None -> ()
+    | Some file -> (
+        print_msg fmt `yellow ("Exporting properties to " ^ file ^ " ...");
+        try
+          f ~name:(Filename.basename file) ~path:(Filename.dirname file)
+          |> print_fun fmt `white Cmd.(defaults.verb) file
+        with E.EXPORT_ERROR e ->
+          Format.(
+            pp_print_flush fmt ();
+            fprintf err_formatter "@[<v>@[%s: %s@]@."
+              (Utils.err_opt Cmd.(defaults.colors))
+              e) )
+
+  let export_states fmt f g =
+    if Cmd.(defaults.export_states_flag) then
+      match Cmd.(defaults.export_states) with
+      | None -> assert false
+      | Some path ->
+          print_msg fmt `yellow ("Exporting states to " ^ path ^ " ...");
+          f
+            (fun i s ->
+              let aux i s f ext =
+                let fname = string_of_int i ^ ext in
+                try
+                  f s ~name:fname ~path
+                  |> print_fun fmt `white
+                       Cmd.(defaults.verb)
+                       (Filename.concat path fname)
+                with Failure msg ->
+                  Format.(
+                    pp_print_flush fmt ();
+                    fprintf err_formatter "@[<v>@[%s: %s@]@."
+                      (Utils.err_opt Cmd.(defaults.colors))
+                      msg)
+              in
+              Cmd.(defaults.out_format)
+              |> List.map format_map
+              |> List.iter (fun (f, ext) -> aux i s f ext))
+            g
+
+  let export_ts fmt msg formats =
+    match Cmd.(defaults.export_graph) with
+    | None -> ()
+    | Some file ->
+        let name =
+          let n = Filename.basename file in
+          try Filename.chop_extension n with Invalid_argument _ -> n
+        and path = Filename.dirname file in
+        List.iter
+          (fun (f, ext) ->
+            try
+              let file' = Filename.concat path (name ^ ext) in
+              print_msg fmt `yellow (msg ^ file' ^ " ...");
+              f ~name:(name ^ ext) ~path
+              |> print_fun fmt `white Cmd.(defaults.verb) file
+            with E.EXPORT_ERROR e ->
+              Format.(
+                pp_print_flush fmt ();
+                fprintf err_formatter "@[<v>@[%s: %s@]@."
+                  (Utils.err_opt Cmd.(defaults.colors))
+                  e))
+          formats
 
   let print_stats_store fmt env priorities =
     [
       {
         descr = ("Type:", `cyan);
-        value = `s (Rs.to_string T.typ);
+        value = `s (Rs.string_of_rs_type T.typ);
         pp_val = pp_string;
         display = true;
       };
@@ -324,9 +308,9 @@ struct
 
   let print_stats fmt stats =
     if Cmd.defaults.running_time then
-      Format.fprintf fmt "%a@." (pp_float "") (`f TsType.(stats.time))
+      Format.fprintf fmt "%a@." (pp_float "") (`f Rs.(stats.time))
     else
-      TsType.stats_descr stats
+      Rs.stats_descr stats
       |> List.map (fun (descr, value, flag) ->
              {
                descr = (descr, `green);
@@ -346,24 +330,26 @@ struct
     in
     print_stats fmt stats;
     export_ts fmt
-      ("Exporting " ^ Rs.to_string T.typ ^ " to ")
+      ("Exporting " ^ Rs.string_of_rs_type T.typ ^ " to ")
       (List.map format_map Cmd.(defaults.out_format));
     export_states fmt T.iter_states graph;
     export_prism
       Cmd.(defaults.export_prism)
       fmt
-      ("Exporting " ^ Rs.to_string T.typ ^ " in PRISM format to ")
+      ("Exporting " ^ Rs.string_of_rs_type T.typ ^ " in PRISM format to ")
       (E.write_prism graph);
     export_prism
       Cmd.(defaults.export_state_rewards)
       fmt
-      ( "Exporting the state rewards of " ^ Rs.to_string T.typ
+      ( "Exporting the state rewards of "
+      ^ Rs.string_of_rs_type T.typ
       ^ " in PRISM format to " )
       (E.write_state_rewards graph);
     export_prism
       Cmd.(defaults.export_transition_rewards)
       fmt
-      ( "Exporting the transition rewards of " ^ Rs.to_string T.typ
+      ( "Exporting the transition rewards of "
+      ^ Rs.string_of_rs_type T.typ
       ^ " in PRISM format to " )
       (E.write_transition_rewards graph);
     export_csl fmt (E.write_lab graph);
@@ -371,7 +357,11 @@ struct
     exit 0
 
   let sim fmt s0 priorities preds =
-    print_msg fmt `yellow ("Starting " ^ Rs.sim_type T.typ ^ " ...");
+    let sim_type = function
+      | Rs.BRS | PBRS | NBRS -> "simulation"
+      | SBRS -> "stochastic simulation"
+    in
+    print_msg fmt `yellow ("Starting " ^ sim_type T.typ ^ " ...");
     print_max_sim fmt T.typ;
     open_progress_bar ();
     T.sim ~s0 ~priorities ~predicates:preds
@@ -380,7 +370,13 @@ struct
     |> after fmt close_progress_bar
 
   let full fmt s0 priorities preds =
-    print_msg fmt `yellow ("Computing " ^ Rs.ts_type T.typ ^ " ...");
+    let ts_type = function
+      | Rs.BRS -> "transition system"
+      | PBRS -> "DTMC" (* Discrete Time Markov Chain *)
+      | SBRS -> "CTMC" (* Continuous Time Markov Chain *)
+      | NBRS -> "MDP"
+    in
+    print_msg fmt `yellow ("Computing " ^ ts_type T.typ ^ " ...");
     print_max fmt;
     open_progress_bar ();
     T.bfs ~s0 ~priorities ~predicates:preds
@@ -405,15 +401,23 @@ struct
             after fmt
               (fun () ->
                 close_progress_bar ();
+                let limit_msg = function
+                  | Rs.BRS | PBRS | NBRS -> "number of simulation steps"
+                  | SBRS -> "simulation time"
+                in
                 print_msg fmt `yellow
-                  ("Maximum " ^ Rs.limit_msg T.typ ^ " reached."))
+                  ("Maximum " ^ limit_msg T.typ ^ " reached."))
               (graph, stats)
         | T.DEADLOCK (graph, stats, limit) ->
             after fmt
               (fun () ->
                 close_progress_bar ();
+                let limit_type = function
+                  | Rs.BRS | PBRS | NBRS -> "step"
+                  | SBRS -> "time"
+                in
                 print_msg fmt `yellow
-                  ( "Deadlock state reached at " ^ Rs.limit_type T.typ ^ " "
+                  ( "Deadlock state reached at " ^ limit_type T.typ ^ " "
                   ^ T.string_of_limit limit ^ "." ))
               (graph, stats) )
     | `full -> (
@@ -495,7 +499,7 @@ let () =
           let m = Parser.model Lexer.token lexbuf in
           close_in file;
           let module Selector (T : sig
-            val rs_type : Bigraph.Rs.t
+            val rs_type : Bigraph.Rs.rs_type
           end)
           (M : Solver.M) =
           struct

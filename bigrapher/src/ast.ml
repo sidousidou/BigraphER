@@ -178,7 +178,7 @@ type dbrs = {
   dbrs_params : param_exp list;
   dbrs_preds : pred_id list;
   dbrs_loc : Loc.t;
-  dbrs_type : Rs.t;
+  dbrs_type : Rs.rs_type;
 }
 
 type model = { model_decs : dec list; model_rs : dbrs; model_loc : Loc.t }

@@ -84,7 +84,8 @@ val parse : string -> t
        01
        00
        1 1 2 f
-       1 2 2 f ]}
+       1 2 2 f
+    ]}
 
     The first line specifies the number of regions, nodes, sites, and links
     in the displayed order. The second line lists the controls of the nodes.
