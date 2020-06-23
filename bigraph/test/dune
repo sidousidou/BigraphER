@@ -1,5 +1,5 @@
 (executables
- (names test_match test_decomp test_brs test_inst)
+ (names test_match test_decomp test_brs test_inst test_solid)
  (libraries CI_utils bigraph))
 
 (rule
