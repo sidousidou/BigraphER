@@ -30,6 +30,21 @@
  (action
   (diff %{ref} %{out})))
 
+(rule
+ (deps
+  (:model ../examples/mdp_wsn.big))
+ (target mdp_wsn.tra)
+ (action
+  (run %{bin:bigrapher} full -q -p %{target} %{model})))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref files/mdp_wsn.reference.tra)
+  (:out mdp_wsn.tra))
+ (action
+  (diff %{ref} %{out})))
+
 (alias
  (name speed)
  (deps

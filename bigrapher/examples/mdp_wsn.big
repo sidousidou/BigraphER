@@ -1,0 +1,40 @@
+# Signature
+atomic ctrl BS = 1;
+atomic ctrl BS_F = 1;
+atomic ctrl BS_S = 1;
+atomic ctrl S = 1;
+atomic ctrl S_F = 1;
+atomic ctrl S_S = 1;
+
+float w_f = 1.;
+float w_s = 4.;
+
+# Initial state
+big g0 = /x (BS{x} | S{x});
+
+# Actions
+
+action send
+  react send_fail =
+    g0 -[ w_f ]-> /x (BS_F{x} | S_F{x});
+
+  react send_suc =
+    g0 -[ w_s ]-> /x (BS_S{x} | S_S{x});
+end
+
+action wait
+  react wait = g0 -[ 1 ]-> g0;
+end
+
+action reset
+  react reset =
+    /x (BS_F{x} | S_F{x}) -[ 1 ]-> g0;
+end
+
+# System
+begin nbrs
+  init g0;
+  rules = [ { send_fail, send_suc, wait, reset } ];
+end
+
+
