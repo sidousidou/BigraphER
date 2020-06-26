@@ -15,6 +15,21 @@
    (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
      parser-junit.xml))))
 
+(rule
+ (deps
+  (:model ../examples/prob_wsn.big))
+ (target prob_wsn.tra)
+ (action
+  (run %{bin:bigrapher} full -q -p %{target} %{model})))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref files/prob_wsn.reference.tra)
+  (:out prob_wsn.tra))
+ (action
+  (diff %{ref} %{out})))
+
 (alias
  (name speed)
  (deps

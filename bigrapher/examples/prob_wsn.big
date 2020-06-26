@@ -1,0 +1,29 @@
+# Signature
+atomic ctrl BS = 1;
+atomic ctrl S = 1;
+atomic ctrl S_F = 1;
+
+float w_f = 2.;
+float w_r = 1.5;
+
+# Reaction rules
+react fail =
+  BS{x} | S{x}
+  -[ w_f ]->
+  BS{x} | /x S_F{x};
+
+react recover =
+  BS{x} | /x S_F{x}
+  -[ w_r ]->
+  BS{x} | S{x};
+
+# Initial state
+big g0 = /x (BS{x} | S{x} | S{x} | S{x});
+
+# System
+begin pbrs
+  init g0;
+  rules = [ { fail, recover } ];
+end
+
+
