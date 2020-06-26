@@ -45,6 +45,21 @@
  (action
   (diff %{ref} %{out})))
 
+(rule
+ (deps
+  (:model ../examples/stoch_occ.big))
+ (target stoch_occ.tra)
+ (action
+  (run %{bin:bigrapher} full -q -p %{target} %{model})))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref files/stoch_occ.reference.tra)
+  (:out stoch_occ.tra))
+ (action
+  (diff %{ref} %{out})))
+
 (alias
  (name speed)
  (deps

@@ -1,0 +1,7 @@
+Type:          Stochastic BRS
+Bindings:      7       
+# of rules:    2       
+Max # states:  140     
+States:        5       
+Transitions:   4       
+Occurrences:   20      

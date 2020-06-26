@@ -1,0 +1,26 @@
+# Signature
+atomic ctrl B = 1;
+atomic ctrl A = 1;
+
+float rho = 1.;
+float sigma = 4.;
+
+# Initial state
+big g0 = /x (B{x} | A{x} | A{x} | A{x} | A{x});
+
+# Reaction rules
+
+react remove =
+  B{x} | A{x} -[ rho ]-> B{x};
+
+react remove_pair =
+  B{x} | A{x} | A{x} -[ sigma ]-> B{x} | A{x};
+
+
+# System
+begin sbrs
+  init g0;
+  rules = [ { remove, remove_pair } ];
+end
+
+
