@@ -493,8 +493,8 @@ struct
     | Minus (e1, e2, loc) -> eval_minus (eval' e1) (eval' e2) loc
     | UMinus (e1, loc) -> eval_uminus (eval' e1) loc
     | Prod (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
-    | Div (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
-    | Pow (e1, e2, loc) -> eval_prod (eval' e1) (eval' e2) loc
+    | Div (e1, e2, loc) -> eval_div (eval' e1) (eval' e2) loc
+    | Pow (e1, e2, loc) -> eval_pow (eval' e1) (eval' e2) loc
 
   and eval_exp (exp : exp) (scope : scope) (env : store) =
     match exp with
