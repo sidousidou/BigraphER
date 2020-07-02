@@ -126,6 +126,11 @@ module type M = sig
 
       @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
+  (** Compute the non-trivial automorphisms of a bigraph. The elements
+      of each output pair are an automorphism over the place graph and
+      an automorphism over the link graph, respectively. *)
+  val auto : Big.t -> (Iso.t * Iso.t) list
+
   val occurrence_memo :
     target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
   (** [occurrence ~target ~pattern trans] same as {!Solver.M.occurrence} with

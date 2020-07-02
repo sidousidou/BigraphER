@@ -3,7 +3,7 @@ open Printf
 open Bigraph
 module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
-module S = Solver.Make_SAT (Solver.MS)
+module S = Solver.Make_SAT (Solver.MC)
 
 type test = {
   target : Big.t;
@@ -27,11 +27,18 @@ let print_res res =
   in
   match out with [] -> "{ }" | _ -> "{\n" ^ String.concat "\n" out ^ "\n}"
 
-let check_res res exp_res =
+let check_res res exp_res pattern =
   if List.length res <> List.length exp_res then false
   else
     List.for_all
-      (fun ((i0, j0), (i1, j1)) -> Iso.equal i0 i1 && Iso.equal j0 j1)
+      (fun ((i0, j0), (i1, j1)) ->
+        (* Equality up to iso (autos on pattern) *)
+        let autos = S.auto pattern in
+        (i1, j1) :: (List.combine
+                       (Iso.gen_isos i1 (List.map fst autos))
+                       (Iso.gen_isos j1 (List.map snd autos)))
+        |> List.exists (fun (i1', j1') ->
+               Iso.equal i0 i1'  && Iso.equal j0 j1'))
       (List.combine (sort_res res) (sort_res exp_res))
 
 let test_decomposition t p
@@ -110,7 +117,7 @@ let do_tests =
       try
         let occs = S.occurrences ~target:t.target ~pattern:t.pattern in
         t.res <- List.map (fun o -> Solver.(o.nodes, o.edges)) occs;
-        if check_res t.res t.exp_res then
+        if check_res t.res t.exp_res t.pattern then
           match
             List.filter
               (fun o -> not (test_decomposition t.target t.pattern o))

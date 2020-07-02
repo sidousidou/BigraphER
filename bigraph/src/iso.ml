@@ -70,3 +70,7 @@ let gen_isos i =
         (fun i j iso' ->
           match apply auto i with None -> iso' | Some i' -> add i' j iso')
         i empty)
+
+let equal_up_to i i' autos =
+  gen_isos i' autos
+  |> List.exists (equal i)
