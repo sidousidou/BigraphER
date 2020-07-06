@@ -1,5 +1,5 @@
 (executables
- (names test_match test_decomp test_brs test_inst test_solid)
+ (names test_match test_decomp test_brs test_inst test_bug_savannah)
  (libraries CI_utils bigraph))
 
 (rule
@@ -38,3 +38,18 @@
   (:exe test_inst.exe))
  (action
   (run %{exe} %{project_root}/shippable/testresults inst-junit.xml)))
+
+(rule
+ (deps
+  (:exe test_bug_savannah.exe))
+ (action
+  (with-stdout-to
+   test_bug_savannah.output
+   (run %{exe}))))
+
+(rule
+ (alias runtest)
+ (deps
+  (:ref test_bug_savannah.reference))
+ (action
+  (diff %{ref} test_bug_savannah.output)))
