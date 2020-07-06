@@ -14,8 +14,11 @@
    (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
    (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults
      parser-junit.xml)
-   (setenv BIGSOLVER MCARD 
-    (run %{exe} %{bin:bigrapher} %{list} %{project_root}/shippable/testresults parser-junit-MCARD.xml)))))
+   (setenv
+    BIGSOLVER
+    MCARD
+    (run %{exe} %{bin:bigrapher} %{list}
+      %{project_root}/shippable/testresults parser-junit-MCARD.xml)))))
 
 (rule
  (deps

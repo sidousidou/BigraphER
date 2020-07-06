@@ -58,8 +58,8 @@ val equal : t -> t -> bool
 (** Equality between isomorphisms. *)
 
 val equal_up_to : t -> t -> t list -> bool
-(** [equal_up_to i i' autos] checks whether [i] and [i'] are equal up
-    to isomorphism. [autos] is a list of ismorphisms over [i]. *)
+(** [equal_up_to i i' autos] checks whether [i] and [i'] are equal up to
+    isomorphism. [autos] is a list of ismorphisms over [i]. *)
 
 val compare : t -> t -> int
 (** Comparison between isomorphisms. *)
