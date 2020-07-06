@@ -12,8 +12,6 @@ let prism_out name = "-p " ^ name ^ ".tra"
 
 let ts_out name = "-s -t " ^ name
 
-let ml_out name = "-m " ^ name ^ ".ml"
-
 let extra_flags = "--no-colors --debug -M 140"
 
 let path = "./files"
