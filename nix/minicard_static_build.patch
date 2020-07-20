@@ -1,0 +1,52 @@
+diff --git a/minicard/src/dune b/minicard/src/dune
+index 8dd6f56..7216acb 100644
+--- a/minicard/src/dune
++++ b/minicard/src/dune
+@@ -3,7 +3,7 @@
+ (rule
+  (deps
+   (source_tree minicard_c))
+- (targets libminicard_c.a dllminicard_c.so)
++ (targets libminicard_c.a)
+  (enabled_if
+   (and
+    (<> %{system} freebsd)
+@@ -13,14 +13,13 @@
+   (progn
+    (chdir
+     minicard_c
+-    (run make lr lsh))
+-   (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a)
+-   (run cp minicard_c/build/dynamic/lib/libminicard.so dllminicard_c.so))))
++    (run make lr))
++   (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a))))
+ 
+ (rule
+  (deps
+   (source_tree minicard_c))
+- (targets libminicard_c.a dllminicard_c.so)
++ (targets libminicard_c.a)
+  (enabled_if
+   (or
+    (= %{system} freebsd)
+@@ -30,9 +29,8 @@
+   (progn
+    (chdir
+     minicard_c
+-    (run gmake lr lsh))
+-   (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a)
+-   (run cp minicard_c/build/dynamic/lib/libminicard.so dllminicard_c.so))))
++    (run gmake lr))
++   (run cp minicard_c/build/release/lib/libminicard.a libminicard_c.a))))
+ 
+ (library
+  (name minicard)
+@@ -52,7 +50,7 @@
+  (deps
+   (:discover config/discover.exe)
+   libminicard_c.a
+-  dllminicard_c.so)
++  )
+  (action
+   (run %{discover})))
+ 

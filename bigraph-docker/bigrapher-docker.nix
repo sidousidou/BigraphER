@@ -1,9 +1,9 @@
-with import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/20.03.tar.gz") {
-  overlays = [ (import ./nix/dune_2_5_overlay.nix) (import ./nix/minisat_overlay.nix) ];
-};
+let
+  pkgs = import <nixpkgs> {};
+in
 
 let
-  bigrapher = pkgs.callPackage ../default.nix {};
+  bigrapher = pkgs.callPackage ../static.nix {};
 in
 pkgs.dockerTools.buildImage {
   name = "bigrapher";
