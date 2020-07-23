@@ -1,0 +1,17 @@
+diff --git a/minicard/src/minicard_c/utils/System.h b/minicard/src/minicard_c/utils/System.h
+index 2035b3e..4ddb058 100644
+--- a/minicard/src/minicard_c/utils/System.h
++++ b/minicard/src/minicard_c/utils/System.h
+@@ -21,9 +21,9 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
+ #ifndef MiniCard_System_h
+ #define MiniCard_System_h
+ 
+-#if defined(__linux__) && defined(__GLIBC__)
+-#include <fpu_control.h>
+-#endif
++// #if defined(__linux__) && defined(__GLIBC__)
++// #include <fpu_control.h>
++// #endif
+ 
+ #include "mtl/IntTypes.h"
+ 

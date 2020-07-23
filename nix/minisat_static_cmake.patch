@@ -1,0 +1,51 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 061a61a..26c8efe 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -6,7 +6,6 @@ project(minisat)
+ # Configurable options:
+ 
+ option(STATIC_BINARIES "Link binaries statically." ON)
+-option(USE_SORELEASE   "Use SORELEASE in shared library filename." ON)
+ 
+ #--------------------------------------------------------------------------------------------------
+ # Library version:
+@@ -52,35 +51,23 @@ set(MINISAT_LIB_SOURCES
+     minisat/simp/SimpSolver.cc)
+ 
+ add_library(minisat-lib-static STATIC ${MINISAT_LIB_SOURCES})
+-add_library(minisat-lib-shared SHARED ${MINISAT_LIB_SOURCES})
+ 
+-target_link_libraries(minisat-lib-shared ${ZLIB_LIBRARY})
+ target_link_libraries(minisat-lib-static ${ZLIB_LIBRARY})
+ 
+ add_executable(minisat_core minisat/core/Main.cc)
+ add_executable(minisat_simp minisat/simp/Main.cc)
+ 
+-if(STATIC_BINARIES)
+-  target_link_libraries(minisat_core minisat-lib-static)
+-  target_link_libraries(minisat_simp minisat-lib-static)
+-else()
+-  target_link_libraries(minisat_core minisat-lib-shared)
+-  target_link_libraries(minisat_simp minisat-lib-shared)
+-endif()
++target_link_libraries(minisat_core minisat-lib-static)
++target_link_libraries(minisat_simp minisat-lib-static)
+ 
+ set_target_properties(minisat-lib-static PROPERTIES OUTPUT_NAME "minisat")
+-set_target_properties(minisat-lib-shared
+-  PROPERTIES
+-    OUTPUT_NAME "minisat" 
+-    VERSION ${MINISAT_VERSION}
+-    SOVERSION ${MINISAT_SOVERSION})
+ 
+ set_target_properties(minisat_simp       PROPERTIES OUTPUT_NAME "minisat")
+ 
+ #--------------------------------------------------------------------------------------------------
+ # Installation targets:
+ 
+-install(TARGETS minisat-lib-static minisat-lib-shared minisat_core minisat_simp 
++install(TARGETS minisat-lib-static minisat_core minisat_simp 
+         RUNTIME DESTINATION bin
+         LIBRARY DESTINATION lib
+         ARCHIVE DESTINATION lib)

@@ -1,26 +1,26 @@
 { pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/20.03.tar.gz")
   {
-    overlays = [ (import ./nix/dune_2_5_overlay.nix) (import ./nix/minisat_overlay.nix) ];
+    overlays = [ (import ./nix/dune_2_5_overlay.nix) ];
   }
 }:
 
 with pkgs;
 
-ocamlPackages.buildOcaml rec {
-    name = "bigrapher-${version}";
-    version = "1.9.3";
+stdenv.mkDerivation rec {
+  name = "bigrapher-${version}";
+  version = "1.9.3";
 
-    src = lib.cleanSource ./.;
+  src = lib.cleanSource ./.;
 
-    buildInputs = with ocamlPackages; [ pkgs.minisat dune-configurator menhir zlib jsonm cmdliner ];
-    nativeBuildInputs = [ dune_2 ];
+  buildInputs = with ocamlPackages; [ pkgs.minisat zlib jsonm cmdliner ];
+  nativeBuildInputs = with ocamlPackages; [ dune_2 ocaml findlib dune-configurator menhir ];
 
-    buildPhase = ''
+  buildPhase = ''
       dune build @install --profile=release
     '';
 
-    installPhase = ''
+  installPhase = ''
       dune install --profile=release --prefix=$out
     '';
 
-  }
+}
