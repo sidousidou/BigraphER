@@ -1,5 +1,6 @@
 (executables
- (names test_match test_decomp test_brs test_inst test_bug_savannah test_bug_spec)
+ (names test_match test_decomp test_brs test_inst test_bug_savannah
+   test_bug_spec)
  (libraries CI_utils bigraph))
 
 (rule
@@ -68,4 +69,3 @@
   (:ref test_bug_spec.reference))
  (action
   (diff %{ref} test_bug_spec.output)))
-

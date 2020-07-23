@@ -566,7 +566,6 @@ module Make_SAT (S : S) : M = struct
   let add_c11 unmatch_js solver m =
     IntSet.iter
       (fun j ->
-        (* print_endline @@ "Block column " ^ (string_of_int j); *)
         Array.iteri
           (fun i _ -> S.add_clause solver [ S.negative_lit m.(i).(j) ])
           m)
@@ -638,15 +637,13 @@ module Make_SAT (S : S) : M = struct
           with
           | [] ->
               (* No compatible edges found, break out from fold *)
-             raise_notrace NOT_TOTAL
+              raise_notrace NOT_TOTAL
           | t_edges ->
               List.map
                 (fun (i', j') ->
-                  (* print_string @@ (Base.string_of_ints i i') ^ "&&" ^ (Base.string_of_ints j j'); *)
                   (S.positive_lit m.(i).(i'), S.positive_lit m.(j).(j')))
                 t_edges
               |> S.add_conj_pairs s;
-              (* print_endline " "; *)
               List.fold_left
                 (fun acc (i', j') -> IntSet.add j' (IntSet.add i' acc))
                 acc_c t_edges)
@@ -660,12 +657,10 @@ module Make_SAT (S : S) : M = struct
       indeg t t_i = indeg p p_i && outdeg t t_i = outdeg p p_i
 
     let add_c4 ~target:t ~pattern:p ~n_t ~n_p =
-      (* print_endline "add_c4"; *)
       match_cmp ~target:t ~pattern:p ~n_t ~n_p compat
 
     let add_c5 ~target:t ~pattern:p ~n_t ~n_p s m =
-      (* print_endline "add_c5"; *)
-    let aux l_p l_t acc =
+      let aux l_p l_t acc =
         IntSet.fold
           (fun i acc_c ->
             let c = Base.safe @@ Nodes.get_ctrl i n_p in
@@ -673,18 +668,15 @@ module Make_SAT (S : S) : M = struct
             if IntSet.is_empty compat_t then raise_notrace NOT_TOTAL
             else (
               IntSet.fold
-                (fun j acc -> (* print_string @@ Base.string_of_ints i j; *)
-                              S.positive_lit m.(i).(j) :: acc)
+                (fun j acc -> S.positive_lit m.(i).(j) :: acc)
                 compat_t []
               |> S.add_clause s;
-              (* print_newline (); *)
               IntSet.union acc_c compat_t ))
           l_p acc
       in
       aux (leaves p) (leaves t) IntSet.empty |> aux (orphans p) (orphans t)
 
     let add_c6 ~target:t ~pattern:p ~n_t ~n_p s m =
-      (* print_endline "add_c6"; *)
       (* Only ctrl and deg check *)
       let aux adj acc =
         Sparse.fold
@@ -698,10 +690,9 @@ module Make_SAT (S : S) : M = struct
             if IntSet.is_empty js then raise_notrace NOT_TOTAL
             else
               IntSet.fold
-                (fun j acc -> (* print_string @@ Base.string_of_ints i j; *) S.positive_lit m.(i).(j) :: acc)
+                (fun j acc -> S.positive_lit m.(i).(j) :: acc)
                 js []
               |> S.add_clause s;
-            (* print_newline (); *)
             IntSet.union js acc_c)
           adj acc
       in
@@ -709,7 +700,6 @@ module Make_SAT (S : S) : M = struct
 
     (* Block unconnected pairs of nodes with sites and nodes with regions. *)
     let add_c10 ~target:t ~pattern:p s m =
-      (* print_endline "add_c10"; *)
       let n_s = Sparse.dom p.ns (* index i *) and n_r = Sparse.codom p.rn in
       (* index j *)
       let n_s', n_r' =
@@ -727,7 +717,6 @@ module Make_SAT (S : S) : M = struct
             (fun i ->
               IntSet.iter
                 (fun j ->
-                  (* print_endline @@ "!w" ^ (Base.string_of_ints i i') ^ " V !v" ^ (Base.string_of_ints j j'); *)
                   S.add_clause s
                     [ S.negative_lit m.(i).(i'); S.negative_lit m.(j).(j') ])
                 n_r')
@@ -735,7 +724,6 @@ module Make_SAT (S : S) : M = struct
         t.nn
 
     let check_sites t p v_p' c_set iso =
-      (* print_endline "check_sites"; *)
       let s_set =
         IntSet.fold
           (fun j acc ->
@@ -779,7 +767,6 @@ module Make_SAT (S : S) : M = struct
 
     (* Dual *)
     let check_regions t p v_p' iso =
-      (* print_endline "check_regions"; *)
       let p_set =
         IntSet.fold
           (fun j acc ->
@@ -793,8 +780,6 @@ module Make_SAT (S : S) : M = struct
             IntSet.union acc parents)
           v_p' IntSet.empty
       in
-      (* print_endline @@ "p_set: " ^ (IntSet.to_string p_set)
-       *                  ^ "\nr_set: " ^ (IntSet.to_string r_set); *)
       (* Is there a set of regions with the same children set? *)
       (* Nodes *)
       IntSet.for_all
@@ -810,9 +795,6 @@ module Make_SAT (S : S) : M = struct
               (IntSet.of_int p.r) IntSet.empty
           in
           (* Equality test *)
-          (* print_endline @@ "x: " ^ (string_of_int x) 
-           *                  ^ "\nchl_p: " ^ (IntSet.to_string chl_p)
-           *                  ^ "\ncandidate: " ^ (IntSet.to_string candidate); *)
           IntSet.equal candidate chl_p)
         p_set
       && (* Regions *)
@@ -848,7 +830,6 @@ module Make_SAT (S : S) : M = struct
        then there must be an edge in the pattern between the corresponding
        nodes in the domain. *)
     let check_edges t p v_p' iso =
-      (* print_endline "check_edges"; *)
       let iso' = Iso.inverse iso in
       IntSet.fold
         (fun u acc ->
@@ -975,8 +956,7 @@ module Make_SAT (S : S) : M = struct
                 target ([], [], [], 0)
             in
             match js with
-            | [] -> ((* print_endline "match_edges"; *)
-                     raise_notrace NOT_TOTAL) (* No compatible edges found *)
+            | [] -> raise_notrace NOT_TOTAL (* No compatible edges found *)
             | _ -> (clause :: acc, i + 1, acc_c @ js, acc_b @ b))
           pattern ([], 0, [], [])
       in
@@ -987,17 +967,9 @@ module Make_SAT (S : S) : M = struct
         acc_b )
 
     let add_c7 ~target ~pattern ~n_t ~n_p s w =
-      (* print_endline "add_c7"; *)
       let clauses, b_cols, b_pairs =
         match_edges ~target ~pattern ~n_t ~n_p
       in
-      (* print_endline @@ "clauses:\n"
-       *                  ^ (List.map (fun c -> List.map (fun (a, b) -> "w" ^ Base.string_of_ints a b) c
-       *                                        |> String.concat " ") clauses
-       *                     |> String.concat "\n");
-       * print_endline @@ "b_pairs:\n"
-       *                  ^ (List.map (fun (a, b) -> "!w" ^ Base.string_of_ints a b) b_pairs
-       *                     |> String.concat "\n"); *)
       List.map (List.map (fun (i, j) -> S.positive_lit w.(i).(j))) clauses
       |> S.add_clauses s;
       List.map (fun (i, j) -> [ S.negative_lit w.(i).(j) ]) b_pairs
@@ -1026,7 +998,6 @@ module Make_SAT (S : S) : M = struct
     (* Nodes of matched edges are isomorphic. Indexes in clauses are for
        closed edges. *)
     let add_c8 ~target ~pattern ~n_t ~n_p solver v w clauses =
-      (* print_endline "add_c8"; *)
       let a_t =
         Lg.elements target |> List.map (fun e -> e.p) |> Array.of_list
       and a_p =
@@ -1034,16 +1005,10 @@ module Make_SAT (S : S) : M = struct
       in
       List.iter
         (fun (e_i, e_j) ->
-          (* print_endline @@ "w" ^ Base.string_of_ints e_i e_j; *)
           compat_list a_p.(e_i) a_t.(e_j) n_p n_t
           |> (fun c ->
-            (* print_endline @@ (List.map (fun c -> 
-             *                       List.map (fun (i, j) -> Base.string_of_ints i j) c 
-             *                       |> String.concat " ") c 
-             *                   |> String.concat "\n"); *)
-            List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j))) c)
-          |> S.add_implication solver (S.positive_lit w.(e_i).(e_j))
-        )
+               List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j))) c)
+          |> S.add_implication solver (S.positive_lit w.(e_i).(e_j)))
         (List.flatten clauses)
 
     (* Is p sub-hyperedge of t? *)
@@ -1109,7 +1074,6 @@ module Make_SAT (S : S) : M = struct
     (* !(2,3) | ! (4,3) *)
 
     let compat_sub p t f_e n_t n_p =
-      (* print_endline "compat_sub"; *)
       let p_a = Array.of_list (Lg.elements p)
       and t_a = Array.of_list (Lg.elements t) in
       Base.H_int.fold
@@ -1143,7 +1107,6 @@ module Make_SAT (S : S) : M = struct
     (* Peers in the pattern are peers in the target. Auxiliary variables are
        introduced to model open edges matchings. They are stored in matrix w *)
     let add_c9 ~target ~pattern ~n_t ~n_p solver v =
-      (* print_endline "add_c9"; *)
       let open_p, iso_p =
         filter_iso
           (fun e -> (not (Ports.is_empty e.p)) && not (is_closed e))
@@ -1180,16 +1143,13 @@ module Make_SAT (S : S) : M = struct
           else (
             (* Blockig pairs *)
             IntSet.iter
-              (fun j -> (* print_endline @@ "!w'" ^ (Base.string_of_ints i j); *)
-                        S.add_clause solver [ S.negative_lit w.(i).(j) ])
+              (fun j -> S.add_clause solver [ S.negative_lit w.(i).(j) ])
               (IntSet.diff c_s compat_t);
             (* Generate possible node matches for every edge assignment. *)
             List.iter
               (fun ((l0, l1), r) ->
-                (* print_endline @@ "w'" ^ (Base.string_of_ints l0 l1) ^ " ==>"; *)
                 List.map
-                  (List.map (fun (a, b) -> (* print_endline @@ "v" ^ Base.string_of_ints a b; *)
-                                           S.positive_lit v.(a).(b)))
+                  (List.map (fun (a, b) -> S.positive_lit v.(a).(b)))
                   r
                 |> S.add_implication solver (S.positive_lit w.(l0).(l1)))
               (compat_clauses e_p i compat_t h n_t n_p);
@@ -1197,14 +1157,12 @@ module Make_SAT (S : S) : M = struct
         open_p 0
       |> ignore;
       compat_sub open_p non_empty_t f_e n_t n_p
-      |> List.map (List.map (fun (i, j) -> (* print_endline @@ "!w'" ^ Base.string_of_ints i j; *)
-                                           S.negative_lit w.(i).(j)))
+      |> List.map (List.map (fun (i, j) -> S.negative_lit w.(i).(j)))
       |> S.add_clauses solver;
       (w, iso_p, iso_open)
 
     (* Block columns in W' when the corresponding column in W is in a match *)
     let add_c12 solver w iso_w w' iso_w' =
-      (* print_endline "add_c12"; *)
       (* T index -> W' index *)
       let inv_w' = Iso.inverse iso_w' in
       let convert_j j =
@@ -1212,16 +1170,13 @@ module Make_SAT (S : S) : M = struct
       and vars_of_col j m =
         snd
           (Array.fold_left
-             (fun (i, acc) _ -> (i + 1, ((* print_endline @@ "!" ^ (Base.string_of_ints i j); *)
-                                         S.negative_lit m.(i).(j) :: acc)))
+             (fun (i, acc) _ -> (i + 1, S.negative_lit m.(i).(j) :: acc))
              (0, []) m)
       in
       let cols_w = Iso.dom iso_w in
       List.iter
         (fun j ->
-          (* print_endline @@ "vars_w"; *)
-          let vars_w = vars_of_col j w
-          in (* print_endline @@ "vars_w'"; *)
+          let vars_w = vars_of_col j w in
           let vars_w' = vars_of_col (convert_j j) w' in
           Base.cartesian vars_w vars_w'
           |> List.iter (fun (j, j') -> S.add_clause solver [ j; j' ]))
@@ -1301,28 +1256,22 @@ module Make_SAT (S : S) : M = struct
   end
 
   let ban_solution solver vars =
-    let aux m =
-      Array.to_list m |> List.map Array.to_list |> List.flatten
-    in
-    (aux vars.nodes @ aux vars.edges)
-    |> S.ban solver
+    let aux m = Array.to_list m |> List.map Array.to_list |> List.flatten in
+    aux vars.nodes @ aux vars.edges |> S.ban solver
 
   let rec filter_loop solver t p vars t_trans =
-    (* print_endline "filter_loop"; *)
     S.simplify solver;
     match S.solve solver with
-    | UNSAT -> ((* print_endline "UNSAT";  *)raise_notrace NO_MATCH)
+    | UNSAT -> raise_notrace NO_MATCH
     | SAT ->
-       (* _print_dump solver vars; *)
-       if
-         Big.(
-         P.check_match ~target:t.p ~pattern:p.p t_trans
-           (S.get_iso solver vars.nodes))
-       then (solver, vars)
-       else (
-         (* print_endline "Discarding solution"; *)
-         ban_solution solver vars;
-         filter_loop solver t p vars t_trans )
+        if
+          Big.(
+            P.check_match ~target:t.p ~pattern:p.p t_trans
+              (S.get_iso solver vars.nodes))
+        then (solver, vars)
+        else (
+          ban_solution solver vars;
+          filter_loop solver t p vars t_trans )
 
   (* Compute isos from nodes in the pattern to nodes in the target *)
   let aux_match t p t_trans =
@@ -1422,8 +1371,7 @@ module Make_SAT (S : S) : M = struct
              ~iso_codom:vars.map_edges_c;
       hyper_edges =
         S.get_fun s vars.hyp
-        |> Fun.transform ~iso_dom:vars.map_hyp_r
-             ~iso_codom:vars.map_hyp_c;
+        |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
     }
 
   let occurrence_memo ~target:t ~pattern:p trans =
@@ -1434,7 +1382,6 @@ module Make_SAT (S : S) : M = struct
         try
           let s, vars = aux_match t p trans in
           Some (occ_of_vars s vars)
-
         with NO_MATCH -> None)
 
   let occurrence ~target ~pattern =
@@ -1448,24 +1395,23 @@ module Make_SAT (S : S) : M = struct
       []
 
   let auto b =
-    (* print_endline "auto"; *)
     Big.(
       let b_trans = Place.trans b.p
       and rem_id res =
         List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e)) res
       in
-      (try
-         let s, vars = aux_match b b b_trans in
-         let rec loop_occur res =
-           ban_solution s vars;
-           try
-             ignore (filter_loop s b b vars b_trans);
-             loop_occur
-               ((S.get_iso s vars.nodes, S.get_iso s vars.edges) :: res)
-           with NO_MATCH -> res
-         in
-         loop_occur [ (S.get_iso s vars.nodes, S.get_iso s vars.edges) ]
-       with NO_MATCH -> [] )
+      ( try
+          let s, vars = aux_match b b b_trans in
+          let rec loop_occur res =
+            ban_solution s vars;
+            try
+              ignore (filter_loop s b b vars b_trans);
+              loop_occur
+                ((S.get_iso s vars.nodes, S.get_iso s vars.edges) :: res)
+            with NO_MATCH -> res
+          in
+          loop_occur [ (S.get_iso s vars.nodes, S.get_iso s vars.edges) ]
+        with NO_MATCH -> [] )
       |> rem_id)
 
   let occurrences ~target:t ~pattern:p =
@@ -1477,26 +1423,20 @@ module Make_SAT (S : S) : M = struct
           let t_trans = Place.trans t.p in
           let s, vars = aux_match t p t_trans in
           let autos = auto p in
-          (* print_endline @@ "autos:\n"
-           *                  ^ (List.map (fun (i, e) ->
-           *                         (Iso.to_string i) ^ " " ^ (Iso.to_string e)) autos
-           *                     |> String.concat "\n"); *)
           let rec loop_occur res =
-            (* _print_dump s vars; *)
             ban_solution s vars;
             (*********************** AUTOMORPHISMS ***********************)
             List.combine
               (Iso.gen_isos (S.get_iso s vars.nodes) (List.map fst autos))
               (Iso.gen_isos (S.get_iso s vars.edges) (List.map snd autos))
             |> List.iter (fun (iso_i, iso_e) ->
-                   (* print_endline @@ "Banning " ^ (Iso.to_string iso_i) ^ " " ^ (Iso.to_string iso_e); *)
                    S.add_clause s
                      ( clause_of_iso iso_i vars.nodes
                      @ clause_of_iso iso_e vars.edges ));
             (*************************************************************)
             try
               ignore (filter_loop s t p vars t_trans);
-              loop_occur ((occ_of_vars s vars) :: res)
+              loop_occur (occ_of_vars s vars :: res)
             with NO_MATCH -> res
           in
           loop_occur [ occ_of_vars s vars ]

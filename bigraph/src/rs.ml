@@ -529,10 +529,7 @@ struct
     try
       let old, _ = List.find (fun (_, b') -> S.equal_key b b') k_buket in
       Some old
-      (* Is_new? FALSE *)
     with Not_found -> None
-
-  (* Is_new? TRUE *)
 
   (* Partition a list of occurrences into new and old states *)
   let partition g i f_iter =

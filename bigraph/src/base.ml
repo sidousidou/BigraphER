@@ -187,7 +187,7 @@ let remove_block_delims s =
   if String.length s >= 2 then String.(sub s 1 (length s - 2))
   else invalid_arg "String \"" ^ s ^ "\" has no block delimiters"
 
-(** List pretty printer *)
+(* List pretty printer *)
 let pp_list (out : Format.formatter) open_b pp_x sep l =
   let rec pp = function
     | [] -> ()
