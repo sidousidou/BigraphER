@@ -272,7 +272,7 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
                     Some
                       (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r) ~r1:(rhs r)
                          (map r))
-                  else None
+                  else _step s rs
               | None -> _step s rs )
         in
         let rec _fix s rules i =
