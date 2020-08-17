@@ -1,0 +1,11 @@
+(executable
+ (package big_utils)
+ (name matching_perftest)
+ (public_name matching_perftest)
+ (modules matching_perftest)
+ (modes exe)
+ (libraries bigraph mtime mtime.clock.os))
+
+(documentation
+ (package big_utils)
+ (mld_files (:standard)))

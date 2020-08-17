@@ -31,7 +31,7 @@ pkgsStatic.stdenv.mkDerivation rec {
 
   src = lib.cleanSource ./.;
 
-  buildInputs = with ocamlPackages; [ pkgsStatic.minisat pkgsStatic.zlib jsonm cmdliner dune-configurator ];
+  buildInputs = with ocamlPackages; [ pkgsStatic.minisat pkgsStatic.zlib jsonm cmdliner dune-configurator mtime ];
   nativeBuildInputs = with ocamlPackages; [ dune_2 ocaml_static findlib menhir ];
 
   buildPhase = ''
