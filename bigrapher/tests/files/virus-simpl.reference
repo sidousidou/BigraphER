@@ -2,6 +2,6 @@ Type:          Probabilistic BRS
 Bindings:      12      
 # of rules:    3       
 Max # states:  140     
-States:        143     
-Transitions:   379     
-Occurrences:   415     
+States:        142     
+Transitions:   376     
+Occurrences:   411     
