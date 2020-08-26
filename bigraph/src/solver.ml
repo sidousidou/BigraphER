@@ -507,6 +507,8 @@ module type M = sig
 
   val occurrences : target:Big.t -> pattern:Big.t -> occ list
 
+  val occurrences_raw : target:Big.t -> pattern:Big.t -> occ list
+
   val equal : Big.t -> Big.t -> bool
 
   val equal_key : Big.t -> Big.t -> bool
@@ -525,6 +527,9 @@ module type M = sig
       Sparse.t ->
       (Iso.t * Iso.t) list ->
       occ list
+
+    val occurrences_raw :
+      target:Big.t -> pattern:Big.t -> Sparse.t -> occ list
   end
 end
 
@@ -1392,6 +1397,9 @@ module Make_SAT (S : S) : M = struct
       Sparse.t ->
       (Iso.t * Iso.t) list ->
       occ list
+
+    val occurrences_raw :
+      target:Big.t -> pattern:Big.t -> Sparse.t -> occ list
   end = struct
     let auto b b_trans =
       let rem_id res =
@@ -1463,7 +1471,7 @@ module Make_SAT (S : S) : M = struct
     end
 
     (* Compute all the occurrences, including isomorphic ones *)
-    let occurrences_raw ~target:t ~pattern:p t_trans =
+    let occurrences_raw_aux ~target:t ~pattern:p t_trans =
       Big.(
         if Nodes.size p.n = 0 then raise NODE_FREE
         else if quick_unsat t p then O.empty
@@ -1515,9 +1523,12 @@ module Make_SAT (S : S) : M = struct
             |> O.remove min_occ
             |> filter_iso_occs p_autos (O.add min_occ res)
       in
-      occurrences_raw ~target:t ~pattern:p t_trans
+      occurrences_raw_aux ~target:t ~pattern:p t_trans
       |> filter_iso_occs p_autos O.empty
       |> O.elements
+
+    let occurrences_raw ~target ~pattern t_trans =
+      occurrences_raw_aux ~target ~pattern t_trans |> O.elements
   end
 
   let occurs ~target ~pattern =
@@ -1535,6 +1546,9 @@ module Make_SAT (S : S) : M = struct
       else
         Memo.occurrences ~target ~pattern (Place.trans target.p)
           (auto pattern))
+
+  let occurrences_raw ~target ~pattern =
+    Memo.occurrences_raw ~target ~pattern (Place.trans target.p)
 
   let equal_SAT a b =
     Big.(

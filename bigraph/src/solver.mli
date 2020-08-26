@@ -142,6 +142,12 @@ module type M = sig
 
       @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
+  val occurrences_raw : target:Big.t -> pattern:Big.t -> occ list
+  (** Same as {!Solver.M.occurrences} but without filtering symmetric
+      occurrences out.
+
+      @raise NODE_FREE when the [~pattern] has an empty node set. *)
+
   val equal : Big.t -> Big.t -> bool
   (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
       [false] otherwise. *)
@@ -165,6 +171,9 @@ module type M = sig
       Sparse.t ->
       (Iso.t * Iso.t) list ->
       occ list
+
+    val occurrences_raw :
+      target:Big.t -> pattern:Big.t -> Sparse.t -> occ list
   end
 end
 
