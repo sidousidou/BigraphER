@@ -26,12 +26,6 @@ val mem : int -> t -> bool
 
 (** {2 Additional functions} *)
 
-val dom : t -> int list
-(** Return the domain of an isomorphism. *)
-
-val codom : t -> int list
-(** Return the co-domain of an isomorphism. *)
-
 val inverse : t -> t
 (** Return the inverse of an isomorphism. *)
 

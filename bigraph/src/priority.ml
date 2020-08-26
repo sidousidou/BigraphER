@@ -123,7 +123,8 @@ struct
     in
     _scan_sim b 0 ~const_pri
 
-  let cardinal l =
-    let to_reacts = function P_class rr | P_rclass rr -> rr in
-    List.map to_reacts l |> List.flatten |> List.length
+  let cardinal =
+    List.fold_left (fun acc (P_class rr | P_rclass rr) ->
+        acc + (List.length rr)) 0
+
 end

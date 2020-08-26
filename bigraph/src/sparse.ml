@@ -209,9 +209,11 @@ let trans m0 =
   in
   fix m0 m0
 
-let dom m = M_int.bindings m.r_major |> List.split |> fst |> IntSet.of_list
+let dom m =
+  M_int.fold (fun i _ acc -> IntSet.add i acc) m.r_major IntSet.empty
 
-let codom m = M_int.bindings m.c_major |> List.split |> fst |> IntSet.of_list
+let codom m =
+  M_int.fold (fun j _ acc -> IntSet.add j acc) m.c_major IntSet.empty
 
 let leaves m = IntSet.diff (IntSet.of_int m.r) (dom m)
 
@@ -344,7 +346,7 @@ let col_eq m = aux_eq m.c_major
 (* Symmetric closure (for square matrices) *)
 let sym m =
   assert (m.r = m.c);
-  edges m |> List.map (fun (v, u) -> (u, v)) |> add_list m
+  edges m |> List.rev_map (fun (v, u) -> (u, v)) |> add_list m
 
 let descendants m i =
   assert (i >= 0);

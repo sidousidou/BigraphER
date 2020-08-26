@@ -34,7 +34,7 @@ module Ports = struct
 
   let empty = M_int.empty
 
-  let equal = M_int.equal
+  let equal = M_int.equal Base.int_equal
 
   let filter = M_int.filter
 
@@ -625,7 +625,7 @@ let get_dot l =
    i_d are isos from t to c and d.*)
 let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
   (* compute sets of nodes in c and d *)
-  let v_c, v_d = (IntSet.of_list (Iso.dom i_c), IntSet.of_list (Iso.dom i_d))
+  let v_c, v_d = IntSet.iso_dom i_c, IntSet.iso_dom i_d
   (* Introduce indices *)
   and t_a = Array.of_list (Lg.elements target)
   and p_a = Array.of_list (Lg.elements pattern)
@@ -634,7 +634,7 @@ let decomp ~target ~pattern ~i_e ~i_c ~i_d f_e =
   and f_e' = Fun.inverse f_e in
   (* Not a function *)
   (* Domains: disjoint subsets of T *)
-  let closed_t = IntSet.of_list (Iso.dom i_e')
+  let closed_t = IntSet.iso_dom i_e'
   and non_empty_t = Rel.dom f_e' in
   (* Split every edge indexed by n in edges in d, edges in c, id. *)
   let c, d, b_id, _ =

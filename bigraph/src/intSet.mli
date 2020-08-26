@@ -91,4 +91,10 @@ val merge : t list -> t list
 val disjoint : t -> t -> bool
 (** Test if two sets are disjoint, {e i.e.} if their intersection is empty. *)
 
+val iso_dom : Iso.t -> t
+(** Return the domain of an isomorphism. *)
+
+val iso_codom : Iso.t -> t
+(** Return the co-domain of an isomorphism. *)
+
 (**/**)

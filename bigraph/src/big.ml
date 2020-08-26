@@ -220,9 +220,8 @@ let close f b =
   let g = Link.Face.diff (face_of_inter (outer b)) f
   and n = ord_of_inter (outer b)
   and cs =
-    Link.Face.elements f
-    |> List.map (fun n -> closure (Link.Face.singleton n))
-    |> tens_of_list
+    Link.Face.fold (fun n acc ->
+        tens acc (closure (Link.Face.singleton n))) f id_eps
   in
   comp (tens cs (id (Inter (n, g)))) b
 

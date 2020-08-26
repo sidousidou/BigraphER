@@ -52,24 +52,7 @@ let to_string s =
   ^ "}"
 
 let controls s =
-  M_int.bindings s.ctrl |> List.split |> snd |> List.fast_sort Ctrl.compare
-
-(* let sorts s =
- *   M_string.bindings s.sort
- *   |> List.split
- *   |> fst
- * 
- * let string_of_sorts s =
- *   "{"
- *   ^ (M_string.fold (fun c vs acc ->
- *       acc @ ["("
- *              ^ c
- *              ^ ", "
- *              ^ (IntSet.to_string vs)
- *              ^ ")"])
- *       s.sort []
- *      |> String.concat ",")
- *   ^ "}" *)
+  M_int.fold (fun _ c acc -> c :: acc) s.ctrl [] |> List.fast_sort Ctrl.compare
 
 let get_ctrl i s =
   assert (i >= 0);

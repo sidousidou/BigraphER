@@ -76,7 +76,7 @@ module Ports : sig
 
   val empty : t
 
-  val equal : (int -> int -> bool) -> t -> t -> bool
+  val equal : t -> t -> bool
 
   val filter : (int -> int -> bool) -> t -> t
 
@@ -95,7 +95,8 @@ module Ports : sig
   val add : int -> t -> t
 
   val apply : Iso.t -> t -> t
-  (** Apply an isomorphism. *)
+  (** [apply i p] applies isomorphism [i] to port set [p]. Elements of
+     [p] not in the domain of [i] are dropped. *)
 
   val arity : t -> int -> int option
 

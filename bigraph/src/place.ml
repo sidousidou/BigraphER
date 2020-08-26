@@ -242,7 +242,7 @@ let trans p = Sparse.trans p.nn
 let decomp ~target:t ~pattern:p iso =
   let trans_t_nn = trans t (* memoisation *)
   and iso' = Iso.inverse iso
-  and v_p' = IntSet.of_list (Iso.codom iso) in
+  and v_p' = IntSet.iso_codom iso in
   (* children of v_p' not in v_p' *)
   let v_d =
     IntSet.diff

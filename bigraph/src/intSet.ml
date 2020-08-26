@@ -109,3 +109,9 @@ let rec merge = function
 
 (* Check if the intersection of two sets is empty *)
 let disjoint a b = is_empty (inter a b)
+
+let iso_dom i =
+  Iso.fold (fun i _ acc -> add i acc) i empty
+
+let iso_codom i =
+  Iso.fold (fun _ j acc -> add j acc) i empty

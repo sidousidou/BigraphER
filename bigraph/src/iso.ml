@@ -14,10 +14,6 @@ let fold f (i, _) = M_int.fold f i
 
 let cardinal (i, _) = M_int.cardinal i
 
-let dom (i, _) = M_int.bindings i |> List.split |> fst
-
-let codom (i, _) = M_int.bindings i |> List.split |> snd
-
 (* Inverse of a bijection is a bijection *)
 let inverse (i, i') = (i', i)
 
@@ -65,7 +61,7 @@ let transform ~iso_dom ~iso_codom iso =
 
 (* input: i : P -> T *)
 let gen_isos i =
-  List.map (fun auto ->
+  List.rev_map (fun auto ->
       fold
         (fun i j iso' ->
           match apply auto i with None -> iso' | Some i' -> add i' j iso')

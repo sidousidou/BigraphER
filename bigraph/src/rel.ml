@@ -18,9 +18,9 @@ let equal = M_int.equal IntSet.equal
 
 let compare = M_int.compare IntSet.compare
 
-let dom r = M_int.bindings r |> List.split |> fst |> IntSet.of_list
+let dom r = fold (fun i _ acc -> IntSet.add i acc) r IntSet.empty
 
-let codom r = M_int.bindings r |> List.split |> snd |> IntSet.union_list
+let codom r = fold (fun _ j acc -> IntSet.union j acc) r IntSet.empty
 
 let apply r i =
   match M_int.find i r with None -> IntSet.empty | Some xs -> xs
