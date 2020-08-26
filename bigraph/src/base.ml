@@ -161,6 +161,11 @@ end
 
 let safe = function Some v -> v | None -> assert false
 
+let pair_compare fa fb (a0, b0) (a1, b1) =
+ match fa a0 a1 with
+   | 0 -> fb b0 b1
+   | x -> x
+
 let ints_compare (i0, p0) (i1, p1) =
   match i0 - i1 with 0 -> p0 - p1 | x -> x
 
@@ -201,7 +206,8 @@ let pp_list (out : Format.formatter) open_b pp_x sep l =
   pp l;
   Format.pp_close_box out ()
 
-let list_of_rows m = Array.to_list m |> List.map Array.to_list
+let list_of_rows m =
+  Array.map Array.to_list m |> Array.to_list
 
 let list_of_cols m =
   let rec scan acc j i =
