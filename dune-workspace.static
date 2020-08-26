@@ -1,4 +1,4 @@
-(lang dune 2.0)
+(lang dune 2.7)
 
 (context (default
   (disable_dynamically_linked_foreign_archives true)))
