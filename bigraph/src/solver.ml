@@ -22,6 +22,10 @@ let string_of_value = function
 
 type occ = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
+let pp_occ out { nodes; edges; hyper_edges; } =
+  let open Format in
+  fprintf out "@[<v 1>%s%a@;%a@;%a%s@]" "{" Iso.pp nodes Iso.pp edges Fun.pp hyper_edges "}"
+
 (* External solver interface *)
 module type E = sig
   type t
@@ -436,7 +440,7 @@ module Make (ST : ST) (E : E) : S = struct
     |> List.iter (fun c -> add_exactly s (List.map positive_lit c) 1)
 
   let ban s vars =
-    List.map
+    List.rev_map
       (fun v ->
         match value_of s v with
         | True -> negative_lit v
@@ -500,18 +504,28 @@ module type M = sig
 
   val auto : Big.t -> (Iso.t * Iso.t) list
 
-  val occurrence_memo :
-    target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
-
   val occurrences : target:Big.t -> pattern:Big.t -> occ list
 
   val equal : Big.t -> Big.t -> bool
 
   val equal_key : Big.t -> Big.t -> bool
+
+  (* Memoised interface *)
+  module Memo : sig
+    val auto : Big.t -> Sparse.t -> (Iso.t * Iso.t) list
+
+    val occurs : target:Big.t -> pattern:Big.t -> Sparse.t -> bool
+
+    val occurrence : target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
+
+    val occurrences : target:Big.t -> pattern:Big.t -> Sparse.t -> (Iso.t * Iso.t) list -> occ list
+  end
+
 end
 
 (* Bigraph mathing engine based on solver S *)
 module Make_SAT (S : S) : M = struct
+
   let solver_type = S.solver_type
 
   let string_of_solver_t = S.string_of_solver_t
@@ -597,11 +611,8 @@ module Make_SAT (S : S) : M = struct
       h
 
     type deg =
-      | V of int
-      (* only vertices *)
-      | S of int
-
-    (* with sites or regions *)
+      | V of int   (* only vertices *)
+      | S of int   (* with sites or regions *)
 
     let indeg p i =
       assert (i >= 0);
@@ -845,7 +856,7 @@ module Make_SAT (S : S) : M = struct
 
     (* Check if iso i : p -> t is valid *)
     let check_match ~target:t ~pattern:p t_trans iso =
-      let v_p' = IntSet.of_list (Iso.codom iso) in
+      let v_p' = IntSet.iso_codom iso in
       let c_set =
         IntSet.fold
           (fun j acc ->
@@ -869,7 +880,6 @@ module Make_SAT (S : S) : M = struct
         (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
         (IntSet.of_int p.s) []
 
-    (* match_list_eq *)
     let add_c4_eq a b n_a n_b s m =
       ignore (match_cmp ~target:b ~pattern:a ~n_t:n_b ~n_p:n_a eq s m)
 
@@ -888,7 +898,7 @@ module Make_SAT (S : S) : M = struct
           |> S.add_clause s)
         a.rn
 
-    (*Dual*)
+    (* Dual *)
     let add_nodes_sites a b n_a n_b solver m =
       Sparse.iter
         (fun i s ->
@@ -909,8 +919,7 @@ module Make_SAT (S : S) : M = struct
   module L = struct
     open Link
 
-    let comp_multi (c, n) (c', n') =
-      match Ctrl.compare c c' with 0 -> Base.int_compare n n' | x -> x
+    let comp_multi = Base.pair_compare Ctrl.compare Base.int_compare
 
     let ports_type p n =
       Ports.fold
@@ -1173,14 +1182,13 @@ module Make_SAT (S : S) : M = struct
              (fun (i, acc) _ -> (i + 1, S.negative_lit m.(i).(j) :: acc))
              (0, []) m)
       in
-      let cols_w = Iso.dom iso_w in
-      List.iter
-        (fun j ->
-          let vars_w = vars_of_col j w in
-          let vars_w' = vars_of_col (convert_j j) w' in
-          Base.cartesian vars_w vars_w'
-          |> List.iter (fun (j, j') -> S.add_clause solver [ j; j' ]))
-        cols_w
+      IntSet.iso_dom iso_w
+      |> IntSet.iter
+           (fun j ->
+             let vars_w = vars_of_col j w in
+             let vars_w' = vars_of_col (convert_j j) w' in
+             Base.cartesian vars_w vars_w'
+             |> List.iter (fun (j, j') -> S.add_clause solver [ j; j' ]))
 
     let edg_iso a b n_a n_b =
       Face.equal a.i b.i && Face.equal a.o b.o
@@ -1256,7 +1264,7 @@ module Make_SAT (S : S) : M = struct
   end
 
   let ban_solution solver vars =
-    let aux m = Array.to_list m |> List.map Array.to_list |> List.flatten in
+    let aux m = Base.fold_matrix m (fun acc _ _ x -> x :: acc) [] in
     aux vars.nodes @ aux vars.edges |> S.ban solver
 
   let rec filter_loop solver t p vars t_trans =
@@ -1352,16 +1360,6 @@ module Make_SAT (S : S) : M = struct
       || Link.closed_edges p.l > Link.closed_edges t.l
       || Link.max_ports p.l > Link.max_ports t.l)
 
-  let occurs ~target:t ~pattern:p =
-    Big.(
-      try
-        if Nodes.size p.n = 0 then true
-        else if quick_unsat t p then false
-        else (
-          ignore (aux_match t p (Place.trans t.p));
-          true )
-      with NO_MATCH -> false)
-
   let occ_of_vars s vars =
     {
       nodes = S.get_iso s vars.nodes;
@@ -1374,30 +1372,26 @@ module Make_SAT (S : S) : M = struct
         |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
     }
 
-  let occurrence_memo ~target:t ~pattern:p trans =
-    Big.(
-      if Nodes.size p.n = 0 then raise NODE_FREE
-      else if quick_unsat t p then None
-      else
-        try
-          let s, vars = aux_match t p trans in
-          Some (occ_of_vars s vars)
-        with NO_MATCH -> None)
+  (* let clause_of_iso iso m =
+   *   Base.fold_matrix m
+   *     (fun acc i j v ->
+   *       if Base.safe (Iso.apply iso i) = j then S.negative_lit v :: acc
+   *       else S.positive_lit v :: acc)
+   *     [] *)
 
-  let occurrence ~target ~pattern =
-    occurrence_memo ~target ~pattern (Place.trans target.p)
+  (* Memoised interface *)
+  module Memo : sig
+    val auto : Big.t -> Sparse.t -> (Iso.t * Iso.t) list
 
-  let clause_of_iso iso m =
-    Base.fold_matrix m
-      (fun acc i j v ->
-        if Base.safe (Iso.apply iso i) = j then S.negative_lit v :: acc
-        else S.positive_lit v :: acc)
-      []
+    val occurs : target:Big.t -> pattern:Big.t -> Sparse.t -> bool
 
-  let auto b =
-    Big.(
-      let b_trans = Place.trans b.p
-      and rem_id res =
+    val occurrence : target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
+
+    val occurrences : target:Big.t -> pattern:Big.t -> Sparse.t -> (Iso.t * Iso.t) list -> occ list
+  end = struct
+
+    let auto b b_trans =
+      let rem_id res =
         List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e)) res
       in
       ( try
@@ -1412,35 +1406,131 @@ module Make_SAT (S : S) : M = struct
           in
           loop_occur [ (S.get_iso s vars.nodes, S.get_iso s vars.edges) ]
         with NO_MATCH -> [] )
-      |> rem_id)
+      |> rem_id
 
-  let occurrences ~target:t ~pattern:p =
-    Big.(
-      if Nodes.size p.n = 0 then raise NODE_FREE
-      else if quick_unsat t p then []
-      else
+    let occurs ~target:t ~pattern:p t_trans =
+      Big.(
         try
-          let t_trans = Place.trans t.p in
-          let s, vars = aux_match t p t_trans in
-          let autos = auto p in
-          let rec loop_occur res =
-            ban_solution s vars;
-            (*********************** AUTOMORPHISMS ***********************)
-            List.combine
-              (Iso.gen_isos (S.get_iso s vars.nodes) (List.map fst autos))
-              (Iso.gen_isos (S.get_iso s vars.edges) (List.map snd autos))
-            |> List.iter (fun (iso_i, iso_e) ->
-                   S.add_clause s
-                     ( clause_of_iso iso_i vars.nodes
-                     @ clause_of_iso iso_e vars.edges ));
-            (*************************************************************)
-            try
-              ignore (filter_loop s t p vars t_trans);
-              loop_occur (occ_of_vars s vars :: res)
-            with NO_MATCH -> res
-          in
-          loop_occur [ occ_of_vars s vars ]
-        with NO_MATCH -> [])
+          if Nodes.size p.n = 0 then true
+          else if quick_unsat t p then false
+          else (
+            ignore (aux_match t p t_trans);
+            true )
+        with NO_MATCH -> false)
+
+    let occurrence ~target:t ~pattern:p t_trans =
+      Big.(
+        if Nodes.size p.n = 0 then raise NODE_FREE
+        else if quick_unsat t p then None
+        else
+          try
+            let s, vars = aux_match t p t_trans in
+            Some (occ_of_vars s vars)
+          with NO_MATCH -> None)
+
+    (* Sets of occurrences *)
+    module O =
+      struct
+        include Base.S_opt
+                  (Set.Make (struct
+                       type t = occ
+                       let compare
+                             { nodes = n0; edges = e0; hyper_edges = h0 }
+                             { nodes = n1; edges = e1; hyper_edges = h1 } =
+                         Base.(pair_compare Iso.compare (pair_compare Iso.compare Fun.compare)
+                                 (n0, (e0, h0)) (n1, (e1, h1)))
+                     end))
+                  (struct
+                    type t = occ
+                    let pp = pp_occ
+                  end)
+
+        (* let pp =
+         *   pp ~open_b:Format.pp_open_hbox
+         *     ~first:(fun out -> Format.pp_print_string out "{")
+         *     ~last:(fun out -> Format.pp_print_string out "}")
+         *     ~sep:(fun out ->
+         *       Format.pp_print_string out ",";
+         *       Format.pp_print_space out ()) *)
+
+        exception Result of occ
+
+        (* Find the first element in s satisfying p avoiding a full scan of s *)
+        let scan_first p s =
+          try
+            fold (fun o res -> if p o then raise_notrace (Result o) else res) s None
+          with
+            | Result o -> Some o
+
+      end
+
+    (* Compute all the occurrences, including isomorphic ones *)
+    let occurrences_raw ~target:t ~pattern:p t_trans =
+      Big.(
+        if Nodes.size p.n = 0 then raise NODE_FREE
+        else if quick_unsat t p then O.empty
+        else
+          try
+            let s, vars = aux_match t p t_trans in
+            let rec loop_occur (res : O.t) =
+              ban_solution s vars;
+              try
+                ignore (filter_loop s t p vars t_trans);
+                loop_occur (O.add (occ_of_vars s vars) res)
+              with NO_MATCH -> res
+            in
+            loop_occur (O.singleton (occ_of_vars s vars))
+          with NO_MATCH -> O.empty)
+
+    let occurrences ~target:t ~pattern:p t_trans p_autos =
+      let rec filter_iso_occs p_autos (res : O.t) (occs : O.t) =
+        match O.min_elt occs with
+        | None -> res
+        | Some min_occ ->
+           let apply_auto iso auto =
+             Iso.(fold
+                    (fun i j iso' ->
+                      match apply auto i with
+                      | None -> iso'
+                      | Some i' -> add i' j iso')
+                    iso empty) in
+           (* Occurrences isomorphic to min_occ *)
+           List.rev_map (fun (auto_n, auto_e) ->
+               (apply_auto min_occ.nodes auto_n,
+                apply_auto min_occ.edges auto_e))
+             p_autos
+           (* Remove from occs all the isomorphic occurrences *)
+           |> List.fold_left (fun res (iso_n, iso_e) ->
+                  let eq_occ =
+                    O.scan_first (fun o ->
+                        Iso.equal o.nodes iso_n
+                        && Iso.equal o.edges iso_e)
+                      res
+                    |> Base.safe in
+                  O.remove eq_occ res) occs
+           |> O.remove min_occ
+           |> filter_iso_occs p_autos (O.add min_occ res)
+      in
+      occurrences_raw ~target:t ~pattern:p t_trans
+      |> filter_iso_occs p_autos O.empty
+      |> O.elements
+
+  end
+
+  let occurs ~target ~pattern =
+    Memo.occurs ~target ~pattern (Place.trans target.p)
+
+  let auto b =
+    Memo.auto b (Place.trans b.p)
+
+  let occurrence ~target ~pattern =
+    Memo.occurrence ~target ~pattern (Place.trans target.p)
+
+  let occurrences ~target ~pattern =
+    Big.(
+      if Nodes.size pattern.n = 0 then raise NODE_FREE
+      else if quick_unsat target pattern then []
+      else Memo.occurrences ~target ~pattern (Place.trans target.p) (auto pattern))
 
   let equal_SAT a b =
     Big.(

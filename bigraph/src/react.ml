@@ -259,7 +259,7 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
         let rec _step s = function
           | [] -> None
           | r :: rs -> (
-              match S.occurrence_memo ~target:s ~pattern:(lhs r) t_trans with
+              match S.Memo.occurrence ~target:s ~pattern:(lhs r) t_trans with
               | Some { nodes = i_n; edges = i_e; hyper_edges = i_h } ->
                   let ctx, param, _id =
                     Big.decomp ~target:s ~pattern:(lhs r) ~i_n ~i_e i_h
@@ -272,7 +272,7 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
                     Some
                       (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r) ~r1:(rhs r)
                          (map r))
-                  else None
+                  else _step s rs
               | None -> _step s rs )
         in
         let rec _fix s rules i =

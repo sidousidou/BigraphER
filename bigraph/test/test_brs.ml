@@ -100,8 +100,6 @@ let () =
            [
              ("States", states_reference, Rs.(stats.states));
              ("Reactions", reacts_reference, Rs.(stats.trans));
-             (* ("Occurrences", 31, stats.Brs.occs) *)
-             (* RANDOM *)
            ] ));
       (let stats =
          try
