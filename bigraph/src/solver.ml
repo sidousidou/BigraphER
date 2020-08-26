@@ -22,12 +22,10 @@ let string_of_value = function
 
 type occ = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
-let pp_occ out { nodes; edges; hyper_edges; } =
+let pp_occ out { nodes; edges; hyper_edges } =
   let open Format in
-  fprintf out "@[%s@[<v>%a%s@;%a%s@;%a%s@]@;%s@]" "{" Iso.pp nodes ";"
-    Iso.pp edges ";"
-    Fun.pp hyper_edges ";"
-    "}"
+  fprintf out "@[%s@[<v>%a%s@;%a%s@;%a%s@]@;%s@]" "{" Iso.pp nodes ";" Iso.pp
+    edges ";" Fun.pp hyper_edges ";" "}"
 
 (* External solver interface *)
 module type E = sig
@@ -521,14 +519,17 @@ module type M = sig
 
     val occurrence : target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
 
-    val occurrences : target:Big.t -> pattern:Big.t -> Sparse.t -> (Iso.t * Iso.t) list -> occ list
+    val occurrences :
+      target:Big.t ->
+      pattern:Big.t ->
+      Sparse.t ->
+      (Iso.t * Iso.t) list ->
+      occ list
   end
-
 end
 
 (* Bigraph mathing engine based on solver S *)
 module Make_SAT (S : S) : M = struct
-
   let solver_type = S.solver_type
 
   let string_of_solver_t = S.string_of_solver_t
@@ -614,8 +615,11 @@ module Make_SAT (S : S) : M = struct
       h
 
     type deg =
-      | V of int   (* only vertices *)
-      | S of int   (* with sites or regions *)
+      | V of int
+      (* only vertices *)
+      | S of int
+
+    (* with sites or regions *)
 
     let indeg p i =
       assert (i >= 0);
@@ -1186,8 +1190,7 @@ module Make_SAT (S : S) : M = struct
              (0, []) m)
       in
       IntSet.iso_dom iso_w
-      |> IntSet.iter
-           (fun j ->
+      |> IntSet.iter (fun j ->
              let vars_w = vars_of_col j w in
              let vars_w' = vars_of_col (convert_j j) w' in
              Base.cartesian vars_w vars_w'
@@ -1383,9 +1386,13 @@ module Make_SAT (S : S) : M = struct
 
     val occurrence : target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
 
-    val occurrences : target:Big.t -> pattern:Big.t -> Sparse.t -> (Iso.t * Iso.t) list -> occ list
+    val occurrences :
+      target:Big.t ->
+      pattern:Big.t ->
+      Sparse.t ->
+      (Iso.t * Iso.t) list ->
+      occ list
   end = struct
-
     let auto b b_trans =
       let rem_id res =
         List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e)) res
@@ -1425,32 +1432,35 @@ module Make_SAT (S : S) : M = struct
           with NO_MATCH -> None)
 
     (* Sets of occurrences *)
-    module O =
-      struct
-        include Base.S_opt
-                  (Set.Make (struct
-                       type t = occ
-                       let compare
-                             { nodes = n0; edges = e0; hyper_edges = h0 }
-                             { nodes = n1; edges = e1; hyper_edges = h1 } =
-                         Base.(pair_compare Iso.compare (pair_compare Iso.compare Fun.compare)
-                                 (n0, (e0, h0)) (n1, (e1, h1)))
-                     end))
-                  (struct
-                    type t = occ
-                    let pp = pp_occ
-                  end)
+    module O = struct
+      include Base.S_opt
+                (Set.Make (struct
+                  type t = occ
 
-        exception Result of occ
+                  let compare { nodes = n0; edges = e0; hyper_edges = h0 }
+                      { nodes = n1; edges = e1; hyper_edges = h1 } =
+                    Base.(
+                      pair_compare Iso.compare
+                        (pair_compare Iso.compare Fun.compare)
+                        (n0, (e0, h0))
+                        (n1, (e1, h1)))
+                end))
+                (struct
+                  type t = occ
 
-        (* Find the first element in s satisfying p avoiding a full scan of s *)
-        let scan_first p s =
-          try
-            fold (fun o res -> if p o then raise_notrace (Result o) else res) s None
-          with
-            | Result o -> Some o
+                  let pp = pp_occ
+                end)
 
-      end
+      exception Result of occ
+
+      (* Find the first element in s satisfying p avoiding a full scan of s *)
+      let scan_first p s =
+        try
+          fold
+            (fun o res -> if p o then raise_notrace (Result o) else res)
+            s None
+        with Result o -> Some o
+    end
 
     (* Compute all the occurrences, including isomorphic ones *)
     let occurrences_raw ~target:t ~pattern:p t_trans =
@@ -1475,41 +1485,45 @@ module Make_SAT (S : S) : M = struct
         match O.min_elt occs with
         | None -> res
         | Some min_occ ->
-           let apply_auto iso auto =
-             Iso.(fold
-                    (fun i j iso' ->
-                      match apply auto i with
-                      | None -> iso'
-                      | Some i' -> add i' j iso')
-                    iso empty) in
-           (* Occurrences isomorphic to min_occ *)
-           List.rev_map (fun (auto_n, auto_e) ->
-               (apply_auto min_occ.nodes auto_n,
-                apply_auto min_occ.edges auto_e))
-             p_autos
-           (* Remove from occs all the isomorphic occurrences *)
-           |> List.fold_left (fun res (iso_n, iso_e) ->
-                  let eq_occ =
-                    O.scan_first (fun o ->
-                        Iso.equal o.nodes iso_n
-                        && Iso.equal o.edges iso_e)
-                      res
-                    |> Base.safe in
-                  O.remove eq_occ res) occs
-           |> O.remove min_occ
-           |> filter_iso_occs p_autos (O.add min_occ res)
+            let apply_auto iso auto =
+              Iso.(
+                fold
+                  (fun i j iso' ->
+                    match apply auto i with
+                    | None -> iso'
+                    | Some i' -> add i' j iso')
+                  iso empty)
+            in
+            (* Occurrences isomorphic to min_occ *)
+            List.rev_map
+              (fun (auto_n, auto_e) ->
+                ( apply_auto min_occ.nodes auto_n,
+                  apply_auto min_occ.edges auto_e ))
+              p_autos
+            (* Remove from occs all the isomorphic occurrences *)
+            |> List.fold_left
+                 (fun res (iso_n, iso_e) ->
+                   let eq_occ =
+                     O.scan_first
+                       (fun o ->
+                         Iso.equal o.nodes iso_n && Iso.equal o.edges iso_e)
+                       res
+                     |> Base.safe
+                   in
+                   O.remove eq_occ res)
+                 occs
+            |> O.remove min_occ
+            |> filter_iso_occs p_autos (O.add min_occ res)
       in
       occurrences_raw ~target:t ~pattern:p t_trans
       |> filter_iso_occs p_autos O.empty
       |> O.elements
-
   end
 
   let occurs ~target ~pattern =
     Memo.occurs ~target ~pattern (Place.trans target.p)
 
-  let auto b =
-    Memo.auto b (Place.trans b.p)
+  let auto b = Memo.auto b (Place.trans b.p)
 
   let occurrence ~target ~pattern =
     Memo.occurrence ~target ~pattern (Place.trans target.p)
@@ -1518,7 +1532,9 @@ module Make_SAT (S : S) : M = struct
     Big.(
       if Nodes.size pattern.n = 0 then raise NODE_FREE
       else if quick_unsat target pattern then []
-      else Memo.occurrences ~target ~pattern (Place.trans target.p) (auto pattern))
+      else
+        Memo.occurrences ~target ~pattern (Place.trans target.p)
+          (auto pattern))
 
   let equal_SAT a b =
     Big.(

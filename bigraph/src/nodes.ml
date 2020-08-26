@@ -52,7 +52,8 @@ let to_string s =
   ^ "}"
 
 let controls s =
-  M_int.fold (fun _ c acc -> c :: acc) s.ctrl [] |> List.fast_sort Ctrl.compare
+  M_int.fold (fun _ c acc -> c :: acc) s.ctrl []
+  |> List.fast_sort Ctrl.compare
 
 let get_ctrl i s =
   assert (i >= 0);

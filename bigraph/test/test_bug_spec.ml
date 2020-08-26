@@ -90,15 +90,17 @@ let () =
           hyper_edges =
             Fun.of_list [ (0, 4); (1, 1); (2, 0); (3, 3); (4, 2) ];
         };
-      ] in
-  let occ_compare {Solver.nodes = n0; edges = e0; hyper_edges = h0}
-        {Solver.nodes = n1; edges = e1; hyper_edges = h1} =
-      Base.pair_compare
-        Iso.compare
-        (Base.pair_compare Iso.compare Fun.compare)
-        (n0, (e0, h0)) (n1, (e1, h1)) in
-  let occ_gen = S.occurrences ~target:s1 ~pattern:lhs
-                |> List.hd (* There is only one occurrence *)
+      ]
+  in
+  let occ_compare { Solver.nodes = n0; edges = e0; hyper_edges = h0 }
+      { Solver.nodes = n1; edges = e1; hyper_edges = h1 } =
+    Base.pair_compare Iso.compare
+      (Base.pair_compare Iso.compare Fun.compare)
+      (n0, (e0, h0))
+      (n1, (e1, h1))
+  in
+  let occ_gen = S.occurrences ~target:s1 ~pattern:lhs |> List.hd
+  (* There is only one occurrence *)
   and occ_min = List.sort occ_compare occs |> List.hd in
   (* Check decompositions of isomorphic occurrences are also isomorphic *)
   List.map

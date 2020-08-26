@@ -124,7 +124,7 @@ struct
     _scan_sim b 0 ~const_pri
 
   let cardinal =
-    List.fold_left (fun acc (P_class rr | P_rclass rr) ->
-        acc + (List.length rr)) 0
-
+    List.fold_left
+      (fun acc (P_class rr | P_rclass rr) -> acc + List.length rr)
+      0
 end

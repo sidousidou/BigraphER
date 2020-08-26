@@ -95,8 +95,8 @@ module Ports : sig
   val add : int -> t -> t
 
   val apply : Iso.t -> t -> t
-  (** [apply i p] applies isomorphism [i] to port set [p]. Elements of
-     [p] not in the domain of [i] are dropped. *)
+  (** [apply i p] applies isomorphism [i] to port set [p]. Elements of [p]
+      not in the domain of [i] are dropped. *)
 
   val arity : t -> int -> int option
 

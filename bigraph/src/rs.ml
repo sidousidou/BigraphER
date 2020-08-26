@@ -548,7 +548,8 @@ struct
   let check (i, s) (_, h) =
     let t_trans = Big.(Place.trans s.p) in
     List.iter (fun (id, p) ->
-        if S.Memo.occurs ~target:s ~pattern:p t_trans then Base.H_predicate.add h id i)
+        if S.Memo.occurs ~target:s ~pattern:p t_trans then
+          Base.H_predicate.add h id i)
 
   (* Number of states in a graph *)
   let size_s g = Base.H_int.length (G.states g)

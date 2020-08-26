@@ -124,9 +124,9 @@ module type M = sig
       the [~target], [false] otherwise. *)
 
   val occurrence : target:Big.t -> pattern:Big.t -> occ option
-  (** [occurrence ~target ~pattern] returns an occurrence if the
-     [~pattern] occurs in the [~target]. Different occurrences might be
-     returned depending on which external solver is used.
+  (** [occurrence ~target ~pattern] returns an occurrence if the [~pattern]
+      occurs in the [~target]. Different occurrences might be returned
+      depending on which external solver is used.
 
       @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
@@ -136,9 +136,9 @@ module type M = sig
       automorphism over the link graph, respectively. *)
 
   val occurrences : target:Big.t -> pattern:Big.t -> occ list
-  (** [occurrences ~target ~pattern] returns a list of occurrences.
-     Each occurrence is normalised by picking the smallest occurrence
-     (lexicographic ordering) in the symmetry group.
+  (** [occurrences ~target ~pattern] returns a list of occurrences. Each
+      occurrence is normalised by picking the smallest occurrence
+      (lexicographic ordering) in the symmetry group.
 
       @raise NODE_FREE when the [~pattern] has an empty node set. *)
 
@@ -154,14 +154,18 @@ module type M = sig
   (** Memoised interface. *)
   module Memo : sig
     val auto : Big.t -> Sparse.t -> (Iso.t * Iso.t) list
+
     val occurs : target:Big.t -> pattern:Big.t -> Sparse.t -> bool
-    val occurrence :
-      target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
+
+    val occurrence : target:Big.t -> pattern:Big.t -> Sparse.t -> occ option
+
     val occurrences :
       target:Big.t ->
-      pattern:Big.t -> Sparse.t -> (Iso.t * Iso.t) list -> occ list
+      pattern:Big.t ->
+      Sparse.t ->
+      (Iso.t * Iso.t) list ->
+      occ list
   end
-
 end
 
 (** Bigraph matching engine based on solver [S] *)
