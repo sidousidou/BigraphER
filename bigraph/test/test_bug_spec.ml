@@ -83,19 +83,30 @@ let () =
           hyper_edges =
             Fun.of_list [ (0, 0); (1, 3); (2, 4); (3, 1); (4, 2) ];
         };
+        (* Minimal occurrence (lexicographic ordering) *)
         {
           nodes = Iso.of_list [ (0, 4); (1, 5); (2, 6); (3, 7); (4, 8) ];
           edges = Iso.empty;
           hyper_edges =
             Fun.of_list [ (0, 4); (1, 1); (2, 0); (3, 3); (4, 2) ];
         };
-      ]
-  in
+      ] in
+  let occ_compare {Solver.nodes = n0; edges = e0; hyper_edges = h0}
+        {Solver.nodes = n1; edges = e1; hyper_edges = h1} =
+      Base.pair_compare
+        Iso.compare
+        (Base.pair_compare Iso.compare Fun.compare)
+        (n0, (e0, h0)) (n1, (e1, h1)) in
+  let occ_gen = S.occurrences ~target:s1 ~pattern:lhs
+                |> List.hd (* There is only one occurrence *)
+  and occ_min = List.sort occ_compare occs |> List.hd in
   (* Check decompositions of isomorphic occurrences are also isomorphic *)
   List.map
     (fun o -> Big.rewrite (occ_to_triple o) ~s:s1 ~r0:lhs ~r1:lhs None)
     occs
   |> List.for_all (fun s -> S.equal s s1)
   |> string_of_bool |> print_endline;
+  (* Check generated occurrence is equal to the minimal occurrence *)
+  occ_compare occ_gen occ_min = 0 |> string_of_bool |> print_endline;
 
   exit 0

@@ -1346,11 +1346,11 @@ Testing matches_to_json:
     "iso_e": [
       {
         "i": 0,
-        "j": 1
+        "j": 0
       },
       {
         "i": 1,
-        "j": 0
+        "j": 1
       },
       {
         "i": 2,
