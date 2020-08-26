@@ -32,3 +32,7 @@ open Bigraph
 
 ;;
 #install_printer Rel.pp
+
+;;
+#install_printer Solver.pp_occ
+

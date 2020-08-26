@@ -24,7 +24,10 @@ type occ = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
 let pp_occ out { nodes; edges; hyper_edges; } =
   let open Format in
-  fprintf out "@[<v 1>%s%a@;%a@;%a%s@]" "{" Iso.pp nodes Iso.pp edges Fun.pp hyper_edges "}"
+  fprintf out "@[%s@[<v>%a%s@;%a%s@;%a%s@]@;%s@]" "{" Iso.pp nodes ";"
+    Iso.pp edges ";"
+    Fun.pp hyper_edges ";"
+    "}"
 
 (* External solver interface *)
 module type E = sig
@@ -1372,13 +1375,6 @@ module Make_SAT (S : S) : M = struct
         |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
     }
 
-  (* let clause_of_iso iso m =
-   *   Base.fold_matrix m
-   *     (fun acc i j v ->
-   *       if Base.safe (Iso.apply iso i) = j then S.negative_lit v :: acc
-   *       else S.positive_lit v :: acc)
-   *     [] *)
-
   (* Memoised interface *)
   module Memo : sig
     val auto : Big.t -> Sparse.t -> (Iso.t * Iso.t) list
@@ -1444,14 +1440,6 @@ module Make_SAT (S : S) : M = struct
                     type t = occ
                     let pp = pp_occ
                   end)
-
-        (* let pp =
-         *   pp ~open_b:Format.pp_open_hbox
-         *     ~first:(fun out -> Format.pp_print_string out "{")
-         *     ~last:(fun out -> Format.pp_print_string out "}")
-         *     ~sep:(fun out ->
-         *       Format.pp_print_string out ",";
-         *       Format.pp_print_space out ()) *)
 
         exception Result of occ
 
