@@ -39,11 +39,13 @@ module type R = sig
     Fun.t option ->
     t
 
-  val step_post : (Big.t * label * t list) list * int ->
-                  (Big.t * label * t list) list * int
+  val step_post :
+    (Big.t * label * t list) list * int ->
+    (Big.t * label * t list) list * int
 
-  val random_step_post : (Big.t * label * t list) list * int ->
-                         (Big.t * label * t list) option * int
+  val random_step_post :
+    (Big.t * label * t list) list * int ->
+    (Big.t * label * t list) option * int
 end
 
 module type T = sig
@@ -90,7 +92,8 @@ module type T = sig
 
   val is_enabled : Big.t -> t -> bool
 
-  val filter_iso : (Big.t * label * t list) list -> (Big.t * label * t list) list
+  val filter_iso :
+    (Big.t * label * t list) list -> (Big.t * label * t list) list
 
   val apply : Big.t -> t list -> Big.t option
 
@@ -101,24 +104,26 @@ module type T = sig
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
 
   module Memo : sig
-
     val is_enabled : Big.t -> Sparse.t -> t -> bool
 
     val fix : Big.t -> Sparse.t -> t list -> Big.t * int
 
-    val step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
-               (Big.t * label * t list) list * int
+    val step :
+      Big.t ->
+      Sparse.t ->
+      (t * (Iso.t * Iso.t) list) list ->
+      (Big.t * label * t list) list * int
 
-    val random_step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
-                      (Big.t * label * t list) option * int
-
+    val random_step :
+      Big.t ->
+      Sparse.t ->
+      (t * (Iso.t * Iso.t) list) list ->
+      (Big.t * label * t list) option * int
   end
-
 end
 
 module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   T with type t = R.t and type label = R.label and type ac = R.ac = struct
-
   include R
 
   type react_error =
@@ -191,7 +196,7 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
     let rec extract (pred : 'a -> bool) acc = function
       | [] -> (None, acc)
       | x :: l ->
-         if pred x then (Some x, l @ acc) else extract pred (x :: acc) l
+          if pred x then (Some x, l @ acc) else extract pred (x :: acc) l
     in
     let aux1 acc (a, b, c) =
       let iso, non_iso = extract (fun (a', _, _) -> S.equal a a') [] acc in
@@ -207,28 +212,32 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
       Big.decomp ~target:s ~pattern:lhs
         ~i_n:Solver.(o.nodes)
         ~i_e:Solver.(o.edges)
-        Solver.(o.hyper_edges) in
+        Solver.(o.hyper_edges)
+    in
     let ctx_trans = Place.trans ctx.p
     and param_trans = Place.trans param.p in
-    List.for_all (fun cnd ->
-        AC.check_cond_memo cnd ~ctx ~ctx_trans ~param ~param_trans) conds
+    List.for_all
+      (fun cnd -> AC.check_cond_memo cnd ~ctx ~ctx_trans ~param ~param_trans)
+      conds
 
-  (* Generic step function - lhs automorphisms and s transitive closure are precomputed *)
+  (* Generic step function - lhs automorphisms and s transitive closure are
+     precomputed *)
   let step_aux s s_trans rules =
-    List.fold_left (fun acc (r, autos) ->
+    List.fold_left
+      (fun acc (r, autos) ->
         ( S.Memo.occurrences ~target:s ~pattern:(lhs r) s_trans autos
-          |> List.filter (filter_conds s (lhs r) (conds r))
-          |> List.map (fun o ->
-                 ( Big.rewrite
-                     Solver.(o.nodes, o.edges, o.hyper_edges)
-                     ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
-                   l r,
-                   [ r ] )) )
-        @ acc) [] rules
+        |> List.filter (filter_conds s (lhs r) (conds r))
+        |> List.map (fun o ->
+               ( Big.rewrite
+                   Solver.(o.nodes, o.edges, o.hyper_edges)
+                   ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
+                 l r,
+                 [ r ] )) )
+        @ acc)
+      [] rules
     |> fun l -> (filter_iso l, List.length l)
 
   module Memo = struct
-
     let is_enabled b b_trans r =
       match S.Memo.occurrence ~target:b ~pattern:(lhs r) b_trans with
       | Some o -> filter_conds b (lhs r) (conds r) o
@@ -237,33 +246,32 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
     let fix b b_trans = function
       | [] -> (b, 0)
       | rules ->
-         let rec _step s s_trans = function
-           | [] -> None
-           | r :: rs -> (
-             match S.Memo.occurrence ~target:s ~pattern:(lhs r) s_trans with
-             | Some ({ nodes = i_n; edges = i_e; hyper_edges = i_h } as o) ->
-                if filter_conds s (lhs r) (conds r) o then
-                  Some
-                    (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r) ~r1:(rhs r)
-                       (map r))
-                else _step s s_trans rs
-             | None -> _step s s_trans rs )
-         in
-         let rec _fix s s_trans rules i =
-           match _step s s_trans rules with
-           | Some b -> _fix b (Place.trans b.p) rules (i + 1)
-           | None -> (s, i)
-         in
-         _fix b b_trans rules 0
+          let rec _step s s_trans = function
+            | [] -> None
+            | r :: rs -> (
+                match
+                  S.Memo.occurrence ~target:s ~pattern:(lhs r) s_trans
+                with
+                | Some ({ nodes = i_n; edges = i_e; hyper_edges = i_h } as o)
+                  ->
+                    if filter_conds s (lhs r) (conds r) o then
+                      Some
+                        (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r)
+                           ~r1:(rhs r) (map r))
+                    else _step s s_trans rs
+                | None -> _step s s_trans rs )
+          in
+          let rec _fix s s_trans rules i =
+            match _step s s_trans rules with
+            | Some b -> _fix b (Place.trans b.p) rules (i + 1)
+            | None -> (s, i)
+          in
+          _fix b b_trans rules 0
 
-    let step b b_trans rules =
-      step_aux b b_trans rules
-      |> step_post
+    let step b b_trans rules = step_aux b b_trans rules |> step_post
 
     let random_step b b_trans rules =
-      step_aux b b_trans rules
-      |> random_step_post
-
+      step_aux b b_trans rules |> random_step_post
   end
 
   let is_enabled b r = Memo.is_enabled b (Place.trans b.p) r
@@ -272,11 +280,11 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
     let apply_rule b b_trans r =
       match S.Memo.occurrence ~target:b ~pattern:(lhs r) b_trans with
       | Some ({ nodes = i_n; edges = i_e; hyper_edges = i_h } as o) ->
-         if filter_conds b (lhs r) (conds r) o then
-           Some
-             (Big.rewrite (i_n, i_e, i_h) ~s:b ~r0:(lhs r) ~r1:(rhs r)
-                (map r))
-         else None
+          if filter_conds b (lhs r) (conds r) o then
+            Some
+              (Big.rewrite (i_n, i_e, i_h) ~s:b ~r0:(lhs r) ~r1:(rhs r)
+                 (map r))
+          else None
       | None -> None
     in
     List.fold_left
@@ -298,5 +306,4 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   let random_step b rules =
     List.map (fun r -> (r, S.auto (R.lhs r))) rules
     |> Memo.random_step b (Place.trans b.p)
-
 end

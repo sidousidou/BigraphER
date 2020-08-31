@@ -41,40 +41,39 @@ module type P = sig
   (** Iterate over priority classes. *)
 
   val scan_sim :
-    Big.t ->
-    p_class list ->
-    (Big.t * r_label * r_t list) option * int
+    Big.t -> p_class list -> (Big.t * r_label * r_t list) option * int
 
   (** Memoised interface *)
   module Memo : sig
     type t =
-      | C of (r_t * (Iso.t * Iso.t) list) list (** Priority class *)
-      | R of (r_t * (Iso.t * Iso.t) list) list (** Reducible priority class *)
+      | C of (r_t * (Iso.t * Iso.t) list) list  (** Priority class *)
+      | R of (r_t * (Iso.t * Iso.t) list) list
+          (** Reducible priority class *)
 
     val init : p_class list -> t list
 
     val rewrite : Big.t -> Sparse.t -> t list -> Big.t * int
 
     val scan :
-      Big.t * int -> Sparse.t ->
+      Big.t * int ->
+      Sparse.t ->
       part_f:
         ((Big.t * r_label * r_t list) list ->
-         (int * (Big.t * r_label * r_t list)) list
-         * (int * r_label * r_t list) list
-         * int) ->
+        (int * (Big.t * r_label * r_t list)) list
+        * (int * r_label * r_t list) list
+        * int) ->
       t list ->
       ( (int * (Big.t * r_label * r_t list)) list
-        * (int * r_label * r_t list) list
-        * int )
+      * (int * r_label * r_t list) list
+      * int )
       * int
 
     val scan_sim :
-      Big.t -> Sparse.t ->
+      Big.t ->
+      Sparse.t ->
       t list ->
       (Big.t * r_label * r_t list) option * int
-
   end
-
 end
 
 (** Functor building a concrete implementation of priority classes. *)

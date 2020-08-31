@@ -87,13 +87,13 @@ module Make (S : Solver.M) = struct
                   let r = Random.float 1.0 *. a0 in
                   let rec aux acc = function
                     | (s, rho, reaction_rules) :: ss ->
-                       let acc' = acc +. rho in
-                       if acc' > r then
-                         let tau =
-                           1. /. a0 *. log (1. /. Random.float 1.0)
-                         in
-                         (Some (s, tau, reaction_rules), m)
-                       else aux acc' ss
+                        let acc' = acc +. rho in
+                        if acc' > r then
+                          let tau =
+                            1. /. a0 *. log (1. /. Random.float 1.0)
+                          in
+                          (Some (s, tau, reaction_rules), m)
+                        else aux acc' ss
                     | [] -> (None, m)
                   in
                   aux 0.0 ss_sorted

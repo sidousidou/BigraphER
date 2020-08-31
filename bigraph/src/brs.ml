@@ -73,13 +73,13 @@ module Make (S : Solver.M) = struct
           let rec aux i i' acc = function
             | [] -> assert false
             | x :: l ->
-               if i = i' then (x, l @ acc) else aux i (i' + 1) (x :: acc) l
+                if i = i' then (x, l @ acc) else aux i (i' + 1) (x :: acc) l
           in
           match ss with
           | [] -> (None, m)
           | _ ->
-             let s, _ = aux (Random.int (List.length ss)) 0 [] ss in
-             (Some s, m)
+              let s, _ = aux (Random.int (List.length ss)) 0 [] ss in
+              (Some s, m)
       end)
 
   (* Priorities *)

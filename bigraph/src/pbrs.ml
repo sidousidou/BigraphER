@@ -93,20 +93,20 @@ module Make (S : Solver.M) = struct
           match ss with
           | [] -> (None, m)
           | _ ->
-             (* Sort transitions by probability *)
-             let ss_sort =
-               List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
-             (* Compute cumulative probability *)
-             and cumulative =
-               List.fold_left
-                 (fun (out, cum_p) (b, p, r) ->
-                   let cum_p' = cum_p +. p in
-                   ((b, cum_p', r) :: out, cum_p'))
-                 ([], 0.0)
-             in
-             ss_sort ss |> cumulative |> fst |> List.rev
-             |> pick (Random.float 1.0)
-             |> fun x -> (x, m)
+              (* Sort transitions by probability *)
+              let ss_sort =
+                List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
+              (* Compute cumulative probability *)
+              and cumulative =
+                List.fold_left
+                  (fun (out, cum_p) (b, p, r) ->
+                    let cum_p' = cum_p +. p in
+                    ((b, cum_p', r) :: out, cum_p'))
+                  ([], 0.0)
+              in
+              ss_sort ss |> cumulative |> fst |> List.rev
+              |> pick (Random.float 1.0)
+              |> fun x -> (x, m)
       end)
 
   module P =

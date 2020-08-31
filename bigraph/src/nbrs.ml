@@ -143,21 +143,21 @@ module Make (S : Solver.M) = struct
                   match ss with
                   | [] -> (None, m)
                   | _ ->
-                     (* Sort transitions by normalised probability *)
-                     let ss_sort =
-                       List.fast_sort (fun (_, a, _) (_, b, _) ->
-                           compare a b)
-                     (* Compute cumulative probability *)
-                     and cumulative =
-                       List.fold_left
-                         (fun (out, cum_p) (b, (a, rew, p), r) ->
-                           let cum_p' = cum_p +. p in
-                           ((b, (a, rew, cum_p'), r) :: out, cum_p'))
-                         ([], 0.0)
-                     in
-                     let reaction_rules, cum_p = ss_sort ss |> cumulative in
-                     List.rev reaction_rules |> pick (Random.float cum_p)
-                     |> fun x -> (x, m)
+                      (* Sort transitions by normalised probability *)
+                      let ss_sort =
+                        List.fast_sort (fun (_, a, _) (_, b, _) ->
+                            compare a b)
+                      (* Compute cumulative probability *)
+                      and cumulative =
+                        List.fold_left
+                          (fun (out, cum_p) (b, (a, rew, p), r) ->
+                            let cum_p' = cum_p +. p in
+                            ((b, (a, rew, cum_p'), r) :: out, cum_p'))
+                          ([], 0.0)
+                      in
+                      let reaction_rules, cum_p = ss_sort ss |> cumulative in
+                      List.rev reaction_rules |> pick (Random.float cum_p)
+                      |> fun x -> (x, m)
               end)
   end
 

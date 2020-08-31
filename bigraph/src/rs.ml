@@ -562,7 +562,8 @@ struct
   let string_of_reaction_rules r =
     List.rev_map name r |> List.sort_uniq compare |> String.concat " | "
 
-  let rec _bfs g q i m t0 (priorities: P.Memo.t list) predicates max iter_f =
+  let rec _bfs g q i m t0 (priorities : P.Memo.t list) predicates max iter_f
+      =
     if not (Queue.is_empty q) then (
       if i > max then
         raise
@@ -571,7 +572,8 @@ struct
       else
         let v, curr = Queue.pop q in
         let (new_s, old_s, i'), m' =
-          P.Memo.scan (curr, i) (Place.trans curr.p) ~part_f:(partition g i iter_f) priorities
+          P.Memo.scan (curr, i) (Place.trans curr.p)
+            ~part_f:(partition g i iter_f) priorities
         in
         List.iter
           (fun (i, (b, l, r)) ->
@@ -595,8 +597,7 @@ struct
 
   let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
     (* Preprocess priorities to include automorphisms *)
-    let priorities' = P.Memo.init priorities
-    and q = Queue.create () in
+    let priorities' = P.Memo.init priorities and q = Queue.create () in
     (* Apply rewriting to s0 *)
     let s0', m = P.Memo.rewrite s0 (Place.trans s0.p) priorities'
     and g = List.map (fun (id, _) -> id) predicates |> G.init max in
@@ -607,7 +608,8 @@ struct
     check (0, s0') (G.label g) predicates;
     _bfs g q 0 m (Unix.gettimeofday ()) priorities' predicates max iter_f
 
-  let rec _sim trace s i t_sim m t0 (priorities : P.Memo.t list) predicates t_max iter_f =
+  let rec _sim trace s i t_sim m t0 (priorities : P.Memo.t list) predicates
+      t_max iter_f =
     if L.is_greater t_sim t_max then
       raise
         (LIMIT

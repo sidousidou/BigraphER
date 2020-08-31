@@ -19,10 +19,14 @@ module type C = sig
   (** Check an application condition given a matching context [ctx] and
       parameter [param]. *)
 
-  val check_cond_memo : t -> ctx:Big.t -> ctx_trans:Sparse.t ->
-                        param:Big.t -> param_trans:Sparse.t -> bool
+  val check_cond_memo :
+    t ->
+    ctx:Big.t ->
+    ctx_trans:Sparse.t ->
+    param:Big.t ->
+    param_trans:Sparse.t ->
+    bool
   (** Memoised check *)
-
 end
 
 (** Functor building an implementation of the application conditions given a

@@ -40,13 +40,15 @@ module type R = sig
     Fun.t option ->
     t
 
+  val step_post :
+    (Big.t * label * t list) list * int ->
+    (Big.t * label * t list) list * int
   (** Postprocessing rewrite step. *)
-  val step_post : (Big.t * label * t list) list * int ->
-                  (Big.t * label * t list) list * int
 
+  val random_step_post :
+    (Big.t * label * t list) list * int ->
+    (Big.t * label * t list) option * int
   (** Postprocessing random rewrite step. *)
-  val random_step_post : (Big.t * label * t list) list * int ->
-                         (Big.t * label * t list) option * int
 end
 
 (** Output signature of the functor {!React.Make}. *)
@@ -114,7 +116,8 @@ module type T = sig
   (** [is_enabled b r] checks if rewrite rule [r] can be applied to bigraph
       [b]. *)
 
-  val filter_iso : (Big.t * label * t list) list -> (Big.t * label * t list) list
+  val filter_iso :
+    (Big.t * label * t list) list -> (Big.t * label * t list) list
   (** Merge isomorphic occurrences *)
 
   val apply : Big.t -> t list -> Big.t option
@@ -136,19 +139,22 @@ module type T = sig
 
   (** Memoised interface *)
   module Memo : sig
-
     val is_enabled : Big.t -> Sparse.t -> t -> bool
 
     val fix : Big.t -> Sparse.t -> t list -> Big.t * int
 
-    val step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
-               (Big.t * label * t list) list * int
+    val step :
+      Big.t ->
+      Sparse.t ->
+      (t * (Iso.t * Iso.t) list) list ->
+      (Big.t * label * t list) list * int
 
-    val random_step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
-                      (Big.t * label * t list) option * int
-
+    val random_step :
+      Big.t ->
+      Sparse.t ->
+      (t * (Iso.t * Iso.t) list) list ->
+      (Big.t * label * t list) option * int
   end
-
 end
 
 (** Functor building a concrete implementation of basic operations on rewrite
