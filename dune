@@ -3,7 +3,7 @@
   (flags (:standard)))
  (release
   (ocamlopt_flags
-   (:standard -O3)))
+   (:standard -O3 -noassert)))
  (prof
   (ocamlopt_flags -g -p))
  (static
