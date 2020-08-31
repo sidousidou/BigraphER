@@ -562,7 +562,7 @@ struct
   let string_of_reaction_rules r =
     List.rev_map name r |> List.sort_uniq compare |> String.concat " | "
 
-  let rec _bfs g q i m t0 priorities predicates max iter_f =
+  let rec _bfs g q i m t0 (priorities: P.Memo.t list) predicates max iter_f =
     if not (Queue.is_empty q) then (
       if i > max then
         raise
@@ -571,8 +571,7 @@ struct
       else
         let v, curr = Queue.pop q in
         let (new_s, old_s, i'), m' =
-          P.scan (curr, i) ~part_f:(partition g i iter_f)
-            ~const_pri:priorities priorities
+          P.Memo.scan (curr, i) (Place.trans curr.p) ~part_f:(partition g i iter_f) priorities
         in
         List.iter
           (fun (i, (b, l, r)) ->
@@ -596,18 +595,19 @@ struct
 
   let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
     (* Preprocess priorities to include automorphisms *)
-    let q = Queue.create () in
+    let priorities' = P.Memo.init priorities
+    and q = Queue.create () in
     (* Apply rewriting to s0 *)
-    let s0', m = P.rewrite s0 priorities
+    let s0', m = P.Memo.rewrite s0 (Place.trans s0.p) priorities'
     and g = List.map (fun (id, _) -> id) predicates |> G.init max in
     Queue.push (0, s0') q;
     (* Add initial state *)
     iter_f 0 s0';
     Base.H_int.add (G.states g) (Big.key s0') (0, s0');
     check (0, s0') (G.label g) predicates;
-    _bfs g q 0 m (Unix.gettimeofday ()) priorities predicates max iter_f
+    _bfs g q 0 m (Unix.gettimeofday ()) priorities' predicates max iter_f
 
-  let rec _sim trace s i t_sim m t0 priorities predicates t_max iter_f =
+  let rec _sim trace s i t_sim m t0 (priorities : P.Memo.t list) predicates t_max iter_f =
     if L.is_greater t_sim t_max then
       raise
         (LIMIT
@@ -615,7 +615,7 @@ struct
              stats_init ~t0 ~states:(size_s trace) ~trans:(size_t trace)
                ~occs:m ))
     else
-      match P.scan_sim s ~const_pri:priorities priorities with
+      match P.Memo.scan_sim s (Place.trans s.p) priorities with
       | None, m' ->
           raise
             (DEADLOCK
@@ -624,7 +624,6 @@ struct
                    ~occs:(m + m'),
                  t_sim ))
       | Some (s', l, r), m' ->
-          (*let s' = R.big_of_occ o in*)
           iter_f (i + 1) s';
           Base.H_int.add (G.states trace) (Big.key s') (i + 1, s');
           check (i + 1, s') (G.label trace) predicates;
@@ -635,9 +634,10 @@ struct
 
   let sim ~s0 ~priorities ~predicates ~init_size ~stop ~iter_f =
     (* Preprocess priorities to inlclude automorphisms *)
+    let priorities' = P.Memo.init priorities in
     Random.self_init ();
     (* Apply rewriting to s0 *)
-    let s0', m = P.rewrite s0 priorities
+    let s0', m = P.Memo.rewrite s0 (Place.trans s0.p) priorities'
     and trace =
       List.map (fun (id, _) -> id) predicates |> G.init init_size
     in
@@ -645,7 +645,7 @@ struct
     iter_f 0 s0';
     Base.H_int.add (G.states trace) (Big.key s0') (0, s0');
     check (0, s0') (G.label trace) predicates;
-    _sim trace s0' 0 L.init m (Unix.gettimeofday ()) priorities predicates
+    _sim trace s0' 0 L.init m (Unix.gettimeofday ()) priorities' predicates
       stop iter_f
 
   include MakeE (G)

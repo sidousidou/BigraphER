@@ -40,9 +40,13 @@ module type R = sig
     Fun.t option ->
     t
 
-  val step : Big.t -> t list -> (Big.t * label * t list) list * int
+  (** Postprocessing rewrite step. *)
+  val step_post : (Big.t * label * t list) list * int ->
+                  (Big.t * label * t list) list * int
 
-  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
+  (** Postprocessing random rewrite step. *)
+  val random_step_post : (Big.t * label * t list) list * int ->
+                         (Big.t * label * t list) option * int
 end
 
 (** Output signature of the functor {!React.Make}. *)
@@ -81,12 +85,6 @@ module type T = sig
   val map : t -> Fun.t option
   (** Return the instantition map of a rewrite rule. *)
 
-  val merge_occ :
-    Big.t * label * t list ->
-    Big.t * label * t list ->
-    Big.t * label * t list
-  (** Merge two occurrences. *)
-
   val make :
     name:string ->
     lhs:Big.t ->
@@ -116,6 +114,9 @@ module type T = sig
   (** [is_enabled b r] checks if rewrite rule [r] can be applied to bigraph
       [b]. *)
 
+  val filter_iso : (Big.t * label * t list) list -> (Big.t * label * t list) list
+  (** Merge isomorphic occurrences *)
+
   val apply : Big.t -> t list -> Big.t option
   (** Apply a list of reaction rules in sequence. Non-enabled rules are
       ignored. *)
@@ -132,32 +133,27 @@ module type T = sig
 
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
   (** Random step. *)
+
+  (** Memoised interface *)
+  module Memo : sig
+
+    val is_enabled : Big.t -> Sparse.t -> t -> bool
+
+    val fix : Big.t -> Sparse.t -> t list -> Big.t * int
+
+    val step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
+               (Big.t * label * t list) list * int
+
+    val random_step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
+                      (Big.t * label * t list) option * int
+
+  end
+
 end
 
 (** Functor building a concrete implementation of basic operations on rewrite
     rules. *)
 module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   T with type t = R.t and type label = R.label and type ac = R.ac
-
-(** Functor building generic functions for rewrite rules. *)
-module Make_gen (S : Solver.M) (AC : AppCond.C) : sig
-  val filter_iso :
-    (Big.t * 'a * 'b list -> Big.t * 'a * 'b list -> Big.t * 'a * 'b list) ->
-    (Big.t * 'a * 'b list) list ->
-    (Big.t * 'a * 'b list) list
-  (** Merge isomorphic occurrences *)
-
-  val gen_step :
-    Big.t ->
-    'a list ->
-    (Big.t * 'b * 'a list -> Big.t * 'b * 'a list -> Big.t * 'b * 'a list) ->
-    lhs:('a -> Big.t) ->
-    rhs:('a -> Big.t) ->
-    label:('a -> 'b) ->
-    map:('a -> Fun.t option) ->
-    conds:('a -> AppCond.t list) ->
-    (Big.t * 'b * 'a list) list * int
-  (** Generic step function *)
-end
 
 (**/**)

@@ -71,15 +71,10 @@ module Make (S : Solver.M) = struct
                 let make ~name ~lhs ~rhs ?conds:(c = []) r eta =
                   { name; rdx = lhs; rct = rhs; eta; rate = r; conds = c }
 
-                let step b rules =
-                  let open struct
-                    module G = React.Make_gen (S) (AC)
-                  end in
-                  G.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
+                let step_post x = x
 
-                let random_step b rules =
+                let random_step_post (ss, m) =
                   (* Sort transitions by rate *)
-                  let ss, m = step b rules in
                   let ss_sorted =
                     List.fast_sort
                       (fun (_, a, _) (_, b, _) -> compare a b)
@@ -92,13 +87,13 @@ module Make (S : Solver.M) = struct
                   let r = Random.float 1.0 *. a0 in
                   let rec aux acc = function
                     | (s, rho, reaction_rules) :: ss ->
-                        let acc' = acc +. rho in
-                        if acc' > r then
-                          let tau =
-                            1. /. a0 *. log (1. /. Random.float 1.0)
-                          in
-                          (Some (s, tau, reaction_rules), m)
-                        else aux acc' ss
+                       let acc' = acc +. rho in
+                       if acc' > r then
+                         let tau =
+                           1. /. a0 *. log (1. /. Random.float 1.0)
+                         in
+                         (Some (s, tau, reaction_rules), m)
+                       else aux acc' ss
                     | [] -> (None, m)
                   in
                   aux 0.0 ss_sorted

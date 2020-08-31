@@ -71,15 +71,9 @@ module Make (S : Solver.M) = struct
           { name; rdx = lhs; rct = rhs; eta; w; conds = c }
 
         (* Normalise a list of occurrences *)
-        let norm (l, n) =
+        let step_post (l, n) =
           let sum = List.fold_left (fun acc (_, w, _) -> acc +. w) 0.0 l in
           (List.map (fun (b, w, r) -> (b, w /. sum, r)) l, n)
-
-        let step b rules =
-          let open struct
-            module G = React.Make_gen (S) (AC)
-          end in
-          G.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds |> norm
 
         (* Pick the first reaction rule with probability > limit, normalising
            its probability by subtracting the probability of the previous
@@ -95,25 +89,24 @@ module Make (S : Solver.M) = struct
               in
               if p > limit then Some head else _pick limit head tail
 
-        let random_step b rules =
-          let ss, m = step b rules in
+        let random_step_post (ss, m) =
           match ss with
           | [] -> (None, m)
           | _ ->
-              (* Sort transitions by probability *)
-              let ss_sort =
-                List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
-              (* Compute cumulative probability *)
-              and cumulative =
-                List.fold_left
-                  (fun (out, cum_p) (b, p, r) ->
-                    let cum_p' = cum_p +. p in
-                    ((b, cum_p', r) :: out, cum_p'))
-                  ([], 0.0)
-              in
-              ss_sort ss |> cumulative |> fst |> List.rev
-              |> pick (Random.float 1.0)
-              |> fun x -> (x, m)
+             (* Sort transitions by probability *)
+             let ss_sort =
+               List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
+             (* Compute cumulative probability *)
+             and cumulative =
+               List.fold_left
+                 (fun (out, cum_p) (b, p, r) ->
+                   let cum_p' = cum_p +. p in
+                   ((b, cum_p', r) :: out, cum_p'))
+                 ([], 0.0)
+             in
+             ss_sort ss |> cumulative |> fst |> List.rev
+             |> pick (Random.float 1.0)
+             |> fun x -> (x, m)
       end)
 
   module P =

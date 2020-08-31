@@ -66,25 +66,20 @@ module Make (S : Solver.M) = struct
         let make ~name ~lhs ~rhs ?conds:(c = []) _ eta =
           { name; rdx = lhs; rct = rhs; eta; conds = c }
 
-        let step b rules =
-          let open struct
-            module G = React.Make_gen (S) (AC)
-          end in
-          G.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
+        let step_post x = x
 
-        let random_step b rules =
+        let random_step_post (ss, m) =
           (* Remove element with index i *)
           let rec aux i i' acc = function
             | [] -> assert false
             | x :: l ->
-                if i = i' then (x, l @ acc) else aux i (i' + 1) (x :: acc) l
+               if i = i' then (x, l @ acc) else aux i (i' + 1) (x :: acc) l
           in
-          let ss, m = step b rules in
           match ss with
           | [] -> (None, m)
           | _ ->
-              let s, _ = aux (Random.int (List.length ss)) 0 [] ss in
-              (Some s, m)
+             let s, _ = aux (Random.int (List.length ss)) 0 [] ss in
+             (Some s, m)
       end)
 
   (* Priorities *)

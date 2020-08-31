@@ -90,7 +90,7 @@ module Make (S : Solver.M) = struct
                   }
 
                 (* Normalise a list of occurrences *)
-                let norm (l, n) =
+                let step_post (l, n) =
                   let normalise (l, n) =
                     let sum =
                       List.fold_left
@@ -125,13 +125,6 @@ module Make (S : Solver.M) = struct
                       [] different_actions,
                     n )
 
-                let step b rules =
-                  let open struct
-                    module G = React.Make_gen (S) (AC)
-                  end in
-                  G.gen_step b rules merge_occ ~lhs ~rhs ~label:l ~map ~conds
-                  |> norm
-
                 (* Pick the first reaction rule with probability > limit,
                    normalising its probability by subtracting the probability
                    of the previous rule. *)
@@ -146,26 +139,25 @@ module Make (S : Solver.M) = struct
                       in
                       if p > limit then Some head else _pick limit head tail
 
-                let random_step b rules =
-                  let ss, m = step b rules in
+                let random_step_post (ss, m) =
                   match ss with
                   | [] -> (None, m)
                   | _ ->
-                      (* Sort transitions by normalised probability *)
-                      let ss_sort =
-                        List.fast_sort (fun (_, a, _) (_, b, _) ->
-                            compare a b)
-                      (* Compute cumulative probability *)
-                      and cumulative =
-                        List.fold_left
-                          (fun (out, cum_p) (b, (a, rew, p), r) ->
-                            let cum_p' = cum_p +. p in
-                            ((b, (a, rew, cum_p'), r) :: out, cum_p'))
-                          ([], 0.0)
-                      in
-                      let reaction_rules, cum_p = ss_sort ss |> cumulative in
-                      List.rev reaction_rules |> pick (Random.float cum_p)
-                      |> fun x -> (x, m)
+                     (* Sort transitions by normalised probability *)
+                     let ss_sort =
+                       List.fast_sort (fun (_, a, _) (_, b, _) ->
+                           compare a b)
+                     (* Compute cumulative probability *)
+                     and cumulative =
+                       List.fold_left
+                         (fun (out, cum_p) (b, (a, rew, p), r) ->
+                           let cum_p' = cum_p +. p in
+                           ((b, (a, rew, cum_p'), r) :: out, cum_p'))
+                         ([], 0.0)
+                     in
+                     let reaction_rules, cum_p = ss_sort ss |> cumulative in
+                     List.rev reaction_rules |> pick (Random.float cum_p)
+                     |> fun x -> (x, m)
               end)
   end
 

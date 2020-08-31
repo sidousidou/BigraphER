@@ -28,7 +28,6 @@ module type P = sig
       (int * (Big.t * r_label * r_t list)) list
       * (int * r_label * r_t list) list
       * int) ->
-    const_pri:p_class list ->
     p_class list ->
     ( (int * (Big.t * r_label * r_t list)) list
     * (int * r_label * r_t list) list
@@ -37,9 +36,38 @@ module type P = sig
 
   val scan_sim :
     Big.t ->
-    const_pri:p_class list ->
     p_class list ->
     (Big.t * r_label * r_t list) option * int
+
+  module Memo : sig
+    type t =
+      | C of (r_t * (Iso.t * Iso.t) list) list
+      | R of (r_t * (Iso.t * Iso.t) list) list
+
+    val init : p_class list -> t list
+
+    val rewrite : Big.t -> Sparse.t -> t list -> Big.t * int
+
+    val scan :
+      Big.t * int -> Sparse.t ->
+      part_f:
+        ((Big.t * r_label * r_t list) list ->
+         (int * (Big.t * r_label * r_t list)) list
+         * (int * r_label * r_t list) list
+         * int) ->
+      t list ->
+      ( (int * (Big.t * r_label * r_t list)) list
+        * (int * r_label * r_t list) list
+        * int )
+      * int
+
+    val scan_sim :
+      Big.t -> Sparse.t ->
+      t list ->
+      (Big.t * r_label * r_t list) option * int
+
+  end
+
 end
 
 module Make
@@ -57,71 +85,95 @@ struct
   let is_valid_list =
     List.exists (function P_class _ -> true | P_rclass _ -> false)
 
-  let is_enabled b =
-    List.exists (fun r -> S.occurs ~target:b ~pattern:(R.lhs r))
+  module Memo = struct
 
-  (*let is_reducible = function P_class _ -> false | P_rclass _ -> true*)
+    type t =
+      | C of (R.t * (Iso.t * Iso.t) list) list
+      | R of (R.t * (Iso.t * Iso.t) list) list
+
+    let is_enabled b b_trans =
+      List.exists (fun (r , _) -> S.Memo.occurs ~target:b ~pattern:(R.lhs r) b_trans)
+
+    let init (priorities : p_class list) =
+      let r_map = List.map (fun r -> (r, S.auto (R.lhs r))) in
+      List.map (function
+          | P_class rr -> C (r_map rr)
+          | P_rclass rr -> R (r_map rr))
+        priorities
+
+    let rewrite b b_trans const_pri =
+      let rec _rewrite b b_trans m = function
+        | [] -> (b, m)
+        | C rr :: classes ->
+           if is_enabled b b_trans rr then (b, m) else _rewrite b b_trans m classes
+        | R rr :: classes ->
+           let b', i = List.map fst rr |> R.Memo.fix b b_trans in
+           if i = 0 then _rewrite b' (Place.trans b'.p) m classes
+           else _rewrite b' (Place.trans b'.p) (m + i) const_pri
+      in
+      _rewrite b b_trans 0 const_pri
+
+    (* Iterate over priority classes *)
+    let scan (b, i) b_trans ~part_f priorities =
+      let rec _scan (b, i) ~matches ~part_f ~const_pri = function
+        | [] -> (([], [], i), matches)
+        | C rr :: cs ->
+           let ss, l = R.Memo.step b b_trans rr in
+           if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs
+           else
+             (* Apply rewriting - instantaneous *)
+             let ss', l' =
+               List.fold_left
+                 (fun (ss, l) (a, b, c) ->
+                   let s', l' = rewrite a (Place.trans a.p) const_pri in
+                   ((s', b, c) :: ss, l + l'))
+                 ([], l) ss
+               (* Merge isomorphic states *)
+               |> fun (ss, l) -> (R.filter_iso ss ,l)
+             in
+             (part_f ss', matches + l')
+        | R _ :: cs ->
+           (* Skip *)
+           _scan (b, i) ~matches ~part_f ~const_pri cs
+      in
+      _scan (b, i) ~matches:0 ~part_f ~const_pri:priorities priorities
+
+    let scan_sim b b_trans priorities =
+      let rec _scan_sim b m ~const_pri = function
+        | [] -> (None, m)
+        | C rr :: cs -> (
+          match R.Memo.random_step b b_trans rr with
+          | None, m' ->
+             (* Skip *)
+             _scan_sim b (m + m') ~const_pri cs
+          | Some (a, b, c), m' ->
+             let b', m'' = rewrite a (Place.trans a.p) const_pri in
+             (Some (b', b, c), m + m' + m'') )
+        | R _ :: cs ->
+           (* Skip *)
+           _scan_sim b m ~const_pri cs
+      in
+      _scan_sim b 0 ~const_pri:priorities priorities
+
+  end
+
+  (* let is_enabled b =
+   *   List.exists (fun r -> S.occurs ~target:b ~pattern:(R.lhs r)) *)
 
   (* Stop when there are no more classes or when a non reducible class is
      enabled *)
-  let rewrite b const_pri =
-    let rec _rewrite b m = function
-      | [] -> (b, m)
-      | P_class rr :: classes ->
-          if is_enabled b rr then (b, m) else _rewrite b m classes
-      | P_rclass rr :: classes ->
-          let b', i = R.fix b rr in
-          if i = 0 then _rewrite b' m classes
-          else _rewrite b' (m + i) const_pri
-    in
-    _rewrite b 0 const_pri
+  let rewrite b priorities =
+    Memo.(init priorities
+          |> rewrite b (Place.trans b.p))
 
   (* Iterate over priority classes *)
-  let scan (b, i) ~part_f ~const_pri =
-    let rec _scan (b, i) ~matches ~part_f ~const_pri = function
-      | [] -> (([], [], i), matches)
-      | P_class rr :: cs ->
-          let ss, l = R.step b rr in
-          if l = 0 then _scan (b, i) ~matches ~part_f ~const_pri cs
-          else
-            (* Apply rewriting - instantaneous *)
-            let ss', l' =
-              (* Parmap.parfold *)
-              List.fold_left
-                (fun (ss, l) (a, b, c) ->
-                  let s', l' = rewrite a const_pri in
-                  ((s', b, c) :: ss, l + l'))
-                ([], l) ss
-              (* Merge isomorphic states *)
-              |> fun (ss, l) ->
-              let open struct
-                module G = React.Make_gen (S) (AppCond.Make (S))
-              end in
-              (G.filter_iso R.merge_occ ss, l)
-            in
-            (part_f ss', matches + l')
-      | P_rclass _ :: cs ->
-          (* Skip *)
-          _scan (b, i) ~matches ~part_f ~const_pri cs
-    in
-    _scan (b, i) ~matches:0 ~part_f ~const_pri
+  let scan (b, i) ~part_f priorities =
+    Memo.(init priorities
+          |> scan (b, i) (Place.trans b.p) ~part_f)
 
-  let scan_sim b ~const_pri =
-    let rec _scan_sim b m ~const_pri = function
-      | [] -> (None, m)
-      | P_class rr :: cs -> (
-          match R.random_step b rr with
-          | None, m' ->
-              (* Skip *)
-              _scan_sim b (m + m') ~const_pri cs
-          | Some (a, b, c), m' ->
-              let b', m'' = rewrite a const_pri in
-              (Some (b', b, c), m + m' + m'') )
-      | P_rclass _ :: cs ->
-          (* Skip *)
-          _scan_sim b m ~const_pri cs
-    in
-    _scan_sim b 0 ~const_pri
+  let scan_sim b priorities =
+    Memo.(init priorities
+          |> scan_sim b (Place.trans b.p))
 
   let cardinal =
     List.fold_left

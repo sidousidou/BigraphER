@@ -39,9 +39,11 @@ module type R = sig
     Fun.t option ->
     t
 
-  val step : Big.t -> t list -> (Big.t * label * t list) list * int
+  val step_post : (Big.t * label * t list) list * int ->
+                  (Big.t * label * t list) list * int
 
-  val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
+  val random_step_post : (Big.t * label * t list) list * int ->
+                         (Big.t * label * t list) option * int
 end
 
 module type T = sig
@@ -69,11 +71,6 @@ module type T = sig
 
   val map : t -> Fun.t option
 
-  val merge_occ :
-    Big.t * label * t list ->
-    Big.t * label * t list ->
-    Big.t * label * t list
-
   val make :
     name:string ->
     lhs:Big.t ->
@@ -93,6 +90,8 @@ module type T = sig
 
   val is_enabled : Big.t -> t -> bool
 
+  val filter_iso : (Big.t * label * t list) list -> (Big.t * label * t list) list
+
   val apply : Big.t -> t list -> Big.t option
 
   val fix : Big.t -> t list -> Big.t * int
@@ -100,58 +99,26 @@ module type T = sig
   val step : Big.t -> t list -> (Big.t * label * t list) list * int
 
   val random_step : Big.t -> t list -> (Big.t * label * t list) option * int
-end
 
-module Make_gen (S : Solver.M) (AC : AppCond.C) = struct
-  (* Merge isomorphic occurrences *)
-  let filter_iso merge_occ l =
-    (* Input list is assumed without duplicates. Example: extract 4
-       [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)
-    let rec extract (pred : 'a -> bool) acc = function
-      | [] -> (None, acc)
-      | x :: l ->
-          if pred x then (Some x, l @ acc) else extract pred (x :: acc) l
-    in
-    let aux1 acc (a, b, c) =
-      let iso, non_iso = extract (fun (a', _, _) -> S.equal a a') [] acc in
-      match iso with
-      | None -> (a, b, c) :: acc
-      | Some iso_o -> merge_occ (a, b, c) iso_o :: non_iso
-    in
-    List.fold_left aux1 [] l
+  module Memo : sig
 
-  (* Generic step function *)
-  let gen_step s rules
-      (merge_occ :
-        Big.t * 'b * 'c list -> Big.t * 'b * 'c list -> Big.t * 'b * 'c list)
-      ~lhs ~rhs ~label ~map ~conds =
-    let filter_conds r o =
-      let ctx, param, _id =
-        Big.decomp ~target:s ~pattern:(lhs r)
-          ~i_n:Solver.(o.nodes)
-          ~i_e:Solver.(o.edges)
-          Solver.(o.hyper_edges)
-      in
-      List.for_all (fun cnd -> AC.check_cond cnd ~ctx ~param) (conds r)
-    in
-    let aux2 acc r =
-      ( S.occurrences ~target:s ~pattern:(lhs r)
-      |> List.filter (filter_conds r)
-      (* Parmap.parmap *)
-      |> List.map (fun o ->
-             ( Big.rewrite
-                 Solver.(o.nodes, o.edges, o.hyper_edges)
-                 ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
-               label r,
-               [ r ] )) )
-      @ acc
-    in
-    List.fold_left aux2 [] rules |> fun l ->
-    (filter_iso merge_occ l, List.length l)
+    val is_enabled : Big.t -> Sparse.t -> t -> bool
+
+    val fix : Big.t -> Sparse.t -> t list -> Big.t * int
+
+    val step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
+               (Big.t * label * t list) list * int
+
+    val random_step : Big.t -> Sparse.t -> (t * (Iso.t * Iso.t) list) list ->
+                      (Big.t * label * t list) option * int
+
+  end
+
 end
 
 module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   T with type t = R.t and type label = R.label and type ac = R.ac = struct
+
   include R
 
   type react_error =
@@ -217,68 +184,119 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
       else raise (NOT_VALID Lhs_nodes)
     else raise (NOT_VALID (Inter_eq_o (i, i')))
 
-  let is_enabled b r =
-    let conds_valid (i_n, i_e, i_h) =
-      let ctx, param, _ =
-        Big.decomp ~target:b ~pattern:(lhs r) ~i_n ~i_e i_h
-      in
-      List.for_all (fun cnd -> AC.check_cond cnd ~ctx ~param) (conds r)
+  (* Merge isomorphic occurrences *)
+  let filter_iso l =
+    (* Input list is assumed without duplicates. Example: extract 4
+       [0;2;3;4;5;6;7] -> (4, [0;2;3;5;6;7]) *)
+    let rec extract (pred : 'a -> bool) acc = function
+      | [] -> (None, acc)
+      | x :: l ->
+         if pred x then (Some x, l @ acc) else extract pred (x :: acc) l
     in
-    match S.occurrence ~target:b ~pattern:(lhs r) with
-    | Some o -> conds_valid Solver.(o.nodes, o.edges, o.hyper_edges)
-    | None -> false
+    let aux1 acc (a, b, c) =
+      let iso, non_iso = extract (fun (a', _, _) -> S.equal a a') [] acc in
+      match iso with
+      | None -> (a, b, c) :: acc
+      | Some iso_o -> merge_occ (a, b, c) iso_o :: non_iso
+    in
+    List.fold_left aux1 [] l
+
+  (* Check application conditions *)
+  let filter_conds s lhs conds o =
+    let ctx, param, _ =
+      Big.decomp ~target:s ~pattern:lhs
+        ~i_n:Solver.(o.nodes)
+        ~i_e:Solver.(o.edges)
+        Solver.(o.hyper_edges) in
+    let ctx_trans = Place.trans ctx.p
+    and param_trans = Place.trans param.p in
+    List.for_all (fun cnd ->
+        AC.check_cond_memo cnd ~ctx ~ctx_trans ~param ~param_trans) conds
+
+  (* Generic step function - lhs automorphisms and s transitive closure are precomputed *)
+  let step_aux s s_trans rules =
+    List.fold_left (fun acc (r, autos) ->
+        ( S.Memo.occurrences ~target:s ~pattern:(lhs r) s_trans autos
+          |> List.filter (filter_conds s (lhs r) (conds r))
+          |> List.map (fun o ->
+                 ( Big.rewrite
+                     Solver.(o.nodes, o.edges, o.hyper_edges)
+                     ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
+                   l r,
+                   [ r ] )) )
+        @ acc) [] rules
+    |> fun l -> (filter_iso l, List.length l)
+
+  module Memo = struct
+
+    let is_enabled b b_trans r =
+      match S.Memo.occurrence ~target:b ~pattern:(lhs r) b_trans with
+      | Some o -> filter_conds b (lhs r) (conds r) o
+      | None -> false
+
+    let fix b b_trans = function
+      | [] -> (b, 0)
+      | rules ->
+         let rec _step s s_trans = function
+           | [] -> None
+           | r :: rs -> (
+             match S.Memo.occurrence ~target:s ~pattern:(lhs r) s_trans with
+             | Some ({ nodes = i_n; edges = i_e; hyper_edges = i_h } as o) ->
+                if filter_conds s (lhs r) (conds r) o then
+                  Some
+                    (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r) ~r1:(rhs r)
+                       (map r))
+                else _step s s_trans rs
+             | None -> _step s s_trans rs )
+         in
+         let rec _fix s s_trans rules i =
+           match _step s s_trans rules with
+           | Some b -> _fix b (Place.trans b.p) rules (i + 1)
+           | None -> (s, i)
+         in
+         _fix b b_trans rules 0
+
+    let step b b_trans rules =
+      step_aux b b_trans rules
+      |> step_post
+
+    let random_step b b_trans rules =
+      step_aux b b_trans rules
+      |> random_step_post
+
+  end
+
+  let is_enabled b r = Memo.is_enabled b (Place.trans b.p) r
 
   let apply b reacts =
-    let apply_rule b r =
-      match S.occurrence ~target:b ~pattern:(lhs r) with
-      | Some { nodes = i_n; edges = i_e; hyper_edges = i_h } ->
-          let ctx, param, _id =
-            Big.decomp ~target:b ~pattern:(lhs r) ~i_n ~i_e i_h
-          in
-          if
-            List.for_all (fun cnd -> AC.check_cond cnd ~ctx ~param) (conds r)
-          then
-            Some
-              (Big.rewrite (i_n, i_e, i_h) ~s:b ~r0:(lhs r) ~r1:(rhs r)
-                 (map r))
-          else None
+    let apply_rule b b_trans r =
+      match S.Memo.occurrence ~target:b ~pattern:(lhs r) b_trans with
+      | Some ({ nodes = i_n; edges = i_e; hyper_edges = i_h } as o) ->
+         if filter_conds b (lhs r) (conds r) o then
+           Some
+             (Big.rewrite (i_n, i_e, i_h) ~s:b ~r0:(lhs r) ~r1:(rhs r)
+                (map r))
+         else None
       | None -> None
     in
     List.fold_left
       (fun (s, n) r ->
-        match apply_rule s r with Some s' -> (s', n + 1) | None -> (s, n))
+        match apply_rule s (Place.trans s.p) r with
+        | Some s' -> (s', n + 1)
+        | None -> (s, n))
       (b, 0) reacts
     |> fun (b, n) -> if n = 0 then None else Some b
 
   (* Reduce a reducible class to the fixed point. Return the input state if
      no rewriting is performed. *)
-  let fix b = function
-    | [] -> (b, 0)
-    | rules ->
-        let t_trans = Place.trans b.Big.p in
-        let rec _step s = function
-          | [] -> None
-          | r :: rs -> (
-              match S.Memo.occurrence ~target:s ~pattern:(lhs r) t_trans with
-              | Some { nodes = i_n; edges = i_e; hyper_edges = i_h } ->
-                  let ctx, param, _id =
-                    Big.decomp ~target:s ~pattern:(lhs r) ~i_n ~i_e i_h
-                  in
-                  if
-                    List.for_all
-                      (fun cnd -> AC.check_cond cnd ~ctx ~param)
-                      (conds r)
-                  then
-                    Some
-                      (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r) ~r1:(rhs r)
-                         (map r))
-                  else _step s rs
-              | None -> _step s rs )
-        in
-        let rec _fix s rules i =
-          match _step s rules with
-          | Some b -> _fix b rules (i + 1)
-          | None -> (s, i)
-        in
-        _fix b rules 0
+  let fix b = Memo.fix b (Place.trans b.p)
+
+  let step b rules =
+    List.map (fun r -> (r, S.auto (R.lhs r))) rules
+    |> Memo.step b (Place.trans b.p)
+
+  let random_step b rules =
+    List.map (fun r -> (r, S.auto (R.lhs r))) rules
+    |> Memo.random_step b (Place.trans b.p)
+
 end
