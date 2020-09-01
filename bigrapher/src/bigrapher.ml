@@ -90,6 +90,12 @@ let print_header fmt () =
         display = true;
       };
       {
+        descr = ("Solver:", `blue);
+        value = `s Cmd.(string_of_solver_type defaults.solver);
+        pp_val = pp_string;
+        display = true;
+      };
+      {
         descr = ("Command line:", `blue);
         value = `s (String.concat " " (Array.to_list Sys.argv));
         pp_val = pp_string;

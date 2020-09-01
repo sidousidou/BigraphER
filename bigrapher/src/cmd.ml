@@ -101,6 +101,10 @@ let string_of_format f =
     f
   |> String.concat ","
 
+let string_of_solver_type = function
+  | Bigraph.Solver.MSAT -> "MiniSAT"
+  | Bigraph.Solver.MCARD -> "MiniCARD"
+
 let string_of_file = function None -> "-" (* Not set *) | Some f -> f
 
 let eval_config fmt () =
@@ -153,11 +157,8 @@ let eval_config fmt () =
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
         ( "solver",
           fun fmt () ->
-            fprintf fmt "@[<hov>%s@]"
-              Bigraph.Solver.(
-                match defaults.solver with
-                | MSAT -> "MiniSAT"
-                | MCARD -> "MiniCARD") );
+            fprintf fmt "@[<hov>%s@]" (string_of_solver_type defaults.solver)
+        );
         ("steps", fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.steps);
         ("time", fun fmt () -> fprintf fmt "@[<hov>%g@]" defaults.time);
         ("verb", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.verb);
@@ -283,8 +284,8 @@ let copts consts debug ext graph lbls prism quiet states srew trew verbose
   defaults.running_time <- rtime;
   defaults.solver <-
     ( match solver with
-    | "MiniCARD" -> Bigraph.Solver.MCARD
-    | "MiniSAT" -> Bigraph.Solver.MSAT
+    | "MCARD" -> Bigraph.Solver.MCARD
+    | "MSAT" -> Bigraph.Solver.MSAT
     | _ -> Bigraph.Solver.MSAT (* Defaults to MiniSAT *) )
 
 let copts_t =
