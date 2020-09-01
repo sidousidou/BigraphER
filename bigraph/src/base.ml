@@ -237,3 +237,5 @@ let cartesian a b =
   List.fold_left
     (fun acc j -> List.fold_left (fun acc j' -> (j, j') :: acc) acc b)
     [] a
+
+let list_rev_split_left l = List.fold_left (fun res (a, _) -> a :: res) [] l
