@@ -77,7 +77,7 @@ module Make (S : Solver.M) = struct
                   (* Sort transitions by rate *)
                   let ss_sorted =
                     List.fast_sort
-                      (fun (_, a, _) (_, b, _) -> compare a b)
+                      (fun (_, a, _) (_, b, _) -> compare (a:float) (b:float))
                       ss
                   in
                   (* Compute exit rate *)
