@@ -72,8 +72,7 @@ module Make (S : Solver.M) = struct
           (* Remove element with index i *)
           let rec aux i i' = function
             | [] -> assert false
-            | x :: l ->
-                if i = i' then x else aux i (i' + 1) l
+            | x :: l -> if i = i' then x else aux i (i' + 1) l
           in
           match ss with
           | [] -> (None, m)
