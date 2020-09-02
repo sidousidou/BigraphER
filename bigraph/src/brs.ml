@@ -70,16 +70,14 @@ module Make (S : Solver.M) = struct
 
         let random_step_post (ss, m) =
           (* Remove element with index i *)
-          let rec aux i i' acc = function
+          let rec aux i i' = function
             | [] -> assert false
             | x :: l ->
-                if i = i' then (x, l @ acc) else aux i (i' + 1) (x :: acc) l
+                if i = i' then x else aux i (i' + 1) l
           in
           match ss with
           | [] -> (None, m)
-          | _ ->
-              let s, _ = aux (Random.int (List.length ss)) 0 [] ss in
-              (Some s, m)
+          | _ -> (Some (aux (Random.int (List.length ss)) 0 ss), m)
       end)
 
   (* Priorities *)
