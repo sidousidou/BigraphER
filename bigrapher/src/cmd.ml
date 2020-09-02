@@ -109,11 +109,38 @@ let string_of_solver_type = function
 
 let string_of_file = function None -> "-" (* Not set *) | Some f -> f
 
+let parse_formats s =
+  String.split_on_char ',' s
+  |> List.fold_left
+       (fun acc s ->
+         match s with
+         | "dot" -> Dot :: acc
+         | "svg" -> Svg :: acc
+         | "txt" -> Txt :: acc
+         | "json" -> Json :: acc
+         | _ -> acc)
+       []
+  |> function
+  | [] -> default_formats
+  | x -> x
+
+let parse_solver_type = function
+  | "MCARD" -> Bigraph.Solver.MCARD
+  | "MSAT" -> Bigraph.Solver.MSAT
+  | _ -> Bigraph.Solver.MSAT
+
+(* Defaults to MiniSAT *)
+
 let eval_config fmt () =
   let config_str fmt () =
     let conf =
       [
-        ("colors", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.colors);
+        ( "colors",
+          fun fmt () ->
+            ( match Sys.getenv_opt "BIGNOCOLORS" with
+            | None -> ()
+            | Some _ -> defaults.colors <- false );
+            fprintf fmt "@[<hov>%b@]" defaults.colors );
         ( "consts",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]"
@@ -152,9 +179,17 @@ let eval_config fmt () =
           fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.max_states );
         ( "out_format",
           fun fmt () ->
+            ( match Sys.getenv_opt "BIGFORMAT" with
+            | None -> ()
+            | Some x -> defaults.out_format <- parse_formats x );
             fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format)
         );
-        ("quiet", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.quiet);
+        ( "quiet",
+          fun fmt () ->
+            ( match Sys.getenv_opt "BIGQUIET" with
+            | None -> ()
+            | Some _ -> defaults.quiet <- true );
+            fprintf fmt "@[<hov>%b@]" defaults.quiet );
         ( "running_time",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
         ( "seed",
@@ -164,11 +199,19 @@ let eval_config fmt () =
             | Some x -> fprintf fmt "@[<hov>%d@]" x );
         ( "solver",
           fun fmt () ->
+            ( match Sys.getenv_opt "BIGSOLVER" with
+            | None -> ()
+            | Some x -> defaults.solver <- parse_solver_type x );
             fprintf fmt "@[<hov>%s@]" (string_of_solver_type defaults.solver)
         );
         ("steps", fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.steps);
         ("time", fun fmt () -> fprintf fmt "@[<hov>%g@]" defaults.time);
-        ("verb", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.verb);
+        ( "verb",
+          fun fmt () ->
+            ( match Sys.getenv_opt "BIGVERBOSE" with
+            | None -> ()
+            | Some _ -> defaults.verb <- true );
+            fprintf fmt "@[<hov>%b@]" defaults.verb );
       ]
     in
     print_table fmt conf (fun (x, _) -> x) (fun fmt (_, f) -> f fmt ())
@@ -289,11 +332,7 @@ let copts consts debug ext graph lbls prism quiet states srew trew verbose
   defaults.verb <- verbose;
   defaults.colors <- not nocols;
   defaults.running_time <- rtime;
-  defaults.solver <-
-    ( match solver with
-    | "MCARD" -> Bigraph.Solver.MCARD
-    | "MSAT" -> Bigraph.Solver.MSAT
-    | _ -> Bigraph.Solver.MSAT (* Defaults to MiniSAT *) )
+  defaults.solver <- parse_solver_type solver
 
 let copts_t =
   let opt_str = Arg.opt (Arg.some Arg.string) None in
