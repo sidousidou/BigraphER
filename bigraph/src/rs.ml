@@ -411,7 +411,7 @@ module type RS = sig
     priorities:p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
-    iter_f:(int -> Big.t -> unit) ->
+    (int -> Big.t -> unit) ->
     graph * stats
 
   exception DEADLOCK of graph * stats * limit
@@ -420,11 +420,12 @@ module type RS = sig
 
   val sim :
     s0:Big.t ->
+    ?seed:int ->
     priorities:p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
     init_size:int ->
     stop:limit ->
-    iter_f:(int -> Big.t -> unit) ->
+    (int -> Big.t -> unit) ->
     graph * stats
 
   val to_prism : graph -> string
@@ -595,7 +596,7 @@ struct
         _bfs g q i' (m + m') t0 priorities predicates max iter_f )
     else (g, stats_init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m)
 
-  let bfs ~s0 ~priorities ~predicates ~max ~iter_f =
+  let bfs ~s0 ~priorities ~predicates ~max iter_f =
     (* Preprocess priorities to include automorphisms *)
     let priorities' = P.Memo.init priorities and q = Queue.create () in
     (* Apply rewriting to s0 *)
@@ -634,10 +635,10 @@ struct
           _sim trace s' (i + 1) (L.increment t_sim l) (m + m') t0 priorities
             predicates t_max iter_f
 
-  let sim ~s0 ~priorities ~predicates ~init_size ~stop ~iter_f =
+  let sim ~s0 ?seed ~priorities ~predicates ~init_size ~stop iter_f =
     (* Preprocess priorities to inlclude automorphisms *)
     let priorities' = P.Memo.init priorities in
-    Random.self_init ();
+    (match seed with None -> Random.self_init () | Some x -> Random.init x);
     (* Apply rewriting to s0 *)
     let s0', m = P.Memo.rewrite s0 (Place.trans s0.p) priorities'
     and trace =

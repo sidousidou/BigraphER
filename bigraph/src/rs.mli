@@ -204,16 +204,16 @@ module type RS = sig
     priorities:p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
     max:int ->
-    iter_f:(int -> Big.t -> unit) ->
+    (int -> Big.t -> unit) ->
     graph * stats
-  (** [bfs ~s0 ~priorities ~max ~iter_f] computes the transition system of
-      the reactive system specified by initial state [s0] and priority
-      classes [priorities]. Arguments [~max] and [~iter_f] are the maximum
-      number of states of the transition system and a function to be applied
-      whenever a new state is discovered, respectively. Priority classes are
-      assumed to be sorted by priority, {e i.e.}, the first element in the
-      list is the class with the highest priority. List of predicates
-      [~predicates] is also checked for every state.
+  (** [bfs ~s0 ~priorities ~max iter_f] computes the transition system of the
+      reactive system specified by initial state [s0] and priority classes
+      [priorities]. Arguments [~max] and [iter_f] are the maximum number of
+      states of the transition system and a function to be applied whenever a
+      new state is discovered, respectively. Priority classes are assumed to
+      be sorted by priority, {e i.e.}, the first element in the list is the
+      class with the highest priority. List of predicates [~predicates] is
+      also checked for every state.
 
       @raise Brs.MAX when the maximum number of states is reached. *)
 
@@ -225,17 +225,19 @@ module type RS = sig
 
   val sim :
     s0:Big.t ->
+    ?seed:int ->
     priorities:p_class list ->
     predicates:(Base.Predicate.t * Big.t) list ->
     init_size:int ->
     stop:limit ->
-    iter_f:(int -> Big.t -> unit) ->
+    (int -> Big.t -> unit) ->
     graph * stats
   (** Simulate the raective system specified by initial state [s0] and
       priority classes [priorities]. Arguments [init_size] and [stop] are the
       initial size of the state set and the simulation limit, respectively.
       Function [iter_f] is applied to every new state discovered during the
-      simulation.
+      simulation. Optional argument [seed] is used to initialise the random
+      generator with a specific seed.
 
       @raise DEADLOCK when the simulation reaches a deadlock state.
       @raise LIMIT when the simulation limit is exceeded. *)

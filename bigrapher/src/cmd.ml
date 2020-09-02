@@ -24,6 +24,7 @@ type settings = {
   mutable model : string option;
   mutable out_format : format_op list;
   mutable quiet : bool;
+  mutable seed : int option;
   mutable steps : int;
   mutable steps_flag : bool;
   mutable time : float;
@@ -53,6 +54,7 @@ let defaults =
     model = None;
     out_format = default_formats;
     quiet = false;
+    seed = None;
     steps = 1000;
     steps_flag = false;
     time = 1000.0;
@@ -155,6 +157,11 @@ let eval_config fmt () =
         ("quiet", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.quiet);
         ( "running_time",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
+        ( "seed",
+          fun fmt () ->
+            match defaults.seed with
+            | None -> fprintf fmt "@[<hov>%s@]" "-"
+            | Some x -> fprintf fmt "@[<hov>%d@]" x );
         ( "solver",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]" (string_of_solver_type defaults.solver)
@@ -380,7 +387,8 @@ let copts_t =
     $ states $ srew $ trew $ verbose $ nocols $ rtime $ solver)
 
 (* Sim options *)
-let sim_opts time steps =
+let sim_opts time steps seed =
+  defaults.seed <- seed;
   match time with
   | Some t ->
       defaults.time_flag <- true;
@@ -406,7 +414,7 @@ let sim_opts_t =
   in
   let steps =
     let doc =
-      "Set the maximum number of simulation steps.This option is valid\n\
+      "Set the maximum number of simulation steps. This option is valid\n\
       \               only for deterministic and probabilistic models."
     in
     Arg.(
@@ -414,7 +422,13 @@ let sim_opts_t =
       & opt (some int) None
       & info [ "S"; "simulation-steps" ] ~docv:"INT" ~doc)
   in
-  Term.(const sim_opts $ time $ steps)
+  let seed =
+    let doc =
+      "Initialise the pseudo-random number generator using $(docv) as seed."
+    in
+    Arg.(value & opt (some int) None & info [ "seed" ] ~docv:"INT" ~doc)
+  in
+  Term.(const sim_opts $ time $ steps $ seed)
 
 (* Full options *)
 let full_opts states = defaults.max_states <- states
