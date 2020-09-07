@@ -1,5 +1,7 @@
-###1.9.3 (2020-02-10): ###
+###1.9.3 (2020-09-07): ###
 
+* Allow RNG seeds to be specified
+* Support pseudo-boolean solver selection
 * Add support for application conditions on reaction rules
 
 ###1.9.2 (2020-02-25): ###

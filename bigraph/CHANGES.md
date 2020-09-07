@@ -1,5 +1,7 @@
-###1.3.3 (2020-04-22): ###
+###1.3.3 (2020-09-07): ###
 
+* Performance improvements
+* Support pseudoboolean (MiniCARD) solver backend
 * Add support for application conditions
 * `Big.decomp` now returns a minimal parameter decomposition
 
