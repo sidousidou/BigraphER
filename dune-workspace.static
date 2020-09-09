@@ -1,7 +1,0 @@
-(lang dune 2.5)
-
-(context (default
-  (disable_dynamically_linked_foreign_archives true)))
-
-(env (_ (flags -cclib -static -cclib -lstdc++)
-        (ocamlopt_flags -O3 -noassert)))
