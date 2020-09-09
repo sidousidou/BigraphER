@@ -11,18 +11,22 @@ RUN sudo apt-get -qy update && \
       minisat \
       graphviz \
       emacs && \
-    sudo apt-get clean
+    sudo apt-get clean && \
+    sudo rm -rf /var/lib/apt/lists/*
 
 # Install OCaml dependencies
+RUN rm -rf opam-repository && \
+    opam switch list -s | head -8 | xargs opam switch remove
 RUN opam repo set-url --all-switches default https://opam.ocaml.org/ && \
-    opam switch install 4.10.0+flambda && \
-    opam install -y dune dune-configurator jsonm menhir cmdliner
+    opam install -y dune dune-configurator jsonm menhir cmdliner && \
+    opam clean -acr
 
 # Build bigrapher
 COPY --chown=opam . /home/opam/devel
 WORKDIR /home/opam/devel
 RUN eval $(opam env) && \
     dune build -j 4 --profile=release --always-show-command-line && \
-    dune install
+    dune install && \
+    dune clean
 ENTRYPOINT ["bash", "-l"]
 
