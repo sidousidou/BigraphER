@@ -1,3 +1,7 @@
+###1.9.3-quickfix1 (2020-09-09) ###
+
+* Fix missing updates from merge
+
 ###1.9.3 (2020-09-07): ###
 
 * Allow RNG seeds to be specified

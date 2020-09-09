@@ -90,6 +90,12 @@ let print_header fmt () =
         display = true;
       };
       {
+        descr = ("Solver:", `blue);
+        value = `s Cmd.(string_of_solver_type defaults.solver);
+        pp_val = pp_string;
+        display = true;
+      };
+      {
         descr = ("Command line:", `blue);
         value = `s (String.concat " " (Array.to_list Sys.argv));
         pp_val = pp_string;
@@ -109,27 +115,35 @@ let print_max fmt =
       };
     ]
 
-let print_max_sim fmt = function
+let print_max_sim fmt typ seed =
+  ( match typ with
   | Rs.BRS | Rs.PBRS | Rs.NBRS ->
-      print_table fmt
-        [
-          {
-            descr = ("Max sim steps:", `cyan);
-            value = `i Cmd.(defaults.steps);
-            pp_val = pp_int;
-            display = not Cmd.defaults.running_time;
-          };
-        ]
+      {
+        descr = ("Max sim steps:", `cyan);
+        value = `i Cmd.(defaults.steps);
+        pp_val = pp_int;
+        display = not Cmd.defaults.running_time;
+      }
   | Rs.SBRS ->
-      print_table fmt
-        [
-          {
-            descr = ("Max sim time:", `cyan);
-            value = `f Cmd.(defaults.time);
-            pp_val = pp_float "";
-            display = not Cmd.defaults.running_time;
-          };
-        ]
+      {
+        descr = ("Max sim time:", `cyan);
+        value = `f Cmd.(defaults.time);
+        pp_val = pp_float "";
+        display = not Cmd.defaults.running_time;
+      } )
+  ::
+  ( match seed with
+  | None -> []
+  | Some x ->
+      [
+        {
+          descr = ("Seed:", `cyan);
+          value = `i x;
+          pp_val = pp_int;
+          display = not Cmd.defaults.running_time;
+        };
+      ] )
+  |> print_table fmt
 
 let open_progress_bar () =
   if not Cmd.(defaults.debug || defaults.quiet || defaults.running_time) then
@@ -362,11 +376,17 @@ struct
       | SBRS -> "stochastic simulation"
     in
     print_msg fmt `yellow ("Starting " ^ sim_type T.typ ^ " ...");
-    print_max_sim fmt T.typ;
+    print_max_sim fmt T.typ Cmd.defaults.seed;
     open_progress_bar ();
-    T.sim ~s0 ~priorities ~predicates:preds
-      ~init_size:Cmd.(defaults.max_states)
-      ~stop:L.stop ~iter_f:print_loop
+    ( match Cmd.defaults.seed with
+    | None ->
+        T.sim ~s0 ~priorities ~predicates:preds
+          ~init_size:Cmd.(defaults.max_states)
+          ~stop:L.stop print_loop
+    | Some x ->
+        T.sim ~s0 ~seed:x ~priorities ~predicates:preds
+          ~init_size:Cmd.(defaults.max_states)
+          ~stop:L.stop print_loop )
     |> after fmt close_progress_bar
 
   let full fmt s0 priorities preds =
@@ -381,7 +401,7 @@ struct
     open_progress_bar ();
     T.bfs ~s0 ~priorities ~predicates:preds
       ~max:Cmd.(defaults.max_states)
-      ~iter_f:print_loop
+      print_loop
     |> after fmt close_progress_bar
 
   let set_trap fmt =

@@ -16,7 +16,7 @@ build:
     - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install m4 zlib1g-dev minisat graphviz
     - opam repo set-url --all-switches default https://opam.ocaml.org/ && opam update && opam install -y dune dune-configurator menhir cmdliner jsonm
     - eval $(opam env)
-    - dune runtest --profile=release
+    - dune runtest -j 4 --profile=release
     - cp _build/default/shippable/testresults/*.xml shippable/testresults/
 
   on_success:
