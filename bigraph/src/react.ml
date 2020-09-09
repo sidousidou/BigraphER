@@ -225,15 +225,15 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   let step_aux s s_trans rules =
     List.fold_left
       (fun acc (r, autos) ->
-        ( S.Memo.occurrences ~target:s ~pattern:(lhs r) s_trans autos
+        S.Memo.occurrences ~target:s ~pattern:(lhs r) s_trans autos
         |> List.filter (filter_conds s (lhs r) (conds r))
-        |> List.map (fun o ->
+        |> List.rev_map (fun o ->
                ( Big.rewrite
                    Solver.(o.nodes, o.edges, o.hyper_edges)
                    ~s ~r0:(lhs r) ~r1:(rhs r) (map r),
                  l r,
-                 [ r ] )) )
-        @ acc)
+                 [ r ] ))
+        |> Base.flip List.rev_append acc)
       [] rules
     |> fun l -> (filter_iso l, List.length l)
 

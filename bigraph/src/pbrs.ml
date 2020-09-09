@@ -95,7 +95,8 @@ module Make (S : Solver.M) = struct
           | _ ->
               (* Sort transitions by probability *)
               let ss_sort =
-                List.fast_sort (fun (_, a, _) (_, b, _) -> compare a b)
+                List.fast_sort (fun (_, a, _) (_, b, _) ->
+                    compare (a : float) (b : float))
               (* Compute cumulative probability *)
               and cumulative =
                 List.fold_left
@@ -104,8 +105,8 @@ module Make (S : Solver.M) = struct
                     ((b, cum_p', r) :: out, cum_p'))
                   ([], 0.0)
               in
-              ss_sort ss |> cumulative |> fst |> List.rev
-              |> pick (Random.float 1.0)
+              let reaction_rules, cum_p = ss_sort ss |> cumulative in
+              List.rev reaction_rules |> pick (Random.float cum_p)
               |> fun x -> (x, m)
       end)
 

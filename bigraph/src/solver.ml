@@ -122,7 +122,10 @@ module MS_W : E = struct
           (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
           :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
           :: (d, f) :: (e, f) :: acc
-      | x :: rest -> _at_most (List.map (fun y -> (x, y)) rest @ acc) rest
+      | x :: rest ->
+          _at_most
+            (List.rev_append (List.rev_map (fun y -> (x, y)) rest) acc)
+            rest
     in
     List.iter
       (fun (a, b) -> add_clause s [ negate a; negate b ])
@@ -215,7 +218,7 @@ module MS_W : E = struct
             List.iter
               (fun (cmd_v, sub) -> add_clause s (negate cmd_v :: aux sub))
               cmd_g;
-            fst (List.split cmd_g)
+            Base.list_rev_split_left cmd_g
       in
       aux t |> ignore
 
@@ -229,13 +232,13 @@ module MS_W : E = struct
                 aux sub
                 |> List.iter (fun l -> add_clause s [ cmd_v; negate l ]))
               cmd_g;
-            fst (List.split cmd_g)
+            Base.list_rev_split_left cmd_g
       in
       aux t |> ignore
 
     let add_at_least_cmd s = function
       | Leaf g -> add_clause s g
-      | Node cmd_g -> add_clause s (fst (List.split cmd_g))
+      | Node cmd_g -> add_clause s (Base.list_rev_split_left cmd_g)
   end
 
   (* Only base case implemented. *)
@@ -368,7 +371,7 @@ module Make (ST : ST) (E : E) : S = struct
 
   (* Add x <=> (C && C && ...) *)
   let add_iff s x clauses =
-    List.flatten clauses |> List.iter (fun l -> add_clause s [ x; negate l ]);
+    List.iter (List.iter (fun l -> add_clause s [ x; negate l ])) clauses;
     add_implication s x clauses
 
   (* Add (a && b) || (c && d) || ... via tseitin transformation *)
@@ -423,14 +426,14 @@ module Make (ST : ST) (E : E) : S = struct
   (* One true per row *)
   let add_fun s m =
     Base.list_of_rows m
-    |> List.iter (fun c -> add_exactly s (List.map positive_lit c) 1)
+    |> List.iter (fun c -> add_exactly s (List.rev_map positive_lit c) 1)
 
   (* 1. One true per row
    * 2. At most one true per column *)
   let add_injection s m =
     add_fun s m;
     Base.list_of_cols m
-    |> List.iter (fun c -> add_at_most s (List.map positive_lit c) 1)
+    |> List.iter (fun c -> add_at_most s (List.rev_map positive_lit c) 1)
 
   (* 1. One true per row
    * 2. One true per column *)
@@ -438,7 +441,7 @@ module Make (ST : ST) (E : E) : S = struct
     assert (Base.is_square_matrix m);
     add_fun s m;
     Base.list_of_cols m
-    |> List.iter (fun c -> add_exactly s (List.map positive_lit c) 1)
+    |> List.iter (fun c -> add_exactly s (List.rev_map positive_lit c) 1)
 
   let ban s vars =
     List.rev_map
@@ -662,7 +665,7 @@ module Make_SAT (S : S) : M = struct
               (* No compatible edges found, break out from fold *)
               raise_notrace NOT_TOTAL
           | t_edges ->
-              List.map
+              List.rev_map
                 (fun (i', j') ->
                   (S.positive_lit m.(i).(i'), S.positive_lit m.(j).(j')))
                 t_edges
@@ -991,9 +994,11 @@ module Make_SAT (S : S) : M = struct
       let clauses, b_cols, b_pairs =
         match_edges ~target ~pattern ~n_t ~n_p
       in
-      List.map (List.map (fun (i, j) -> S.positive_lit w.(i).(j))) clauses
+      List.rev_map
+        (List.rev_map (fun (i, j) -> S.positive_lit w.(i).(j)))
+        clauses
       |> S.add_clauses s;
-      List.map (fun (i, j) -> [ S.negative_lit w.(i).(j) ]) b_pairs
+      List.rev_map (fun (i, j) -> [ S.negative_lit w.(i).(j) ]) b_pairs
       |> S.add_clauses s;
       add_c11 b_cols s w;
       clauses
@@ -1004,16 +1009,13 @@ module Make_SAT (S : S) : M = struct
         (fun i acc ->
           let ar_i = Base.safe @@ Ports.arity a i
           and c_i = Base.safe @@ Nodes.get_ctrl i n_a in
-          let pairs =
-            IntSet.filter
+          ( IntSet.filter
               (fun j ->
                 ar_i = Base.safe @@ Ports.arity b j
                 && Ctrl.equal c_i (Base.safe @@ Nodes.get_ctrl j n_b))
               i_b
-            |> IntSet.elements
-            |> List.map (fun j -> (i, j))
-          in
-          pairs :: acc)
+          |> fun s -> IntSet.fold (fun j acc -> (i, j) :: acc) s [] )
+          |> fun x -> x :: acc)
         i_a []
 
     (* Nodes of matched edges are isomorphic. Indexes in clauses are for
@@ -1025,12 +1027,14 @@ module Make_SAT (S : S) : M = struct
         Lg.elements pattern |> List.map (fun e -> e.p) |> Array.of_list
       in
       List.iter
-        (fun (e_i, e_j) ->
-          compat_list a_p.(e_i) a_t.(e_j) n_p n_t
-          |> (fun c ->
-               List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j))) c)
-          |> S.add_implication solver (S.positive_lit w.(e_i).(e_j)))
-        (List.flatten clauses)
+        (List.iter (fun (e_i, e_j) ->
+             compat_list a_p.(e_i) a_t.(e_j) n_p n_t
+             |> (fun c ->
+                  List.rev_map
+                    (List.rev_map (fun (i, j) -> S.positive_lit v.(i).(j)))
+                    c)
+             |> S.add_implication solver (S.positive_lit w.(e_i).(e_j))))
+        clauses
 
     (* Is p sub-hyperedge of t? *)
     let sub_edge p t n_t n_p =
@@ -1169,8 +1173,8 @@ module Make_SAT (S : S) : M = struct
             (* Generate possible node matches for every edge assignment. *)
             List.iter
               (fun ((l0, l1), r) ->
-                List.map
-                  (List.map (fun (a, b) -> S.positive_lit v.(a).(b)))
+                List.rev_map
+                  (List.rev_map (fun (a, b) -> S.positive_lit v.(a).(b)))
                   r
                 |> S.add_implication solver (S.positive_lit w.(l0).(l1)))
               (compat_clauses e_p i compat_t h n_t n_p);
@@ -1178,7 +1182,7 @@ module Make_SAT (S : S) : M = struct
         open_p 0
       |> ignore;
       compat_sub open_p non_empty_t f_e n_t n_p
-      |> List.map (List.map (fun (i, j) -> S.negative_lit w.(i).(j)))
+      |> List.rev_map (List.rev_map (fun (i, j) -> S.negative_lit w.(i).(j)))
       |> S.add_clauses solver;
       (w, iso_p, iso_open)
 
@@ -1255,11 +1259,11 @@ module Make_SAT (S : S) : M = struct
             | _ -> (clause :: acc, block, i + 1))
           p ([], [], 0)
       in
-      S.add_clauses solver
-        ( List.map
-            (List.map (fun (i, j) -> S.positive_lit v_l.(i).(j)))
-            clauses
-        @ block_rows b v_l );
+      List.rev_map
+        (List.rev_map (fun (i, j) -> S.positive_lit v_l.(i).(j)))
+        clauses
+      |> S.add_clauses solver;
+      block_rows b v_l |> S.add_clauses solver;
       clauses
 
     let match_ports_eq p t n_p n_t solver v w clauses =
@@ -1267,11 +1271,12 @@ module Make_SAT (S : S) : M = struct
       let a_t = Lg.elements t |> List.map (fun e -> e.p) |> Array.of_list
       and a_p = Lg.elements p |> List.map (fun e -> e.p) |> Array.of_list in
       List.iter
-        (fun (e_i, e_j) ->
-          compat_list a_p.(e_i) a_t.(e_j) n_p n_t
-          |> List.map (List.map (fun (i, j) -> S.positive_lit v.(i).(j)))
-          |> S.add_implication solver (S.positive_lit w.(e_i).(e_j)))
-        (List.flatten clauses)
+        (List.iter (fun (e_i, e_j) ->
+             compat_list a_p.(e_i) a_t.(e_j) n_p n_t
+             |> List.rev_map
+                  (List.rev_map (fun (i, j) -> S.positive_lit v.(i).(j)))
+             |> S.add_implication solver (S.positive_lit w.(e_i).(e_j))))
+        clauses
   end
 
   let ban_solution solver vars =
