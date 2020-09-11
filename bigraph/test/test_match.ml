@@ -657,7 +657,7 @@ let () =
   Printexc.record_backtrace true;
   let bgs =
     IO.parse_all Sys.argv.(1) (fun x -> Filename.check_suffix x ".big")
-    |> List.map (fun (n, ls) -> (n, Big.parse ls))
+    |> List.map (fun (n, ls) -> (n, Big.of_string ls))
   in
   let ts = tests bgs in
   let testcases_match = do_tests ts

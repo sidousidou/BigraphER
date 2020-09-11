@@ -48,7 +48,7 @@ let () =
         && (Filename.chop_extension x).[0] = 'T')
   in
   let bgs =
-    List.map (fun (n, s) -> (n, Big.parse s)) bg_strings
+    List.map (fun (n, s) -> (n, Big.of_string s)) bg_strings
     |> List.filter (fun (_, b) -> b.Big.p.Place.s = 0)
   in
   let testcases = do_tests bgs in
