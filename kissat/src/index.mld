@@ -1,0 +1,8 @@
+{1 Library kissat}
+
+Library providing a basic set of OCaml bindings for the
+{{:https://github.com/arminbiere/kissat}Kissat} SAT solver.
+
+Module {!Kissat} is the main entry point of the library.
+
+@author Michele Sevegnani
