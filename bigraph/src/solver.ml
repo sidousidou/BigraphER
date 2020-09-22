@@ -1,5 +1,5 @@
 (* Solver type *)
-type solver_t = MSAT | MCARD
+type solver_t = MSAT | MCARD | KSAT
 
 (* Solver type wrapper*)
 module type ST = sig
@@ -100,146 +100,21 @@ module MS_W : E = struct
       cpu = Minisat.(x.cpu);
     }
 
-  let positive_lit = Minisat.(pos_lit)
+  let positive_lit = Minisat.pos_lit
 
-  let negative_lit = Minisat.(neg_lit)
+  let negative_lit = Minisat.neg_lit
 
-  let negate = Minisat.(negate)
+  let negate = Minisat.negate
 
-  (* Disjunctions (all possible pairs) of negative literals *)
-  let add_at_most_naive s l =
-    (* Boolean encoding of at most one TRUE. Most common cases are hard-coded *)
-    let rec _at_most acc = function
-      | [] | [ _ ] -> acc
-      | [ a; b ] -> (a, b) :: acc
-      | [ a; b; c ] -> (a, b) :: (a, c) :: (b, c) :: acc
-      | [ a; b; c; d ] ->
-          (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
-      | [ a; b; c; d; e ] ->
-          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
-          :: (c, d) :: (c, e) :: (d, e) :: acc
-      | [ a; b; c; d; e; f ] ->
-          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
-          :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
-          :: (d, f) :: (e, f) :: acc
-      | x :: rest ->
-          _at_most
-            (List.rev_append (List.rev_map (fun y -> (x, y)) rest) acc)
-            rest
-    in
-    List.iter
-      (fun (a, b) -> add_clause s [ negate a; negate b ])
-      (_at_most [] l)
-
-  (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
-  module CMD = struct
-    type group = lit list
-
-    type cmd_tree = Leaf of group | Node of (lit * cmd_tree) list
-
-    (* Parameters t and g are used for configure the commander-variable
-       encoding *)
-    type params = { t : int; g : int }
-
-    let defaults = { t = 6; g = 3 }
-
-    (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then
-       [0;1] [2;3] to avoid singletons. Also if [0;1] [2] then [0;1;2] *)
-    let group l n g =
-      assert (g > 1);
-      assert (n >= g);
-      if List.length l <= n then None
-      else
-        let x, i, res =
-          List.fold_left
-            (fun (group, i, res) x ->
-              if i >= g then ([ x ], 1, group :: res)
-              else (x :: group, i + 1, res))
-            ([], 0, []) l
-        in
-        if i = 1 then
-          if g > 2 then
-            match res with
-            | (v :: vs) :: res -> Some ((x @ [ v ]) :: vs :: res)
-            | _ -> assert false
-          else
-            match res with
-            | v :: res -> Some ((x @ v) :: res)
-            | _ -> assert false
-        else Some (x :: res)
-
-    (* Build a tree of commander variables. Input is a tree, output split the
-       root and add a level of variables. *)
-    let cmd_init l p s =
-      let rec _cmd_init n g t =
-        match t with
-        | Node cmd_l -> (
-            match group cmd_l n g with
-            | Some cmd_l' ->
-                Node
-                  (List.fold_left
-                     (fun acc g -> (positive_lit (new_var s), Node g) :: acc)
-                     [] cmd_l')
-                |> _cmd_init n g
-            (* Do not add an additional level of commander variables *)
-            | None -> t )
-        | Leaf vars -> (
-            match group vars n g with
-            | Some cmd_l ->
-                Node
-                  (List.fold_left
-                     (fun acc g -> (positive_lit (new_var s), Leaf g) :: acc)
-                     [] cmd_l)
-                |> _cmd_init n g
-            (* Do not add an additional level of commander variables *)
-            | None -> t )
-      in
-      _cmd_init p.t p.g (Leaf l)
-
-    (* Scan the tree and add constraints:
-     *  1. at most one TRUE in every group
-     *  2. if commander variable is TRUE then at least one TRUE in its group
-     *  3. if commander variable is FALSE then no TRUE in its group 4. exactly
-     *     one commander variable is true. *)
-
-    (* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
-    let rec add_cmd_c1 s = function
-      | Leaf g -> add_at_most_naive s g
-      | Node cmd_g ->
-          let cmd_vars, sub = List.split cmd_g in
-          add_at_most_naive s cmd_vars;
-          List.iter (fun t -> add_cmd_c1 s t) sub
-
-    (* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)
-    let add_cmd_c2 s t =
-      let rec aux = function
-        | Leaf g -> g
-        | Node cmd_g ->
-            List.iter
-              (fun (cmd_v, sub) -> add_clause s (negate cmd_v :: aux sub))
-              cmd_g;
-            Base.list_rev_split_left cmd_g
-      in
-      aux t |> ignore
-
-    (* (C, [X0, X1, X2]) -> [(C or !X0), (C or !X1), (C or !X2)] *)
-    let add_cmd_c3 s t =
-      let rec aux = function
-        | Leaf g -> g
-        | Node cmd_g ->
-            List.iter
-              (fun (cmd_v, sub) ->
-                aux sub
-                |> List.iter (fun l -> add_clause s [ cmd_v; negate l ]))
-              cmd_g;
-            Base.list_rev_split_left cmd_g
-      in
-      aux t |> ignore
-
-    let add_at_least_cmd s = function
-      | Leaf g -> add_clause s g
-      | Node cmd_g -> add_clause s (Base.list_rev_split_left cmd_g)
-  end
+  module CMD = Cmd_encoding.Make (struct
+                   type lit = Minisat.lit
+                   type var = Minisat.var
+                   type solver = Minisat.solver
+                   let add_clause = add_clause
+                   let negate = negate
+                   let new_var = new_var
+                   let positive_lit = positive_lit
+                 end)
 
   (* Only base case implemented. *)
   let add_at_most s lits k =
@@ -319,6 +194,117 @@ module MC_W : E = struct
   let add_exactly s lits k =
     add_at_most s lits k;
     add_at_least s lits k
+end
+
+(* Wrapper for the Kissat module *)
+module KS_W : E = struct
+  type var = Kissat.var
+
+  type lit = Kissat.lit
+
+  type w =
+    | Fresh of Kissat.t (* solve() has not been invoked yet *)
+    | Old of Kissat.t   (* solve() has been already invoked *)
+
+  and t = { mutable solver: w;
+            mutable vars: int;
+            mutable clauses : lit list list; }
+
+  let create () = { solver = Fresh (Kissat.create ());
+                    vars = 0;
+                    clauses = []; }
+
+  let set_verbosity _ _ = ()
+
+  let add_clause s lits =
+    (match s.solver with
+     | Fresh (_s) -> Kissat.add_clause _s lits
+     | Old (_s) -> ());
+    s.clauses <- lits :: s.clauses
+
+  let new_var s =
+    s.vars <- s.vars + 1;
+    match s.solver with
+    | Fresh (_s) | Old (_s) ->
+       Kissat.new_var _s
+
+  let simplify _ = ()
+
+  (* Kissat does not support incremental solving *)
+  let solve s =
+    (match s.solver with
+     | Fresh _s -> (s.solver <- Old (_s); Kissat.solve _s)
+     | Old _ -> let _s = Kissat.create () in
+                let rec loop n =
+                  if n = 0 then ()
+                  else (ignore @@ Kissat.new_var _s;
+                       loop (n - 1)) in
+                loop s.vars;
+                List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
+                Kissat.solve _s)
+    |> function
+      | Ok Kissat.SAT -> SAT
+      | Ok Kissat.UNSAT -> UNSAT
+      | Error _ -> failwith "Kissat internal error"
+
+  let value_of s v =
+    match s.solver with
+      | Fresh _s | Old _s ->
+         match Kissat.value_of _s v with
+         | Kissat.False -> False
+         | Kissat.True -> True
+         | Kissat.Unknown -> Unknown
+
+  let get_stats s =
+    match s.solver with
+    | Fresh _s | Old _s ->
+       let res = Kissat.get_stats _s in
+       {
+         v = res.v;
+         c = res.c;
+         mem = nan;
+         cpu = nan;
+       }
+
+  let positive_lit = Kissat.pos_lit
+
+  let negative_lit = Kissat.neg_lit
+
+  let negate = Kissat.negate
+
+  module CMD = Cmd_encoding.Make (struct
+                   type lit = Kissat.lit
+                   type var = Kissat.var
+                   type solver = t
+                   let add_clause = add_clause
+                   let negate = negate
+                   let new_var = new_var
+                   let positive_lit = positive_lit
+                 end)
+
+  (* Only base case implemented. *)
+  let add_at_most s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+                                  add_cmd_c1 s t;
+                                  add_cmd_c2 s t;
+                                  add_cmd_c3 s t)
+
+  (* Only base case implemented. *)
+  let add_at_least s lits k =
+    assert (k = 1);
+    CMD.(cmd_init lits defaults s |> add_at_least_cmd s)
+
+  (* Only base case implemented. *)
+  let add_exactly s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+                                  add_cmd_c1 s t;
+                                  add_cmd_c2 s t;
+                                  add_cmd_c3 s t;
+                                  add_at_least_cmd s t)
 end
 
 module type S = sig
@@ -493,6 +479,17 @@ module MC =
     end)
     ((
     MC_W : E ))
+
+(*Instance of Kissat solver *)
+module KS =
+  Make
+    (struct
+      let solver_type = KSAT
+
+      let string_of_solver_t = "Kissat"
+    end)
+    ((
+    KS_W : E ))
 
 (* The type of a bigraph matching engine *)
 module type M = sig

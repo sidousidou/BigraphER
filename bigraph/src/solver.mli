@@ -3,7 +3,7 @@
     @author Michele Sevegnani *)
 
 (** Solver type. *)
-type solver_t = MSAT  (** MiniSAT *) | MCARD  (** MiniCARD *)
+type solver_t = MSAT  (** MiniSAT *) | MCARD  (** MiniCARD *) | KSAT (** Kissat *)
 
 type stats = {
   v : int;  (** Number of variables. *)
@@ -107,6 +107,9 @@ module MS : S
 
 module MC : S
 (** Instance of MiniCARD solver. *)
+
+module KS : S
+(** Instance of Kissat solver. *)
 
 (** The type of a bigraph matching engine. *)
 module type M = sig
