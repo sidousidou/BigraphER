@@ -14,17 +14,15 @@ type lit
 (** The type of literals. *)
 
 (** The type of variable values. *)
-type value = False | True
+type value = False | True | Unknown
 
 (** The type of Kissat solver solutions. *)
 type solution = SAT | UNSAT
 
-(* type stat = {
- *   v : int;  (\** Number of variables. *\)
- *   c : int;  (\** Number of clauses. *\)
- *   mem : float;  (\** Memory used in MB. *\)
- *   cpu : float;  (\** CPU time in seconds. *\)
- * } *)
+type stat = {
+  v : int;  (** Number of variables. *)
+  c : int;  (** Number of clauses. *)
+}
 
 val create : unit -> t
 
@@ -47,5 +45,13 @@ val neg_lit : var -> lit
 
 val negate : lit -> lit
 (** Negate a literal. *)
+
+val print_stats : t -> unit
+
+val set_option : t -> string -> int -> int
+
+val get_option : t -> string -> int
+
+val get_stats : t -> stat
 
 (**/**)

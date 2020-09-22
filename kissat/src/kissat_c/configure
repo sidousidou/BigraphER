@@ -290,13 +290,9 @@ cat <<EOF >../makefile
 all:
 	\$(MAKE) -C "$BUILD"
 lib:
-	mkdir -p $BUILD/static
-	cp $BUILD/makefile $BUILD/static/makefile
-	\$(MAKE) -C "$BUILD/static" libkissat.a
+	\$(MAKE) -C "$BUILD" libkissat.a
 dylib:
-	mkdir -p $BUILD/dynamic
-	cp $BUILD/makefile $BUILD/dynamic/makefile
-	\$(MAKE) -C "$BUILD/dynamic" libkissat.so
+	\$(MAKE) -C "$BUILD" libkissat.so
 clean:
 	rm -f "$ROOT"/makefile
 	rm -rf "$BUILD"

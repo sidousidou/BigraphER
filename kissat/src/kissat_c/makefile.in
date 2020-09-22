@@ -3,15 +3,15 @@ CFLAGS=@CFLAGS@
 LD=@LD@
 AR=@AR@
 
-VPATH=../../src:../../test
+VPATH=../src
 
-%.o: %.c ../../[st]*/*.h makefile
+%.o: %.c ../[st]*/*.h makefile
 	$(CC) $(CFLAGS) -c $<
 
 APPSRC=application.c handle.c parse.c witness.c
 
-LIBSRT=$(sort $(wildcard ../../src/*.c))
-LIBSUB=$(subst ../../src/,,$(LIBSRT))
+LIBSRT=$(sort $(wildcard ../src/*.c))
+LIBSUB=$(subst ../src/,,$(LIBSRT))
 LIBSRC=$(filter-out main.c $(APPSRC),$(LIBSUB))
 
 APPOBJ=$(APPSRC:.c=.o)
@@ -25,14 +25,14 @@ kissat: main.o $(APPOBJ) libkissat.a makefile
 	$(LD) -o $@ $< $(APPOBJ) -L. -lkissat -lm
 
 build.h:
-	../../scripts/generate-build-header.sh > $@
+	../scripts/generate-build-header.sh > $@
 
 collect.o: sort.c
 dense.o: sort.c
 propagate.o: assign.c
 watch.o: sort.c
 
-build.o: build.c build.h ../../[st]*/*.h makefile
+build.o: build.c build.h ../[st]*/*.h makefile
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
 libkissat.a: $(LIBOBJ) makefile

@@ -14,16 +14,10 @@
    (chdir
     kissat_c
     (progn
-     (run ./configure --ultimate --sat -O3)
-     (run make lib)))
-   (run cp kissat_c/build/static/libkissat.a libkissat_c.a)
-   (chdir
-    kissat_c
-    (progn
-     (run make clean)
      (run ./configure --ultimate --sat -O3 -fPIC)
-     (run make dylib)))
-   (run cp kissat_c/build/dynamic/libkissat.so dllkissat_c.so))))
+     (run make lib dylib)))
+   (run cp kissat_c/build/libkissat.a libkissat_c.a)
+   (run cp kissat_c/build/libkissat.so dllkissat_c.so))))
 
 (rule
  (deps
@@ -39,16 +33,10 @@
    (chdir
     kissat_c
     (progn
-     (run ./configure --ultimate --sat -O3)
-     (run gmake lib)))
-   (run cp kissat_c/build/static/libkissat.a libkissat_c.a)
-   (chdir
-    kissat_c
-    (progn
-     (run gmake clean)
      (run ./configure --ultimate --sat -O3 -fPIC)
-     (run gmake dylib)))
-   (run cp kissat_c/build/dynamic/libkissat.so dllkissat_c.so))))
+     (run gmake lib dylib)))
+   (run cp kissat_c/build/libkissat.a libkissat_c.a)
+   (run cp kissat_c/build/libkissat.so dllkissat_c.so))))
 
 (library
  (name kissat)

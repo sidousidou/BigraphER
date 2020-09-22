@@ -13,7 +13,7 @@ case "$CC" in
   gcc*|clang*) CC="`$CC --version 2>/dev/null|head -1`";;
 esac
 COMPILER="$CC $CFLAGS"
-VERSION="`cat ../../VERSION 2>/dev/null`"
+VERSION="`cat ../VERSION 2>/dev/null`"
 [ "$VERSION" = "" ] && die "could not get 'VERSION'"
 cat <<EOF
 #define VERSION "$VERSION"
