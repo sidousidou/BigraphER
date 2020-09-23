@@ -1,21 +1,27 @@
 (* Commander variable encoding *)
 
-module Make (S :
-               sig
-                 type lit
-                 type var
-                 type solver
-                 val add_clause : solver -> lit list -> unit
-                 val negate : lit -> lit
-                 val new_var : solver -> var
-                 val positive_lit : var -> lit
-               end) = struct
+module Make (S : sig
+  type lit
+
+  type var
+
+  type solver
+
+  val add_clause : solver -> lit list -> unit
+
+  val negate : lit -> lit
+
+  val new_var : solver -> var
+
+  val positive_lit : var -> lit
+end) =
+struct
   type group = S.lit list
 
   type cmd_tree = Leaf of group | Node of (S.lit * cmd_tree) list
 
   (* Parameters t and g are used for configure the commander-variable
-       encoding *)
+     encoding *)
   type params = { t : int; g : int }
 
   let defaults = { t = 6; g = 3 }
@@ -28,25 +34,25 @@ module Make (S :
       | [ a; b ] -> (a, b) :: acc
       | [ a; b; c ] -> (a, b) :: (a, c) :: (b, c) :: acc
       | [ a; b; c; d ] ->
-         (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
+          (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
       | [ a; b; c; d; e ] ->
-         (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
-         :: (c, d) :: (c, e) :: (d, e) :: acc
+          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
+          :: (c, d) :: (c, e) :: (d, e) :: acc
       | [ a; b; c; d; e; f ] ->
-         (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
-         :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
-         :: (d, f) :: (e, f) :: acc
+          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
+          :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
+          :: (d, f) :: (e, f) :: acc
       | x :: rest ->
-         _at_most
-           (List.rev_append (List.rev_map (fun y -> (x, y)) rest) acc)
-           rest
+          _at_most
+            (List.rev_append (List.rev_map (fun y -> (x, y)) rest) acc)
+            rest
     in
     List.iter
       (fun (a, b) -> S.add_clause s [ S.negate a; S.negate b ])
       (_at_most [] l)
 
-  (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then
-       [0;1] [2;3] to avoid singletons. Also if [0;1] [2] then [0;1;2] *)
+  (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then [0;1]
+     [2;3] to avoid singletons. Also if [0;1] [2] then [0;1;2] *)
   let group l n g =
     assert (g > 1);
     assert (n >= g);
@@ -71,30 +77,32 @@ module Make (S :
       else Some (x :: res)
 
   (* Build a tree of commander variables. Input is a tree, output split the
-       root and add a level of variables. *)
+     root and add a level of variables. *)
   let cmd_init l p s =
     let rec _cmd_init n g t =
       match t with
       | Node cmd_l -> (
-        match group cmd_l n g with
-        | Some cmd_l' ->
-           Node
-             (List.fold_left
-                (fun acc g -> (S.positive_lit (S.new_var s), Node g) :: acc)
-                [] cmd_l')
-           |> _cmd_init n g
-        (* Do not add an additional level of commander variables *)
-        | None -> t )
+          match group cmd_l n g with
+          | Some cmd_l' ->
+              Node
+                (List.fold_left
+                   (fun acc g ->
+                     (S.positive_lit (S.new_var s), Node g) :: acc)
+                   [] cmd_l')
+              |> _cmd_init n g
+          (* Do not add an additional level of commander variables *)
+          | None -> t )
       | Leaf vars -> (
-        match group vars n g with
-        | Some cmd_l ->
-           Node
-             (List.fold_left
-                (fun acc g -> (S.positive_lit (S.new_var s), Leaf g) :: acc)
-                [] cmd_l)
-           |> _cmd_init n g
-        (* Do not add an additional level of commander variables *)
-        | None -> t )
+          match group vars n g with
+          | Some cmd_l ->
+              Node
+                (List.fold_left
+                   (fun acc g ->
+                     (S.positive_lit (S.new_var s), Leaf g) :: acc)
+                   [] cmd_l)
+              |> _cmd_init n g
+          (* Do not add an additional level of commander variables *)
+          | None -> t )
     in
     _cmd_init p.t p.g (Leaf l)
 
@@ -108,19 +116,19 @@ module Make (S :
   let rec add_cmd_c1 s = function
     | Leaf g -> add_at_most_naive s g
     | Node cmd_g ->
-       let cmd_vars, sub = List.split cmd_g in
-       add_at_most_naive s cmd_vars;
-       List.iter (fun t -> add_cmd_c1 s t) sub
+        let cmd_vars, sub = List.split cmd_g in
+        add_at_most_naive s cmd_vars;
+        List.iter (fun t -> add_cmd_c1 s t) sub
 
   (* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)
   let add_cmd_c2 s t =
     let rec aux = function
       | Leaf g -> g
       | Node cmd_g ->
-         List.iter
-           (fun (cmd_v, sub) -> S.add_clause s (S.negate cmd_v :: aux sub))
-           cmd_g;
-         Base.list_rev_split_left cmd_g
+          List.iter
+            (fun (cmd_v, sub) -> S.add_clause s (S.negate cmd_v :: aux sub))
+            cmd_g;
+          Base.list_rev_split_left cmd_g
     in
     aux t |> ignore
 
@@ -129,12 +137,12 @@ module Make (S :
     let rec aux = function
       | Leaf g -> g
       | Node cmd_g ->
-         List.iter
-           (fun (cmd_v, sub) ->
-             aux sub
-             |> List.iter (fun l -> S.add_clause s [ cmd_v; S.negate l ]))
-           cmd_g;
-         Base.list_rev_split_left cmd_g
+          List.iter
+            (fun (cmd_v, sub) ->
+              aux sub
+              |> List.iter (fun l -> S.add_clause s [ cmd_v; S.negate l ]))
+            cmd_g;
+          Base.list_rev_split_left cmd_g
     in
     aux t |> ignore
 

@@ -107,14 +107,20 @@ module MS_W : E = struct
   let negate = Minisat.negate
 
   module CMD = Cmd_encoding.Make (struct
-                   type lit = Minisat.lit
-                   type var = Minisat.var
-                   type solver = Minisat.solver
-                   let add_clause = add_clause
-                   let negate = negate
-                   let new_var = new_var
-                   let positive_lit = positive_lit
-                 end)
+    type lit = Minisat.lit
+
+    type var = Minisat.var
+
+    type solver = Minisat.solver
+
+    let add_clause = add_clause
+
+    let negate = negate
+
+    let new_var = new_var
+
+    let positive_lit = positive_lit
+  end)
 
   (* Only base case implemented. *)
   let add_at_most s lits k =
@@ -204,67 +210,69 @@ module KS_W : E = struct
 
   type w =
     | Fresh of Kissat.t (* solve() has not been invoked yet *)
-    | Old of Kissat.t   (* solve() has been already invoked *)
+    | Old of Kissat.t
 
-  and t = { mutable solver: w;
-            mutable vars: int;
-            mutable clauses : lit list list; }
+  (* solve() has been already invoked *)
+  and t = {
+    mutable solver : w;
+    mutable vars : int;
+    mutable clauses : lit list list;
+  }
 
-  let create () = { solver = Fresh (Kissat.create ());
-                    vars = 0;
-                    clauses = []; }
+  let create () =
+    { solver = Fresh (Kissat.create ()); vars = 0; clauses = [] }
 
   let set_verbosity _ _ = ()
 
   let add_clause s lits =
-    (match s.solver with
-     | Fresh (_s) -> Kissat.add_clause _s lits
-     | Old (_s) -> ());
+    ( match s.solver with
+    | Fresh _s -> Kissat.add_clause _s lits
+    | Old _s -> () );
     s.clauses <- lits :: s.clauses
 
   let new_var s =
     s.vars <- s.vars + 1;
-    match s.solver with
-    | Fresh (_s) | Old (_s) ->
-       Kissat.new_var _s
+    match s.solver with Fresh _s | Old _s -> Kissat.new_var _s
 
   let simplify _ = ()
 
   (* Kissat does not support incremental solving *)
   let solve s =
-    (match s.solver with
-     | Fresh _s -> (s.solver <- Old (_s); Kissat.solve _s)
-     | Old _ -> let _s = Kissat.create () in
-                let rec loop n =
-                  if n = 0 then ()
-                  else (ignore @@ Kissat.new_var _s;
-                       loop (n - 1)) in
-                loop s.vars;
-                List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
-                Kissat.solve _s)
+    ( match s.solver with
+    | Fresh _s ->
+        s.solver <- Old _s;
+        Kissat.solve _s
+    | Old _ ->
+        let _s = Kissat.create () in
+        let rec loop n =
+          assert (n >= 0);
+          if n = 0 then ()
+          else (
+            ignore @@ Kissat.new_var _s;
+            loop (n - 1) )
+        in
+        loop s.vars;
+        List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
+        s.solver <- Old _s;
+        Kissat.solve _s )
     |> function
-      | Ok Kissat.SAT -> SAT
-      | Ok Kissat.UNSAT -> UNSAT
-      | Error _ -> failwith "Kissat internal error"
+    | Ok Kissat.SAT -> SAT
+    | Ok Kissat.UNSAT -> UNSAT
+    | Error _ -> failwith "Kissat internal error"
 
   let value_of s v =
     match s.solver with
-      | Fresh _s | Old _s ->
-         match Kissat.value_of _s v with
-         | Kissat.False -> False
-         | Kissat.True -> True
-         | Kissat.Unknown -> Unknown
+    | Fresh _s | Old _s -> (
+        match Kissat.value_of _s v with
+        | Kissat.False -> False
+        | Kissat.True -> True
+        | Kissat.Unknown -> Unknown )
 
   let get_stats s =
     match s.solver with
     | Fresh _s | Old _s ->
-       let res = Kissat.get_stats _s in
-       {
-         v = res.v;
-         c = res.c;
-         mem = nan;
-         cpu = nan;
-       }
+        let res = Kissat.get_stats _s in
+        { v = res.v; c = res.c; mem = nan; cpu = nan }
 
   let positive_lit = Kissat.pos_lit
 
@@ -273,23 +281,29 @@ module KS_W : E = struct
   let negate = Kissat.negate
 
   module CMD = Cmd_encoding.Make (struct
-                   type lit = Kissat.lit
-                   type var = Kissat.var
-                   type solver = t
-                   let add_clause = add_clause
-                   let negate = negate
-                   let new_var = new_var
-                   let positive_lit = positive_lit
-                 end)
+    type lit = Kissat.lit
+
+    type var = Kissat.var
+
+    type solver = t
+
+    let add_clause = add_clause
+
+    let negate = negate
+
+    let new_var = new_var
+
+    let positive_lit = positive_lit
+  end)
 
   (* Only base case implemented. *)
   let add_at_most s lits k =
     assert (k = 1);
     CMD.(
       cmd_init lits defaults s |> fun t ->
-                                  add_cmd_c1 s t;
-                                  add_cmd_c2 s t;
-                                  add_cmd_c3 s t)
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t)
 
   (* Only base case implemented. *)
   let add_at_least s lits k =
@@ -301,10 +315,10 @@ module KS_W : E = struct
     assert (k = 1);
     CMD.(
       cmd_init lits defaults s |> fun t ->
-                                  add_cmd_c1 s t;
-                                  add_cmd_c2 s t;
-                                  add_cmd_c3 s t;
-                                  add_at_least_cmd s t)
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t;
+      add_at_least_cmd s t)
 end
 
 module type S = sig

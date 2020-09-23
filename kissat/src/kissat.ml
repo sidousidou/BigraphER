@@ -10,7 +10,7 @@ type value = False | True | Unknown
 
 type solution = SAT | UNSAT
 
-type stat = { v : int; c : int; }
+type stat = { v : int; c : int }
 
 external __create : unit -> t_raw = "ocaml_kissat_new"
 
@@ -32,7 +32,7 @@ external __print_stats : t_raw -> unit = "ocaml_kissat_print_statistics"
 let create () =
   let s = __create () in
   Gc.finalise __delete s;
-  { solver = s; vars = 0; clauses = 0; }
+  { solver = s; vars = 0; clauses = 0 }
 
 let solve s =
   match __solve s.solver with
@@ -44,16 +44,15 @@ let solve s =
 
 let value_of s var =
   let v = __value s.solver var in
-  if v > 0 then True
-  else if v < 0 then False
-  else Unknown
+  if v > 0 then True else if v < 0 then False else Unknown
 
 let new_var s =
   s.vars <- s.vars + 1;
   s.vars
 
 let add_clause s c =
-  List.iter (fun l ->
+  List.iter
+    (fun l ->
       assert (abs l <= s.vars);
       __add s.solver l)
     c;
@@ -70,14 +69,15 @@ let neg_lit var =
 
 let negate lit = -lit
 
-let string_of_value = function False -> "false" | True -> "true"  | Unknown -> "unknown"
+let string_of_value = function
+  | False -> "false"
+  | True -> "true"
+  | Unknown -> "unknown"
 
 let print_stats s = __print_stats s.solver
 
-let set_option s opt x =
-  __set_option s.solver opt x
+let set_option s opt x = __set_option s.solver opt x
 
-let get_option s opt =
-  __get_option s.solver opt
+let get_option s opt = __get_option s.solver opt
 
-let get_stats s = { v = s.vars; c = s.clauses; }
+let get_stats s = { v = s.vars; c = s.clauses }

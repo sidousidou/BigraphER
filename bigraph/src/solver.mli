@@ -3,7 +3,10 @@
     @author Michele Sevegnani *)
 
 (** Solver type. *)
-type solver_t = MSAT  (** MiniSAT *) | MCARD  (** MiniCARD *) | KSAT (** Kissat *)
+type solver_t =
+  | MSAT  (** MiniSAT *)
+  | MCARD  (** MiniCARD *)
+  | KSAT  (** Kissat *)
 
 type stats = {
   v : int;  (** Number of variables. *)
