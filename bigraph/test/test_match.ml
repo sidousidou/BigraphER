@@ -3,7 +3,7 @@ open Printf
 open Bigraph
 module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
-module S = Solver.Make_SAT (Solver.MC)
+module S = Solver.Make_SAT (Solver.KS)
 
 type test = {
   target : Big.t;
