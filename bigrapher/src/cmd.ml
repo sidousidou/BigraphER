@@ -417,8 +417,8 @@ let copts_t =
   let solver =
     let doc =
       "Select solver for matching engine.\n\
-      \               Supported solvers are `MSAT' (MiniSAT) `KSAT' (Kissat), and `MCARD' \
-       (MiniCARD)."
+      \               Supported solvers are `MSAT' (MiniSAT) `KSAT' \
+       (Kissat), and `MCARD' (MiniCARD)."
     in
     let env = Arg.env_var "BIGSOLVER" ~doc in
     Arg.(value & opt string "MSAT" & info [ "solver" ] ~doc ~env)

@@ -25,8 +25,14 @@ let benchmark =
 
 let () =
   assert (Array.length Sys.argv = 2);
-  let n = 5 in
-  printf "test_speed (%d runs):\n" n;
+  let n = 5
+  and solver =
+    match Sys.getenv_opt "BIGSOLVER" with
+    | Some "MCARD" -> "MiniCARD"
+    | Some "KSAT" -> "Kissat"
+    | Some "MSAT" | Some _ | None -> "MiniSAT"
+  in
+  printf "test_speed (%d runs) -- %s\n" n solver;
   let bin = Sys.argv.(1) ^ " full --running-time "
   and f x = input_line x |> float_of_string in
   List.iter

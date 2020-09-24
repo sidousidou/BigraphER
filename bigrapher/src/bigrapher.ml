@@ -614,8 +614,8 @@ let () =
               let module S = Selector (T) (Solver.Make_SAT (Solver.MC)) in
               S.run fmt Cmd.(defaults.colors) m exec_type
           | Bigraph.Solver.KSAT ->
-             let module S = Selector (T) (Solver.Make_SAT (Solver.KS)) in
-             S.run fmt Cmd.(defaults.colors) m exec_type
+              let module S = Selector (T) (Solver.Make_SAT (Solver.KS)) in
+              S.run fmt Cmd.(defaults.colors) m exec_type
         with
         | Place.NOT_PRIME ->
             close_progress_bar ();
