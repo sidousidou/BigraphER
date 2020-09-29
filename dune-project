@@ -3,8 +3,8 @@
 (license BSD-3-Clause)
 (authors "Michele Sevegnani" "Blair Archibald")
 (maintainers "michele.sevegnani@glasgow.ac.uk")
-(homepage "http://www.dcs.gla.ac.uk/~michele/bigrapher.html")
-(documentation "http://www.dcs.gla.ac.uk/~michele/doc/index.html")
+(homepage "https://uog-bigraph.bitbucket.io/")
+(documentation "https://uog-bigraph.bitbucket.io/docs/index.html")
 (generate_opam_files true)
 
 (using menhir 1.0)
