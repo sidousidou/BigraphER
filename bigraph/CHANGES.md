@@ -1,3 +1,7 @@
+### 1.3.4 ###
+
+* Output state number alongside predicates in svg's
+
 ###1.3.3 (2020-09-07): ###
 
 * Performance improvements

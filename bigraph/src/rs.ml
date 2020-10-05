@@ -243,8 +243,10 @@ module MakeE (G : G) = struct
     in
     if Base.S_predicate.is_empty relevant_preds then string_of_int i
     else
-      Base.S_predicate.elements relevant_preds
-      |> List.split |> fst |> String.concat ", "
+      let print_predicates =
+        Base.S_predicate.elements relevant_preds |> List.split |> fst |> String.concat ", "
+      in
+      string_of_int i ^ " -- " ^ print_predicates
 
   let to_dot g ~path ~name =
     let rank = "{ rank=source; 0 };\n" in
