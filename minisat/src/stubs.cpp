@@ -236,7 +236,7 @@ static inline CAMLprim value append(value hd, value tl) {
   CAMLreturn(tuple(hd, tl));
 }
 
-CAMLprim value build_solution_full(Solver* _solver) {
+CAMLprim value build_solution(Solver* _solver) {
   CAMLparam0();
   CAMLlocal1(res);
 
@@ -246,24 +246,6 @@ CAMLprim value build_solution_full(Solver* _solver) {
     if (_solver->modelValue(i) == l_True) {
       res = append(Val_int(i), res);
     }
-  }
-
-  CAMLreturn(res);
-}
-
-CAMLprim value build_solution(Solver* _solver, value vars) {
-  CAMLparam1(vars);
-  CAMLlocal2(x, res);
-
-  res = Val_emptylist;
-  x = vars;
-
-  while (x != Val_emptylist) {
-    int i = Int_val(Field(x, 0));
-    if (_solver->modelValue(i) == l_True) {
-      res = append(Val_int(i), res);
-    }
-    x = Field(x, 1);
   }
 
   CAMLreturn(res);
@@ -286,7 +268,7 @@ CAMLprim value ocaml_minisat_solve_all_true(value solver, value vars) {
         blocking_clause.push(mkLit(i, _solver->modelValue(i) == l_True));
       }
       _solver->addClause(blocking_clause);
-      res = append(build_solution_full(_solver), res);
+      res = append(build_solution(_solver), res);
     }
   } else {
     while (_solver->solve()) {
@@ -298,7 +280,7 @@ CAMLprim value ocaml_minisat_solve_all_true(value solver, value vars) {
         x = Field(x, 1);
       }
       _solver->addClause(blocking_clause);
-      res = append(build_solution(_solver, vars), res);
+      res = append(build_solution(_solver), res);
     }
   }
 
