@@ -67,7 +67,7 @@ module type E = sig
 end
 
 (* Wrapper for the Minisat module *)
-module MS_W: E = struct
+module MS_W : E = struct
   type t = Minisat.t
 
   type var = Minisat.var
@@ -111,29 +111,29 @@ module MS_W: E = struct
   let negate = Minisat.negate
 
   module CMD = Cmd_encoding.Make (struct
-                   type lit = Minisat.lit
+    type lit = Minisat.lit
 
-                   type var = Minisat.var
+    type var = Minisat.var
 
-                   type solver = t
+    type solver = t
 
-                   let add_clause = add_clause
+    let add_clause = add_clause
 
-                   let negate = negate
+    let negate = negate
 
-                   let new_var = new_var
+    let new_var = new_var
 
-                   let positive_lit = positive_lit
-                 end)
+    let positive_lit = positive_lit
+  end)
 
   (* Only base case implemented. *)
   let add_at_most s lits k =
     assert (k = 1);
     CMD.(
       cmd_init lits defaults s |> fun t ->
-                                  add_cmd_c1 s t;
-                                  add_cmd_c2 s t;
-                                  add_cmd_c3 s t)
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t)
 
   (* Only base case implemented. *)
   let add_at_least s lits k =
@@ -145,43 +145,45 @@ module MS_W: E = struct
     assert (k = 1);
     CMD.(
       cmd_init lits defaults s |> fun t ->
-                                  add_cmd_c1 s t;
-                                  add_cmd_c2 s t;
-                                  add_cmd_c3 s t;
-                                  add_at_least_cmd s t)
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t;
+      add_at_least_cmd s t)
 end
 
 (* Wrapper for the Minicard module *)
 module MC_W : E = struct
-  type t = Minicard.solver
+  type t = Minicard.t
 
   type var = Minicard.var
 
   type lit = Minicard.lit
 
-  let create () = Minicard.(new solver)
+  let create = Minicard.create
 
-  let set_verbosity s verb = s#set_verbosity verb
+  let set_verbosity = Minicard.set_verbosity
 
-  let add_clause s lits = s#add_clause lits
+  let add_clause = Minicard.add_clause
 
-  let new_var s = s#new_var
+  let new_var = Minicard.new_var
 
-  let simplify s = s#simplify
+  let simplify = Minicard.simplify
 
   let solve s =
-    match s#solve with Minicard.SAT -> SAT | Minicard.UNSAT -> UNSAT
+    match Minicard.solve s with
+    | Minicard.SAT -> SAT
+    | Minicard.UNSAT -> UNSAT
 
-  let solve_all = assert false
+  let solve_all s vars = Minicard.get_models ~vars s
 
   let value_of s v =
-    match s#value_of v with
+    match Minicard.value_of s v with
     | Minicard.False -> False
     | Minicard.True -> True
     | Minicard.Unknown -> Unknown
 
   let get_stats s =
-    let x = s#get_stats in
+    let x = Minicard.get_stats s in
     {
       v = Minicard.(x.v);
       c = Minicard.(x.c);
@@ -197,11 +199,11 @@ module MC_W : E = struct
 
   let add_at_most s lits k =
     assert (k >= 0);
-    s#add_at_most lits k
+    Minicard.add_at_most s lits k
 
   let add_at_least s lits k =
     assert (k >= 0);
-    s#add_at_least lits k
+    Minicard.add_at_least s lits k
 
   let add_exactly s lits k =
     add_at_most s lits k;
@@ -1354,15 +1356,16 @@ module Make_SAT (S : S) : M = struct
           (IntSet.diff (IntSet.of_int m)
              (IntSet.union_list [ js0; js1; js2 ]))
           solver v;
-        (solver, {
-           nodes = v;
-           edges = w;
-           map_edges_r = iso_w_r;
-           map_edges_c = iso_w_c;
-           hyp = w';
-           map_hyp_r = iso_w'_r;
-           map_hyp_c = iso_w'_c;
-        })
+        ( solver,
+          {
+            nodes = v;
+            edges = w;
+            map_edges_r = iso_w_r;
+            map_edges_c = iso_w_c;
+            hyp = w';
+            map_hyp_r = iso_w'_r;
+            map_hyp_c = iso_w'_c;
+          } )
       with NOT_TOTAL -> raise_notrace NO_MATCH)
 
   (* Find first valid solution *)
@@ -1371,54 +1374,55 @@ module Make_SAT (S : S) : M = struct
     match S.solve solver with
     | UNSAT -> raise_notrace NO_MATCH
     | SAT ->
-       if
-         Big.(
-         P.check_match ~target:t.p ~pattern:p.p t_trans
-           (S.get_iso solver vars.nodes))
-       then (solver, vars)
-       else (
-         ban_solution solver vars;
-         filter_solve t p t_trans (solver, vars))
+        if
+          Big.(
+            P.check_match ~target:t.p ~pattern:p.p t_trans
+              (S.get_iso solver vars.nodes))
+        then (solver, vars)
+        else (
+          ban_solution solver vars;
+          filter_solve t p t_trans (solver, vars) )
 
-(* Mapping solver variables to matching variables *)
+  (* Mapping solver variables to matching variables *)
   module Lookup = struct
     type var_m = N of int * int | E of int * int | H of int * int
 
-    let wrap_ij_N i j = N(i, j)
+    let wrap_ij_N i j = N (i, j)
 
-    let wrap_ij_E i j = E(i, j)
+    let wrap_ij_E i j = E (i, j)
 
-    let wrap_ij_H i j = H(i, j)
+    let wrap_ij_H i j = H (i, j)
 
-    let create vars = Hashtbl.create (Base.size_matrix vars.nodes
-                                      + Base.size_matrix vars.nodes
-                                      + Base.size_matrix vars.hyp)
+    let create vars =
+      Hashtbl.create
+        ( Base.size_matrix vars.nodes
+        + Base.size_matrix vars.nodes
+        + Base.size_matrix vars.hyp )
 
     let fill wrap_f m t =
-      Base.iter_matrix (fun i j x ->
-          Hashtbl.add t x (wrap_f i j)) m
-
+      Base.iter_matrix (fun i j x -> Hashtbl.add t x (wrap_f i j)) m
   end
 
   (* Sets of occurrences *)
   module O = struct
     include Base.S_opt
               (Set.Make (struct
-                   type t = occ
+                type t = occ
 
-                   let compare { nodes = n0; edges = e0; hyper_edges = h0 }
-                         { nodes = n1; edges = e1; hyper_edges = h1 } =
-                     Base.(
-                       pair_compare Iso.compare
-                         (pair_compare Iso.compare Fun.compare)
-                         (n0, (e0, h0))
-                         (n1, (e1, h1)))
-                 end))
+                let compare { nodes = n0; edges = e0; hyper_edges = h0 }
+                    { nodes = n1; edges = e1; hyper_edges = h1 } =
+                  Base.(
+                    pair_compare Iso.compare
+                      (pair_compare Iso.compare Fun.compare)
+                      (n0, (e0, h0))
+                      (n1, (e1, h1)))
+              end))
               (struct
                 type t = occ
 
                 let pp = pp_occ
               end)
+
     exception Result of occ
 
     (* Find the first element in s satisfying p avoiding a full scan of s *)
@@ -1442,23 +1446,34 @@ module Make_SAT (S : S) : M = struct
         |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
     }
 
-  let occ_of_model model t vars = (* model is a list of true variables *)
-    List.fold_left (fun (res : occ) (v : S.var) ->
+  let occ_of_model model t vars =
+    (* model is a list of true variables *)
+    List.fold_left
+      (fun (res : occ) (v : S.var) ->
         match Hashtbl.find_opt t v with
-        | Some (Lookup.(N (i, j))) ->
-           { res with nodes = Iso.add i j res.nodes }
-        | Some (Lookup.(E (i, j))) ->
-           { res with edges = Iso.add
-                                (Base.safe @@ Iso.apply vars.map_edges_r i)
-                                (Base.safe @@ Iso.apply vars.map_edges_c j)
-                                res.edges }
-        | Some (Lookup.(H (i, j))) ->
-           { res with hyper_edges = Fun.add
-                                      (Base.safe @@ Iso.apply vars.map_hyp_r i)
-                                      (Base.safe @@ Iso.apply vars.map_hyp_c j)
-                                      res.hyper_edges }
+        | Some Lookup.(N (i, j)) ->
+            { res with nodes = Iso.add i j res.nodes }
+        | Some Lookup.(E (i, j)) ->
+            {
+              res with
+              edges =
+                Iso.add
+                  (Base.safe @@ Iso.apply vars.map_edges_r i)
+                  (Base.safe @@ Iso.apply vars.map_edges_c j)
+                  res.edges;
+            }
+        | Some Lookup.(H (i, j)) ->
+            {
+              res with
+              hyper_edges =
+                Fun.add
+                  (Base.safe @@ Iso.apply vars.map_hyp_r i)
+                  (Base.safe @@ Iso.apply vars.map_hyp_c j)
+                  res.hyper_edges;
+            }
         | None -> res)
-      { nodes = Iso.empty; edges = Iso.empty; hyper_edges = Fun.empty } model
+      { nodes = Iso.empty; edges = Iso.empty; hyper_edges = Fun.empty }
+      model
 
   let filter_solve_all t p t_trans (solver, vars) =
     S.simplify solver;
@@ -1470,10 +1485,17 @@ module Make_SAT (S : S) : M = struct
       Base.elements_matrix vars.edges
       |> List.rev_append (Base.elements_matrix vars.nodes)
       |> S.solve_all solver
-      |> List.fold_left (fun acc model ->
+      |> List.fold_left
+           (fun acc model ->
              let o = occ_of_model model h vars in
-             if P.check_match ~target:Big.(t.p) ~pattern:Big.(p.p) t_trans o.nodes
-             then O.add o acc else acc) O.empty)
+             if
+               P.check_match
+                 ~target:Big.(t.p)
+                 ~pattern:Big.(p.p)
+                 t_trans o.nodes
+             then O.add o acc
+             else acc)
+           O.empty)
 
   (* True when p is not a match *)
   let quick_unsat t p =
@@ -1508,9 +1530,8 @@ module Make_SAT (S : S) : M = struct
   end = struct
     let auto b b_trans =
       ( try
-          solver_setup b b
-          |> filter_solve_all b b b_trans
-          |> fun occs -> O.fold (fun o acc -> (o.nodes, o.edges) :: acc) occs []
+          solver_setup b b |> filter_solve_all b b b_trans |> fun occs ->
+          O.fold (fun o acc -> (o.nodes, o.edges) :: acc) occs []
         with NO_MATCH -> [] )
       |> List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e))
 
@@ -1530,9 +1551,9 @@ module Make_SAT (S : S) : M = struct
         else if quick_unsat t p then None
         else
           try
-            Some (solver_setup t p
-                  |> filter_solve t p t_trans
-                  |> fun (s, vars) -> occ_of_vars s vars)
+            Some
+              ( solver_setup t p |> filter_solve t p t_trans
+              |> fun (s, vars) -> occ_of_vars s vars )
           with NO_MATCH -> None)
 
     (* Compute all the occurrences, including isomorphic ones *)
@@ -1541,9 +1562,7 @@ module Make_SAT (S : S) : M = struct
         if Nodes.size p.n = 0 then raise NODE_FREE
         else if quick_unsat t p then O.empty
         else
-          try
-            solver_setup t p
-            |> filter_solve_all t p t_trans
+          try solver_setup t p |> filter_solve_all t p t_trans
           with NO_MATCH -> O.empty)
 
     let occurrences ~target:t ~pattern:p t_trans p_autos =
