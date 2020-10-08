@@ -179,8 +179,6 @@ let flip f x y = f y x
 
 let flip2 f a b c = f a c b
 
-let list_equal f a b = List.length a = List.length b && List.for_all2 f a b
-
 (* "\n12\n4\n678\n" -> ["12"; "4"; "678"] "01234\n" -> ["01234"] "0123" ->
    ["0123"] *)
 let parse_lines = Str.(split (regexp_string "\n"))
@@ -189,6 +187,50 @@ let parse_lines = Str.(split (regexp_string "\n"))
 let remove_block_delims s =
   if String.length s >= 2 then String.(sub s 1 (length s - 2))
   else invalid_arg "String \"" ^ s ^ "\" has no block delimiters"
+
+(* Funcitons on square matrices *)
+
+let list_of_rows m = Array.map Array.to_list m |> Array.to_list
+
+let list_of_cols m =
+  let rec scan acc j i =
+    if i < 0 then acc else scan (m.(i).(j) :: acc) j (i - 1)
+  and i = Array.length m - 1 in
+  let rec scan2 acc j =
+    if j < 0 then acc else scan2 (scan [] j i :: acc) (j - 1)
+  in
+  scan2 [] (if i < 0 then -1 else Array.length m.(0) - 1)
+
+let fold_matrix f m acc =
+  Array.fold_left
+    (fun (i, acc) r ->
+      ( i + 1,
+        Array.fold_left (fun (j, acc) x -> (j + 1, f acc i j x)) (0, acc) r
+        |> snd ))
+    (0, acc) m
+  |> snd
+
+let iter_matrix f m =
+  Array.iteri (fun i r ->
+    Array.iteri (fun j x -> f i j x) r) m
+
+let is_square_matrix m =
+  let x = Array.length m in
+  Array.for_all (fun r -> Array.length r = x) m
+
+let elements_matrix m =
+  fold_matrix (fun acc _ _ x -> x :: acc) m []
+
+(* m is assumed square *)
+let size_matrix m =
+  match Array.length m with
+  | 0 -> 0
+  | r -> r * Array.length m.(0)
+
+
+(* List utilities *)
+
+let list_equal f a b = List.length a = List.length b && List.for_all2 f a b
 
 (* List pretty printer *)
 let pp_list (out : Format.formatter) open_b pp_x sep l =
@@ -203,30 +245,6 @@ let pp_list (out : Format.formatter) open_b pp_x sep l =
   open_b out;
   pp l;
   Format.pp_close_box out ()
-
-let list_of_rows m = Array.map Array.to_list m |> Array.to_list
-
-let list_of_cols m =
-  let rec scan acc j i =
-    if i < 0 then acc else scan (m.(i).(j) :: acc) j (i - 1)
-  and i = Array.length m - 1 in
-  let rec scan2 acc j =
-    if j < 0 then acc else scan2 (scan [] j i :: acc) (j - 1)
-  in
-  scan2 [] (if i < 0 then -1 else Array.length m.(0) - 1)
-
-let fold_matrix m f acc =
-  Array.fold_left
-    (fun (i, acc) r ->
-      ( i + 1,
-        Array.fold_left (fun (j, acc) x -> (j + 1, f acc i j x)) (0, acc) r
-        |> snd ))
-    (0, acc) m
-  |> snd
-
-let is_square_matrix m =
-  let x = Array.length m in
-  Array.for_all (fun r -> Array.length r = x) m
 
 let list_of_pair (a, b) = [ a; b ]
 
