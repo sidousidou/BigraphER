@@ -66,6 +66,12 @@ module S_opt (S_lib : Set.S) (P : Pp with type t = S_lib.elt) = struct
 
   let choose = choose_opt
 
+  let is_singleton s =
+    try
+      fold (fun _ acc -> if acc > 1 then raise_notrace Exit else acc + 1) s 0
+      = 1
+    with Exit -> false
+
   let pp ~open_b ~first ~last ~sep out s =
     let open Format in
     open_b out ();
@@ -211,22 +217,17 @@ let fold_matrix f m acc =
   |> snd
 
 let iter_matrix f m =
-  Array.iteri (fun i r ->
-    Array.iteri (fun j x -> f i j x) r) m
+  Array.iteri (fun i r -> Array.iteri (fun j x -> f i j x) r) m
 
 let is_square_matrix m =
   let x = Array.length m in
   Array.for_all (fun r -> Array.length r = x) m
 
-let elements_matrix m =
-  fold_matrix (fun acc _ _ x -> x :: acc) m []
+let elements_matrix m = fold_matrix (fun acc _ _ x -> x :: acc) m []
 
 (* m is assumed square *)
 let size_matrix m =
-  match Array.length m with
-  | 0 -> 0
-  | r -> r * Array.length m.(0)
-
+  match Array.length m with 0 -> 0 | r -> r * Array.length m.(0)
 
 (* List utilities *)
 
