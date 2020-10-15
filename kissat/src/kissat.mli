@@ -19,18 +19,13 @@ type value = False | True | Unknown
 (** The type of Kissat solver solutions. *)
 type solution = SAT | UNSAT
 
-type stat = {
-  v : int;  (** Number of variables. *)
-  c : int;  (** Number of clauses. *)
-}
-
 val create : unit -> t
 
 val solve : t -> (solution, int) result
 
 val value_of : t -> var -> value
 
-val new_var : t -> var
+val var_of_int : int -> var
 
 val add_clause : t -> lit list -> unit
 
@@ -51,7 +46,5 @@ val print_stats : t -> unit
 val set_option : t -> string -> int -> int
 
 val get_option : t -> string -> int
-
-val get_stats : t -> stat
 
 (**/**)

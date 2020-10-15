@@ -44,11 +44,17 @@ CAMLprim value ocaml_kissat_solve(value block) {
   CAMLreturn (Val_int (kissat_solve(solver)));
 }
 
-void ocaml_kissat_add(value block, value lit) {
-  CAMLparam2(block, lit);
+void ocaml_kissat_add_clause(value block, value lits) {
+  CAMLparam2(block, lits);
 
   kissat *solver = solver_val(block);
-  kissat_add(solver, Int_val(lit));
+
+  while (lits != Val_emptylist) {
+    kissat_add(solver, Int_val(Field(lits, 0)));
+    lits = Field(lits, 1);
+  }
+
+  kissat_add(solver, Int_val(0));
 
   CAMLreturn0;
 }
@@ -76,7 +82,6 @@ CAMLprim value ocaml_kissat_set_option(value block, value name, value v) {
 
   CAMLreturn(Val_int(kissat_set_option(solver, String_val(name), Int_val(v))));
 }
-
 
 void ocaml_kissat_print_statistics(value block) {
   CAMLparam1(block);

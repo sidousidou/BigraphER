@@ -24,8 +24,8 @@ type occ = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
 let pp_occ out { nodes; edges; hyper_edges } =
   let open Format in
-  fprintf out "@[%s@[<v>%a%s@;%a%s@;%a%s@]@;%s@]" "{" Iso.pp nodes ";" Iso.pp
-    edges ";" Fun.pp hyper_edges ";" "}"
+  fprintf out "@[{@[<v>%a,@;%a,@;%a@]}@]" Iso.pp nodes Iso.pp edges Fun.pp
+    hyper_edges
 
 (* External solver interface *)
 module type E = sig
@@ -232,43 +232,33 @@ module KS_W : E = struct
 
   let set_verbosity _ _ = ()
 
+  let re_init_solver s =
+    match s.solver with
+    | Old _ ->
+        let _s = Kissat.create () in
+        List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
+        s.solver <- Fresh _s;
+        _s
+    | Fresh _s -> _s
+
   let add_clause s lits =
-    ( match s.solver with
-    | Fresh _s -> Kissat.add_clause _s lits
-    | Old _s -> () );
+    Kissat.add_clause (re_init_solver s) lits;
     s.clauses <- lits :: s.clauses
 
   let new_var s =
     s.vars <- s.vars + 1;
-    match s.solver with Fresh _s | Old _s -> Kissat.new_var _s
+    Kissat.var_of_int s.vars
 
   let simplify _ = ()
 
   (* Kissat does not support incremental solving *)
   let solve s =
-    ( match s.solver with
-    | Fresh _s ->
-        s.solver <- Old _s;
-        Kissat.solve _s
-    | Old _ ->
-        let _s = Kissat.create () in
-        let rec loop n =
-          assert (n >= 0);
-          if n = 0 then ()
-          else (
-            ignore @@ Kissat.new_var _s;
-            loop (n - 1) )
-        in
-        loop s.vars;
-        List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
-        s.solver <- Old _s;
-        Kissat.solve _s )
-    |> function
+    let _s = re_init_solver s in
+    s.solver <- Old _s;
+    Kissat.solve _s |> function
     | Ok Kissat.SAT -> SAT
     | Ok Kissat.UNSAT -> UNSAT
     | Error _ -> failwith "Kissat internal error"
-
-  let solve_all = assert false
 
   let value_of s v =
     match s.solver with
@@ -278,17 +268,41 @@ module KS_W : E = struct
         | Kissat.True -> True
         | Kissat.Unknown -> Unknown )
 
-  let get_stats s =
-    match s.solver with
-    | Fresh _s | Old _s ->
-        let res = Kissat.get_stats _s in
-        { v = res.v; c = res.c; mem = nan; cpu = nan }
-
   let positive_lit = Kissat.pos_lit
 
   let negative_lit = Kissat.neg_lit
 
   let negate = Kissat.negate
+
+  let solve_all s vars =
+    let rec build_solution s i res =
+      if i <= 0 then res
+      else
+        let var_i = Kissat.var_of_int i in
+        match value_of s var_i with
+        | True -> build_solution s (i - 1) (var_i :: res)
+        | False | Unknown -> build_solution s (i - 1) res
+    and blocking_clause =
+      List.fold_left
+        (fun res v ->
+          match value_of s v with
+          | True -> negative_lit v :: res
+          | False -> positive_lit v :: res
+          | Unknown -> assert false)
+        []
+    in
+    let rec solve_loop res =
+      match solve s with
+      | SAT ->
+          let solution = build_solution s s.vars [] in
+          blocking_clause vars |> add_clause s;
+          solve_loop (solution :: res)
+      | UNSAT -> res
+    in
+    solve_loop []
+
+  let get_stats s =
+    { v = s.vars; c = List.length s.clauses; mem = nan; cpu = nan }
 
   module CMD = Cmd_encoding.Make (struct
     type lit = Kissat.lit

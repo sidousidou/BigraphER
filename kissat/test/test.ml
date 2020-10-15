@@ -36,18 +36,19 @@ let split str ch =
  * Processes the content of [file], adds the variables and clauses to the solver
  * and returns a mapping between names and solver variables.
  *)
-let process_file solver file =
+let process_file solver n_vars file =
   (* Mapping between variable names and indices. *)
   let vars = Hashtbl.create 0 in
 
   (* Processes a line containing a variable definition. *)
-  let process_var line =
+  let process_var line n_vars =
     let l = String.length line in
     assert (l > 2);
     assert (line.[1] = ' ');
     let name = drop line 2 in
-    let v = new_var solver in
-    Hashtbl.add vars name v
+    let v = n_vars + 1 in
+    Hashtbl.add vars name (var_of_int v);
+    v
   in
 
   (* Processes a line containing a clause. *)
@@ -72,27 +73,29 @@ let process_file solver file =
   in
 
   (* Read a new line and processes its content. *)
-  let rec process_line () =
+  let rec process_line n_vars =
     try
       let line = input_line file in
-      ( if line = "" then ()
+      ( if line = "" then n_vars
       else
         match line.[0] with
-        | 'v' -> process_var line
-        | 'c' -> process_clause line
-        | '#' -> ()
-        | _ -> assert false );
-      process_line ()
+        | 'v' -> process_var line n_vars
+        | 'c' ->
+            process_clause line;
+            n_vars
+        | '#' -> n_vars
+        | _ -> assert false )
+      |> process_line
     with End_of_file -> ()
   in
 
-  process_line ();
+  ignore (process_line n_vars);
   vars
 
 (* Reads a given file and solves the instance. *)
 let solve file =
-  let solver = create () in
-  let vars = process_file solver file in
+  let solver = create () and n_vars = 0 in
+  let vars = process_file solver n_vars file in
   match solve solver with
   | Ok UNSAT -> printf "unsat\n"
   | Ok SAT ->

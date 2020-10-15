@@ -1,6 +1,4 @@
-type t_raw
-
-type t = { solver : t_raw; mutable vars : int; mutable clauses : int }
+type t
 
 type var = int (* positive integers *)
 
@@ -10,32 +8,29 @@ type value = False | True | Unknown
 
 type solution = SAT | UNSAT
 
-type stat = { v : int; c : int }
+external __create : unit -> t = "ocaml_kissat_new"
 
-external __create : unit -> t_raw = "ocaml_kissat_new"
+external __delete : t -> unit = "ocaml_kissat_delete"
 
-external __delete : t_raw -> unit = "ocaml_kissat_delete"
+external __solve : t -> int = "ocaml_kissat_solve"
 
-external __solve : t_raw -> int = "ocaml_kissat_solve"
+external add_clause : t -> lit list -> unit = "ocaml_kissat_add_clause"
 
-external __add : t_raw -> lit -> unit = "ocaml_kissat_add"
+external __value : t -> var -> int = "ocaml_kissat_value"
 
-external __value : t_raw -> var -> int = "ocaml_kissat_value"
+external get_option : t -> string -> int = "ocaml_kissat_get_option"
 
-external __get_option : t_raw -> string -> int = "ocaml_kissat_get_option"
+external set_option : t -> string -> int -> int = "ocaml_kissat_set_option"
 
-external __set_option : t_raw -> string -> int -> int
-  = "ocaml_kissat_set_option"
-
-external __print_stats : t_raw -> unit = "ocaml_kissat_print_statistics"
+external print_stats : t -> unit = "ocaml_kissat_print_statistics"
 
 let create () =
   let s = __create () in
   Gc.finalise __delete s;
-  { solver = s; vars = 0; clauses = 0 }
+  s
 
 let solve s =
-  match __solve s.solver with
+  match __solve s with
   | 10 -> Ok SAT
   | 20 -> Ok UNSAT
   | x ->
@@ -43,21 +38,8 @@ let solve s =
       Error x
 
 let value_of s var =
-  let v = __value s.solver var in
+  let v = __value s var in
   if v > 0 then True else if v < 0 then False else Unknown
-
-let new_var s =
-  s.vars <- s.vars + 1;
-  s.vars
-
-let add_clause s c =
-  List.iter
-    (fun l ->
-      assert (abs l <= s.vars);
-      __add s.solver l)
-    c;
-  __add s.solver 0;
-  s.clauses <- s.clauses + 1
 
 let pos_lit var =
   assert (var > 0);
@@ -74,10 +56,6 @@ let string_of_value = function
   | True -> "true"
   | Unknown -> "unknown"
 
-let print_stats s = __print_stats s.solver
-
-let set_option s opt x = __set_option s.solver opt x
-
-let get_option s opt = __get_option s.solver opt
-
-let get_stats s = { v = s.vars; c = s.clauses }
+let var_of_int x =
+  assert (x > 0);
+  x

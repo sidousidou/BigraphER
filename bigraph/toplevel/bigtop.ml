@@ -25,7 +25,13 @@ open Bigraph
 #install_printer Nodes.pp
 
 ;;
+#install_printer IntSet.pp
+
+;;
 #install_printer Iso.pp
+
+;;
+#install_printer Sym.PS.pp
 
 ;;
 #install_printer Fun.pp
