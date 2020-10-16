@@ -27,52 +27,54 @@ type stat = {
   cpu : float;  (** CPU time in seconds. *)
 }
 
-(** The class implementing MiniCARD solvers. *)
-class solver :
-  object
-    val solver : t
-    (** MiniCARD instance.*)
+val create : unit -> t
+(** Create a MiniCARD instance. *)
 
-    method add_clause : lit list -> unit
-    (** Add a clause (i.e. disjunction of literals) to the set of problem
-        constraints. A clause is represented as a list of literals. *)
+val add_clause : t -> lit list -> unit
+(** Add a clause (i.e. disjunction of literals) to the set of problem
+    constraints. A clause is represented as a list of literals. *)
 
-    method set_verbosity : int -> unit
-    (** Set verbosity level (0=silent, 1=some, 2=more). *)
+val set_verbosity : t -> int -> unit
+(** Set verbosity level (0=silent, 1=some, 2=more). *)
 
-    method add_at_most : lit list -> int -> unit
-    (** Add an {i at most} cardinality constraint to the set of problem
-        constraints. A clause is represented as a list of literals. *)
+val add_at_most : t -> lit list -> int -> unit
+(** Add an {i at most} cardinality constraint to the set of problem
+    constraints. A clause is represented as a list of literals. *)
 
-    method add_at_least : lit list -> int -> unit
-    (** Add an {i at least} cardinality constraint to the set of problem
-        constraints. A clause is represented as a list of literals. *)
+val add_at_least : t -> lit list -> int -> unit
+(** Add an {i at least} cardinality constraint to the set of problem
+    constraints. A clause is represented as a list of literals. *)
 
-    method new_var : var
-    (** Create a fresh variable. *)
+val new_var : t -> var
+(** Create a fresh variable. *)
 
-    method simplify : unit
-    (** [simplify] can be called before [solve] to simply the set of problem
-        constrains. It will first propagate all unit information and the
-        remove all satisfied constraints. *)
+val simplify : t -> unit
+(** [simplify] can be called before [solve] to simply the set of problem
+    constrains. It will first propagate all unit information and the remove
+    all satisfied constraints. *)
 
-    method solve : solution
-    (** Find a solution to the current sat problem. *)
+val solve : t -> solution
+(** Find a solution to the current sat problem. *)
 
-    method value_of : var -> value
-    (** Return the value associated to a variable. {b Note}, this method can
-        only be invoked after [solve] returned [SAT].
+val value_of : t -> var -> value
+(** Return the value associated to a variable. {b Note}, this method can only
+    be invoked after [solve] returned [SAT].
 
-        @raise Invalid_argument when the input variable is not a valid index. *)
+    @raise Invalid_argument when the input variable is not a valid index. *)
 
-    method get_stats : stat
-    (** Return some current statistics. {b Note}, this method can only be
-        invoked after [solve] has been invoked.*)
+val get_models : ?vars:var list -> t -> var list list
+(** Return a list of valid models. Note, only [true] variables are included
+    in each model. Optional argument [vars] is a list of variables that are
+    banned at each iteration. If this argument is missing all variables are
+    banned. *)
 
-    method print_stats : unit
-    (** Print some current statistics to standard output. {b Note}, this
-        method can only be invoked after [solve] has been invoked.*)
-  end
+val get_stats : t -> stat
+(** Return some current statistics. {b Note}, this method can only be invoked
+    after [solve] has been invoked.*)
+
+val print_stats : t -> unit
+(** Print some current statistics to standard output. {b Note}, this method
+    can only be invoked after [solve] has been invoked.*)
 
 val string_of_value : value -> string
 (** Convert a value to a string. *)

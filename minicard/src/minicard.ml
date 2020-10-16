@@ -27,7 +27,7 @@ external __add_clause : t -> lit list -> bool = "ocaml_minicard_add_clause"
 external __add_at_most : t -> lit list -> int -> bool
   = "ocaml_minicard_add_at_most"
 
-external simplify : t -> bool = "ocaml_minicard_simplify"
+external __simplify : t -> bool = "ocaml_minicard_simplify"
 
 external solve : t -> solution = "ocaml_minicard_solve"
 
@@ -41,52 +41,46 @@ external __mem_used : unit -> float = "ocaml_minicard_mem_used"
 
 external __cpu_time : unit -> float = "ocaml_minicard_cpu_time"
 
-class solver =
-  object (self)
-    val solver = create ()
+external __all_solutions_true : t -> var list -> var list list
+  = "ocaml_minicard_solve_all_true"
 
-    method new_var = new_var solver
+let add_clause solver l =
+  match l with [] -> () | _ -> ignore (__add_clause solver l)
 
-    method set_verbosity = set_verbosity solver
+let simplify solver = ignore (__simplify solver)
 
-    method add_clause l =
-      match l with [] -> () | _ -> ignore (__add_clause solver l)
+let add_at_most solver l k =
+  match l with [] -> () | _ -> ignore (__add_at_most solver l k)
 
-    method add_at_most l k =
-      match l with [] -> () | _ -> ignore (__add_at_most solver l k)
+let add_at_least solver l k =
+  add_at_most solver (List.map negate l) (List.length l - k)
 
-    method add_at_least l k =
-      self#add_at_most (List.map negate l) (List.length l - k)
+let value_of solver v =
+  try
+    match __value_of solver v with
+    | 0 -> False
+    | 1 -> True
+    | 2 -> Unknown
+    | _ -> assert false
+  with Failure _ -> invalid_arg "Minicard.value_of"
 
-    method simplify = ignore (simplify solver)
+let get_models ?(vars = []) solver = __all_solutions_true solver vars
 
-    method solve = solve solver
+let get_stats solver =
+  {
+    v = n_vars solver;
+    c = n_clauses solver;
+    mem = __mem_used ();
+    cpu = __cpu_time ();
+  }
 
-    method value_of v =
-      try
-        match __value_of solver v with
-        | 0 -> False
-        | 1 -> True
-        | 2 -> Unknown
-        | _ -> assert false
-      with Failure _ -> invalid_arg "Minicard.value_of"
-
-    method get_stats =
-      {
-        v = n_vars solver;
-        c = n_clauses solver;
-        mem = __mem_used ();
-        cpu = __cpu_time ();
-      }
-
-    method print_stats =
-      let res = self#get_stats in
-      Printf.(
-        printf "Number of variables   : %-8d\n" res.v;
-        printf "Number of clauses     : %-8d\n" res.c;
-        printf "Memory used           : %.2f MB\n" res.mem;
-        printf "CPU time              : %g s\n" res.cpu)
-  end
+let print_stats solver =
+  let res = get_stats solver in
+  Printf.(
+    printf "Number of variables   : %-8d\n" res.v;
+    printf "Number of clauses     : %-8d\n" res.c;
+    printf "Memory used           : %.2f MB\n" res.mem;
+    printf "CPU time              : %g s\n" res.cpu)
 
 let string_of_value = function
   | False -> "false"

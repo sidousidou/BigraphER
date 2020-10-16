@@ -18,7 +18,12 @@
     BIGSOLVER
     MCARD
     (run %{exe} %{bin:bigrapher} %{list}
-      %{project_root}/shippable/testresults parser-junit-MCARD.xml)))))
+      %{project_root}/shippable/testresults parser-junit-MCARD.xml))
+   (setenv
+    BIGSOLVER
+    KSAT
+    (run %{exe} %{bin:bigrapher} %{list}
+      %{project_root}/shippable/testresults parser-junit-KSAT.xml)))))
 
 (rule
  (deps
@@ -79,4 +84,16 @@
  (deps
   (:exe test_speed.exe))
  (action
-  (run %{exe} %{bin:bigrapher})))
+  (progn
+   (setenv
+    BIGSOLVER
+    MSAT
+    (run %{exe} %{bin:bigrapher}))
+   (setenv
+    BIGSOLVER
+    MCARD
+    (run %{exe} %{bin:bigrapher}))
+   (setenv
+    BIGSOLVER
+    KSAT
+    (run %{exe} %{bin:bigrapher})))))

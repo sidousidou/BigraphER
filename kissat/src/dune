@@ -1,0 +1,65 @@
+(data_only_dirs kissat_c)
+
+(rule
+ (deps
+  (source_tree kissat_c))
+ (targets libkissat_c.a dllkissat_c.so)
+ (enabled_if
+  (and
+   (<> %{system} freebsd)
+   (<> %{system} netbsd)
+   (<> %{system} openbsd)))
+ (action
+  (progn
+   (chdir
+    kissat_c
+    (progn
+     (run ./configure --ultimate --sat -O3 -fPIC)
+     (run make lib dylib)))
+   (run cp kissat_c/build/libkissat.a libkissat_c.a)
+   (run cp kissat_c/build/libkissat.so dllkissat_c.so))))
+
+(rule
+ (deps
+  (source_tree kissat_c))
+ (targets libkissat_c.a dllkissat_c.so)
+ (enabled_if
+  (or
+   (= %{system} freebsd)
+   (= %{system} netbsd)
+   (= %{system} openbsd)))
+ (action
+  (progn
+   (chdir
+    kissat_c
+    (progn
+     (run ./configure --ultimate --sat -O3 -fPIC)
+     (run gmake lib dylib)))
+   (run cp kissat_c/build/libkissat.a libkissat_c.a)
+   (run cp kissat_c/build/libkissat.so dllkissat_c.so))))
+
+(library
+ (name kissat)
+ (foreign_archives kissat_c)
+ (public_name kissat)
+ (foreign_stubs
+  (language c)
+  (names stubs)
+  (flags
+   (:include flags.sexp)))
+ (c_library_flags
+  (:include libs.sexp))
+ (synopsis "OCaml bindings for the Kissat SAT Solver"))
+
+(rule
+ (targets flags.sexp libs.sexp)
+ (deps
+  (:discover config/discover.exe)
+  libkissat_c.a
+  dllkissat_c.so)
+ (action
+  (run %{discover})))
+
+(documentation
+ (package kissat)
+ (mld_files (:standard)))

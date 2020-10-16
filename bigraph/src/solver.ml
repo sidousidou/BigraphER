@@ -1,5 +1,5 @@
 (* Solver type *)
-type solver_t = MSAT | MCARD
+type solver_t = MSAT | MCARD | KSAT
 
 (* Solver type wrapper*)
 module type ST = sig
@@ -24,8 +24,8 @@ type occ = { nodes : Iso.t; edges : Iso.t; hyper_edges : Fun.t }
 
 let pp_occ out { nodes; edges; hyper_edges } =
   let open Format in
-  fprintf out "@[%s@[<v>%a%s@;%a%s@;%a%s@]@;%s@]" "{" Iso.pp nodes ";" Iso.pp
-    edges ";" Fun.pp hyper_edges ";" "}"
+  fprintf out "@[{@[<v>%a,@;%a,@;%a@]}@]" Iso.pp nodes Iso.pp edges Fun.pp
+    hyper_edges
 
 (* External solver interface *)
 module type E = sig
@@ -53,6 +53,8 @@ module type E = sig
 
   val solve : t -> solution
 
+  val solve_all : t -> var list -> var list list
+
   val value_of : t -> var -> value
 
   val get_stats : t -> stats
@@ -66,33 +68,35 @@ end
 
 (* Wrapper for the Minisat module *)
 module MS_W : E = struct
-  type t = Minisat.solver
+  type t = Minisat.t
 
   type var = Minisat.var
 
   type lit = Minisat.lit
 
-  let create () = Minisat.(new solver)
+  let create = Minisat.create
 
-  let set_verbosity s verb = s#set_verbosity verb
+  let set_verbosity = Minisat.set_verbosity
 
-  let add_clause s lits = s#add_clause lits
+  let add_clause = Minisat.add_clause
 
-  let new_var s = s#new_var
+  let new_var = Minisat.new_var
 
-  let simplify s = s#simplify
+  let simplify = Minisat.simplify
 
   let solve s =
-    match s#solve with Minisat.SAT -> SAT | Minisat.UNSAT -> UNSAT
+    match Minisat.solve s with Minisat.SAT -> SAT | Minisat.UNSAT -> UNSAT
+
+  let solve_all s vars = Minisat.get_models ~vars s
 
   let value_of s v =
-    match s#value_of v with
+    match Minisat.value_of s v with
     | Minisat.False -> False
     | Minisat.True -> True
     | Minisat.Unknown -> Unknown
 
   let get_stats s =
-    let x = s#get_stats in
+    let x = Minisat.get_stats s in
     {
       v = Minisat.(x.v);
       c = Minisat.(x.c);
@@ -100,146 +104,27 @@ module MS_W : E = struct
       cpu = Minisat.(x.cpu);
     }
 
-  let positive_lit = Minisat.(pos_lit)
+  let positive_lit = Minisat.pos_lit
 
-  let negative_lit = Minisat.(neg_lit)
+  let negative_lit = Minisat.neg_lit
 
-  let negate = Minisat.(negate)
+  let negate = Minisat.negate
 
-  (* Disjunctions (all possible pairs) of negative literals *)
-  let add_at_most_naive s l =
-    (* Boolean encoding of at most one TRUE. Most common cases are hard-coded *)
-    let rec _at_most acc = function
-      | [] | [ _ ] -> acc
-      | [ a; b ] -> (a, b) :: acc
-      | [ a; b; c ] -> (a, b) :: (a, c) :: (b, c) :: acc
-      | [ a; b; c; d ] ->
-          (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
-      | [ a; b; c; d; e ] ->
-          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
-          :: (c, d) :: (c, e) :: (d, e) :: acc
-      | [ a; b; c; d; e; f ] ->
-          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
-          :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
-          :: (d, f) :: (e, f) :: acc
-      | x :: rest ->
-          _at_most
-            (List.rev_append (List.rev_map (fun y -> (x, y)) rest) acc)
-            rest
-    in
-    List.iter
-      (fun (a, b) -> add_clause s [ negate a; negate b ])
-      (_at_most [] l)
+  module CMD = Cmd_encoding.Make (struct
+    type lit = Minisat.lit
 
-  (* ++++++++++++++++++++ Commander variable encoding ++++++++++++++++++++ *)
-  module CMD = struct
-    type group = lit list
+    type var = Minisat.var
 
-    type cmd_tree = Leaf of group | Node of (lit * cmd_tree) list
+    type solver = t
 
-    (* Parameters t and g are used for configure the commander-variable
-       encoding *)
-    type params = { t : int; g : int }
+    let add_clause = add_clause
 
-    let defaults = { t = 6; g = 3 }
+    let negate = negate
 
-    (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then
-       [0;1] [2;3] to avoid singletons. Also if [0;1] [2] then [0;1;2] *)
-    let group l n g =
-      assert (g > 1);
-      assert (n >= g);
-      if List.length l <= n then None
-      else
-        let x, i, res =
-          List.fold_left
-            (fun (group, i, res) x ->
-              if i >= g then ([ x ], 1, group :: res)
-              else (x :: group, i + 1, res))
-            ([], 0, []) l
-        in
-        if i = 1 then
-          if g > 2 then
-            match res with
-            | (v :: vs) :: res -> Some ((x @ [ v ]) :: vs :: res)
-            | _ -> assert false
-          else
-            match res with
-            | v :: res -> Some ((x @ v) :: res)
-            | _ -> assert false
-        else Some (x :: res)
+    let new_var = new_var
 
-    (* Build a tree of commander variables. Input is a tree, output split the
-       root and add a level of variables. *)
-    let cmd_init l p s =
-      let rec _cmd_init n g t =
-        match t with
-        | Node cmd_l -> (
-            match group cmd_l n g with
-            | Some cmd_l' ->
-                Node
-                  (List.fold_left
-                     (fun acc g -> (positive_lit (new_var s), Node g) :: acc)
-                     [] cmd_l')
-                |> _cmd_init n g
-            (* Do not add an additional level of commander variables *)
-            | None -> t )
-        | Leaf vars -> (
-            match group vars n g with
-            | Some cmd_l ->
-                Node
-                  (List.fold_left
-                     (fun acc g -> (positive_lit (new_var s), Leaf g) :: acc)
-                     [] cmd_l)
-                |> _cmd_init n g
-            (* Do not add an additional level of commander variables *)
-            | None -> t )
-      in
-      _cmd_init p.t p.g (Leaf l)
-
-    (* Scan the tree and add constraints:
-     *  1. at most one TRUE in every group
-     *  2. if commander variable is TRUE then at least one TRUE in its group
-     *  3. if commander variable is FALSE then no TRUE in its group 4. exactly
-     *     one commander variable is true. *)
-
-    (* [X0, X1, X2] -> [(!X0 or !X1), (!X0 or !X2), (!X1 or !X2)] *)
-    let rec add_cmd_c1 s = function
-      | Leaf g -> add_at_most_naive s g
-      | Node cmd_g ->
-          let cmd_vars, sub = List.split cmd_g in
-          add_at_most_naive s cmd_vars;
-          List.iter (fun t -> add_cmd_c1 s t) sub
-
-    (* (C, [X0, X1, X2]) -> [!C or X0 or X1 or X2] *)
-    let add_cmd_c2 s t =
-      let rec aux = function
-        | Leaf g -> g
-        | Node cmd_g ->
-            List.iter
-              (fun (cmd_v, sub) -> add_clause s (negate cmd_v :: aux sub))
-              cmd_g;
-            Base.list_rev_split_left cmd_g
-      in
-      aux t |> ignore
-
-    (* (C, [X0, X1, X2]) -> [(C or !X0), (C or !X1), (C or !X2)] *)
-    let add_cmd_c3 s t =
-      let rec aux = function
-        | Leaf g -> g
-        | Node cmd_g ->
-            List.iter
-              (fun (cmd_v, sub) ->
-                aux sub
-                |> List.iter (fun l -> add_clause s [ cmd_v; negate l ]))
-              cmd_g;
-            Base.list_rev_split_left cmd_g
-      in
-      aux t |> ignore
-
-    let add_at_least_cmd s = function
-      | Leaf g -> add_clause s g
-      | Node cmd_g -> add_clause s (Base.list_rev_split_left cmd_g)
-  end
+    let positive_lit = positive_lit
+  end)
 
   (* Only base case implemented. *)
   let add_at_most s lits k =
@@ -268,33 +153,37 @@ end
 
 (* Wrapper for the Minicard module *)
 module MC_W : E = struct
-  type t = Minicard.solver
+  type t = Minicard.t
 
   type var = Minicard.var
 
   type lit = Minicard.lit
 
-  let create () = Minicard.(new solver)
+  let create = Minicard.create
 
-  let set_verbosity s verb = s#set_verbosity verb
+  let set_verbosity = Minicard.set_verbosity
 
-  let add_clause s lits = s#add_clause lits
+  let add_clause = Minicard.add_clause
 
-  let new_var s = s#new_var
+  let new_var = Minicard.new_var
 
-  let simplify s = s#simplify
+  let simplify = Minicard.simplify
 
   let solve s =
-    match s#solve with Minicard.SAT -> SAT | Minicard.UNSAT -> UNSAT
+    match Minicard.solve s with
+    | Minicard.SAT -> SAT
+    | Minicard.UNSAT -> UNSAT
+
+  let solve_all s vars = Minicard.get_models ~vars s
 
   let value_of s v =
-    match s#value_of v with
+    match Minicard.value_of s v with
     | Minicard.False -> False
     | Minicard.True -> True
     | Minicard.Unknown -> Unknown
 
   let get_stats s =
-    let x = s#get_stats in
+    let x = Minicard.get_stats s in
     {
       v = Minicard.(x.v);
       c = Minicard.(x.c);
@@ -310,15 +199,150 @@ module MC_W : E = struct
 
   let add_at_most s lits k =
     assert (k >= 0);
-    s#add_at_most lits k
+    Minicard.add_at_most s lits k
 
   let add_at_least s lits k =
     assert (k >= 0);
-    s#add_at_least lits k
+    Minicard.add_at_least s lits k
 
   let add_exactly s lits k =
     add_at_most s lits k;
     add_at_least s lits k
+end
+
+(* Wrapper for the Kissat module *)
+module KS_W : E = struct
+  type var = Kissat.var
+
+  type lit = Kissat.lit
+
+  type w =
+    | Fresh of Kissat.t (* solve() has not been invoked yet *)
+    | Old of Kissat.t
+
+  (* solve() has been already invoked *)
+  and t = {
+    mutable solver : w;
+    mutable vars : int;
+    mutable clauses : lit list list;
+  }
+
+  let create () =
+    { solver = Fresh (Kissat.create ()); vars = 0; clauses = [] }
+
+  let set_verbosity _ _ = ()
+
+  let re_init_solver s =
+    match s.solver with
+    | Old _ ->
+        let _s = Kissat.create () in
+        List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
+        s.solver <- Fresh _s;
+        _s
+    | Fresh _s -> _s
+
+  let add_clause s lits =
+    Kissat.add_clause (re_init_solver s) lits;
+    s.clauses <- lits :: s.clauses
+
+  let new_var s =
+    s.vars <- s.vars + 1;
+    Kissat.var_of_int s.vars
+
+  let simplify _ = ()
+
+  (* Kissat does not support incremental solving *)
+  let solve s =
+    let _s = re_init_solver s in
+    s.solver <- Old _s;
+    Kissat.solve _s |> function
+    | Ok Kissat.SAT -> SAT
+    | Ok Kissat.UNSAT -> UNSAT
+    | Error _ -> failwith "Kissat internal error"
+
+  let value_of s v =
+    match s.solver with
+    | Fresh _s | Old _s -> (
+        match Kissat.value_of _s v with
+        | Kissat.False -> False
+        | Kissat.True -> True
+        | Kissat.Unknown -> Unknown )
+
+  let positive_lit = Kissat.pos_lit
+
+  let negative_lit = Kissat.neg_lit
+
+  let negate = Kissat.negate
+
+  let solve_all s vars =
+    let rec build_solution s i res =
+      if i <= 0 then res
+      else
+        let var_i = Kissat.var_of_int i in
+        match value_of s var_i with
+        | True -> build_solution s (i - 1) (var_i :: res)
+        | False | Unknown -> build_solution s (i - 1) res
+    and blocking_clause =
+      List.fold_left
+        (fun res v ->
+          match value_of s v with
+          | True -> negative_lit v :: res
+          | False -> positive_lit v :: res
+          | Unknown -> assert false)
+        []
+    in
+    let rec solve_loop res =
+      match solve s with
+      | SAT ->
+          let solution = build_solution s s.vars [] in
+          blocking_clause vars |> add_clause s;
+          solve_loop (solution :: res)
+      | UNSAT -> res
+    in
+    solve_loop []
+
+  let get_stats s =
+    { v = s.vars; c = List.length s.clauses; mem = nan; cpu = nan }
+
+  module CMD = Cmd_encoding.Make (struct
+    type lit = Kissat.lit
+
+    type var = Kissat.var
+
+    type solver = t
+
+    let add_clause = add_clause
+
+    let negate = negate
+
+    let new_var = new_var
+
+    let positive_lit = positive_lit
+  end)
+
+  (* Only base case implemented. *)
+  let add_at_most s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t)
+
+  (* Only base case implemented. *)
+  let add_at_least s lits k =
+    assert (k = 1);
+    CMD.(cmd_init lits defaults s |> add_at_least_cmd s)
+
+  (* Only base case implemented. *)
+  let add_exactly s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t;
+      add_at_least_cmd s t)
 end
 
 module type S = sig
@@ -455,21 +479,21 @@ module Make (ST : ST) (E : E) : S = struct
 
   (* Generate an iso from a matrix of assignments *)
   let get_iso s m =
-    Base.fold_matrix m
+    Base.fold_matrix
       (fun iso i j x ->
         match value_of s x with
         | True -> Iso.add i j iso
         | False | Unknown -> iso)
-      Iso.empty
+      m Iso.empty
 
   (* Generate a function from a matrix of assignments *)
   let get_fun s m =
-    Base.fold_matrix m
+    Base.fold_matrix
       (fun f i j x ->
         match value_of s x with
         | True -> Fun.add i j f
         | False | Unknown -> f)
-      Fun.empty
+      m Fun.empty
 end
 
 (* Instance of MiniSat solver *)
@@ -493,6 +517,17 @@ module MC =
     end)
     ((
     MC_W : E ))
+
+(*Instance of Kissat solver *)
+module KS =
+  Make
+    (struct
+      let solver_type = KSAT
+
+      let string_of_solver_t = "Kissat"
+    end)
+    ((
+    KS_W : E ))
 
 (* The type of a bigraph matching engine *)
 module type M = sig
@@ -1280,25 +1315,11 @@ module Make_SAT (S : S) : M = struct
   end
 
   let ban_solution solver vars =
-    let aux m = Base.fold_matrix m (fun acc _ _ x -> x :: acc) [] in
+    let aux m = Base.fold_matrix (fun acc _ _ x -> x :: acc) m [] in
     aux vars.nodes @ aux vars.edges |> S.ban solver
 
-  let rec filter_loop solver t p vars t_trans =
-    S.simplify solver;
-    match S.solve solver with
-    | UNSAT -> raise_notrace NO_MATCH
-    | SAT ->
-        if
-          Big.(
-            P.check_match ~target:t.p ~pattern:p.p t_trans
-              (S.get_iso solver vars.nodes))
-        then (solver, vars)
-        else (
-          ban_solution solver vars;
-          filter_loop solver t p vars t_trans )
-
-  (* Compute isos from nodes in the pattern to nodes in the target *)
-  let aux_match t p t_trans =
+  (* Set up solver *)
+  let solver_setup t p =
     Big.(
       try
         let solver = S.create ()
@@ -1349,7 +1370,7 @@ module Make_SAT (S : S) : M = struct
           (IntSet.diff (IntSet.of_int m)
              (IntSet.union_list [ js0; js1; js2 ]))
           solver v;
-        let vars =
+        ( solver,
           {
             nodes = v;
             edges = w;
@@ -1358,10 +1379,137 @@ module Make_SAT (S : S) : M = struct
             hyp = w';
             map_hyp_r = iso_w'_r;
             map_hyp_c = iso_w'_c;
-          }
-        in
-        filter_loop solver t p vars t_trans
+          } )
       with NOT_TOTAL -> raise_notrace NO_MATCH)
+
+  (* Find first valid solution *)
+  let rec filter_solve t p t_trans (solver, vars) =
+    S.simplify solver;
+    match S.solve solver with
+    | UNSAT -> raise_notrace NO_MATCH
+    | SAT ->
+        if
+          Big.(
+            P.check_match ~target:t.p ~pattern:p.p t_trans
+              (S.get_iso solver vars.nodes))
+        then (solver, vars)
+        else (
+          ban_solution solver vars;
+          filter_solve t p t_trans (solver, vars) )
+
+  (* Mapping solver variables to matching variables *)
+  module Lookup = struct
+    type var_m = N of int * int | E of int * int | H of int * int
+
+    let wrap_ij_N i j = N (i, j)
+
+    let wrap_ij_E i j = E (i, j)
+
+    let wrap_ij_H i j = H (i, j)
+
+    let create vars =
+      Hashtbl.create
+        ( Base.size_matrix vars.nodes
+        + Base.size_matrix vars.nodes
+        + Base.size_matrix vars.hyp )
+
+    let fill wrap_f m t =
+      Base.iter_matrix (fun i j x -> Hashtbl.add t x (wrap_f i j)) m
+  end
+
+  (* Sets of occurrences *)
+  module O = struct
+    include Base.S_opt
+              (Set.Make (struct
+                type t = occ
+
+                let compare { nodes = n0; edges = e0; hyper_edges = h0 }
+                    { nodes = n1; edges = e1; hyper_edges = h1 } =
+                  Base.(
+                    pair_compare Iso.compare
+                      (pair_compare Iso.compare Fun.compare)
+                      (n0, (e0, h0))
+                      (n1, (e1, h1)))
+              end))
+              (struct
+                type t = occ
+
+                let pp = pp_occ
+              end)
+
+    exception Result of occ
+
+    (* Find the first element in s satisfying p avoiding a full scan of s *)
+    let scan_first p s =
+      try
+        fold
+          (fun o res -> if p o then raise_notrace (Result o) else res)
+          s None
+      with Result o -> Some o
+  end
+
+  let occ_of_vars s vars =
+    {
+      nodes = S.get_iso s vars.nodes;
+      edges =
+        S.get_iso s vars.edges
+        |> Iso.transform ~iso_dom:vars.map_edges_r
+             ~iso_codom:vars.map_edges_c;
+      hyper_edges =
+        S.get_fun s vars.hyp
+        |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
+    }
+
+  let occ_of_model model t vars =
+    (* model is a list of true variables *)
+    List.fold_left
+      (fun (res : occ) (v : S.var) ->
+        match Hashtbl.find_opt t v with
+        | Some Lookup.(N (i, j)) ->
+            { res with nodes = Iso.add i j res.nodes }
+        | Some Lookup.(E (i, j)) ->
+            {
+              res with
+              edges =
+                Iso.add
+                  (Base.safe @@ Iso.apply vars.map_edges_r i)
+                  (Base.safe @@ Iso.apply vars.map_edges_c j)
+                  res.edges;
+            }
+        | Some Lookup.(H (i, j)) ->
+            {
+              res with
+              hyper_edges =
+                Fun.add
+                  (Base.safe @@ Iso.apply vars.map_hyp_r i)
+                  (Base.safe @@ Iso.apply vars.map_hyp_c j)
+                  res.hyper_edges;
+            }
+        | None -> res)
+      { nodes = Iso.empty; edges = Iso.empty; hyper_edges = Fun.empty }
+      model
+
+  let filter_solve_all t p t_trans (solver, vars) =
+    S.simplify solver;
+    Lookup.(
+      let h = create vars in
+      fill wrap_ij_N vars.nodes h;
+      fill wrap_ij_E vars.edges h;
+      fill wrap_ij_H vars.hyp h;
+      Base.elements_matrix vars.edges
+      |> List.rev_append (Base.elements_matrix vars.nodes)
+      |> S.solve_all solver
+      |> List.fold_left
+           (fun acc model ->
+             let o = occ_of_model model h vars in
+             if
+               P.check_match
+                 ~target:Big.(t.p)
+                 ~pattern:Big.(p.p)
+                 t_trans o.nodes
+             then O.add o acc
+             else acc)
+           O.empty)
 
   (* True when p is not a match *)
   let quick_unsat t p =
@@ -1375,18 +1523,6 @@ module Make_SAT (S : S) : M = struct
          > IntSet.cardinal (Place.orphans t.p)
       || Link.closed_edges p.l > Link.closed_edges t.l
       || Link.max_ports p.l > Link.max_ports t.l)
-
-  let occ_of_vars s vars =
-    {
-      nodes = S.get_iso s vars.nodes;
-      edges =
-        S.get_iso s vars.edges
-        |> Iso.transform ~iso_dom:vars.map_edges_r
-             ~iso_codom:vars.map_edges_c;
-      hyper_edges =
-        S.get_fun s vars.hyp
-        |> Fun.transform ~iso_dom:vars.map_hyp_r ~iso_codom:vars.map_hyp_c;
-    }
 
   (* Memoised interface *)
   module Memo : sig
@@ -1407,22 +1543,11 @@ module Make_SAT (S : S) : M = struct
       target:Big.t -> pattern:Big.t -> Sparse.t -> occ list
   end = struct
     let auto b b_trans =
-      let rem_id res =
-        List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e)) res
-      in
       ( try
-          let s, vars = aux_match b b b_trans in
-          let rec loop_occur res =
-            ban_solution s vars;
-            try
-              ignore (filter_loop s b b vars b_trans);
-              loop_occur
-                ((S.get_iso s vars.nodes, S.get_iso s vars.edges) :: res)
-            with NO_MATCH -> res
-          in
-          loop_occur [ (S.get_iso s vars.nodes, S.get_iso s vars.edges) ]
+          solver_setup b b |> filter_solve_all b b b_trans |> fun occs ->
+          O.fold (fun o acc -> (o.nodes, o.edges) :: acc) occs []
         with NO_MATCH -> [] )
-      |> rem_id
+      |> List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e))
 
     let occurs ~target:t ~pattern:p t_trans =
       Big.(
@@ -1430,7 +1555,7 @@ module Make_SAT (S : S) : M = struct
           if Nodes.size p.n = 0 then true
           else if quick_unsat t p then false
           else (
-            ignore (aux_match t p t_trans);
+            ignore (solver_setup t p |> filter_solve t p t_trans);
             true )
         with NO_MATCH -> false)
 
@@ -1440,40 +1565,10 @@ module Make_SAT (S : S) : M = struct
         else if quick_unsat t p then None
         else
           try
-            let s, vars = aux_match t p t_trans in
-            Some (occ_of_vars s vars)
+            Some
+              ( solver_setup t p |> filter_solve t p t_trans
+              |> fun (s, vars) -> occ_of_vars s vars )
           with NO_MATCH -> None)
-
-    (* Sets of occurrences *)
-    module O = struct
-      include Base.S_opt
-                (Set.Make (struct
-                  type t = occ
-
-                  let compare { nodes = n0; edges = e0; hyper_edges = h0 }
-                      { nodes = n1; edges = e1; hyper_edges = h1 } =
-                    Base.(
-                      pair_compare Iso.compare
-                        (pair_compare Iso.compare Fun.compare)
-                        (n0, (e0, h0))
-                        (n1, (e1, h1)))
-                end))
-                (struct
-                  type t = occ
-
-                  let pp = pp_occ
-                end)
-
-      exception Result of occ
-
-      (* Find the first element in s satisfying p avoiding a full scan of s *)
-      let scan_first p s =
-        try
-          fold
-            (fun o res -> if p o then raise_notrace (Result o) else res)
-            s None
-        with Result o -> Some o
-    end
 
     (* Compute all the occurrences, including isomorphic ones *)
     let occurrences_raw_aux ~target:t ~pattern:p t_trans =
@@ -1481,16 +1576,7 @@ module Make_SAT (S : S) : M = struct
         if Nodes.size p.n = 0 then raise NODE_FREE
         else if quick_unsat t p then O.empty
         else
-          try
-            let s, vars = aux_match t p t_trans in
-            let rec loop_occur (res : O.t) =
-              ban_solution s vars;
-              try
-                ignore (filter_loop s t p vars t_trans);
-                loop_occur (O.add (occ_of_vars s vars) res)
-              with NO_MATCH -> res
-            in
-            loop_occur (O.singleton (occ_of_vars s vars))
+          try solver_setup t p |> filter_solve_all t p t_trans
           with NO_MATCH -> O.empty)
 
     let occurrences ~target:t ~pattern:p t_trans p_autos =
