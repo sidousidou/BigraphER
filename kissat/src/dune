@@ -24,7 +24,7 @@
   (source_tree kissat_c))
  (targets libkissat_c.a dllkissat_c.so)
  (enabled_if
-  (and
+  (or
    (= %{system} freebsd)
    (= %{system} netbsd)
    (= %{system} openbsd)))
