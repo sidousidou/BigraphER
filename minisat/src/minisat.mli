@@ -31,7 +31,11 @@ type stat = {
 class solver :
   object
     val solver : t
+    val cnf_store : string list
+
     (** MiniSAT instance.*)
+
+    method dump_cnf : unit
 
     method add_clause : lit list -> unit
     (** Add a clause (i.e. disjunction of literals) to the set of problem
