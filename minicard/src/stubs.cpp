@@ -264,7 +264,7 @@ CAMLprim value build_solution(Solver* _solver) {
 // Only return true vars in each solution
 CAMLprim value ocaml_minicard_solve_all_true(value solver, value vars) {
   CAMLparam2 (solver, vars);
-  CAMLlocal2 (x, res);
+  CAMLlocal3 (x, res, block_sol);
 
   vec<Lit> blocking_clause;
   Solver* _solver = solver_val(solver);
@@ -278,7 +278,8 @@ CAMLprim value ocaml_minicard_solve_all_true(value solver, value vars) {
         blocking_clause.push(mkLit(i, _solver->modelValue(i) == l_True));
       }
       _solver->addClause(blocking_clause);
-      res = append(build_solution(_solver), res);
+      block_sol = build_solution(_solver);
+      res = append(block_sol, res);
     }
   } else {
     while (_solver->solve()) {
@@ -290,7 +291,8 @@ CAMLprim value ocaml_minicard_solve_all_true(value solver, value vars) {
         x = Field(x, 1);
       }
       _solver->addClause(blocking_clause);
-      res = append(build_solution(_solver), res);
+      block_sol = build_solution(_solver);
+      res = append(block_sol, res);
     }
   }
 
