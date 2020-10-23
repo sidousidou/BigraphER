@@ -96,7 +96,7 @@ CAMLprim value ocaml_minicard_new_var(value solver) {
   CAMLlocal1(result);
   
   Solver* _solver = solver_val(solver);
-  Val_int(_solver->newVar());
+  result = Val_int(_solver->newVar());
   
   CAMLreturn(result);
 }
