@@ -93,52 +93,64 @@ void ocaml_minisat_set_verbosity(value solver, value verb) {
 
 CAMLprim value ocaml_minisat_new_var(value solver) {
   CAMLparam1(solver);
+  CAMLlocal1(result);
 
   Solver* _solver = solver_val(solver);
+  result = Val_int(_solver->newVar());
 
-  CAMLreturn(Val_int(_solver->newVar()));
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_pos_lit(value v) {
   CAMLparam1(v);
+  CAMLlocal1(result);
 
   Lit lit = mkLit(Int_val(v), false);
-
-  CAMLreturn(Val_int(toInt(lit)));
+  result = Val_int(toInt(lit));
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_neg_lit(value v) {
   CAMLparam1(v);
+  CAMLlocal1(result);
 
   Lit lit = mkLit(Int_val(v), true);
-
-  CAMLreturn(Val_int(toInt(lit)));
+  result = Val_int(toInt(lit));
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_negate(value l) {
   CAMLparam1(l);
+  CAMLlocal1(result);
 
   Lit lit = toLit(Int_val(l));
-
-  CAMLreturn(Val_int(toInt(~lit)));
+  result = Val_int(toInt(~lit));
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_add_clause(value solver, value c) {
   CAMLparam2(solver, c);
+  CAMLlocal1(result);
 
   Solver* _solver = solver_val(solver);
   vec<Lit> clause;
   convert_literals(c, clause);
-
-  CAMLreturn(Val_bool(_solver->addClause_(clause)));
+  result = Val_bool(_solver->addClause_(clause));
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_simplify(value solver) {
   CAMLparam1 (solver);
+  CAMLlocal1(result);
 
   Solver* _solver = solver_val(solver);
-
-  CAMLreturn (Val_bool(_solver->simplify()));
+  result = Val_bool(_solver->simplify());
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_solve(value solver) {
@@ -183,18 +195,22 @@ CAMLprim value ocaml_minisat_value_of(value solver, value v) {
 
 CAMLprim value ocaml_minisat_n_vars(value solver) {
   CAMLparam1 (solver);
+  CAMLlocal1 (result);
 
   Solver* _solver = solver_val(solver);
-
-  CAMLreturn(Val_int(_solver->nVars()));
+  result = Val_int(_solver->nVars());
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_n_clauses(value solver) {
   CAMLparam1 (solver);
+  CAMLlocal1 (result);
 
   Solver* _solver = solver_val(solver);
-
-  CAMLreturn(Val_int(_solver->nClauses()));
+  result = Val_int(_solver->nClauses());
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minisat_mem_used(value unit) {
@@ -233,33 +249,37 @@ static inline CAMLprim value tuple(value a, value b) {
 
 static inline CAMLprim value append(value hd, value tl) {
   CAMLparam2(hd, tl);
-  CAMLreturn(tuple(hd, tl));
+  CAMLlocal1 (result);
+
+  result = tuple(hd, tl);
+  
+  CAMLreturn(result);
 }
 
 CAMLprim value build_solution(Solver* _solver) {
   CAMLparam0();
-  CAMLlocal1(res);
+  CAMLlocal1(result);
 
-  res = Val_emptylist;
+  result = Val_emptylist;
 
   for (int i = 0; i < _solver->nVars(); i++) {
     if (_solver->modelValue(i) == l_True) {
-      res = append(Val_int(i), res);
+      result = append(Val_int(i), result);
     }
   }
 
-  CAMLreturn(res);
+  CAMLreturn(result);
 }
 
 // Only return true vars in each solution
 CAMLprim value ocaml_minisat_solve_all_true(value solver, value vars) {
   CAMLparam2 (solver, vars);
-  CAMLlocal3 (x, res, block_sol);
+  CAMLlocal3 (x, result, block_sol);
 
   vec<Lit> blocking_clause;
   Solver* _solver = solver_val(solver);
 
-  res = Val_emptylist;
+  result = Val_emptylist;
 
   if (vars == Val_emptylist) {
     while (_solver->solve()) {
@@ -269,7 +289,7 @@ CAMLprim value ocaml_minisat_solve_all_true(value solver, value vars) {
       }
       _solver->addClause(blocking_clause);
       block_sol = build_solution(_solver);
-      res = append(block_sol, res);
+      result = append(block_sol, result);
     }
   } else {
     while (_solver->solve()) {
@@ -282,9 +302,9 @@ CAMLprim value ocaml_minisat_solve_all_true(value solver, value vars) {
       }
       _solver->addClause(blocking_clause);
       block_sol = build_solution(_solver);
-      res = append(block_sol, res);
+      result = append(block_sol, result);
     }
   }
 
-  CAMLreturn(res);
+  CAMLreturn(result);
 }
