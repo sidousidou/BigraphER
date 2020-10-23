@@ -12,82 +12,89 @@
 
 CAMLprim value ocaml_kissat_new(value unit) {
   CAMLparam1(unit);
-  CAMLlocal1(block);
+  CAMLlocal1(result);
 
-  kissat *solver = kissat_init();
+  kissat* _solver = kissat_init();
+  result = caml_alloc_small(sizeof(kissat*), Abstract_tag);
+  solver_val(result) = _solver;
 
-  block = caml_alloc_small(sizeof(kissat*), Abstract_tag);
-  solver_val(block) = solver;
-
-  CAMLreturn (block);
+  CAMLreturn (result);
 }
 
-void ocaml_kissat_delete(value block) {
-  CAMLparam1 (block);
+void ocaml_kissat_delete(value solver) {
+  CAMLparam1 (solver);
 
-  if (solver_val(block)==0) {
+  if (solver_val(solver)==0) {
     goto exit;
   }
 
-  kissat *solver = solver_val(block);
-  kissat_release(solver);
+  kissat* _solver = solver_val(solver);
+  kissat_release(_solver);
 
  exit:
   CAMLreturn0;
 }
 
-CAMLprim value ocaml_kissat_solve(value block) {
-  CAMLparam1 (block);
+CAMLprim value ocaml_kissat_solve(value solver) {
+  CAMLparam1 (solver);
+  CAMLlocal1(result);
 
-  kissat *solver = solver_val(block);
+  kissat* _solver = solver_val(solver);
+  result = Val_int(kissat_solve(_solver));
 
-  CAMLreturn (Val_int (kissat_solve(solver)));
+  CAMLreturn (result);
 }
 
-void ocaml_kissat_add_clause(value block, value lits) {
-  CAMLparam2(block, lits);
+void ocaml_kissat_add_clause(value solver, value lits) {
+  CAMLparam2(solver, lits);
 
-  kissat *solver = solver_val(block);
+  kissat* _solver = solver_val(solver);
 
   while (lits != Val_emptylist) {
-    kissat_add(solver, Int_val(Field(lits, 0)));
+    kissat_add(_solver, Int_val(Field(lits, 0)));
     lits = Field(lits, 1);
   }
 
-  kissat_add(solver, Int_val(0));
+  kissat_add(_solver, Int_val(0));
 
   CAMLreturn0;
 }
 
-CAMLprim value ocaml_kissat_value(value block, value lit) {
-  CAMLparam2(block, lit);
+CAMLprim value ocaml_kissat_value(value solver, value lit) {
+  CAMLparam2(solver, lit);
+  CAMLlocal1(result);
 
-  kissat *solver = solver_val(block);
+  kissat* _solver = solver_val(solver);
+  result = Val_int(kissat_value(_solver, Int_val(lit)));
 
-  CAMLreturn(Val_int(kissat_value(solver, Int_val(lit))));
+  CAMLreturn(result);
 }
 
-CAMLprim value ocaml_kissat_get_option(value block, value name) {
-  CAMLparam2(block, name);
+CAMLprim value ocaml_kissat_get_option(value solver, value name) {
+  CAMLparam2(solver, name);
+  CAMLlocal1(result);
 
-  kissat *solver = solver_val(block);
+  kissat* _solver = solver_val(solver);
+  result = Val_int(kissat_get_option(_solver, String_val(name)));
 
-  CAMLreturn(Val_int(kissat_get_option(solver, String_val(name))));
+  CAMLreturn(result);
 }
 
-CAMLprim value ocaml_kissat_set_option(value block, value name, value v) {
-  CAMLparam3(block, name, v);
+CAMLprim value ocaml_kissat_set_option(value solver, value name, value v) {
+  CAMLparam3(solver, name, v);
+  CAMLlocal1(result);
 
-  kissat *solver = solver_val(block);
+  kissat* _solver = solver_val(solver);
+  result = Val_int(kissat_set_option(_solver, String_val(name), Int_val(v)));
 
-  CAMLreturn(Val_int(kissat_set_option(solver, String_val(name), Int_val(v))));
+  CAMLreturn(result);
 }
 
-void ocaml_kissat_print_statistics(value block) {
-  CAMLparam1(block);
+void ocaml_kissat_print_statistics(value solver) {
+  CAMLparam1(solver);
 
-  kissat *solver = solver_val(block);
-  kissat_print_statistics(solver);
+  kissat* _solver = solver_val(solver);
+  kissat_print_statistics(_solver);
 
   CAMLreturn0;
 }
