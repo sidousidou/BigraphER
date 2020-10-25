@@ -40,6 +40,16 @@
     (odoc :with-doc)))
 
 (package
+  (name maple)
+  (version 0.1.0)
+  (synopsis "Bindings for the SAT solver MapleLCMDistChronoBT-DL-v3")
+  (tags ("SAT solver" "org:dcs"))
+  (depends
+    (dune (and :build (>= 2.0.0)))
+    (dune-configurator :build)
+    (odoc :with-doc)))
+
+(package
   (name bigraph)
   (version 1.3.3)
   (authors "Michele Sevegnani" "Blair Archibald" "Paulius Dilkas")

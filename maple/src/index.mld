@@ -1,0 +1,9 @@
+{1 Library maple}
+
+Library providing a basic set of OCaml bindings for the
+MapleLCMDiscChronoBT-DL-v3 SAT solver developed by Stepan Kochemazov,
+Oleg Zaikin, Victor Kondratiev, and Alexander Semenov.
+
+Module {!Maple} is the main entry point of the library.
+
+@author Michele Sevegnani

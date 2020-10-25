@@ -1,0 +1,67 @@
+(data_only_dirs mapleLCMDiscChronoBT_c)
+
+(rule
+ (deps
+  (source_tree mapleLCMDiscChronoBT_c))
+ (targets libmaple_c.a dllmaple_c.so)
+ (enabled_if
+  (and
+   (<> %{system} freebsd)
+   (<> %{system} netbsd)
+   (<> %{system} openbsd)))
+ (action
+  (progn
+   (chdir
+    mapleLCMDiscChronoBT_c
+    (run make lr lsh))
+   (run cp mapleLCMDiscChronoBT_c/build/release/lib/libMapleLCMDiscChronoBT.a
+     libmaple_c.a)
+   (run cp
+     mapleLCMDiscChronoBT_c/build/dynamic/lib/libMapleLCMDiscChronoBT.so
+     dllmaple_c.so))))
+
+(rule
+ (deps
+  (source_tree mapleLCMDiscChronoBT_c))
+ (targets libmaple_c.a dllmaple_c.so)
+ (enabled_if
+  (or
+   (= %{system} freebsd)
+   (= %{system} netbsd)
+   (= %{system} openbsd)))
+ (action
+  (progn
+   (chdir
+    mapleLCMDiscChronoBT_c
+    (run gmake lr lsh))
+   (run cp mapleLCMDiscChronoBT_c/build/release/lib/libMapleLCMDiscChronoBT.a
+     libmaple_c.a)
+   (run cp
+     mapleLCMDiscChronoBT_c/build/dynamic/lib/libMapleLCMDiscChronoBT.so
+     dllmaple_c.so))))
+
+(library
+ (name maple)
+ (foreign_archives maple_c)
+ (public_name maple)
+ (foreign_stubs
+  (language cxx)
+  (names stubs)
+  (flags
+   (:include flags.sexp)))
+ (c_library_flags
+  (:include libs.sexp))
+ (synopsis "OCaml bindings for the MapleLCMDiscChronoBT-DL-v3 SAT solver"))
+
+(rule
+ (targets flags.sexp libs.sexp)
+ (deps
+  (:discover config/discover.exe)
+  libmaple_c.a
+  dllmaple_c.so)
+ (action
+  (run %{discover})))
+
+(documentation
+ (package maple)
+ (mld_files (:standard)))
