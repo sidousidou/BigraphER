@@ -120,8 +120,8 @@ let solve file =
   let solver = create () in
   let vars = process_file solver file in
   match solve solver with
-  | Minicard.UNSAT -> printf "unsat\n"
-  | Minicard.SAT ->
+  | UNSAT -> printf "unsat\n"
+  | SAT ->
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->

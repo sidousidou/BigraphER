@@ -1,8 +1,7 @@
 ###################################################################################################
 
-.PHONY:	r sh lr lsh config all install install-headers install-lib\
-        install-bin clean distclean
-all:	r lr lsh
+.PHONY:	lr lsh config all clean distclean
+all:	lr lsh
 
 ## Load Previous Configuration ####################################################################
 
@@ -33,8 +32,6 @@ config:
 	   echo 'prefix?=$(prefix)'                 ) > config.mk
 
 ## Configurable options end #######################################################################
-
-INSTALL ?= install
 
 # GNU Standard Install Variables
 exec_prefix ?= $(prefix)
@@ -73,11 +70,7 @@ VERB=
 endif
 
 SRCS = $(wildcard minicard/*.cc) $(wildcard utils/*.cc)
-HDRS = $(wildcard minicard/*.h) $(wildcard mtl/*.h) $(wildcard utils/*.h)
 OBJS = $(filter-out %Main.o, $(SRCS:.cc=.o))
-
-r:	$(BUILD_DIR)/release/bin/$(MINISAT)
-sh:	$(BUILD_DIR)/dynamic/bin/$(MINISAT)
 
 lr:	$(BUILD_DIR)/release/lib/$(MINISAT_SLIB)
 lsh:	$(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)
@@ -85,13 +78,6 @@ lsh:	$(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)
 ## Build-type Compile-flags:
 $(BUILD_DIR)/release/%.o:			MINISAT_CXXFLAGS +=$(MINISAT_REL) $(MINISAT_RELSYM)
 $(BUILD_DIR)/dynamic/%.o:			MINISAT_CXXFLAGS +=$(MINISAT_REL) $(MINISAT_FPIC)
-
-## Build-type Link-flags:
-$(BUILD_DIR)/release/bin/$(MINISAT):		MINISAT_LDFLAGS += $(RELEASE_LDFLAGS) $(MINISAT_RELSYM)
-
-## Executable dependencies
-$(BUILD_DIR)/release/bin/$(MINISAT):	 	$(BUILD_DIR)/release/minicard/Main.o $(BUILD_DIR)/release/lib/$(MINISAT_SLIB)
-$(BUILD_DIR)/dynamic/bin/$(MINISAT):	 	$(BUILD_DIR)/dynamic/minicard/Main.o $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB)
 
 ## Library dependencies
 $(BUILD_DIR)/release/lib/$(MINISAT_SLIB):	$(foreach o,$(OBJS),$(BUILD_DIR)/release/$(o))
@@ -110,12 +96,6 @@ $(BUILD_DIR)/dynamic/%.o:	%.cc
 	$(VERB) mkdir -p $(dir $@)
 	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/dynamic/$*.d
 
-## Linking rule
-$(BUILD_DIR)/release/bin/$(MINISAT) $(BUILD_DIR)/dynamic/bin/$(MINISAT):
-	$(ECHO) Linking Binary: $@
-	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $^ $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@
-
 ## Static Library rule
 %/lib/$(MINISAT_SLIB):
 	$(ECHO) Linking Static Library: $@
@@ -131,27 +111,6 @@ $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)\
 	$(VERB) $(CXX) $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@ $(SHARED_LDFLAGS) $^
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR)
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB)
-
-install:	install-headers install-lib install-bin
-
-install-headers:
-#       Create directories
-	$(INSTALL) -d $(DESTDIR)$(includedir)/minicard
-#       Install headers
-	for h in $(HDRS) ; do \
-	  $(INSTALL) -m 644 $$h $(DESTDIR)$(includedir)/$$h ; \
-	done
-
-install-lib: $(BUILD_DIR)/release/lib/$(MINISAT_SLIB) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)
-	$(INSTALL) -d $(DESTDIR)$(libdir)
-	$(INSTALL) -m 644 $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(DESTDIR)$(libdir)
-	ln -sf $(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(DESTDIR)$(libdir)/$(MINISAT_DLIB).$(SOMAJOR)
-	ln -sf $(MINISAT_DLIB).$(SOMAJOR) $(DESTDIR)$(libdir)/$(MINISAT_DLIB)
-	$(INSTALL) -m 644 $(BUILD_DIR)/release/lib/$(MINISAT_SLIB) $(DESTDIR)$(libdir)
-
-install-bin: $(BUILD_DIR)/dynamic/bin/$(MINISAT)
-	$(INSTALL) -d $(DESTDIR)$(bindir)
-	$(INSTALL) -m 755 $(BUILD_DIR)/dynamic/bin/$(MINISAT) $(DESTDIR)$(bindir)
 
 clean:
 	rm -f $(foreach t, release dynamic, $(foreach o, $(SRCS:.cc=.o), $(BUILD_DIR)/$t/$o)) \
