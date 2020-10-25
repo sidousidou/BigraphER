@@ -107,7 +107,7 @@ CAMLprim value ocaml_minisat_pos_lit(value v) {
 
   Lit lit = mkLit(Int_val(v), false);
   result = Val_int(toInt(lit));
-  
+
   CAMLreturn(result);
 }
 
@@ -117,7 +117,7 @@ CAMLprim value ocaml_minisat_neg_lit(value v) {
 
   Lit lit = mkLit(Int_val(v), true);
   result = Val_int(toInt(lit));
-  
+
   CAMLreturn(result);
 }
 
@@ -127,7 +127,7 @@ CAMLprim value ocaml_minisat_negate(value l) {
 
   Lit lit = toLit(Int_val(l));
   result = Val_int(toInt(~lit));
-  
+
   CAMLreturn(result);
 }
 
@@ -139,7 +139,7 @@ CAMLprim value ocaml_minisat_add_clause(value solver, value c) {
   vec<Lit> clause;
   convert_literals(c, clause);
   result = Val_bool(_solver->addClause_(clause));
-  
+
   CAMLreturn(result);
 }
 
@@ -149,7 +149,7 @@ CAMLprim value ocaml_minisat_simplify(value solver) {
 
   Solver* _solver = solver_val(solver);
   result = Val_bool(_solver->simplify());
-  
+
   CAMLreturn(result);
 }
 
@@ -199,7 +199,7 @@ CAMLprim value ocaml_minisat_n_vars(value solver) {
 
   Solver* _solver = solver_val(solver);
   result = Val_int(_solver->nVars());
-  
+
   CAMLreturn(result);
 }
 
@@ -209,7 +209,7 @@ CAMLprim value ocaml_minisat_n_clauses(value solver) {
 
   Solver* _solver = solver_val(solver);
   result = Val_int(_solver->nClauses());
-  
+
   CAMLreturn(result);
 }
 
@@ -252,7 +252,7 @@ static inline CAMLprim value append(value hd, value tl) {
   CAMLlocal1 (result);
 
   result = tuple(hd, tl);
-  
+
   CAMLreturn(result);
 }
 

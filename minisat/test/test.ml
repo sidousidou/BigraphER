@@ -65,7 +65,7 @@ let process_file solver file =
       List.map
         (fun (sign, name) ->
           let var = Hashtbl.find vars name in
-          if sign then Minisat.pos_lit var else Minisat.neg_lit var)
+          if sign then pos_lit var else neg_lit var)
         lits
     in
     add_clause solver clause
@@ -95,13 +95,13 @@ let solve file =
   let vars = process_file solver file in
   simplify solver;
   match solve solver with
-  | Minisat.UNSAT -> printf "unsat\n"
-  | Minisat.SAT ->
+  | UNSAT -> printf "unsat\n"
+  | SAT ->
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->
           printf "  %s=%s\n" name
-            (Minisat.string_of_value (value_of solver v)))
+            (string_of_value (value_of solver v)))
         vars
 
 let solve_all xs file =
@@ -113,8 +113,8 @@ let solve_all xs file =
         Hashtbl.iter
           (fun name v ->
             printf "  %s=%s\n" name
-              ( if List.mem v m then Minisat.string_of_value Minisat.True
-              else Minisat.string_of_value Minisat.False ))
+              ( if List.mem v m then string_of_value True
+              else string_of_value False ))
           vars)
   in
   simplify solver;
