@@ -1,5 +1,5 @@
 (* Solver type *)
-type solver_t = MSAT | MCARD | KSAT
+type solver_t = MSAT | MCARD | KSAT | MAPLE
 
 (* Solver type wrapper*)
 module type ST = sig
@@ -345,6 +345,91 @@ module KS_W : E = struct
       add_at_least_cmd s t)
 end
 
+(* Wrapper for the Maple module *)
+module MP_W : E = struct
+  type t = Maple.t
+
+  type var = Maple.var
+
+  type lit = Maple.lit
+
+  let create = Maple.create
+
+  let set_verbosity = Maple.set_verbosity
+
+  let add_clause = Maple.add_clause
+
+  let new_var = Maple.new_var
+
+  let simplify = Maple.simplify
+
+  let solve s =
+    match Maple.solve s with Maple.SAT -> SAT | Maple.UNSAT -> UNSAT
+
+  let solve_all s vars = Maple.get_models ~vars s
+
+  let value_of s v =
+    match Maple.value_of s v with
+    | Maple.False -> False
+    | Maple.True -> True
+    | Maple.Unknown -> Unknown
+
+  let get_stats s =
+    let x = Maple.get_stats s in
+    {
+      v = Maple.(x.v);
+      c = Maple.(x.c);
+      mem = Maple.(x.mem);
+      cpu = Maple.(x.cpu);
+    }
+
+  let positive_lit = Maple.pos_lit
+
+  let negative_lit = Maple.neg_lit
+
+  let negate = Maple.negate
+
+  module CMD = Cmd_encoding.Make (struct
+    type lit = Maple.lit
+
+    type var = Maple.var
+
+    type solver = t
+
+    let add_clause = add_clause
+
+    let negate = negate
+
+    let new_var = new_var
+
+    let positive_lit = positive_lit
+  end)
+
+  (* Only base case implemented. *)
+  let add_at_most s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t)
+
+  (* Only base case implemented. *)
+  let add_at_least s lits k =
+    assert (k = 1);
+    CMD.(cmd_init lits defaults s |> add_at_least_cmd s)
+
+  (* Only base case implemented. *)
+  let add_exactly s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t;
+      add_at_least_cmd s t)
+end
+
 module type S = sig
   include ST
 
@@ -528,6 +613,17 @@ module KS =
     end)
     ((
     KS_W : E ))
+
+(* Instance of MapleLCMDiscChronoBT-DL-v3 solver *)
+module MP =
+  Make
+    (struct
+      let solver_type = MAPLE
+
+      let string_of_solver_t = "MapleLCMDiscChronoBT-DL-v3"
+    end)
+    ((
+    MP_W : E ))
 
 (* The type of a bigraph matching engine *)
 module type M = sig

@@ -100,8 +100,7 @@ let solve file =
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->
-          printf "  %s=%s\n" name
-            (string_of_value (value_of solver v)))
+          printf "  %s=%s\n" name (string_of_value (value_of solver v)))
         vars
 
 let solve_all xs file =

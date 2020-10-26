@@ -23,7 +23,12 @@
     BIGSOLVER
     KSAT
     (run %{exe} %{bin:bigrapher} %{list}
-      %{project_root}/shippable/testresults parser-junit-KSAT.xml)))))
+      %{project_root}/shippable/testresults parser-junit-KSAT.xml))
+   (setenv
+    BIGSOLVER
+    MAPLE
+    (run %{exe} %{bin:bigrapher} %{list}
+      %{project_root}/shippable/testresults parser-junit-MAPLE.xml)))))
 
 (rule
  (deps
@@ -92,6 +97,10 @@
    (setenv
     BIGSOLVER
     MCARD
+    (run %{exe} %{bin:bigrapher}))
+   (setenv
+    BIGSOLVER
+    MAPLE
     (run %{exe} %{bin:bigrapher}))
    (setenv
     BIGSOLVER

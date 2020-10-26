@@ -30,6 +30,7 @@ let () =
     match Sys.getenv_opt "BIGSOLVER" with
     | Some "MCARD" -> "MiniCARD"
     | Some "KSAT" -> "Kissat"
+    | Some "MAPLE" -> "MapleLCMDistChronoBT-DL-v3"
     | Some "MSAT" | Some _ | None -> "MiniSAT"
   in
   printf "test_speed (%d runs) -- %s\n" n solver;
