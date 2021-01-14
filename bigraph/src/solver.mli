@@ -8,6 +8,7 @@ type solver_t =
   | MCARD  (** MiniCARD *)
   | KSAT  (** Kissat *)
   | MAPLE  (** MapleLCMDiscChronoBT-DL-v3 *)
+  | CLASP (** CLASP ALLSAT solver *)
 
 type stats = {
   v : int;  (** Number of variables. *)
@@ -119,6 +120,9 @@ module KS : S
 
 module MP : S
 (** Instance of MapleLCMDiscChronoBT-DL-v3 solver. *)
+
+module MClasp : S
+(** Instance of Clasp solver *)
 
 (** The type of a bigraph matching engine. *)
 module type M = sig

@@ -108,6 +108,7 @@ let string_of_solver_type = function
   | Bigraph.Solver.MCARD -> "MiniCARD"
   | Bigraph.Solver.KSAT -> "Kissat"
   | Bigraph.Solver.MAPLE -> "MapleLCMDiscChronoBT-DL-v3"
+  | Bigraph.Solver.CLASP -> "Clasp"
 
 let string_of_file = function None -> "-" (* Not set *) | Some f -> f
 
@@ -131,6 +132,7 @@ let parse_solver_type = function
   | "MSAT" -> Bigraph.Solver.MSAT
   | "KSAT" -> Bigraph.Solver.KSAT
   | "MAPLE" -> Bigraph.Solver.MAPLE
+  | "CLASP" -> Bigraph.Solver.CLASP
   | _ -> Bigraph.Solver.MSAT
 
 (* Defaults to MiniSAT *)
@@ -420,7 +422,7 @@ let copts_t =
     let doc =
       "Select solver for matching engine.\n\
       \               Supported solvers are `MSAT' (MiniSAT), `KSAT' \
-       (Kissat), `MAPLE` (MapleLCMDiscChronoBT-DL-v3), and `MCARD' \
+       (Kissat), `MAPLE` (MapleLCMDiscChronoBT-DL-v3), `CLASP` and `MCARD' \
        (MiniCARD)."
     in
     let env = Arg.env_var "BIGSOLVER" ~doc in

@@ -1,5 +1,5 @@
 (* Solver type *)
-type solver_t = MSAT | MCARD | KSAT | MAPLE
+type solver_t = MSAT | MCARD | KSAT | MAPLE | CLASP
 
 (* Solver type wrapper*)
 module type ST = sig
@@ -430,6 +430,155 @@ module MP_W : E = struct
       add_at_least_cmd s t)
 end
 
+(* Wrapper for the Clasp module *)
+module Clasp_W : E = struct
+  (* type t = Minisat.t *)
+
+  type clasp =
+             | Clasp
+
+  type t = clasp
+
+  type var = int
+  type lit = int
+
+  (* TODO: have the type carry this around *)
+  let cnf_store = ref []
+  let max_v = ref 0
+  let num_clauses = ref 0
+  let last_sol = ref []
+
+  let create () =
+    cnf_store := [];
+    last_sol := [];
+    max_v := 0;
+    num_clauses := 0;
+    Clasp
+
+  let set_verbosity _s _v = ()
+
+  let lit_to_varstr (l : lit) : string =
+    let v = l / 2 in
+    if l mod 2 == 0 then string_of_int (v + 1)
+    else "-" ^ string_of_int (v + 1)
+
+  let add_clause _s l =
+    match l with
+      [] -> ()
+      | _ -> begin
+              let cls = (List.map lit_to_varstr l |> String.concat " ") ^ " 0"
+              in cnf_store := (cls :: !cnf_store);
+              num_clauses := !num_clauses + 1;
+            end
+
+  let new_var _s = max_v := !max_v + 1; !max_v
+
+  let simplify _s = ()
+
+  let write_cnf () =
+    let (fname, outc) = Filename.open_temp_file "big" "cnf" in
+    Printf.fprintf outc "p cnf %d %d\n" (!max_v + 1) (!num_clauses);
+    List.iter (Printf.fprintf outc "%s\n") (!cnf_store);
+    close_out outc;
+    fname
+
+  let read_solutions_lines inc =
+    let rec read_full_sol cur =
+      let last_char = String.sub cur (String.length cur - 1) 1 in
+      let second_last_char = String.sub cur (String.length cur - 2) 1 in
+      if last_char = "0" && second_last_char = " "
+        then
+        String.sub cur 0 (String.length cur - 1)
+        else
+        let line = input_line inc in
+        let s = String.sub line 2 (String.length line - 2) in
+        read_full_sol (cur ^ " " ^ s)
+    in
+    let sols = ref [] in
+    try
+      while true; do
+        let line = input_line inc in
+        if String.sub line 0 1 = "v" then
+        begin
+          let sol = String.sub line 2 (String.length line - 2) in
+          sols := read_full_sol sol :: !sols
+        end
+      done; !sols
+    with End_of_file ->
+      close_in inc;
+      List.rev !sols
+
+  let solve_n _s n =
+    let fname = write_cnf () in
+    let ic = Unix.open_process_in @@ Printf.sprintf "clasp %d %s" n fname in
+    let sols = read_solutions_lines ic in
+    List.map (fun s -> String.trim s
+                 |> String.split_on_char ' '
+                 |> List.map int_of_string
+                 |> List.filter (fun p -> p > 0)
+                 |> List.map (fun p -> p-1)) sols
+
+  let solve s = let sol = solve_n s 1 in
+                if List.length sol > 0
+                then (last_sol := List.hd sol; SAT)
+                else UNSAT
+
+  let solve_all s vars = solve_n s 0
+
+  let value_of s v = match List.find_opt (fun p -> (Int.abs p) == v) !last_sol with
+                      | None -> Unknown
+                      | Some v' -> if v' > 0 then True else False
+
+
+  let get_stats s = failwith "Clasp - value_of undefined"
+
+  let positive_lit v = v * 2
+
+  let negative_lit v = (v * 2) + 1
+
+  let negate l = if l mod 2 == 0 then l + 1 else l - 1
+
+  module CMD = Cmd_encoding.Make (struct
+    type lit = int
+
+    type var = int
+
+    type solver = t
+
+    let add_clause = add_clause
+
+    let negate = negate
+
+    let new_var = new_var
+
+    let positive_lit = positive_lit
+  end)
+
+  (* Only base case implemented. *)
+  let add_at_most s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t)
+
+  (* Only base case implemented. *)
+  let add_at_least s lits k =
+    assert (k = 1);
+    CMD.(cmd_init lits defaults s |> add_at_least_cmd s)
+
+  (* Only base case implemented. *)
+  let add_exactly s lits k =
+    assert (k = 1);
+    CMD.(
+      cmd_init lits defaults s |> fun t ->
+      add_cmd_c1 s t;
+      add_cmd_c2 s t;
+      add_cmd_c3 s t;
+      add_at_least_cmd s t)
+end
+
 module type S = sig
   include ST
 
@@ -624,6 +773,17 @@ module MP =
     end)
     ((
     MP_W : E ))
+
+(* Instance of clasp ALLSAT solver *)
+module MClasp =
+  Make
+    (struct
+      let solver_type = CLASP
+
+      let string_of_solver_t = "Clasp"
+    end)
+    ((
+    Clasp_W : E ))
 
 (* The type of a bigraph matching engine *)
 module type M = sig

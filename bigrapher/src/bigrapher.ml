@@ -619,6 +619,9 @@ let () =
           | Bigraph.Solver.MAPLE ->
               let module S = Selector (T) (Solver.Make_SAT (Solver.MP)) in
               S.run fmt Cmd.(defaults.colors) m exec_type
+          | Bigraph.Solver.CLASP ->
+              let module S = Selector (T) (Solver.Make_SAT (Solver.MClasp)) in
+              S.run fmt Cmd.(defaults.colors) m exec_type
         with
         | Place.NOT_PRIME ->
             close_progress_bar ();
