@@ -442,14 +442,14 @@ module Clasp_W : E = struct
   type var = int
   type lit = int
 
-  (* TODO: have the type carry this around *)
-  let cnf_store = ref []
+  (* TODO: have the type carry this around? *)
+  let cnf_store = Buffer.create 16
   let max_v = ref 0
   let num_clauses = ref 0
   let last_sol = ref []
 
   let create () =
-    cnf_store := [];
+    Buffer.clear cnf_store;
     last_sol := [];
     max_v := 0;
     num_clauses := 0;
@@ -466,21 +466,19 @@ module Clasp_W : E = struct
     match l with
       [] -> ()
       | _ -> begin
-              let cls = (List.map lit_to_varstr l |> String.concat " ") ^ " 0"
-              in cnf_store := (cls :: !cnf_store);
-              num_clauses := !num_clauses + 1;
+              let cls = (List.map lit_to_varstr l |> String.concat " ") ^ " 0\n"
+              in Buffer.add_string cnf_store cls; num_clauses := !num_clauses + 1;
             end
 
   let new_var _s = max_v := !max_v + 1; !max_v
 
   let simplify _s = ()
 
-  let write_cnf () =
-    let (fname, outc) = Filename.open_temp_file "big" "cnf" in
-    Printf.fprintf outc "p cnf %d %d\n" (!max_v + 1) (!num_clauses);
-    List.iter (Printf.fprintf outc "%s\n") (!cnf_store);
-    close_out outc;
-    fname
+  let write_cnf chan =
+    Printf.fprintf chan "p cnf %d %d\n" (!max_v + 1) (!num_clauses);
+    (* Buffer.output_buffer Pervasives.stdout cnf_store; *)
+    Buffer.output_buffer chan cnf_store;
+    close_out chan
 
   let read_solutions_lines inc =
     let rec read_full_sol cur =
@@ -509,8 +507,8 @@ module Clasp_W : E = struct
       List.rev !sols
 
   let solve_n _s n =
-    let fname = write_cnf () in
-    let ic = Unix.open_process_in @@ Printf.sprintf "clasp %d %s" n fname in
+    let (ic, oc) = Unix.open_process @@ Printf.sprintf "clasp %d" n in
+    let () = write_cnf oc in
     let sols = read_solutions_lines ic in
     List.map (fun s -> String.trim s
                  |> String.split_on_char ' '
