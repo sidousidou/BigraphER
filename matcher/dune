@@ -1,0 +1,11 @@
+(executable
+ (package big_utils)
+ (name big_matcher)
+ (public_name big_matcher)
+ (modules big_matcher)
+ (modes exe)
+ (libraries bigraph mtime mtime.clock.os))
+
+(documentation
+ (package big_utils)
+ (mld_files (:standard)))

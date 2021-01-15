@@ -12,7 +12,7 @@ stdenv.mkDerivation rec {
 
   src = lib.cleanSource ./.;
 
-  buildInputs = with ocamlPackages; [ pkgs.minisat zlib jsonm cmdliner ];
+  buildInputs = with ocamlPackages; [ pkgs.minisat zlib jsonm cmdliner mtime ];
   nativeBuildInputs = with ocamlPackages; [ dune_2 ocaml findlib dune-configurator menhir ];
 
   buildPhase = ''
