@@ -432,8 +432,6 @@ end
 
 (* Wrapper for the Clasp module *)
 module Clasp_W : E = struct
-  (* type t = Minisat.t *)
-
   type clasp =
              | Clasp
 
@@ -459,8 +457,8 @@ module Clasp_W : E = struct
 
   let lit_to_varstr (l : lit) : string =
     let v = l / 2 in
-    if l mod 2 == 0 then string_of_int (v + 1)
-    else "-" ^ string_of_int (v + 1)
+    if l mod 2 = 0 then string_of_int v
+    else "-" ^ string_of_int v
 
   let add_clause _s l =
     match l with
@@ -474,9 +472,10 @@ module Clasp_W : E = struct
 
   let simplify _s = ()
 
-  let write_cnf chan =
-    Printf.fprintf chan "p cnf %d %d\n" (!max_v + 1) (!num_clauses);
-    (* Buffer.output_buffer Pervasives.stdout cnf_store; *)
+  let write_cnf vars chan =
+    Printf.fprintf chan "p cnf %d %d\n" !max_v !num_clauses;
+    (* Project node/edge variables *)
+    List.iter (fun v -> Printf.fprintf chan "c project %s\n" (string_of_int v)) vars;
     Buffer.output_buffer chan cnf_store;
     close_out chan
 
@@ -501,27 +500,31 @@ module Clasp_W : E = struct
           let sol = String.sub line 2 (String.length line - 2) in
           sols := read_full_sol sol :: !sols
         end
+        else if String.length line >= 6 && String.sub line 0 6 = "c Time" then
+          Printf.printf "Clasp Timing: %s\n" line
       done; !sols
     with End_of_file ->
       close_in inc;
       List.rev !sols
 
-  let solve_n _s n =
-    let (ic, oc) = Unix.open_process @@ Printf.sprintf "clasp %d" n in
-    let () = write_cnf oc in
+  let solve_n _s vars n =
+    let (ic, oc) = Unix.open_process
+                   @@ Printf.sprintf "clasp %d --project=auto --parse-ext " n in
+    let () = write_cnf vars oc in
     let sols = read_solutions_lines ic in
-    List.map (fun s -> String.trim s
+    let sols' = List.map (fun s -> String.trim s
                  |> String.split_on_char ' '
                  |> List.map int_of_string
-                 |> List.filter (fun p -> p > 0)
-                 |> List.map (fun p -> p-1)) sols
+                 |> List.filter (fun p -> p > 0)) sols in
+    sols'
 
-  let solve s = let sol = solve_n s 1 in
+
+  let solve s = let sol = solve_n s [] 1 in
                 if List.length sol > 0
                 then (last_sol := List.hd sol; SAT)
                 else UNSAT
 
-  let solve_all s vars = solve_n s 0
+  let solve_all s vars = solve_n s vars 0
 
   let value_of s v = match List.find_opt (fun p -> (Int.abs p) == v) !last_sol with
                       | None -> Unknown
@@ -534,7 +537,7 @@ module Clasp_W : E = struct
 
   let negative_lit v = (v * 2) + 1
 
-  let negate l = if l mod 2 == 0 then l + 1 else l - 1
+  let negate l = if l mod 2 = 0 then l + 1 else l - 1
 
   module CMD = Cmd_encoding.Make (struct
     type lit = int

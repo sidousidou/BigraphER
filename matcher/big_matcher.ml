@@ -13,7 +13,7 @@ type solver = SAT | PB | Clasp
 let parse_solver s = match (String.lowercase_ascii s) with
   | "sat" -> SAT
   | "pb" -> PB
-  | "clasp" -> PB
+  | "clasp" -> Clasp
   | _ -> raise Exit
 
 

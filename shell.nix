@@ -18,5 +18,6 @@ mkShell {
     ocamlPackages.cmdliner
     ocamlPackages.odoc
     ocamlPackages.dune-configurator
+    ocamlPackages.mtime
   ];
 }
