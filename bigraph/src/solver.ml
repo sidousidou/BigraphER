@@ -502,6 +502,8 @@ module Clasp_W : E = struct
         end
         else if String.length line >= 6 && String.sub line 0 6 = "c Time" then
           Printf.printf "Clasp Timing: %s\n" line
+        else if String.length line >= 5 && String.sub line 0 5 = "c CPU" then
+          Printf.printf "Clasp Timing: %s\n" line
       done; !sols
     with End_of_file ->
       close_in inc;
