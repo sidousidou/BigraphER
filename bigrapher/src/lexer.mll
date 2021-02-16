@@ -101,6 +101,7 @@ rule token =  parse
   | "*"                     { PROD }
   | "/"                     { SLASH }
   | "^"                     { CARET }
+  | "abs"                   { ABS }
   | "par"                   { PAR }
   | "ppar"                  { PPAR }
   | "if"                    { IF }
