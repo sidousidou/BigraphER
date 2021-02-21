@@ -478,14 +478,14 @@ let exp_septuple (n0, f0) (n1, f1) (n2, f2) (n3, f3) (n4, f4) (n5, f5)
 let rec conv j msgs = function
   | [] -> Error (j, disj_type_err msgs)
   | f :: fs -> (
-      match f j with Ok v -> Ok v | Error (_, e) -> conv j (e :: msgs) fs )
+      match f j with Ok v -> Ok v | Error (_, e) -> conv j (e :: msgs) fs)
 
 let rec map_bind f res = function
   | [] -> Ok (List.rev res)
   | j :: js -> (
       match conv j [] f with
       | Ok v -> map_bind f (v :: res) js
-      | Error _ as e -> e )
+      | Error _ as e -> e)
 
 let exp_array f = function
   | `A l -> map_bind f [] l
@@ -700,7 +700,7 @@ let aux_step minify solver (b, reacts) =
           let open struct
             module BRS = Brs.Make (Solver.Make_SAT (Solver.MP))
           end in
-          aux BRS.step (wrapper1 (occs_to_json ~minify)) b rs )
+          aux BRS.step (wrapper1 (occs_to_json ~minify)) b rs)
   | `P rs -> (
       match solver_t with
       | Solver.MSAT ->
@@ -722,7 +722,7 @@ let aux_step minify solver (b, reacts) =
           let open struct
             module PBRS = Pbrs.Make (Solver.Make_SAT (Solver.MP))
           end in
-          aux PBRS.step (wrapper (p_occs_to_json ~minify)) b rs )
+          aux PBRS.step (wrapper (p_occs_to_json ~minify)) b rs)
   | `S rs -> (
       match solver_t with
       | Solver.MSAT ->
@@ -744,7 +744,7 @@ let aux_step minify solver (b, reacts) =
           let open struct
             module SBRS = Sbrs.Make (Solver.Make_SAT (Solver.MP))
           end in
-          aux SBRS.step (wrapper (s_occs_to_json ~minify)) b rs )
+          aux SBRS.step (wrapper (s_occs_to_json ~minify)) b rs)
   | `N rs -> (
       match solver_t with
       | Solver.MSAT ->
@@ -766,7 +766,7 @@ let aux_step minify solver (b, reacts) =
           let open struct
             module NBRS = Nbrs.Make (Solver.Make_SAT (Solver.MP))
           end in
-          aux NBRS.step (wrapper (n_occs_to_json ~minify)) b rs )
+          aux NBRS.step (wrapper (n_occs_to_json ~minify)) b rs)
 
 let aux_string minify = function
   | Ok s -> s
@@ -777,8 +777,8 @@ let step ?(encoding = `UTF_8) ?(minify = true) ?(solver = "MSAT") s =
   >>= aux_step minify solver |> aux_string minify
 
 let big_match ?(minify = true) ?(solver = "MSAT") in_ch out_ch =
-  ( match json_of_src (`Channel in_ch) with
+  (match json_of_src (`Channel in_ch) with
   | `Error (r, e) -> Error (dec_err r e)
-  | `JSON j -> parse_err @@ exp_step_input j )
+  | `JSON j -> parse_err @@ exp_step_input j)
   >>= aux_step minify solver |> aux_string minify
   |> fun s -> output_string out_ch s
