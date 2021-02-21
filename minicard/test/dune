@@ -1,20 +1,8 @@
-(executables
- (names test)
+(executable
+ (name test)
  (libraries minicard))
 
-(rule
+(cram
  (deps
-  (:exe test.exe)
-  (:phi
-   (glob_files ../files/*.formula)))
- (action
-  (with-stdout-to
-   test.output
-   (run %{exe} %{phi}))))
-
-(rule
- (alias runtest)
- (deps
-  (:ref test.reference))
- (action
-  (diff %{ref} test.output)))
+  test.exe
+  (glob_files *.formula)))
