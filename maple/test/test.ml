@@ -75,13 +75,13 @@ let process_file solver file =
   let rec process_line () =
     try
       let line = input_line file in
-      ( if line = "" then ()
+      (if line = "" then ()
       else
         match line.[0] with
         | 'v' -> process_var line
         | 'c' -> process_clause line
         | '#' -> ()
-        | _ -> assert false );
+        | _ -> assert false);
       process_line ()
     with End_of_file -> ()
   in
@@ -112,8 +112,8 @@ let solve_all xs file =
         Hashtbl.iter
           (fun name v ->
             printf "  %s=%s\n" name
-              ( if List.mem v m then string_of_value True
-              else string_of_value False ))
+              (if List.mem v m then string_of_value True
+              else string_of_value False))
           vars)
   in
   simplify solver;
