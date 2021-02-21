@@ -76,7 +76,7 @@ let process_file solver n_vars file =
   let rec process_line n_vars =
     try
       let line = input_line file in
-      ( if line = "" then n_vars
+      (if line = "" then n_vars
       else
         match line.[0] with
         | 'v' -> process_var line n_vars
@@ -84,7 +84,7 @@ let process_file solver n_vars file =
             process_clause line;
             n_vars
         | '#' -> n_vars
-        | _ -> assert false )
+        | _ -> assert false)
       |> process_line
     with End_of_file -> ()
   in
