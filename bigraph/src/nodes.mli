@@ -18,7 +18,10 @@ val equal : t -> t -> bool
 (** Equality test. Node identities are ignored. *)
 
 val find_all : Ctrl.t -> t -> IntSet.t
-(** [find_all c ns] finds all the nodes in node set [ns] with control
+(** [find_all c ns] finds all the nodes in node set [ns] with control [c]. *)
+
+val find_all_sort : Ctrl.t -> t -> IntSet.t
+(** [find_all_sort c ns] finds all the nodes in node set [ns] with control
     contained by the sort that also contains control [c]. *)
 
 val fold : (int -> Ctrl.t -> 'a -> 'a) -> t -> 'a -> 'a
