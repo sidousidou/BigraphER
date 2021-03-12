@@ -46,7 +46,7 @@ let process_file solver file =
     assert (l > 2);
     assert (line.[1] = ' ');
     let name = drop line 2 in
-    let v = solver#new_var in
+    let v = new_var solver in
     Hashtbl.add vars name v
   in
 
@@ -68,7 +68,7 @@ let process_file solver file =
           if sign then pos_lit var else neg_lit var)
         lits
     in
-    solver#add_clause clause
+    add_clause solver clause
   in
 
   (* Processes a line containing an at-most constraint. *)
@@ -93,7 +93,7 @@ let process_file solver file =
           if sign then pos_lit var else neg_lit var)
         lits
     in
-    solver#add_at_most clause k
+    add_at_most solver clause k
   in
 
   (* Read a new line and processes its content. *)
@@ -117,15 +117,15 @@ let process_file solver file =
 
 (* Reads a given file and solves the instance. *)
 let solve file =
-  let solver = new solver in
+  let solver = create () in
   let vars = process_file solver file in
-  match solver#solve with
-  | Minicard.UNSAT -> printf "unsat\n"
-  | Minicard.SAT ->
+  match solve solver with
+  | UNSAT -> printf "unsat\n"
+  | SAT ->
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->
-          printf "  %s=%s\n" name (string_of_value (solver#value_of v)))
+          printf "  %s=%s\n" name (string_of_value (value_of solver v)))
         vars
 
 (*

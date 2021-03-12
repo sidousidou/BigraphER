@@ -50,6 +50,8 @@ let inter = S.inter
 
 let is_empty = S.is_empty
 
+let is_singleton = S.is_singleton
+
 let iter = S.iter
 
 let max_elt = S.max_elt

@@ -65,6 +65,9 @@ val to_string : t -> string
 val pp : Format.formatter -> t -> unit
 (** Pretty printer. *)
 
+val is_singleton : t -> bool
+(** Test whether a set is a singleton or not. *)
+
 val of_list : int list -> t
 (** Return a set containing the elements of a list. *)
 

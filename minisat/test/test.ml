@@ -46,7 +46,7 @@ let process_file solver file =
     assert (l > 2);
     assert (line.[1] = ' ');
     let name = drop line 2 in
-    let v = solver#new_var in
+    let v = new_var solver in
     Hashtbl.add vars name v
   in
 
@@ -65,10 +65,10 @@ let process_file solver file =
       List.map
         (fun (sign, name) ->
           let var = Hashtbl.find vars name in
-          if sign then Minisat.pos_lit var else Minisat.neg_lit var)
+          if sign then pos_lit var else neg_lit var)
         lits
     in
-    solver#add_clause clause
+    add_clause solver clause
   in
 
   (* Read a new line and processes its content. *)
@@ -91,32 +91,56 @@ let process_file solver file =
 
 (* Reads a given file and solves the instance. *)
 let solve file =
-  let solver = new solver in
+  let solver = create () in
   let vars = process_file solver file in
-  match solver#solve with
-  | Minisat.UNSAT -> printf "unsat\n"
-  | Minisat.SAT ->
+  simplify solver;
+  match solve solver with
+  | UNSAT -> printf "unsat\n"
+  | SAT ->
       printf "sat\n";
       Hashtbl.iter
         (fun name v ->
-          printf "  %s=%s\n" name
-            (Minisat.string_of_value (solver#value_of v)))
+          printf "  %s=%s\n" name (string_of_value (value_of solver v)))
         vars
 
-(*
- * Solve the files given on the command line, or read one from standard
- * input if none is given.
- *)
-let main () =
-  let argc = Array.length Sys.argv in
-  if argc = 1 then solve stdin
-  else
+let solve_all xs file =
+  let solver = create () in
+  let vars = process_file solver file in
+  let print_sols =
+    List.iteri (fun i m ->
+        printf "Solution %d:\n" i;
+        Hashtbl.iter
+          (fun name v ->
+            printf "  %s=%s\n" name
+              ( if List.mem v m then string_of_value True
+              else string_of_value False ))
+          vars)
+  in
+  simplify solver;
+  let sols = get_models ~vars:(List.map (Hashtbl.find vars) xs) solver in
+  match sols with [] -> printf "unsat\n" | _ -> print_sols sols
+
+(* Solve the files given on the command line, or read one from standard input
+   if none is given. Arguments --all computes all the solutions and --vars
+   1,2,3 lists all non-auxiliary variables in the problem. --vars must follow
+   --all. *)
+let () =
+  let scan_files solve_f i len =
     Array.iter
       (fun fname ->
         try
           printf "Solving %s...\n" fname;
-          solve (open_in fname)
+          solve_f (open_in fname)
         with Sys_error msg -> printf "ERROR: %s\n" msg)
-      (Array.sub Sys.argv 1 (argc - 1))
-
-let () = main ()
+      (Array.sub Sys.argv i len)
+  in
+  let argc = Array.length Sys.argv in
+  if argc = 1 then solve stdin
+  else if String.equal "--all" Sys.argv.(1) then
+    if argc = 2 then solve_all [] stdin
+    else if String.equal "--vars" Sys.argv.(2) then
+      let vars = String.split_on_char ',' Sys.argv.(3) in
+      if argc = 4 then solve_all vars stdin
+      else scan_files (solve_all vars) 4 (argc - 4)
+    else scan_files (solve_all []) 2 (argc - 2)
+  else scan_files solve 1 (argc - 1)

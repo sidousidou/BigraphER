@@ -58,6 +58,8 @@ module type E = sig
 
   val solve : t -> solution
 
+  val solve_all : t -> var list -> var list list
+
   val value_of : t -> var -> value
 
   val get_stats : t -> stats

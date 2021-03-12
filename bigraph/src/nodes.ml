@@ -70,7 +70,8 @@ let find_all c s =
 
 let to_dot s =
   let escape_quotes s =
-    let r = Str.regexp "\"" in Str.global_replace r "" s
+    let r = Str.regexp "\"" in
+    Str.global_replace r "" s
   in
   fold
     (fun i c acc ->
