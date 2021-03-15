@@ -60,15 +60,17 @@ let get_ctrl i s =
   assert (i < s.size);
   M_int.find i s.ctrl
 
-let find_all c s =
+let find_all_sort c s =
   match M_string.find (Ctrl.name c) s.sort with
   | None -> IntSet.empty
   | Some s -> s
 
+let find_all c s =
+  find_all_sort c s |> IntSet.filter (fun i -> Base.safe @@ get_ctrl i s |> Ctrl.equal c)
+
 let to_dot s =
   let escape_quotes s =
-    let r = Str.regexp "\"" in
-    Str.global_replace r "" s
+    let r = Str.regexp "\"" in Str.global_replace r "" s
   in
   fold
     (fun i c acc ->
