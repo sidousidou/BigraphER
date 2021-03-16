@@ -1,18 +1,11 @@
 (executable
  (name test_speed)
- (libraries bigraph CI_utils unix))
+ (libraries bigraph unix))
 
 (cram
  (deps
   %{bin:bigrapher}
   (glob_files ../examples/*.big)))
-
-(cram
- (deps
-  %{bin:bigrapher}
-  ../examples/prob_wsn.big
-  ../examples/mdp_wsn.big
-  ../examples/stoch_occ.big))
 
 (alias
  (name speed)

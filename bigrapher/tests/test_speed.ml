@@ -1,4 +1,3 @@
-module IO = CI_utils.Io
 open Printf
 
 (* bin is assumed to print out a float *)
