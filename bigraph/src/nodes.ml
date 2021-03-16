@@ -44,11 +44,11 @@ let pp out s =
 
 let to_string s =
   "{"
-  ^ ( fold
-        (fun i c acc ->
-          acc @ [ "(" ^ string_of_int i ^ ", " ^ Ctrl.to_string c ^ ")" ])
-        s []
-    |> String.concat "," )
+  ^ (fold
+       (fun i c acc ->
+         acc @ [ "(" ^ string_of_int i ^ ", " ^ Ctrl.to_string c ^ ")" ])
+       s []
+    |> String.concat ",")
   ^ "}"
 
 let controls s =
@@ -66,11 +66,13 @@ let find_all_sort c s =
   | Some s -> s
 
 let find_all c s =
-  find_all_sort c s |> IntSet.filter (fun i -> Base.safe @@ get_ctrl i s |> Ctrl.equal c)
+  find_all_sort c s
+  |> IntSet.filter (fun i -> Base.safe @@ get_ctrl i s |> Ctrl.equal c)
 
 let to_dot s =
   let escape_quotes s =
-    let r = Str.regexp "\"" in Str.global_replace r "" s
+    let r = Str.regexp "\"" in
+    Str.global_replace r "" s
   in
   fold
     (fun i c acc ->

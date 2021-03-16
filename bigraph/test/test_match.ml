@@ -1,7 +1,6 @@
 (* Tests for the matching engine *)
 open Printf
 open Bigraph
-module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
 module S = Solver.Make_SAT (Solver.KS)
 
@@ -35,9 +34,10 @@ let check_res res exp_res pattern =
         (* Equality up to iso (autos on pattern) *)
         let autos = S.auto pattern in
         (i1, j1)
-        :: List.combine
-             (Iso.gen_isos i1 (List.map fst autos))
-             (Iso.gen_isos j1 (List.map snd autos))
+        ::
+        List.combine
+          (Iso.gen_isos i1 (List.map fst autos))
+          (Iso.gen_isos j1 (List.map snd autos))
         |> List.exists (fun (i1', j1') ->
                Iso.equal i0 i1' && Iso.equal j0 j1'))
       (List.combine (sort_res res) (sort_res exp_res))
@@ -53,63 +53,45 @@ let attr_match =
 let module_name = __MODULE__
 
 let do_tests =
-  let success t =
-    ( t.t_name ^ " &gt; " ^ t.p_name,
-      module_name,
-      ST.xml_block "system-out" [] [ "Result: " ^ print_res t.res ],
-      [] )
-  and failure_occ t msg =
-    ( t.t_name ^ " &gt; " ^ t.p_name,
-      module_name,
-      ST.xml_block "system-out" []
-        [
-          "Result: " ^ print_res t.res ^ "\nExpected result: "
-          ^ print_res t.exp_res ^ "\nTarget:\n" ^ Big.to_string t.target
-          ^ "\n dot:\n"
-          ^ Big.(to_dot t.target "target")
-          ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\n dot:\n"
-          ^ Big.(to_dot t.pattern "pattern")
-          ^ "\n";
-        ],
-      [ ST.xml_block "failure" attr_match [ msg ] ] )
+  let failure_occ t msg =
+    Printf.printf "Error: %s\n%s\n" msg
+      ("Result: " ^ print_res t.res ^ "\nExpected result: "
+     ^ print_res t.exp_res ^ "\nTarget:\n" ^ Big.to_string t.target
+     ^ "\n dot:\n"
+      ^ Big.(to_dot t.target "target")
+      ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\n dot:\n"
+      ^ Big.(to_dot t.pattern "pattern"))
   and failure_decomp t msg occs total =
-    ( t.t_name ^ " &gt; " ^ t.p_name,
-      module_name,
-      ST.xml_block "system-out" []
-        [
-          (List.length occs |> string_of_int)
-          ^ " errors out of " ^ string_of_int total ^ "\nDecompositions:\n"
-          ^ ( List.mapi
-                (fun i { Solver.nodes = i_n; edges = i_e; hyper_edges = f_e } ->
-                  let c, d, id_big =
-                    Big.decomp ~target:t.target ~pattern:t.pattern ~i_n ~i_e
-                      f_e
-                  in
-                  "Occurrence " ^ string_of_int i ^ ":\nTarget:\n"
-                  ^ Big.to_string t.target ^ "\n dot:\n"
-                  ^ Big.(to_dot t.target "target")
-                  ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\nC:\n"
-                  ^ Big.to_string c ^ "\nD:\n" ^ Big.to_string d
-                  ^ "\nTensor:\n"
-                  ^ Big.(to_string (tens t.pattern id_big))
-                  ^ "\nComposition D:\n"
-                  ^ Big.(to_string (comp (tens t.pattern id_big) d))
-                  ^ "\nComposition C:\n"
-                  ^ Big.(to_string (comp c (comp (tens t.pattern id_big) d)))
-                  ^ "\n dot:\n"
-                  ^ Big.(
-                      to_dot
-                        (comp c (comp (tens t.pattern id_big) d))
-                        ("occ_" ^ string_of_int i)))
-                occs
-            |> String.concat "\n" );
-        ],
-      [ ST.xml_block "failure" attr_match [ msg ] ] )
+    Printf.printf "Error:%s\n%s\n" msg
+      ((List.length occs |> string_of_int)
+      ^ " errors out of " ^ string_of_int total ^ "\nDecompositions:\n"
+      ^ (List.mapi
+           (fun i { Solver.nodes = i_n; edges = i_e; hyper_edges = f_e } ->
+             let c, d, id_big =
+               Big.decomp ~target:t.target ~pattern:t.pattern ~i_n ~i_e f_e
+             in
+             "Occurrence " ^ string_of_int i ^ ":\nTarget:\n"
+             ^ Big.to_string t.target ^ "\n dot:\n"
+             ^ Big.(to_dot t.target "target")
+             ^ "\nPattern:\n" ^ Big.to_string t.pattern ^ "\nC:\n"
+             ^ Big.to_string c ^ "\nD:\n" ^ Big.to_string d ^ "\nTensor:\n"
+             ^ Big.(to_string (tens t.pattern id_big))
+             ^ "\nComposition D:\n"
+             ^ Big.(to_string (comp (tens t.pattern id_big) d))
+             ^ "\nComposition C:\n"
+             ^ Big.(to_string (comp c (comp (tens t.pattern id_big) d)))
+             ^ "\n dot:\n"
+             ^ Big.(
+                 to_dot
+                   (comp c (comp (tens t.pattern id_big) d))
+                   ("occ_" ^ string_of_int i)))
+           occs
+        |> String.concat "\n"))
   and error n0 b0 n1 b1 =
-    n0 ^ "\n" ^ Big.to_string b0 ^ "\n" ^ n1 ^ "\n" ^ Big.to_string b1 ^ "\n"
-    ^ Printexc.get_backtrace ()
+    print_endline @@ n0 ^ "\n" ^ Big.to_string b0 ^ "\n" ^ n1 ^ "\n"
+    ^ Big.to_string b1 ^ "\n" ^ Printexc.get_backtrace ()
   in
-  List.map (fun t ->
+  List.iter (fun t ->
       let default_fail_msg =
         sprintf "%s cannot be matched in %s." t.p_name t.t_name
       and decomp_fail_msg =
@@ -124,42 +106,29 @@ let do_tests =
               (fun o -> not (test_decomposition t.target t.pattern o))
               occs
           with
-          | [] -> success t
+          | [] -> ()
           | l -> failure_decomp t decomp_fail_msg l (List.length occs)
         else failure_occ t default_fail_msg
       with
       | S.NODE_FREE -> (
           (* tests 23 and 16 are special cases *)
           match (t.t_name, t.p_name) with
-          | "T13", "P23" | "T10", "P16" -> success t
-          | _ -> failure_occ t default_fail_msg )
+          | "T13", "P23" | "T10", "P16" -> ()
+          | _ -> failure_occ t default_fail_msg)
       | Big.COMP_ERROR (x, y) -> (
           (* pattern in test 25 is not epi *)
           match (t.t_name, t.p_name) with
-          | "T14", "P25" -> success t
+          | "T14", "P25" -> ()
           | _ ->
               failure_occ t
                 (sprintf "Interfaces %s != %s" (Big.string_of_inter x)
-                   (Big.string_of_inter y)) )
-      | _ ->
-          ( t.t_name ^ " &gt; " ^ t.p_name,
-            module_name,
-            ST.(xml_block "system-out" [] [ error_msg ]),
-            [
-              ST.(
-                xml_block "error" attr_err
-                  [ error t.t_name t.target t.p_name t.pattern ]);
-            ] ))
+                   (Big.string_of_inter y)))
+      | _ -> error t.t_name t.target t.p_name t.pattern)
 
 let do_equality_tests l ts =
-  let success s msg =
-    (s, module_name, ST.xml_block "system-out" [] [ msg ], [])
-  and failure s msg_out msg =
-    ( s,
-      module_name,
-      ST.xml_block "system-out" [] [ msg_out ],
-      [ ST.xml_block "failure" attr_match [ msg ] ] )
+  let failure msg_out msg = Printf.printf "Error: %s\n%s\n" msg msg_out
   and error n b =
+    print_endline
     (* let aux m = *)
     (* "(" ^ (string_of_int m.Sparse.r) ^ " X " ^ (string_of_int m.Sparse.c)
        ^ ") " *)
@@ -167,7 +136,8 @@ let do_equality_tests l ts =
     (* (("(" ^ (string_of_int i) *)
     (* ^ "," ^ (string_of_int j) ^ ")") :: acc)) *)
     (* m [])) in *)
-    n ^ "\n" ^ Big.to_string b ^ "\n"
+    @@ "Error: "
+    ^ n ^ "\n" ^ Big.to_string b ^ "\n"
     (* ^ "edges: " ^ (string_of_int (Sparse.entries (b.p.nn))) ^ "\n" *)
     (* ^ "rn:\n" ^  (aux b.p.rn) ^ "\n" *)
     (* ^ "rs:\n" ^  (aux b.p.rs) ^ "\n" *)
@@ -180,72 +150,44 @@ let do_equality_tests l ts =
     (* (Sparse.append b.p.nn b.p.ns))) ^ "\n" *)
     ^ Printexc.get_backtrace ()
   in
-  List.map
+  List.iter
     (fun (n, b) ->
-      let s = n ^ " = " ^ n in
       try
-        if S.equal b b then success s "Bigraphs are equal"
-        else failure s "Bigraphs are not equal" (sprintf "%s != %s" n n)
+        if S.equal b b then ()
+        else failure "Bigraphs are not equal" (sprintf "%s != %s" n n)
+      with _ -> error n b)
+    (List.sort (fun (x, _) (y, _) -> String.compare x y) l);
+  List.iter
+    (fun t ->
+      try
+        if S.equal t.target t.pattern then
+          match (t.t_name, t.p_name) with
+          | "T16", "T16" -> ()
+          | _ ->
+              failure "Bigraphs are equal"
+                (Big.to_dot t.target t.t_name
+                ^ "\n"
+                ^ Big.to_dot t.pattern t.p_name)
+        else ()
       with _ ->
-        ( s,
-          module_name,
-          ST.(xml_block "system-out" [] [ error_msg ]),
-          [ ST.(xml_block "error" attr_err [ error n b ]) ] ))
-    (List.sort (fun (x, _) (y, _) -> String.compare x y) l)
-  @ List.map
-      (fun t ->
-        let s = t.t_name ^ " = " ^ t.p_name in
-        try
-          if S.equal t.target t.pattern then
-            match (t.t_name, t.p_name) with
-            | "T16", "T16" -> success s "Bigraphs are equal"
-            | _ ->
-                failure s "Bigraphs are equal"
-                  ( Big.to_dot t.target t.t_name
-                  ^ "\n"
-                  ^ Big.to_dot t.pattern t.p_name )
-          else success s "Bigraphs are not equal"
-        with _ ->
-          ( s,
-            module_name,
-            ST.(xml_block "system-out" [] [ error_msg ]),
-            [
-              ST.(
-                xml_block "error" attr_err
-                  [
-                    t.t_name ^ "\n" ^ Big.to_string t.target ^ "\n"
-                    ^ t.p_name ^ "\n" ^ Big.to_string t.pattern ^ "\n"
-                    ^ Printexc.get_backtrace ();
-                  ]);
-            ] ))
-      ts
+        print_endline @@ "Error: " ^ t.t_name ^ "\n" ^ Big.to_string t.target
+        ^ "\n" ^ t.p_name ^ "\n" ^ Big.to_string t.pattern ^ "\n"
+        ^ Printexc.get_backtrace ())
+    ts
 
 let do_to_string_tests =
-  let success s msg =
-    (s, module_name, ST.xml_block "system-out" [] [ msg ], [])
-  and failure s msg_out msg =
-    ( s,
-      module_name,
-      ST.xml_block "system-out" [] [ msg_out ],
-      [ ST.xml_block "failure" attr_match [ msg ] ] )
-  and error n b e =
-    n ^ "\n" ^ Big.to_string b ^ "\n" ^ Printexc.to_string e ^ "\n"
-    ^ Printexc.get_backtrace ()
+  let error n b e =
+    print_endline @@ "Error: " ^ n ^ "\n" ^ Big.to_string b ^ "\n"
+    ^ Printexc.to_string e ^ "\n" ^ Printexc.get_backtrace ()
   in
-  List.map (fun (n, b) ->
-      let s = n ^ " = Big.of_string(Big.to_string(" ^ n ^ "))"
-      and s_b = Big.to_string b in
+  List.iter (fun (n, b) ->
+      let s_b = Big.to_string b in
       try
-        if S.equal b (Big.of_string s_b) then
-          success s "Bigraph parsed correctly"
+        if S.equal b (Big.of_string s_b) then ()
         else
-          failure s "Parse error"
-            (sprintf "%s != %s" s_b (Big.to_string (Big.of_string s_b)))
-      with e ->
-        ( s,
-          module_name,
-          ST.(xml_block "system-out" [] [ error_msg ]),
-          [ ST.(xml_block "error" attr_err [ error n b e ]) ] ))
+          Printf.printf "Parse error: %s != %s\n" s_b
+            (Big.to_string (Big.of_string s_b))
+      with e -> error n b e)
 
 let tests bgs =
   (* TEST 1 *)
@@ -660,18 +602,7 @@ let () =
     |> List.map (fun (n, ls) -> (n, Big.of_string ls))
   in
   let ts = tests bgs in
-  let testcases_match = do_tests ts
-  and testcases_eq = do_equality_tests bgs ts
-  and testcases_to_string = do_to_string_tests bgs in
-  print_endline "OK";
-  IO.mkdir Sys.argv.(2);
-  ST.(
-    write_xml
-      (testsuite "test_match" testcases_match)
-      Sys.argv.(2) "match-junit.xml";
-    write_xml (testsuite "test_eq" testcases_eq) Sys.argv.(2) "eq-junit.xml";
-    write_xml
-      (testsuite "test_to_string" testcases_to_string)
-      Sys.argv.(2) "to-string-junit.xml");
-  print_endline "Done!";
+  do_tests ts;
+  do_equality_tests bgs ts;
+  do_to_string_tests bgs;
   exit 0

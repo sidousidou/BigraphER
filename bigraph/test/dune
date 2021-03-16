@@ -3,84 +3,13 @@
    debug_ksat test_bug_spec)
  (libraries CI_utils bigraph))
 
-(rule
- (alias runtest)
+(cram
  (deps
-  (:exe test_match.exe)
-  (glob_files ../files/*.big))
- (action
-  (progn
-   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
-   (run %{exe} ../files %{project_root}/shippable/testresults))))
-
-(rule
- (alias runtest)
- (deps
-  (:exe test_decomp.exe)
-  (glob_files ../files/*.big))
- (action
-  (progn
-   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
-   (run %{exe} ../files/ %{project_root}/shippable/testresults
-     decomp-junit.xml))))
-
-(rule
- (alias runtest)
- (deps
-  (:exe test_brs.exe))
- (action
-  (progn
-   (run %{bin:mkdir} -p %{project_root}/shippable/testresults)
-   (run %{exe} %{project_root}/shippable/testresults brs-junit.xml))))
-
-(rule
- (alias runtest)
- (deps
-  (:exe test_inst.exe))
- (action
-  (run %{exe} %{project_root}/shippable/testresults inst-junit.xml)))
-
-(rule
- (deps
-  (:exe test_bug_savannah.exe))
- (action
-  (with-stdout-to
-   test_bug_savannah.output
-   (run %{exe}))))
-
-(rule
- (alias runtest)
- (deps
-  (:ref test_bug_savannah.reference))
- (action
-  (diff %{ref} test_bug_savannah.output)))
-
-(rule
- (deps
-  (:exe test_bug_spec.exe))
- (action
-  (with-stdout-to
-   test_bug_spec.output
-   (run %{exe}))))
-
-(rule
- (alias runtest)
- (deps
-  (:ref test_bug_spec.reference))
- (action
-  (diff %{ref} test_bug_spec.output)))
-
-(rule
- (deps
-  (:exe debug_ksat.exe))
- (action
-  (with-stdout-to
-   debug_ksat.output
-   (run %{exe}))))
-
-(rule
- (alias runtest)
- (deps
-  (:ref debug_ksat.reference))
- (action
-  (diff %{ref} debug_ksat.output)))
+  test_match.exe
+  test_inst.exe
+  test_decomp.exe
+  test_brs.exe
+  test_bug_savannah.exe
+  test_bug_spec.exe
+  debug_ksat.exe
+  (glob_files ./files/*.big)))

@@ -1,5 +1,4 @@
 open Bigraph
-module ST = CI_utils.Shippable_test
 module IO = CI_utils.Io
 module S = Solver.Make_SAT (Solver.MS)
 module BRS = Brs.Make (S)
@@ -71,28 +70,13 @@ let test = [ (b1, rr1, b1'); (b2, rr2, b2'); (b3, rr3, b3') ]
 
 let () =
   let print_res (a, r, b) =
-    ST.xml_block "system-out" []
-      [
-        "a:\n" ^ Big.to_string a ^ "\nr:\n" ^ BRS.string_of_react r
-        ^ "\nb:\n" ^ Big.to_string b;
-      ]
+    "a:\n" ^ Big.to_string a ^ "\nr:\n" ^ BRS.string_of_react r ^ "\nb:\n"
+    ^ Big.to_string b
   in
-  let testcases =
-    List.mapi
-      (fun i ((a, r, b) as t) ->
-        let label = "test_inst" ^ string_of_int i
-        and print_out = print_res (a, r, b) in
-        if check t then (label, __MODULE__, print_out, [])
-        else
-          ( label,
-            __MODULE__,
-            print_out,
-            [ ST.xml_block "failure" [ ("message", "Wrong rewriting") ] [] ]
-          ))
-      test
-  in
-  print_endline "OK";
-  IO.mkdir Sys.argv.(1);
-  ST.(write_xml (testsuite "test_inst" testcases) Sys.argv.(1) Sys.argv.(2));
-  print_endline "Done!";
+  List.iteri
+    (fun i ((a, r, b) as t) ->
+      if check t then ()
+      else
+        Printf.printf "Test %d: wrong rewriting\n%s" i (print_res (a, r, b)))
+    test;
   exit 0

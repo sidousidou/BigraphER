@@ -66,10 +66,10 @@ and p =
 
 let () =
   print_endline @@ "Occurrences:\n"
-  ^ ( S.occurrences ~target:s5 ~pattern:p
+  ^ (S.occurrences ~target:s5 ~pattern:p
     |> List.map (fun o ->
            Solver.(
              Iso.to_string o.nodes ^ ", " ^ Iso.to_string o.edges ^ ", "
              ^ Fun.to_string o.hyper_edges))
-    |> String.concat "\n" );
+    |> String.concat "\n");
   exit 0
