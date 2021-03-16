@@ -16,11 +16,7 @@ let do_tests =
         if test_prime_decomposition b then ()
         else Printf.printf "Test %s failed.\n" n
       with
-      | Place.NOT_PRIME ->
-          Printf.printf
-            "Test %s passed. Place graph not decomposable into prime \
-             components.\n"
-            n
+      | Place.NOT_PRIME -> ()
       | _ ->
           Printf.printf "Test %s error: %s\n" n (Printexc.get_backtrace ()))
 

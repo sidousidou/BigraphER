@@ -2,10 +2,6 @@ Test bigraph library
   $ ./test_match.exe ./files
   $ ./test_inst.exe
   $ ./test_decomp.exe ./files
-  Test T12 passed. Place graph not decomposable into prime components.
-  Test T13 passed. Place graph not decomposable into prime components.
-  Test T9 passed. Place graph not decomposable into prime components.
-  Test T8 passed. Place graph not decomposable into prime components.
   $ ./test_brs.exe
   brs
   States: 30
