@@ -29,9 +29,9 @@ module type P = sig
       * (int * r_label * r_t list) list
       * int) ->
     p_class list ->
-    ( (int * (Big.t * r_label * r_t list)) list
+    ((int * (Big.t * r_label * r_t list)) list
     * (int * r_label * r_t list) list
-    * int )
+    * int)
     * int
 
   val scan_sim :
@@ -55,9 +55,9 @@ module type P = sig
         * (int * r_label * r_t list) list
         * int) ->
       t list ->
-      ( (int * (Big.t * r_label * r_t list)) list
+      ((int * (Big.t * r_label * r_t list)) list
       * (int * r_label * r_t list) list
-      * int )
+      * int)
       * int
 
     val scan_sim :
@@ -146,7 +146,7 @@ struct
                 _scan_sim b (m + m') ~const_pri cs
             | Some (a, b, c), m' ->
                 let b', m'' = rewrite a (Place.trans a.p) const_pri in
-                (Some (b', b, c), m + m' + m'') )
+                (Some (b', b, c), m + m' + m''))
         | R _ :: cs ->
             (* Skip *)
             _scan_sim b m ~const_pri cs

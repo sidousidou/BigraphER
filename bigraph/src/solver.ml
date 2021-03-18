@@ -266,7 +266,7 @@ module KS_W : E = struct
         match Kissat.value_of _s v with
         | Kissat.False -> False
         | Kissat.True -> True
-        | Kissat.Unknown -> Unknown )
+        | Kissat.Unknown -> Unknown)
 
   let positive_lit = Kissat.pos_lit
 
@@ -590,7 +590,7 @@ module MS =
       let string_of_solver_t = "MiniSAT"
     end)
     ((
-    MS_W : E ))
+    MS_W : E))
 
 (*Instance of MiniCARD solver *)
 module MC =
@@ -601,7 +601,7 @@ module MC =
       let string_of_solver_t = "MiniCARD"
     end)
     ((
-    MC_W : E ))
+    MC_W : E))
 
 (*Instance of Kissat solver *)
 module KS =
@@ -612,7 +612,7 @@ module KS =
       let string_of_solver_t = "Kissat"
     end)
     ((
-    KS_W : E ))
+    KS_W : E))
 
 (* Instance of MapleLCMDiscChronoBT-DL-v3 solver *)
 module MP =
@@ -623,7 +623,7 @@ module MP =
       let string_of_solver_t = "MapleLCMDiscChronoBT-DL-v3"
     end)
     ((
-    MP_W : E ))
+    MP_W : E))
 
 (* The type of a bigraph matching engine *)
 module type M = sig
@@ -692,18 +692,18 @@ module Make_SAT (S : S) : M = struct
   let _print_dump solver vars =
     let aux s m descr =
       descr ^ "\n"
-      ^ ( Array.map
-            (fun row ->
-              Array.map
-                (fun x ->
-                  match S.value_of s x with
-                  | True -> "t"
-                  | False -> "f"
-                  | Unknown -> "-")
-                row
-              |> Array.to_list |> String.concat "")
-            m
-        |> Array.to_list |> String.concat "\n" )
+      ^ (Array.map
+           (fun row ->
+             Array.map
+               (fun x ->
+                 match S.value_of s x with
+                 | True -> "t"
+                 | False -> "f"
+                 | Unknown -> "-")
+               row
+             |> Array.to_list |> String.concat "")
+           m
+        |> Array.to_list |> String.concat "\n")
       |> print_endline
     in
     let stats = S.get_stats solver in
@@ -773,8 +773,8 @@ module Make_SAT (S : S) : M = struct
     (* true if the degrees are compatible *)
     let compat_deg t p =
       match p with
-      | V d -> ( match t with V d' -> d = d' | S _ -> false )
-      | S d -> ( match t with V d' -> d' >= d | S d' -> d' >= d )
+      | V d -> ( match t with V d' -> d = d' | S _ -> false)
+      | S d -> ( match t with V d' -> d' >= d | S d' -> d' >= d)
 
     (* Match nodes in compatible DAG edges *)
     let match_cmp ~target:t ~pattern:p ~n_t ~n_p cmp s m =
@@ -828,7 +828,7 @@ module Make_SAT (S : S) : M = struct
                 (fun j acc -> S.positive_lit m.(i).(j) :: acc)
                 compat_t []
               |> S.add_clause s;
-              IntSet.union acc_c compat_t ))
+              IntSet.union acc_c compat_t))
           l_p acc
       in
       aux (leaves p) (leaves t) IntSet.empty |> aux (orphans p) (orphans t)
@@ -1290,7 +1290,7 @@ module Make_SAT (S : S) : M = struct
               (fun e_t (j, acc) ->
                 if sub_edge e_p.p e_t.p n_t n_p then (
                   Base.H_int.add f_e j i;
-                  (j + 1, IntSet.add j acc) )
+                  (j + 1, IntSet.add j acc))
                 else (j + 1, acc))
               non_empty_t (0, IntSet.empty)
           in
@@ -1309,7 +1309,7 @@ module Make_SAT (S : S) : M = struct
                   r
                 |> S.add_implication solver (S.positive_lit w.(l0).(l1)))
               (compat_clauses e_p i compat_t h n_t n_p);
-            i + 1 ))
+            i + 1))
         open_p 0
       |> ignore;
       compat_sub open_p non_empty_t f_e n_t n_p
@@ -1491,7 +1491,7 @@ module Make_SAT (S : S) : M = struct
         then (solver, vars)
         else (
           ban_solution solver vars;
-          filter_solve t p t_trans (solver, vars) )
+          filter_solve t p t_trans (solver, vars))
 
   (* Mapping solver variables to matching variables *)
   module Lookup = struct
@@ -1505,9 +1505,9 @@ module Make_SAT (S : S) : M = struct
 
     let create vars =
       Hashtbl.create
-        ( Base.size_matrix vars.nodes
+        (Base.size_matrix vars.nodes
         + Base.size_matrix vars.nodes
-        + Base.size_matrix vars.hyp )
+        + Base.size_matrix vars.hyp)
 
     let fill wrap_f m t =
       Base.iter_matrix (fun i j x -> Hashtbl.add t x (wrap_f i j)) m
@@ -1515,23 +1515,24 @@ module Make_SAT (S : S) : M = struct
 
   (* Sets of occurrences *)
   module O = struct
-    include Base.S_opt
-              (Set.Make (struct
-                type t = occ
+    include
+      Base.S_opt
+        (Set.Make (struct
+          type t = occ
 
-                let compare { nodes = n0; edges = e0; hyper_edges = h0 }
-                    { nodes = n1; edges = e1; hyper_edges = h1 } =
-                  Base.(
-                    pair_compare Iso.compare
-                      (pair_compare Iso.compare Fun.compare)
-                      (n0, (e0, h0))
-                      (n1, (e1, h1)))
-              end))
-              (struct
-                type t = occ
+          let compare { nodes = n0; edges = e0; hyper_edges = h0 }
+              { nodes = n1; edges = e1; hyper_edges = h1 } =
+            Base.(
+              pair_compare Iso.compare
+                (pair_compare Iso.compare Fun.compare)
+                (n0, (e0, h0))
+                (n1, (e1, h1)))
+        end))
+        (struct
+          type t = occ
 
-                let pp = pp_occ
-              end)
+          let pp = pp_occ
+        end)
 
     exception Result of occ
 
@@ -1639,10 +1640,10 @@ module Make_SAT (S : S) : M = struct
       target:Big.t -> pattern:Big.t -> Sparse.t -> occ list
   end = struct
     let auto b b_trans =
-      ( try
-          solver_setup b b |> filter_solve_all b b b_trans |> fun occs ->
-          O.fold (fun o acc -> (o.nodes, o.edges) :: acc) occs []
-        with NO_MATCH -> [] )
+      (try
+         solver_setup b b |> filter_solve_all b b b_trans |> fun occs ->
+         O.fold (fun o acc -> (o.nodes, o.edges) :: acc) occs []
+       with NO_MATCH -> [])
       |> List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e))
 
     let occurs ~target:t ~pattern:p t_trans =
@@ -1652,7 +1653,7 @@ module Make_SAT (S : S) : M = struct
           else if quick_unsat t p then false
           else (
             ignore (solver_setup t p |> filter_solve t p t_trans);
-            true )
+            true)
         with NO_MATCH -> false)
 
     let occurrence ~target:t ~pattern:p t_trans =

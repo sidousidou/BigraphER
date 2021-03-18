@@ -27,7 +27,7 @@ let parse_name s a =
         |> List.map (fun p ->
                try I (int_of_string p)
                with Failure _ -> (
-                 try F (float_of_string p) with Failure _ -> S p ))
+                 try F (float_of_string p) with Failure _ -> S p))
       in
       C (n, ps, a)
   | _ -> invalid_arg err
@@ -57,7 +57,7 @@ let rec params_compare = function
   | x :: xs, y :: ys -> (
       match param_compare (x, y) with
       | 0 -> params_compare (xs, ys)
-      | res -> res )
+      | res -> res)
   | _ -> assert false
 
 let compare (C (c0, p0, _)) (C (c1, p1, _)) =

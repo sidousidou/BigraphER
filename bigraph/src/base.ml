@@ -41,7 +41,7 @@ module M_opt (M_lib : Map.S) (P : Pp with type t = M_lib.key) = struct
     in
     open_b out ();
     first out;
-    ( match min_binding m with
+    (match min_binding m with
     | None -> ()
     | Some (a, b) ->
         let m' = remove a m in
@@ -50,7 +50,7 @@ module M_opt (M_lib : Map.S) (P : Pp with type t = M_lib.key) = struct
           (fun a b ->
             sep out;
             pp_binding out a b)
-          m' );
+          m');
     last out;
     pp_close_box out ()
 end
@@ -76,7 +76,7 @@ module S_opt (S_lib : Set.S) (P : Pp with type t = S_lib.elt) = struct
     let open Format in
     open_b out ();
     first out;
-    ( match min_elt s with
+    (match min_elt s with
     | None -> ()
     | Some min ->
         let s' = remove min s in
@@ -85,7 +85,7 @@ module S_opt (S_lib : Set.S) (P : Pp with type t = S_lib.elt) = struct
           (fun x ->
             sep out;
             P.pp out x)
-          s' );
+          s');
     last out;
     pp_close_box out ()
 end

@@ -34,71 +34,68 @@ module Make (S : Solver.M) = struct
   module AC = AppCond.Make (S)
 
   module R = struct
-    include React.Make (S) (AC)
-              (struct
-                type ac = AppCond.t
+    include
+      React.Make (S) (AC)
+        (struct
+          type ac = AppCond.t
 
-                type t = react
+          type t = react
 
-                type label = float
+          type label = float
 
-                let name r = r.name
+          let name r = r.name
 
-                let lhs r = r.rdx
+          let lhs r = r.rdx
 
-                let rhs r = r.rct
+          let rhs r = r.rct
 
-                let conds r = r.conds
+          let conds r = r.conds
 
-                let l r = r.rate
+          let l r = r.rate
 
-                let map r = r.eta
+          let map r = r.eta
 
-                let merge_occ (b, rho, r) (_, rho', r') =
-                  (b, rho +. rho', r @ r')
+          let merge_occ (b, rho, r) (_, rho', r') = (b, rho +. rho', r @ r')
 
-                let equal r r' =
-                  S.equal r.rdx r'.rdx && S.equal r.rct r'.rct
-                  && Base.opt_equal Fun.equal r.eta r'.eta
-                  && r.rate = r'.rate
+          let equal r r' =
+            S.equal r.rdx r'.rdx && S.equal r.rct r'.rct
+            && Base.opt_equal Fun.equal r.eta r'.eta
+            && r.rate = r'.rate
 
-                let val_chk r = r.rate > 0.0
+          let val_chk r = r.rate > 0.0
 
-                let val_chk_error_msg = "Not a stochastic rate"
+          let val_chk_error_msg = "Not a stochastic rate"
 
-                let string_of_label = Printf.sprintf "%-3g"
+          let string_of_label = Printf.sprintf "%-3g"
 
-                let make ~name ~lhs ~rhs ?conds:(c = []) r eta =
-                  { name; rdx = lhs; rct = rhs; eta; rate = r; conds = c }
+          let make ~name ~lhs ~rhs ?conds:(c = []) r eta =
+            { name; rdx = lhs; rct = rhs; eta; rate = r; conds = c }
 
-                let step_post x = x
+          let step_post x = x
 
-                let random_step_post (ss, m) =
-                  (* Sort transitions by rate *)
-                  let ss_sorted =
-                    List.fast_sort
-                      (fun (_, a, _) (_, b, _) ->
-                        compare (a : float) (b : float))
-                      ss
-                  in
-                  (* Compute exit rate *)
-                  let a0 =
-                    List.fold_left (fun acc (_, rho, _) -> acc +. rho) 0.0 ss
-                  in
-                  let r = Random.float 1.0 *. a0 in
-                  let rec aux acc = function
-                    | (s, rho, reaction_rules) :: ss ->
-                        let acc' = acc +. rho in
-                        if acc' > r then
-                          let tau =
-                            1. /. a0 *. log (1. /. Random.float 1.0)
-                          in
-                          (Some (s, tau, reaction_rules), m)
-                        else aux acc' ss
-                    | [] -> (None, m)
-                  in
-                  aux 0.0 ss_sorted
-              end)
+          let random_step_post (ss, m) =
+            (* Sort transitions by rate *)
+            let ss_sorted =
+              List.fast_sort
+                (fun (_, a, _) (_, b, _) -> compare (a : float) (b : float))
+                ss
+            in
+            (* Compute exit rate *)
+            let a0 =
+              List.fold_left (fun acc (_, rho, _) -> acc +. rho) 0.0 ss
+            in
+            let r = Random.float 1.0 *. a0 in
+            let rec aux acc = function
+              | (s, rho, reaction_rules) :: ss ->
+                  let acc' = acc +. rho in
+                  if acc' > r then
+                    let tau = 1. /. a0 *. log (1. /. Random.float 1.0) in
+                    (Some (s, tau, reaction_rules), m)
+                  else aux acc' ss
+              | [] -> (None, m)
+            in
+            aux 0.0 ss_sorted
+        end)
 
     let is_inst r = l r = infinity
   end
@@ -153,10 +150,11 @@ module Make (S : Solver.M) = struct
     let typ = Rs.SBRS
   end
 
-  include Rs.Make (S) (R) (P) ((L : Rs.L with type l = R.label))
-            ((
-            G : Rs.G with type l = R.label ))
-            (K)
+  include
+    Rs.Make (S) (R) (P) ((L : Rs.L with type l = R.label))
+      ((
+      G : Rs.G with type l = R.label))
+      (K)
 
   let rate = label
 end

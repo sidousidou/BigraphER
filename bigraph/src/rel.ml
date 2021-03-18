@@ -38,10 +38,10 @@ let pp =
 
 let to_string r =
   "{"
-  ^ ( M_int.bindings r
+  ^ (M_int.bindings r
     |> List.map (fun (i, js) ->
            "(" ^ string_of_int i ^ ", " ^ IntSet.to_string js)
-    |> String.concat ", " )
+    |> String.concat ", ")
   ^ "}"
 
 let to_list = M_int.bindings

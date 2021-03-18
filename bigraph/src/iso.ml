@@ -37,10 +37,10 @@ let pp out (i, _) =
 
 let to_string (i, _) =
   "{"
-  ^ ( M_int.bindings i
+  ^ (M_int.bindings i
     |> List.map (fun (i, j) ->
            "(" ^ string_of_int i ^ ", " ^ string_of_int j ^ ")")
-    |> String.concat ", " )
+    |> String.concat ", ")
   ^ "}"
 
 let is_id (i, _) = M_int.for_all int_equal i

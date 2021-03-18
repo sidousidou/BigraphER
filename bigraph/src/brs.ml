@@ -132,8 +132,9 @@ module Make (S : Solver.M) = struct
     let typ = Rs.BRS
   end
 
-  include Rs.Make (S) (R) (P) ((L : Rs.L with type l = R.label))
-            ((
-            G : Rs.G with type l = R.label ))
-            (K)
+  include
+    Rs.Make (S) (R) (P) ((L : Rs.L with type l = R.label))
+      ((
+      G : Rs.G with type l = R.label))
+      (K)
 end

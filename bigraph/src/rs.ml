@@ -103,11 +103,11 @@ module MakeE (G : G) = struct
           if vertex1 <> !previous_vertex then (
             previous_vertex := vertex1;
             previous_action := "!";
-            previous_number := -1 );
+            previous_number := -1);
           if action <> !previous_action then (
             previous_action := action;
             previous_number := !previous_number + 1;
-            choices := !choices + 1 );
+            choices := !choices + 1);
           ( vertex1,
             vertex2,
             string_of_int !previous_number,
@@ -224,7 +224,7 @@ module MakeE (G : G) = struct
                 !next_id action
                 (generate_reward_html reward)
                 vertex1 action vertex1 !next_id
-              :: acc ))
+              :: acc))
           (G.edges g) []
       in
       (String.concat "" nodes, mapping)
@@ -244,7 +244,8 @@ module MakeE (G : G) = struct
     if Base.S_predicate.is_empty relevant_preds then string_of_int i
     else
       let print_predicates =
-        Base.S_predicate.elements relevant_preds |> List.split |> fst |> String.concat ", "
+        Base.S_predicate.elements relevant_preds
+        |> List.split |> fst |> String.concat ", "
       in
       string_of_int i ^ " -- " ^ print_predicates
 
@@ -304,11 +305,11 @@ module MakeE (G : G) = struct
     let labs =
       Base.S_predicate.fold
         (fun (p, r) acc ->
-          ( match Base.H_predicate.find_all h (p, r) with
+          (match Base.H_predicate.find_all h (p, r) with
           | [] -> "false"
           | xs ->
               List.map (fun s -> "x = " ^ string_of_int s) xs
-              |> String.concat " | " )
+              |> String.concat " | ")
           |> fun s ->
           "label \"" ^ sanitise p ^ "\" = " ^ s |> fun s -> s :: acc)
         preds []
@@ -595,7 +596,7 @@ struct
             Base.H_int.add (G.edges g) v (a, b, string_of_reaction_rules c))
           old_s;
         (* recursive call *)
-        _bfs g q i' (m + m') t0 priorities predicates max iter_f )
+        _bfs g q i' (m + m') t0 priorities predicates max iter_f)
     else (g, stats_init ~t0 ~states:(size_s g) ~trans:(size_t g) ~occs:m)
 
   let bfs ~s0 ~priorities ~predicates ~max iter_f =

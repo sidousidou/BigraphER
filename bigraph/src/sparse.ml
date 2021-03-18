@@ -24,8 +24,8 @@ let compare a b =
       | 0 -> (
           match M_int.compare IntSet.compare a.r_major b.r_major with
           | 0 -> M_int.compare IntSet.compare a.c_major b.c_major
-          | x -> x )
-      | x -> x )
+          | x -> x)
+      | x -> x)
   | x -> x
 
 let _init_array m =
@@ -54,7 +54,7 @@ let pp out m =
       if i = m.r - 1 then pp_ints out r
       else (
         pp_ints out r;
-        pp_print_cut out () ))
+        pp_print_cut out ()))
     buff;
   pp_close_box out ()
 
@@ -262,7 +262,9 @@ let levels m =
     in
     if IntSet.is_empty leaves then res
     else
-      fix (IntSet.union acc leaves) (IntSet.diff nodes leaves) (leaves :: res)
+      fix (IntSet.union acc leaves)
+        (IntSet.diff nodes leaves)
+        (leaves :: res)
   in
   fix IntSet.empty (IntSet.of_int m.r) []
 

@@ -141,7 +141,7 @@ let compare_placing a b =
   assert (a.n = 0);
   assert (b.n = 0);
   match a.r - b.r with
-  | 0 -> ( match a.s - b.s with 0 -> Sparse.compare a.rs b.rs | x -> x )
+  | 0 -> ( match a.s - b.s with 0 -> Sparse.compare a.rs b.rs | x -> x)
   | x -> x
 
 (* Tensor product: A x B (indices in the right hand-side are increased) *)
@@ -440,8 +440,8 @@ let get_dot p =
     List.fold_left
       (fun buff ns ->
         sprintf "%s{ rank=same; %s };\n" buff
-          ( IntSet.fold (fun i acc -> sprintf "v%d" i :: acc) ns []
-          |> String.concat "; " ))
+          (IntSet.fold (fun i acc -> sprintf "v%d" i :: acc) ns []
+          |> String.concat "; "))
       "" (Sparse.levels p.nn)
   (* Adjacency matrix *)
   and m_rn = Sparse.fold (arr 'r' 'v') p.rn ""

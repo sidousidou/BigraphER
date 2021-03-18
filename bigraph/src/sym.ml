@@ -1,13 +1,14 @@
 (* Power set over integers *)
 module PS = struct
-  include Base.S_opt
-            (Set.Make
-               (IntSet))
-               (struct
-                 type t = IntSet.t
+  include
+    Base.S_opt
+      (Set.Make
+         (IntSet))
+         (struct
+           type t = IntSet.t
 
-                 let pp = IntSet.pp
-               end)
+           let pp = IntSet.pp
+         end)
 
   let pp =
     pp ~open_b:Format.pp_open_hbox

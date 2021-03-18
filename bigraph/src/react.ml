@@ -160,11 +160,11 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
     let lhs = lhs r and rhs = rhs r in
     Big.inter_equal (Big.outer lhs) (Big.outer rhs)
     && lhs.Big.p.Place.n > 0 && Big.is_solid lhs
-    && ( match map r with
+    && (match map r with
        | None -> Big.inter_equal (Big.inner lhs) (Big.inner rhs)
        | Some eta ->
            let s_lhs = lhs.Big.p.Place.s and s_rhs = rhs.Big.p.Place.s in
-           Fun.is_total s_rhs eta && Fun.check_codom s_lhs eta )
+           Fun.is_total s_rhs eta && Fun.check_codom s_lhs eta)
     && val_chk r
 
   let is_valid_exn r =
@@ -259,7 +259,7 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
                         (Big.rewrite (i_n, i_e, i_h) ~s ~r0:(lhs r)
                            ~r1:(rhs r) (map r))
                     else _step s s_trans rs
-                | None -> _step s s_trans rs )
+                | None -> _step s s_trans rs)
           in
           let rec _fix s s_trans rules i =
             match _step s s_trans rules with

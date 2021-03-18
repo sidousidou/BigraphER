@@ -53,10 +53,10 @@ module Ports = struct
 
   let to_string ps =
     "{"
-    ^ ( M_int.bindings ps
+    ^ (M_int.bindings ps
       |> List.map (fun (a, b) ->
              "(" ^ string_of_int a ^ ", " ^ string_of_int b ^ ")")
-      |> String.concat ", " )
+      |> String.concat ", ")
     ^ "}"
 
   let pp =
@@ -155,8 +155,8 @@ let edg_compare (h : edg) (k : edg) =
           match Ports.compare int_compare h.p k.p with
           (* Structural equality to allow duplicates *)
           | 0 -> if h.p == k.p then 0 else 1
-          | x -> x )
-      | x -> x )
+          | x -> x)
+      | x -> x)
   | x -> x
 
 let edg_is_empty e =
@@ -172,9 +172,9 @@ let pp_edge out e =
 
 let edge_of_string s =
   try
-    ( Base.remove_block_delims s
+    (Base.remove_block_delims s
     |> Base.remove_block_delims
-    |> Str.(split_delim (regexp_string "}, {")) )
+    |> Str.(split_delim (regexp_string "}, {")))
     |> function
     | [ i; o; p ] ->
         { i = face_of_string i; o = face_of_string o; p = Ports.of_string p }
@@ -182,17 +182,18 @@ let edge_of_string s =
   with _ -> invalid_arg "Not a valid string representation of an edge"
 
 module Lg = struct
-  include S_opt
-            (Set.Make (struct
-              type t = edg
+  include
+    S_opt
+      (Set.Make (struct
+        type t = edg
 
-              let compare = edg_compare
-            end))
-            (struct
-              type t = edg
+        let compare = edg_compare
+      end))
+      (struct
+        type t = edg
 
-              let pp = pp_edge
-            end)
+        let pp = pp_edge
+      end)
 
   let add e l = if edg_is_empty e then l else add e l
 
@@ -241,9 +242,9 @@ let parse ~links:lines ~nodes =
         |> List.fold_left (flip Ports.add) Ports.empty;
       i = Face.empty;
       o =
-        ( match List.nth a (List.length a - 1) with
+        (match List.nth a (List.length a - 1) with
         | "t" -> parse_face [ "n" ^ string_of_int n ]
-        | _ -> Face.empty );
+        | _ -> Face.empty);
     }
   in
   let l =
@@ -550,12 +551,12 @@ let get_dot l =
                 buff (string_of_name n) (string_of_name n))
             e.o buff_o,
           (* Hyperedges *)
-          ( if flag then
-            sprintf
-              "%se%d [ shape=none, label=\"\", width=0, height=0, margin=0, \
-               color=green ];\n"
-              buff_h i
-          else buff_h ),
+          (if flag then
+           sprintf
+             "%se%d [ shape=none, label=\"\", width=0, height=0, margin=0, \
+              color=green ];\n"
+             buff_h i
+          else buff_h),
           (* Adjacency *)
           if flag then
             buff_adj

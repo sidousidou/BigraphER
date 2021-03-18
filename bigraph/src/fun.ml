@@ -38,10 +38,10 @@ let pp =
 
 let to_string f =
   "{"
-  ^ ( to_list f
+  ^ (to_list f
     |> List.map (fun (i, j) ->
            "(" ^ string_of_int i ^ ", " ^ string_of_int j ^ ")")
-    |> String.concat ", " )
+    |> String.concat ", ")
   ^ "}"
 
 let transform ~iso_dom ~iso_codom f =

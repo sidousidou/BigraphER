@@ -34,9 +34,9 @@ module type P = sig
       * (int * r_label * r_t list) list
       * int) ->
     p_class list ->
-    ( (int * (Big.t * r_label * r_t list)) list
+    ((int * (Big.t * r_label * r_t list)) list
     * (int * r_label * r_t list) list
-    * int )
+    * int)
     * int
   (** Iterate over priority classes. *)
 
@@ -63,9 +63,9 @@ module type P = sig
         * (int * r_label * r_t list) list
         * int) ->
       t list ->
-      ( (int * (Big.t * r_label * r_t list)) list
+      ((int * (Big.t * r_label * r_t list)) list
       * (int * r_label * r_t list) list
-      * int )
+      * int)
       * int
 
     val scan_sim :

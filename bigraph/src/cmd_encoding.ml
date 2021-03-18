@@ -36,12 +36,33 @@ struct
       | [ a; b; c; d ] ->
           (a, b) :: (a, c) :: (a, d) :: (b, c) :: (b, d) :: (c, d) :: acc
       | [ a; b; c; d; e ] ->
-          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (b, c) :: (b, d) :: (b, e)
-          :: (c, d) :: (c, e) :: (d, e) :: acc
+          (a, b)
+          ::
+          (a, c)
+          ::
+          (a, d)
+          ::
+          (a, e)
+          :: (b, c) :: (b, d) :: (b, e) :: (c, d) :: (c, e) :: (d, e) :: acc
       | [ a; b; c; d; e; f ] ->
-          (a, b) :: (a, c) :: (a, d) :: (a, e) :: (a, f) :: (b, c) :: (b, d)
-          :: (b, e) :: (b, f) :: (c, d) :: (c, e) :: (c, f) :: (d, e)
-          :: (d, f) :: (e, f) :: acc
+          (a, b)
+          ::
+          (a, c)
+          ::
+          (a, d)
+          ::
+          (a, e)
+          ::
+          (a, f)
+          ::
+          (b, c)
+          ::
+          (b, d)
+          ::
+          (b, e)
+          ::
+          (b, f)
+          :: (c, d) :: (c, e) :: (c, f) :: (d, e) :: (d, f) :: (e, f) :: acc
       | x :: rest ->
           _at_most
             (List.rev_append (List.rev_map (fun y -> (x, y)) rest) acc)
@@ -91,7 +112,7 @@ struct
                    [] cmd_l')
               |> _cmd_init n g
           (* Do not add an additional level of commander variables *)
-          | None -> t )
+          | None -> t)
       | Leaf vars -> (
           match group vars n g with
           | Some cmd_l ->
@@ -102,7 +123,7 @@ struct
                    [] cmd_l)
               |> _cmd_init n g
           (* Do not add an additional level of commander variables *)
-          | None -> t )
+          | None -> t)
     in
     _cmd_init p.t p.g (Leaf l)
 
