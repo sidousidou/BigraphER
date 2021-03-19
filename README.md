@@ -2,7 +2,6 @@
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
-[![Run Status](https://api.shippable.com/projects/5e6fa6aa5f10de0007bc21a1/badge?branch=master)]()
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/mseve/bigrapher)]()
 
 This repository contains a collection of tools for writing and
