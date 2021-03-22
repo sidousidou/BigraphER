@@ -31,7 +31,7 @@ pipelines:
           - sudo apt-get -qy update && sudo apt-get -qy upgrade && sudo apt-get -qy install m4 zlib1g-dev minisat graphviz
           - opam repo set-url --all-switches default https://opam.ocaml.org/ && opam update && opam install -y dune dune-configurator menhir cmdliner jsonm
           - eval $(opam env)
-          - dune build -j4 --profile=static
+          - dune build -j4 --profile=static bigrapher/src/bigrapher.exe
           - ldd _build/default/bigrapher/src/bigrapher.exe
           - dune build @doc
           - tar -czvf bigrapher.tar.gz _build/default/bigrapher/src/bigrapher.exe
