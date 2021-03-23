@@ -32,6 +32,7 @@ pipelines:
           - opam repo set-url --all-switches default https://opam.ocaml.org/ && opam update && opam install -y dune dune-configurator menhir cmdliner jsonm odoc
           - eval $(opam env)
           - dune build -j4 --profile=static bigrapher/src/bigrapher.exe
+          - ldd _build/default/bigrapher/src/bigrapher.exe || echo "OK"
           - dune build @doc
           - tar -czvf bigrapher.tar.gz _build/default/bigrapher/src/bigrapher.exe
           - tar -czvf doc.tar.gz _build/default/_doc/_html
