@@ -11,7 +11,7 @@ open Bigraph
 %token            EOF
 
 %token <string>   CIDE
-%token <string>   IDE       
+%token <string>   IDE
 %token <int>      CINT
 %token <float>    CFLOAT
 %token <string>   CSTRING
@@ -62,9 +62,9 @@ open Bigraph
 %token            ABS
 
 %token            PIPE DPIPE
-%token            DOT 
+%token            DOT
 
-%left  PIPE DPIPE 
+%left  PIPE DPIPE
 %left  PLUS MINUS
 %left  PROD SLASH
 %right CARET

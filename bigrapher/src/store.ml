@@ -208,7 +208,7 @@ struct
     with Not_found -> (
       match Base.H_string.find env id with
       | Some v -> aux v
-      | None -> raise (ERROR (Unbound_variable id, p)) )
+      | None -> raise (ERROR (Unbound_variable id, p)))
 
   let store_val_type = function
     | Int _, t, _
@@ -311,7 +311,7 @@ struct
         | React _
         | React_fun (_, _, _, _, _, _, _, _)
         | Int_param _ | Str_param _ | Float_param _ ->
-            false )
+            false)
 
   let get_big id p env =
     match Base.H_string.find env id with
@@ -490,8 +490,12 @@ struct
     match e with
     | Float f -> Float (Float.abs f)
     | Int i -> Int (Int.abs i)
-    | _ -> raise (ERROR (Wrong_type (fst (assign_type e []),
-                                    `core_val (`g int_or_float)), p))
+    | _ ->
+        raise
+          (ERROR
+             ( Wrong_type
+                 (fst (assign_type e []), `core_val (`g int_or_float)),
+               p ))
 
   let rec eval_op (exp : op) (scope : scope) (env : store) =
     let eval' e = eval_exp e scope env in
@@ -505,8 +509,7 @@ struct
 
   and eval_fn (exp : fn) (scope : scope) (env : store) =
     let eval' e = eval_exp e scope env in
-    match exp with
-    | Abs (e, loc) -> eval_abs (eval' e) loc
+    match exp with Abs (e, loc) -> eval_abs (eval' e) loc
 
   and eval_exp (exp : exp) (scope : scope) (env : store) =
     match exp with
@@ -657,11 +660,11 @@ struct
         (Big.intro (Link.Face.singleton (Link.Name n)), env_t)
     | Big_comp (l, r, p) -> (
         try binary_eval l r scope env env_t Big.comp
-        with Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)) )
+        with Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
     | Big_tens (l, r, p) -> (
         try binary_eval l r scope env env_t Big.tens
         with Link.NAMES_ALREADY_DEFINED (i, o) ->
-          raise (ERROR (Tens (i, o), p)) )
+          raise (ERROR (Tens (i, o), p)))
     | Big_par (l, r, _) -> binary_eval l r scope env env_t Big.par
     | Big_ppar (l, r, _) -> binary_eval l r scope env env_t Big.ppar
     | Big_share (a, psi, b, p) -> (
@@ -672,12 +675,12 @@ struct
           (Big.share a_v psi_v b_v, env_t''')
         with
         | Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p))
-        | Big.SHARING_ERROR -> raise (ERROR (Share, loc_of_big_exp psi)) )
+        | Big.SHARING_ERROR -> raise (ERROR (Share, loc_of_big_exp psi)))
     | Big_num (v, p) -> (
         match v with
         | 0 -> (Big.zero, env_t)
         | 1 -> (Big.one, env_t)
-        | _ -> raise (ERROR (Unknown_big v, p)) )
+        | _ -> raise (ERROR (Unknown_big v, p)))
     | Big_id exp ->
         ( Big.id (Big.Inter (exp.id_place, parse_face exp.id_link exp.id_loc)),
           env_t )
@@ -691,7 +694,7 @@ struct
           let i_v, env_t' = eval_ion scope env env_t false ion in
           let b_v, env_t'' = eval_big b scope env env_t' in
           (Big.nest i_v b_v, env_t'')
-        with Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)) )
+        with Big.COMP_ERROR (i, j) -> raise (ERROR (Comp (i, j), p)))
     | Big_ion ion -> eval_ion scope env env_t true ion
     | Big_close exp -> (Big.closure (Link.parse_face [ exp.cl_name ]), env_t)
     | Big_sub exp ->
@@ -714,7 +717,7 @@ struct
             let outer = Link.parse_face [ "~0" ] in
             ( Big.rename ~inner:(Link.parse_face cs.m_cl_names) ~outer b_v
               |> Big.close outer,
-              env_t' ) )
+              env_t' ))
     | Big_par_fn (n, b, p) ->
         let n' = as_int (eval_exp n scope env) p in
         if n' < 0 then raise (ERROR (Invalid_iter_op n', p))
@@ -763,12 +766,12 @@ struct
     in
     match
       P.parse_react name lhs_v rhs_v ~conds:conds'
-        ( match l with
+        (match l with
         | Some f_exp ->
             if String.equal action "" then
               `F (as_float (eval_exp f_exp scope env) p)
             else `P (action, reward, as_float (eval_exp f_exp scope env) p)
-        | None -> `E () )
+        | None -> `E ())
         eta
     with
     | None -> raise (ERROR (Reaction "Invalid reaction", p))
@@ -820,7 +823,7 @@ struct
         | A_ctrl_fun (_, _)
         | React _
         | React_fun (_, _, _, _, _, _, _, _) ->
-            false )
+            false)
 
   module IdSet = Set.Make (struct
     type t = Id.t
@@ -965,11 +968,11 @@ struct
   (******** ADD TO STORE FUNCTIONS *********)
 
   let add_to_store fmt c env id (v : typed_store_val) =
-    ( match Base.H_string.find env id with
+    (match Base.H_string.find env id with
     | Some x ->
         report_warning fmt c
           (Multiple_declaration (id, get_pos x, get_pos v))
-    | None -> () );
+    | None -> ());
     Base.H_string.replace env id v
 
   let update fmt c id (v : store_val) p env env_t =
@@ -1088,7 +1091,8 @@ struct
     in
     let rec eval_float_range start incr stop acc =
       let start' = start +. incr in
-      if start' <= stop then eval_float_range start' incr stop (start' :: acc)
+      if start' <= stop then
+        eval_float_range start' incr stop (start' :: acc)
       else acc
     in
     let flatten_int = function [ v ] -> Int v | v -> Int_param v

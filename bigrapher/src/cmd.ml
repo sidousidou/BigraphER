@@ -141,16 +141,16 @@ let eval_config fmt () =
       [
         ( "colors",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGNOCOLORS" with
+            (match Sys.getenv_opt "BIGNOCOLORS" with
             | None -> ()
-            | Some _ -> defaults.colors <- false );
+            | Some _ -> defaults.colors <- false);
             fprintf fmt "@[<hov>%b@]" defaults.colors );
         ( "consts",
           fun fmt () ->
             fprintf fmt "@[<hov>%s@]"
-              ( match Ast.string_of_consts defaults.consts with
+              (match Ast.string_of_consts defaults.consts with
               | "" -> "-"
-              | s -> s ) );
+              | s -> s) );
         ("debug", fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.debug);
         ( "export_graph",
           fun fmt () ->
@@ -183,16 +183,16 @@ let eval_config fmt () =
           fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.max_states );
         ( "out_format",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGFORMAT" with
+            (match Sys.getenv_opt "BIGFORMAT" with
             | None -> ()
-            | Some x -> defaults.out_format <- parse_formats x );
+            | Some x -> defaults.out_format <- parse_formats x);
             fprintf fmt "@[<hov>%s@]" (string_of_format defaults.out_format)
         );
         ( "quiet",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGQUIET" with
+            (match Sys.getenv_opt "BIGQUIET" with
             | None -> ()
-            | Some _ -> defaults.quiet <- true );
+            | Some _ -> defaults.quiet <- true);
             fprintf fmt "@[<hov>%b@]" defaults.quiet );
         ( "running_time",
           fun fmt () -> fprintf fmt "@[<hov>%b@]" defaults.running_time );
@@ -203,18 +203,18 @@ let eval_config fmt () =
             | Some x -> fprintf fmt "@[<hov>%d@]" x );
         ( "solver",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGSOLVER" with
+            (match Sys.getenv_opt "BIGSOLVER" with
             | None -> ()
-            | Some x -> defaults.solver <- parse_solver_type x );
+            | Some x -> defaults.solver <- parse_solver_type x);
             fprintf fmt "@[<hov>%s@]" (string_of_solver_type defaults.solver)
         );
         ("steps", fun fmt () -> fprintf fmt "@[<hov>%d@]" defaults.steps);
         ("time", fun fmt () -> fprintf fmt "@[<hov>%g@]" defaults.time);
         ( "verb",
           fun fmt () ->
-            ( match Sys.getenv_opt "BIGVERBOSE" with
+            (match Sys.getenv_opt "BIGVERBOSE" with
             | None -> ()
-            | Some _ -> defaults.verb <- true );
+            | Some _ -> defaults.verb <- true);
             fprintf fmt "@[<hov>%b@]" defaults.verb );
       ]
     in
@@ -247,7 +247,7 @@ let check_dot () =
       defaults.out_format <- default_formats;
       fprintf err_formatter "@[<v>%s Warning: %s@]"
         (warn_opt defaults.colors)
-        dot_msg )
+        dot_msg)
 
 let const_conv =
   let lexer = Genlex.make_lexer [ "=" ] in
@@ -283,7 +283,7 @@ let const_conv =
                    d_exp = EStr (Str_val (v, Loc.dummy_loc));
                    d_loc = Loc.dummy_loc;
                  })
-        | _ -> Error (`Msg "Could not parse assignment") )
+        | _ -> Error (`Msg "Could not parse assignment"))
     | _ -> Error (`Msg "Could not parse assignment")
   in
   let print_format pf = function
@@ -443,7 +443,7 @@ let sim_opts time steps seed =
       | Some s ->
           defaults.steps_flag <- true;
           defaults.steps <- s
-      | None -> () )
+      | None -> ())
 
 let sim_opts_t =
   let time =
@@ -489,7 +489,7 @@ let run f typ =
   check_dot ();
   if check_states () then (
     defaults.model <- f;
-    typ )
+    typ)
   else `exit
 
 let run_sim _copts _sopts f = run f `sim

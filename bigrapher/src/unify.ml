@@ -133,7 +133,7 @@ let resolve_type env = function
       try
         let set, t' = List.find (fun (set, _) -> Gamma.mem t set) env in
         match t' with None -> `g (Gamma.min_elt set) | Some b -> `b b
-      with Not_found -> assert false )
+      with Not_found -> assert false)
   | `b _ as t -> t
 
 let resolve_types env = List.map (resolve_type env)

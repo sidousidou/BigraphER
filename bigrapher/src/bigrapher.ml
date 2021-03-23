@@ -102,7 +102,7 @@ let print_header fmt () =
         display = true;
       };
     ]
-    |> print_table fmt )
+    |> print_table fmt)
 
 let print_max fmt =
   print_table fmt
@@ -116,7 +116,7 @@ let print_max fmt =
     ]
 
 let print_max_sim fmt typ seed =
-  ( match typ with
+  (match typ with
   | Rs.BRS | Rs.PBRS | Rs.NBRS ->
       {
         descr = ("Max sim steps:", `cyan);
@@ -130,9 +130,9 @@ let print_max_sim fmt typ seed =
         value = `f Cmd.(defaults.time);
         pp_val = pp_float "";
         display = not Cmd.defaults.running_time;
-      } )
+      })
   ::
-  ( match seed with
+  (match seed with
   | None -> []
   | Some x ->
       [
@@ -142,7 +142,7 @@ let print_max_sim fmt typ seed =
           pp_val = pp_int;
           display = not Cmd.defaults.running_time;
         };
-      ] )
+      ])
   |> print_table fmt
 
 let open_progress_bar () =
@@ -230,7 +230,7 @@ struct
             pp_print_flush fmt ();
             fprintf err_formatter "@[<v>@[%s: %s@]@."
               (Utils.err_opt Cmd.(defaults.colors))
-              e) )
+              e))
 
   let export_csl fmt f =
     match Cmd.(defaults.export_lab) with
@@ -245,7 +245,7 @@ struct
             pp_print_flush fmt ();
             fprintf err_formatter "@[<v>@[%s: %s@]@."
               (Utils.err_opt Cmd.(defaults.colors))
-              e) )
+              e))
 
   let export_states fmt f g =
     if Cmd.(defaults.export_states_flag) then
@@ -355,16 +355,16 @@ struct
     export_prism
       Cmd.(defaults.export_state_rewards)
       fmt
-      ( "Exporting the state rewards of "
+      ("Exporting the state rewards of "
       ^ Rs.string_of_rs_type T.typ
-      ^ " in PRISM format to " )
+      ^ " in PRISM format to ")
       (E.write_state_rewards graph);
     export_prism
       Cmd.(defaults.export_transition_rewards)
       fmt
-      ( "Exporting the transition rewards of "
+      ("Exporting the transition rewards of "
       ^ Rs.string_of_rs_type T.typ
-      ^ " in PRISM format to " )
+      ^ " in PRISM format to ")
       (E.write_transition_rewards graph);
     export_csl fmt (E.write_lab graph);
     Format.(pp_print_flush err_formatter ());
@@ -378,7 +378,7 @@ struct
     print_msg fmt `yellow ("Starting " ^ sim_type T.typ ^ " ...");
     print_max_sim fmt T.typ Cmd.defaults.seed;
     open_progress_bar ();
-    ( match Cmd.defaults.seed with
+    (match Cmd.defaults.seed with
     | None ->
         T.sim ~s0 ~priorities ~predicates:preds
           ~init_size:Cmd.(defaults.max_states)
@@ -386,7 +386,7 @@ struct
     | Some x ->
         T.sim ~s0 ~seed:x ~priorities ~predicates:preds
           ~init_size:Cmd.(defaults.max_states)
-          ~stop:L.stop print_loop )
+          ~stop:L.stop print_loop)
     |> after fmt close_progress_bar
 
   let full fmt s0 priorities preds =
@@ -437,9 +437,9 @@ struct
                   | SBRS -> "time"
                 in
                 print_msg fmt `yellow
-                  ( "Deadlock state reached at " ^ limit_type T.typ ^ " "
-                  ^ T.string_of_limit limit ^ "." ))
-              (graph, stats) )
+                  ("Deadlock state reached at " ^ limit_type T.typ ^ " "
+                 ^ T.string_of_limit limit ^ "."))
+              (graph, stats))
     | `full -> (
         set_trap fmt;
         try full fmt s0 priorities preds
@@ -448,7 +448,7 @@ struct
             (fun () ->
               close_progress_bar ();
               print_msg fmt `yellow "Maximum number of states reached.")
-            (graph, stats) )
+            (graph, stats))
     | `check -> check fmt
     | `exit -> ()
 
@@ -492,7 +492,7 @@ let ignore_flags () =
     if defaults.quiet then defaults.verb <- false;
     if defaults.debug then (
       defaults.running_time <- false;
-      defaults.colors <- false );
+      defaults.colors <- false);
     if defaults.running_time then defaults.colors <- false)
 
 let set_output_ch () =
@@ -509,11 +509,11 @@ let () =
         let fmt = set_output_ch () in
         print_header fmt ();
         print_msg fmt `yellow
-          ( "Parsing model file "
-          ^ ( match Cmd.(defaults.model) with
+          ("Parsing model file "
+          ^ (match Cmd.(defaults.model) with
             | None -> "stdin"
-            | Some name -> name )
-          ^ " ..." );
+            | Some name -> name)
+          ^ " ...");
         let lexbuf, file = open_lex Cmd.(defaults.model) in
         try
           let m = Parser.model Lexer.token lexbuf in
@@ -662,4 +662,4 @@ let () =
           Format.(
             fprintf err_formatter "@[%s@,%s@]@." (Printexc.to_string e)
               (Printexc.get_backtrace ());
-            exit 1) )
+            exit 1))

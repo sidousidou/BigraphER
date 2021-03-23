@@ -73,9 +73,9 @@ let dot_installed () =
           Unix.dup2 null Unix.stderr;
           Unix.dup2 null Unix.stdout;
           Unix.execvp "dot" [| "dot"; "-V" |]
-        with _ -> exit 127 )
+        with _ -> exit 127)
     | p -> (
         match snd (Unix.waitpid [] p) with
         | Unix.WEXITED 0 -> true
-        | Unix.WEXITED _ | Unix.WSTOPPED _ | Unix.WSIGNALED _ -> false )
+        | Unix.WEXITED _ | Unix.WSTOPPED _ | Unix.WSIGNALED _ -> false)
   with Unix.Unix_error _ -> false

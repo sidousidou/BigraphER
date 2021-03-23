@@ -39,7 +39,7 @@ let _write_svg s name path =
         Unix.dup2 svg_file Unix.stdout;
         Unix.close svg_file;
         Unix.execvp "dot" [| "dot"; "-Tsvg" |]
-      with _ -> exit 127 )
+      with _ -> exit 127)
   | pid -> (
       (* parent *)
       Unix.close dot_in;
@@ -50,7 +50,7 @@ let _write_svg s name path =
       | Unix.WSIGNALED i -> raise (ERROR (Dot_killed i))
       | Unix.WEXITED 0 -> b_w
       | Unix.WEXITED 127 -> raise (ERROR Dot_not_found)
-      | Unix.WEXITED i -> raise (ERROR (Dot_internal_error i)) )
+      | Unix.WEXITED i -> raise (ERROR (Dot_internal_error i)))
 
 let catch_unix_errors f arg name path =
   try f arg name path

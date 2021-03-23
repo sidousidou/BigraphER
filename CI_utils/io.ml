@@ -25,6 +25,6 @@ let mkdir dir =
   let rec aux dir =
     if not (Sys.file_exists dir) then (
       aux (Filename.dirname dir);
-      safe_mkdir dir )
+      safe_mkdir dir)
   in
   aux dir

@@ -49,8 +49,8 @@ let () =
     write_dot (Big.of_string match_) "match";
     close_in !b_in_ch;
     close_in !m_in_ch;
-    print_endline "Decomposition outputted" )
+    print_endline "Decomposition outputted")
   else (
     close_in !b_in_ch;
     close_in !m_in_ch;
-    print_endline "No match found in bigraph" )
+    print_endline "No match found in bigraph")
