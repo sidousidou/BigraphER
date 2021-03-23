@@ -672,6 +672,7 @@ let aux_step minify solver (b, reacts) =
     match solver with
     | "MSAT" -> Solver.MSAT
     | "MCARD" -> Solver.MCARD
+    | "MSIP" -> Solver.MSIP
     | s -> failwith ("Solver " ^ s ^ " not supported")
   in
   let wrapper1 func lst = List.map (fun (a, _, _) -> a) lst |> func
@@ -690,6 +691,11 @@ let aux_step minify solver (b, reacts) =
           let open struct
             module BRS = Brs.Make (Solver.Make_SAT (Solver.MC))
           end in
+          aux BRS.step (wrapper1 (occs_to_json ~minify)) b rs
+      | Solver.MSIP ->
+          let open struct
+            module BRS = Brs.Make (Solver.MSIP)
+          end in
           aux BRS.step (wrapper1 (occs_to_json ~minify)) b rs )
   | `P rs -> (
       match solver_t with
@@ -702,7 +708,12 @@ let aux_step minify solver (b, reacts) =
           let open struct
             module PBRS = Pbrs.Make (Solver.Make_SAT (Solver.MC))
           end in
-          aux PBRS.step (wrapper1 (occs_to_json ~minify)) b rs )
+          aux PBRS.step (wrapper (p_occs_to_json ~minify)) b rs
+      | Solver.MSIP ->
+          let open struct
+            module PBRS = Pbrs.Make (Solver.MSIP)
+          end in
+          aux PBRS.step (wrapper (p_occs_to_json ~minify)) b rs )
   | `S rs -> (
       match solver_t with
       | Solver.MSAT ->
@@ -713,6 +724,11 @@ let aux_step minify solver (b, reacts) =
       | Solver.MCARD ->
           let open struct
             module SBRS = Sbrs.Make (Solver.Make_SAT (Solver.MC))
+          end in
+          aux SBRS.step (wrapper (s_occs_to_json ~minify)) b rs
+      | Solver.MSIP ->
+          let open struct
+            module SBRS = Sbrs.Make (Solver.MSIP)
           end in
           aux SBRS.step (wrapper (s_occs_to_json ~minify)) b rs )
   | `N rs -> (
@@ -725,6 +741,11 @@ let aux_step minify solver (b, reacts) =
       | Solver.MCARD ->
           let open struct
             module NBRS = Nbrs.Make (Solver.Make_SAT (Solver.MC))
+          end in
+          aux NBRS.step (wrapper (n_occs_to_json ~minify)) b rs
+      | Solver.MSIP ->
+          let open struct
+            module NBRS = Nbrs.Make (Solver.MSIP)
           end in
           aux NBRS.step (wrapper (n_occs_to_json ~minify)) b rs )
 

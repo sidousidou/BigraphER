@@ -1,5 +1,5 @@
 (* Solver type *)
-type solver_t = MSAT | MCARD
+type solver_t = MSAT | MCARD | MSIP
 
 (* Solver type wrapper*)
 module type ST = sig
@@ -26,6 +26,72 @@ let pp_occ out { nodes; edges; hyper_edges } =
   let open Format in
   fprintf out "@[{@[<v>%a,@;%a,@;%a@]}@]" Iso.pp nodes Iso.pp edges Fun.pp
     hyper_edges
+
+(* Sets of occurrences *)
+module O = struct
+  include Base.S_opt
+      (Set.Make (struct
+         type t = occ
+
+         let compare { nodes = n0; edges = e0; hyper_edges = h0 }
+             { nodes = n1; edges = e1; hyper_edges = h1 } =
+           Base.(
+             pair_compare Iso.compare
+               (pair_compare Iso.compare Fun.compare)
+               (n0, (e0, h0))
+               (n1, (e1, h1)))
+       end))
+      (struct
+        type t = occ
+
+        let pp = pp_occ
+      end)
+
+  exception Result of occ
+
+  (* Find the first element in s satisfying p avoiding a full scan of s *)
+  let scan_first p s =
+    try
+      fold
+        (fun o res -> if p o then raise_notrace (Result o) else res)
+        s None
+    with Result o -> Some o
+
+  (* Filter isomorphic occurrences *)
+  let rec filter_iso_occs p_autos (res : t) (occs : t) =
+    match min_elt occs with
+    | None -> res
+    | Some min_occ ->
+      let apply_auto iso auto =
+        Iso.(
+          fold
+            (fun i j iso' ->
+               match apply auto i with
+               | None -> iso'
+               | Some i' -> add i' j iso')
+            iso empty)
+      in
+      (* Occurrences isomorphic to min_occ *)
+      List.rev_map
+        (fun (auto_n, auto_e) ->
+           ( apply_auto min_occ.nodes auto_n,
+             apply_auto min_occ.edges auto_e ))
+        p_autos
+      (* Remove from occs all the isomorphic occurrences *)
+      |> List.fold_left
+        (fun res (iso_n, iso_e) ->
+           let eq_occ =
+             scan_first
+               (fun o ->
+                  Iso.equal o.nodes iso_n && Iso.equal o.edges iso_e)
+               res
+             |> Base.safe
+           in
+           remove eq_occ res)
+        occs
+      |> remove min_occ
+      |> filter_iso_occs p_autos (add min_occ res)
+end
 
 (* External solver interface *)
 module type E = sig
@@ -1271,36 +1337,6 @@ module Make_SAT (S : S) : M = struct
       Base.iter_matrix (fun i j x -> Hashtbl.add t x (wrap_f i j)) m
   end
 
-  (* Sets of occurrences *)
-  module O = struct
-    include Base.S_opt
-              (Set.Make (struct
-                type t = occ
-
-                let compare { nodes = n0; edges = e0; hyper_edges = h0 }
-                    { nodes = n1; edges = e1; hyper_edges = h1 } =
-                  Base.(
-                    pair_compare Iso.compare
-                      (pair_compare Iso.compare Fun.compare)
-                      (n0, (e0, h0))
-                      (n1, (e1, h1)))
-              end))
-              (struct
-                type t = occ
-
-                let pp = pp_occ
-              end)
-
-    exception Result of occ
-
-    (* Find the first element in s satisfying p avoiding a full scan of s *)
-    let scan_first p s =
-      try
-        fold
-          (fun o res -> if p o then raise_notrace (Result o) else res)
-          s None
-      with Result o -> Some o
-  end
 
   let occ_of_vars s vars =
     {
@@ -1434,42 +1470,8 @@ module Make_SAT (S : S) : M = struct
           with NO_MATCH -> O.empty)
 
     let occurrences ~target:t ~pattern:p t_trans p_autos =
-      let rec filter_iso_occs p_autos (res : O.t) (occs : O.t) =
-        match O.min_elt occs with
-        | None -> res
-        | Some min_occ ->
-            let apply_auto iso auto =
-              Iso.(
-                fold
-                  (fun i j iso' ->
-                    match apply auto i with
-                    | None -> iso'
-                    | Some i' -> add i' j iso')
-                  iso empty)
-            in
-            (* Occurrences isomorphic to min_occ *)
-            List.rev_map
-              (fun (auto_n, auto_e) ->
-                ( apply_auto min_occ.nodes auto_n,
-                  apply_auto min_occ.edges auto_e ))
-              p_autos
-            (* Remove from occs all the isomorphic occurrences *)
-            |> List.fold_left
-                 (fun res (iso_n, iso_e) ->
-                   let eq_occ =
-                     O.scan_first
-                       (fun o ->
-                         Iso.equal o.nodes iso_n && Iso.equal o.edges iso_e)
-                       res
-                     |> Base.safe
-                   in
-                   O.remove eq_occ res)
-                 occs
-            |> O.remove min_occ
-            |> filter_iso_occs p_autos (O.add min_occ res)
-      in
       occurrences_raw_aux ~target:t ~pattern:p t_trans
-      |> filter_iso_occs p_autos O.empty
+      |> O.filter_iso_occs p_autos O.empty
       |> O.elements
 
     let occurrences_raw ~target ~pattern t_trans =
@@ -1546,4 +1548,226 @@ module Make_SAT (S : S) : M = struct
       if Nodes.size b.n = 0 then
         Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
       else equal_SAT a b)
+end
+
+module MSIP : M = struct
+  exception NODE_FREE
+
+  let solver_type = MSIP
+  let string_of_solver_t = "SIP"
+
+  (** Memoised interface  *)
+  module Memo = struct
+    exception SIP_PARSE_FAILED
+
+    (* Format:
+     * S
+     * N 1 2
+     * N 1 2
+     * E 3 5
+     * H 1 2 3
+     * D
+     * S
+     * N 12
+     * ...
+     * D
+     * X
+    *)
+
+    let read_solutions ?(hyper_only = false) (ic : in_channel) : occ list =
+      let rec read_sol occ =
+        let parse_pairs s =
+          let s = String.sub s 2 (String.length s - 2) in
+          String.trim s
+          |> String.split_on_char ' '
+          |> List.map int_of_string
+          |> fun xs -> match xs with
+          | [i;j] -> (i,j)
+          | _ -> raise SIP_PARSE_FAILED
+        in
+        try let line = input_line ic in
+          let tag = String.sub line 0 1 in
+          match tag with
+          | "N" -> (
+              if hyper_only then read_sol occ
+              else
+                let ns =
+                  let (i,j) = parse_pairs line in Iso.add i j occ.nodes
+                in read_sol { occ with nodes = ns }
+            )
+          | "E" -> (
+              if hyper_only then read_sol occ
+              else
+                let es =
+                  let (i,j) = parse_pairs line in Iso.add i j occ.edges
+                in read_sol { occ with edges = es }
+            )
+          | "H" -> (
+              let hs =
+                let (i,j) = parse_pairs line in Fun.add i j occ.hyper_edges
+              in read_sol { occ with hyper_edges = hs }
+            )
+          | "D" -> occ
+          | _ -> raise SIP_PARSE_FAILED
+        with End_of_file -> raise SIP_PARSE_FAILED
+      in
+      let sols = ref [] in
+      begin
+        let running = ref true in
+        while !running; do
+          let line = input_line ic in
+          let tag = String.sub line 0 1 in
+          match tag with
+          | "S" -> sols := read_sol { nodes = Iso.empty; edges = Iso.empty; hyper_edges = Fun.empty } :: !sols
+          | "X" -> running := false
+          | _ -> ()
+        done
+      end;
+      !sols
+
+    let read_solutions_hyper_only = read_solutions ~hyper_only:true
+
+    type solver_interface = {
+      sin : in_channel;
+      sout : out_channel;
+      pfile : string;
+      tfile : string
+    }
+
+    let solver_ic : solver_interface option ref = ref None
+
+    let call_solver t p args cont =
+      let call_solver_aux i =
+        let toc = open_out i.tfile in
+        let poc = open_out i.pfile in
+        Printf.fprintf toc "%s" (Big.to_string t);
+        Printf.fprintf poc "%s" (Big.to_string p);
+        close_out toc; close_out poc;
+        Printf.fprintf i.sout "%s %s %s\n" i.pfile i.tfile args;
+        flush i.sout;
+        cont i.sin
+      in
+      match !solver_ic with
+      | Some i -> call_solver_aux i
+      | None -> begin
+          let tf = Filename.temp_file "sip" "big" in
+          let pf = Filename.temp_file "sip" "big" in
+          let (ic, oc) = Unix.open_process "glasgow_bigraph_solver" in
+          let i = { sin = ic; sout = oc; pfile = pf; tfile = tf } in
+          solver_ic := Some i;
+          call_solver_aux  i
+        end
+    (* TODO: really need to close the process once we are done,
+     *  but there's not an easy place to do so... *)
+
+    let quick_unsat t p =
+      Big.(
+        Nodes.size p.n > Nodes.size t.n
+        || Sparse.entries p.p.Place.nn > Sparse.entries t.p.Place.nn
+        || Nodes.not_sub p.n t.n
+        || IntSet.cardinal (Place.leaves p.p)
+           > IntSet.cardinal (Place.leaves t.p)
+        || IntSet.cardinal (Place.orphans p.p)
+           > IntSet.cardinal (Place.orphans t.p)
+        || Link.closed_edges p.l > Link.closed_edges t.l
+        || Link.max_ports p.l > Link.max_ports t.l)
+
+    let occurs ~target:t ~pattern:p _trans =
+      Big.(
+        if Nodes.size p.n = 0 then raise NODE_FREE
+        else if quick_unsat t p then false
+        else List.length (call_solver t p "single" read_solutions) > 0)
+
+    let occurrence ~target:t ~pattern:p _trans =
+      let sols = Big.(
+          if Nodes.size p.n = 0 then raise NODE_FREE
+          else if quick_unsat t p then []
+          else call_solver t p "single" read_solutions)
+      in
+      if List.length sols >= 1 then Some (List.hd sols) else None
+
+    let auto b _trans = call_solver b b "all" read_solutions
+                        |> List.map (fun o -> (o.nodes, o.edges))
+                        |> List.filter (fun (i, e) -> not (Iso.is_id i && Iso.is_id e))
+
+    let occurrences ~target:t ~pattern:p _trans autos =
+      Big.(
+        if Nodes.size p.n = 0 then raise NODE_FREE
+        else if quick_unsat t p then []
+        else call_solver t p "all" read_solutions)
+      |> O.of_list
+      |> O.filter_iso_occs autos O.empty
+      |> O.elements
+
+    let occurrences_raw ~target:t ~pattern:p _trans =
+      Big.(
+        if Nodes.size p.n = 0 then raise NODE_FREE
+        else if quick_unsat t p then []
+        else call_solver t p "all" read_solutions)
+
+  end
+
+  let occurs ~(target:Big.t) ~pattern =
+    Memo.occurs ~target ~pattern (Sparse.make 0 0)
+
+  let occurrence ~(target:Big.t) ~pattern =
+    Memo.occurrence ~target ~pattern (Sparse.make 0 0)
+
+  let auto b = Memo.auto b (Sparse.make 0 0)
+
+  let occurrences ~(target:Big.t) ~pattern =
+    Memo.occurrences ~target ~pattern (Sparse.make 0 0) (auto pattern)
+
+  let occurrences_raw ~(target:Big.t) ~pattern =
+    Memo.occurrences_raw ~target ~pattern (Sparse.make 0 0)
+
+  (* TODO: push deg_reions/deg_sites into place? *)
+  let deg_regions p =
+    Place.(
+      IntSet.fold
+        (fun r acc -> IntSet.cardinal (Sparse.chl p.rn r) :: acc)
+        (IntSet.of_int p.r) [])
+
+  let deg_sites p =
+    Place.(
+      IntSet.fold
+        (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
+        (IntSet.of_int p.s) [])
+
+  let equal_SIP a b =
+    Memo.call_solver a b "equal" Memo.read_solutions_hyper_only
+    (* Disallow renamings on interfaces -- not sure the constraints for this
+       yet in SIP, so filter after the fact for now *)
+    |> List.filter (fun occ -> Fun.is_id occ.hyper_edges)
+    |> fun x -> List.length x >= 1
+
+  let equal a b =
+    Big.(
+      Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
+      && inter_equal (inner a) (inner b)
+      && inter_equal (outer a) (outer b)
+      && Place.size a.p = Place.size b.p
+      && deg_regions a.p = deg_regions b.p
+      && deg_sites a.p = deg_sites b.p
+      && Nodes.equal a.n b.n
+      && Sparse.equal a.p.Place.rs b.p.Place.rs
+      &&
+      (* Placing or wiring *)
+      if Nodes.size b.n = 0 then
+        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
+      else
+        equal_SIP a b)
+
+  let equal_key a b =
+    Big.(
+      deg_regions a.p = deg_regions b.p
+      && deg_sites a.p = deg_sites b.p
+      && Sparse.equal a.p.Place.rs b.p.Place.rs
+      &&
+      (* Placing or wiring *)
+      if Nodes.size b.n = 0 then
+        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
+      else
+        equal_SIP a b)
+
 end

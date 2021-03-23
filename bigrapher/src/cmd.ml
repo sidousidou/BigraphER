@@ -106,6 +106,7 @@ let string_of_format f =
 let string_of_solver_type = function
   | Bigraph.Solver.MSAT -> "MiniSAT"
   | Bigraph.Solver.MCARD -> "MiniCARD"
+  | Bigraph.Solver.MSIP -> "SIP"
 
 let string_of_file = function None -> "-" (* Not set *) | Some f -> f
 
@@ -127,6 +128,7 @@ let parse_formats s =
 let parse_solver_type = function
   | "MCARD" -> Bigraph.Solver.MCARD
   | "MSAT" -> Bigraph.Solver.MSAT
+  | "MSIP" -> Bigraph.Solver.MSIP
   | _ -> Bigraph.Solver.MSAT
 
 (* Defaults to MiniSAT *)

@@ -3,7 +3,9 @@
     @author Michele Sevegnani *)
 
 (** Solver type. *)
-type solver_t = MSAT  (** MiniSAT *) | MCARD  (** MiniCARD *)
+type solver_t = MSAT  (** MiniSAT *)
+              | MCARD (** MiniCARD *)
+              | MSIP  (** GSS SIP **)
 
 type stats = {
   v : int;  (** Number of variables. *)
@@ -181,3 +183,6 @@ end
 
 (** Bigraph matching engine based on solver [S] *)
 module Make_SAT (S : S) : M
+
+module MSIP : M
+(** Instance of SIP solver. *)
