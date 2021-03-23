@@ -12,7 +12,11 @@ type num_exp = Num_int_val of int * Loc.t | Num_float_val of float * Loc.t
 
 type var_exp = Var of Id.t * Loc.t
 
-type exp = ENum of num_exp | EStr of str_exp | EVar of var_exp | EOp of op
+type exp = ENum of num_exp
+         | EStr of str_exp
+         | EVar of var_exp
+         | EOp of op
+         | EFn of fn
 
 and op =
   | Plus of exp * exp * Loc.t
@@ -21,6 +25,9 @@ and op =
   | Prod of exp * exp * Loc.t
   | Div of exp * exp * Loc.t
   | Pow of exp * exp * Loc.t
+
+and fn =
+  | Abs of exp * Loc.t
 
 type ctrl_exp =
   | Ctrl_exp of Id.t * int * Loc.t

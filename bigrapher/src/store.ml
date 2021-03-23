@@ -486,6 +486,13 @@ struct
           (ERROR (Wrong_type (fst (assign_type b []), `core_val (`b `int)), p))
     | _ -> assert false
 
+  let eval_abs (e : store_val) p =
+    match e with
+    | Float f -> Float (Float.abs f)
+    | Int i -> Int (Int.abs i)
+    | _ -> raise (ERROR (Wrong_type (fst (assign_type e []),
+                                    `core_val (`g int_or_float)), p))
+
   let rec eval_op (exp : op) (scope : scope) (env : store) =
     let eval' e = eval_exp e scope env in
     match exp with
@@ -496,12 +503,18 @@ struct
     | Div (e1, e2, loc) -> eval_div (eval' e1) (eval' e2) loc
     | Pow (e1, e2, loc) -> eval_pow (eval' e1) (eval' e2) loc
 
+  and eval_fn (exp : fn) (scope : scope) (env : store) =
+    let eval' e = eval_exp e scope env in
+    match exp with
+    | Abs (e, loc) -> eval_abs (eval' e) loc
+
   and eval_exp (exp : exp) (scope : scope) (env : store) =
     match exp with
     | ENum ne -> eval_num ne scope env
     | EStr se -> eval_str se scope env
     | EVar ve -> eval_var ve scope env
     | EOp op -> eval_op op scope env
+    | EFn fn -> eval_fn fn scope env
 
   let as_int (e : store_val) p =
     match e with

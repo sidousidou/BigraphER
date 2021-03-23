@@ -58,7 +58,8 @@ open Bigraph
 %token            PARAM
 %token            BANG
 %token            LSBR RSBR LCBR RCBR LPAR RPAR
-%token            COLON SEMICOLON COMMA 
+%token            COLON SEMICOLON COMMA
+%token            ABS
 
 %token            PIPE DPIPE
 %token            DOT 
@@ -201,6 +202,7 @@ exp:
   | str_exp { EStr $1 }
   | var_exp { EVar $1 }
   | op_exp  { EOp $1 }
+  | fn_exp  { EFn $1 }
   | LPAR exp RPAR { $2 };
 
 num_exp:
@@ -220,6 +222,9 @@ op_exp:
   | exp PROD exp                            { Prod ($1, $3, loc $startpos $endpos)  }
   | exp SLASH exp                           { Div ($1, $3, loc $startpos $endpos)   }
   | exp CARET exp                           { Pow ($1, $3, loc $startpos $endpos)   };
+
+fn_exp:
+  | ABS LPAR exp RPAR                       { Abs ($3, loc $startpos $endpos) };
 
 params:
   p = list(param)                           { p };
