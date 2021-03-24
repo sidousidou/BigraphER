@@ -1,6 +1,6 @@
 # Development image -- includes opam graphviz and emacs
 
-FROM ocaml/opam2:ubuntu-20.04
+FROM ocaml/opam:ubuntu-lts
 LABEL maintainer="michele.sevegnani@glasgow.ac.uk"
 
 # Install OS dependencies
