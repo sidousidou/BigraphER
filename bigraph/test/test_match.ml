@@ -592,6 +592,16 @@ let tests bgs =
         ];
       res = [];
     };
+    (*vvvvvvvvvvvvvvvvvvvv Kyle's example vvvvvvvvvvvvvvvvv*)
+    (* TEST 41 *)
+    {
+      t_name = "T29";
+      p_name = "P40";
+      target = List.assoc "T29" bgs;
+      pattern = List.assoc "P40" bgs;
+      exp_res = [];
+      res = [];
+    };
   ]
 
 (* Args: PATH PATH-out*)
