@@ -2,7 +2,8 @@
 
 Authors: [Michele Sevegnani](http://www.dcs.gla.ac.uk/~michele), [Blair Archibald](http://www.blairarchibald.co.uk)
 
-[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/mseve/bigrapher)]()
+![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/uog-bigraph/bigraph-tools/master)
+![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/mseve/bigrapher)
 
 This repository contains a collection of tools for writing and
 anlysing Bigraph models. It contains:
