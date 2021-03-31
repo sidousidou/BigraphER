@@ -93,6 +93,54 @@ module O = struct
       |> filter_iso_occs p_autos (add min_occ res)
 end
 
+(* Solver equality *)
+module type SE = sig
+  val equal_solver : Big.t -> Big.t -> bool
+end
+
+module Equal (SE : SE) = struct
+  let deg_regions p =
+    Place.(
+      IntSet.fold
+        (fun r acc -> IntSet.cardinal (Sparse.chl p.rn r) :: acc)
+        (IntSet.of_int p.r) [])
+
+  let deg_sites p =
+    Place.(
+      IntSet.fold
+        (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
+        (IntSet.of_int p.s) [])
+
+  let equal a b =
+    Big.(
+      Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
+      && inter_equal (inner a) (inner b)
+      && inter_equal (outer a) (outer b)
+      && Place.size a.p = Place.size b.p
+      && Base.list_equal Base.int_equal (deg_regions a.p) (deg_regions b.p)
+      && Base.list_equal Base.int_equal (deg_sites a.p) (deg_sites b.p)
+      && Nodes.equal a.n b.n
+      && Sparse.equal a.p.Place.rs b.p.Place.rs
+      &&
+      (* Placing or wiring *)
+      if Nodes.size b.n = 0 then
+        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
+      else
+        SE.equal_solver a b)
+
+  let equal_key a b =
+    Big.(
+        Base.list_equal Base.int_equal (deg_regions a.p) (deg_regions b.p)
+      && Base.list_equal Base.int_equal (deg_sites a.p) (deg_sites b.p)
+      && Sparse.equal a.p.Place.rs b.p.Place.rs
+      &&
+      (* Placing or wiring *)
+      if Nodes.size b.n = 0 then
+        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
+      else
+        SE.equal_solver a b)
+end
+
 (* External solver interface *)
 module type E = sig
   type t
@@ -840,16 +888,6 @@ module Make_SAT (S : S) : M = struct
 
     (* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)
 
-    let deg_regions p =
-      IntSet.fold
-        (fun r acc -> IntSet.cardinal (Sparse.chl p.rn r) :: acc)
-        (IntSet.of_int p.r) []
-
-    let deg_sites p =
-      IntSet.fold
-        (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
-        (IntSet.of_int p.s) []
-
     let add_c4_eq a b n_a n_b s m =
       ignore (match_cmp ~target:b ~pattern:a ~n_t:n_b ~n_p:n_a eq s m)
 
@@ -1521,33 +1559,8 @@ module Make_SAT (S : S) : M = struct
       | NOT_TOTAL -> false
       | NO_MATCH -> false)
 
-  let equal a b =
-    Big.(
-      Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
-      && inter_equal (inner a) (inner b)
-      && inter_equal (outer a) (outer b)
-      && Place.size a.p = Place.size b.p
-      && P.deg_regions a.p = P.deg_regions b.p
-      && P.deg_sites a.p = P.deg_sites b.p
-      && Nodes.equal a.n b.n
-      && Sparse.equal a.p.Place.rs b.p.Place.rs
-      &&
-      (* Placing or wiring *)
-      if Nodes.size b.n = 0 then
-        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-      else equal_SAT a b)
+  include Equal (struct let equal_solver = equal_SAT end)
 
-  (* Comparison over keys already performed and failed *)
-  let equal_key a b =
-    Big.(
-      P.deg_regions a.p = P.deg_regions b.p
-      && P.deg_sites a.p = P.deg_sites b.p
-      && Sparse.equal a.p.Place.rs b.p.Place.rs
-      &&
-      (* Placing or wiring *)
-      if Nodes.size b.n = 0 then
-        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-      else equal_SAT a b)
 end
 
 module MSIP : M = struct
@@ -1721,19 +1734,6 @@ module MSIP : M = struct
   let occurrences_raw ~(target:Big.t) ~pattern =
     Memo.occurrences_raw ~target ~pattern (Sparse.make 0 0)
 
-  (* TODO: push deg_reions/deg_sites into place? *)
-  let deg_regions p =
-    Place.(
-      IntSet.fold
-        (fun r acc -> IntSet.cardinal (Sparse.chl p.rn r) :: acc)
-        (IntSet.of_int p.r) [])
-
-  let deg_sites p =
-    Place.(
-      IntSet.fold
-        (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
-        (IntSet.of_int p.s) [])
-
   let equal_SIP a b =
     Memo.call_solver a b "equal" Memo.read_solutions_hyper_only
     (* Disallow renamings on interfaces -- not sure the constraints for this
@@ -1741,33 +1741,5 @@ module MSIP : M = struct
     |> List.filter (fun occ -> Fun.is_id occ.hyper_edges)
     |> fun x -> List.length x >= 1
 
-  let equal a b =
-    Big.(
-      Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
-      && inter_equal (inner a) (inner b)
-      && inter_equal (outer a) (outer b)
-      && Place.size a.p = Place.size b.p
-      && deg_regions a.p = deg_regions b.p
-      && deg_sites a.p = deg_sites b.p
-      && Nodes.equal a.n b.n
-      && Sparse.equal a.p.Place.rs b.p.Place.rs
-      &&
-      (* Placing or wiring *)
-      if Nodes.size b.n = 0 then
-        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-      else
-        equal_SIP a b)
-
-  let equal_key a b =
-    Big.(
-      deg_regions a.p = deg_regions b.p
-      && deg_sites a.p = deg_sites b.p
-      && Sparse.equal a.p.Place.rs b.p.Place.rs
-      &&
-      (* Placing or wiring *)
-      if Nodes.size b.n = 0 then
-        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-      else
-        equal_SIP a b)
-
+  include Equal (struct let equal_solver = equal_SIP end)
 end
