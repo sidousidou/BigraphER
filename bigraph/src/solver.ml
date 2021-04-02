@@ -466,12 +466,12 @@ module Make (ST : ST) (E : E) : S = struct
 
   let new_var_vector s n =
     assert (n >= 0);
-    Base.fold_n [] n (fun _ acc -> new_var s :: acc) |> Array.of_list
+    Array.init n (fun _ -> new_var s)
 
   let new_var_matrix s m n =
     assert (m >= 0);
     assert (n >= 0);
-    Base.fold_n [] m (fun _ acc -> new_var_vector s n :: acc) |> Array.of_list
+    Array.init m (fun _ -> new_var_vector s n)
 
   let add_clauses s = List.iter (fun c -> add_clause s c)
 
