@@ -138,6 +138,16 @@ val is_guard : t -> bool
 (** [is_guard p] is [true] if place graph [p] is guarded, [false] otherwise.
     A place graph is guarded if no region has sites as children. *)
 
+(** {2 Invariants} *)
+val deg_regions : t -> int list
+(** Out-degree of roots, in order. *)
+
+val deg_sites : t -> int list
+(** In-degree of sites, in order. *)
+
+val deg_seq : t -> (int * int) list
+(** In and out degrees of nodes, in non-decreasing order. *)
+
 (** {2 Decompositions} *)
 
 val decomp : target:t -> pattern:t -> Iso.t -> t * t * t * Iso.t * Iso.t

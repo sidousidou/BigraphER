@@ -164,11 +164,6 @@ module type M = sig
   (** [equal a b] returns [true] if bigraphs [a] and [b] are isomorphic,
       [false] otherwise. *)
 
-  val equal_key : Big.t -> Big.t -> bool
-  (** Same as {!Solver.M.equal} but with fewer checks prior to the solver
-      invocation. This function is intended to be used after equality over
-      keys has already failed. *)
-
   (** Memoised interface. *)
   module Memo : sig
     val auto : Big.t -> Sparse.t -> (Iso.t * Iso.t) list

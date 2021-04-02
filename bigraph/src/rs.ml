@@ -531,7 +531,7 @@ struct
   let is_new b v =
     let k_buket = Base.H_int.find_all v (Big.key b) in
     try
-      let old, _ = List.find (fun (_, b') -> S.equal_key b b') k_buket in
+      let old, _ = List.find (fun (_, b') -> S.equal b b') k_buket in
       Some old
     with Not_found -> None
 

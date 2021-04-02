@@ -217,12 +217,12 @@ val sym : t -> t
 (** [sym m] returns the symmetric closure of a graph [m]. Argument [m] is
     assumed square. *)
 
-val descendants : t -> int -> IntSet.t
-(** [descendants m i] returns the set of nodes reachable from [i] in graph
-    [m]. *)
+(* val descendants : t -> int -> IntSet.t
+ * (\** [descendants m i] returns the set of nodes reachable from [i] in graph
+ *     [m]. *\) *)
 
-val connected_comps : t -> IntSet.t list
-(** Return a list of the connected components of an undirected graph. *)
+(* val connected_comps : t -> IntSet.t list
+ * (\** Return a list of the connected components of an undirected graph. *\) *)
 
 val levels : t -> IntSet.t list
 (** [levels m] returns the level decomposition of [m]. Each level is obtained

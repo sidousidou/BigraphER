@@ -466,12 +466,12 @@ module Make (ST : ST) (E : E) : S = struct
 
   let new_var_vector s n =
     assert (n >= 0);
-    Base.list_n [] n (fun _ -> new_var s) |> Array.of_list
+    Base.fold_n [] n (fun _ acc -> new_var s :: acc) |> Array.of_list
 
   let new_var_matrix s m n =
     assert (m >= 0);
     assert (n >= 0);
-    Base.list_n [] m (fun _ -> new_var_vector s n) |> Array.of_list
+    Base.fold_n [] m (fun _ acc -> new_var_vector s n :: acc) |> Array.of_list
 
   let add_clauses s = List.iter (fun c -> add_clause s c)
 
@@ -645,7 +645,7 @@ module type M = sig
 
   val equal : Big.t -> Big.t -> bool
 
-  val equal_key : Big.t -> Big.t -> bool
+  (* val equal_key : Big.t -> Big.t -> bool *)
 
   (* Memoised interface *)
   module Memo : sig
@@ -895,12 +895,11 @@ module Make_SAT (S : S) : M = struct
           let prn_c = IntSet.inter v_p' (Sparse.prn t.nn c) in
           (* Construct a candidate set of sites *)
           let candidate =
-            IntSet.fold
+            Base.fold_n IntSet.empty p.s
               (fun s acc ->
                 let prn_s = IntSet.apply iso (Sparse.prn p.ns s) in
                 if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
                 else acc)
-              (IntSet.of_int p.s) IntSet.empty
           in
           (* Equality test *)
           IntSet.equal candidate prn_c)
@@ -911,12 +910,11 @@ module Make_SAT (S : S) : M = struct
           let prn_s = IntSet.inter v_p' (Sparse.prn t.ns s) in
           (* Construct a candidate set of sites *)
           let candidate =
-            IntSet.fold
+            Base.fold_n IntSet.empty p.s
               (fun s acc ->
                 let prn_s' = IntSet.apply iso (Sparse.prn p.ns s) in
                 if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
                 else acc)
-              (IntSet.of_int p.s) IntSet.empty
           in
           (* Equality test *)
           IntSet.equal candidate prn_s)
@@ -944,12 +942,11 @@ module Make_SAT (S : S) : M = struct
           let chl_p = IntSet.inter v_p' (Sparse.chl t.nn x) in
           (* Construct a candidate set of regions *)
           let candidate =
-            IntSet.fold
+            Base.fold_n IntSet.empty p.r
               (fun r acc ->
                 let chl_r = IntSet.apply iso (Sparse.chl p.rn r) in
                 if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
                 else acc)
-              (IntSet.of_int p.r) IntSet.empty
           in
           (* Equality test *)
           IntSet.equal candidate chl_p)
@@ -960,12 +957,11 @@ module Make_SAT (S : S) : M = struct
           let chl_r = IntSet.inter v_p' (Sparse.chl t.rn x) in
           (* Construct a candidate set of regions *)
           let candidate =
-            IntSet.fold
+            Base.fold_n IntSet.empty p.r
               (fun r acc ->
                 let chl_r' = IntSet.apply iso (Sparse.chl p.rn r) in
                 if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
                 else acc)
-              (IntSet.of_int p.r) IntSet.empty
           in
           (* Equality test *)
           IntSet.equal candidate chl_r)
@@ -1015,16 +1011,6 @@ module Make_SAT (S : S) : M = struct
       && check_trans t_trans v_p' c_set
 
     (* ++++++++++++++++++++++ Equality functions ++++++++++++++++++++++ *)
-
-    let deg_regions p =
-      IntSet.fold
-        (fun r acc -> IntSet.cardinal (Sparse.chl p.rn r) :: acc)
-        (IntSet.of_int p.r) []
-
-    let deg_sites p =
-      IntSet.fold
-        (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
-        (IntSet.of_int p.s) []
 
     let add_c4_eq a b n_a n_b s m =
       ignore (match_cmp ~target:b ~pattern:a ~n_t:n_b ~n_p:n_a eq s m)
@@ -1093,7 +1079,26 @@ module Make_SAT (S : S) : M = struct
 
     (* Two edges are compatible if they have the same number of ports with
        equal control. *)
-    let compat_edges e_p e_t n_t n_p = equal_types (e_p.p, n_p) (e_t.p, n_t)
+    let compat_edges ~e_t ~e_p ~n_t ~n_p = equal_types (e_p.p, n_p) (e_t.p, n_t)
+
+    (* Two link graphs are iso iff their edge types sequences are the same *)
+    let iso_edges ~a ~b ~n_a ~n_b =
+      let link_seq l n =
+        Link.Lg.fold (fun e acc ->
+            (e.i, e.o, ports_type e.p n) :: acc)
+          l []
+        |> List.fast_sort (fun (i, o, typ) (i', o', typ') ->
+               Base.pair_compare
+                 (Base.pair_compare Face.compare Face.compare)
+                 compare
+                 ((i, o), typ) ((i', o'), typ')
+             ) in
+      Base.list_equal (fun (i, o, typ) (i', o', typ') ->
+          Face.equal i i'
+          && Face.equal o o'
+          && Base.list_equal (fun (c, n) (c', n') -> Ctrl.equal c c' && n = n') typ typ')
+        (link_seq a n_a) (link_seq b n_b)
+
 
     (* Closed edges in p are matched to closed edges in t. Controls are
        checked to exclude incompatible pairs. Return blocking pairs and
@@ -1105,7 +1110,7 @@ module Make_SAT (S : S) : M = struct
             let clause, js, b, _ =
               Lg.fold
                 (fun e_t (acc, js, b, j) ->
-                  if compat_edges e_p e_t n_t n_p then
+                  if compat_edges ~e_t ~e_p ~n_t ~n_p then
                     ((i, j) :: acc, j :: js, b, j + 1)
                   else (acc, js, (i, j) :: b, j + 1))
                 target ([], [], [], 0)
@@ -1160,10 +1165,8 @@ module Make_SAT (S : S) : M = struct
       List.iter
         (List.iter (fun (e_i, e_j) ->
              compat_list a_p.(e_i) a_t.(e_j) n_p n_t
-             |> (fun c ->
-                  List.rev_map
-                    (List.rev_map (fun (i, j) -> S.positive_lit v.(i).(j)))
-                    c)
+             |> List.rev_map
+                  (List.rev_map (fun (i, j) -> S.positive_lit v.(i).(j)))
              |> S.add_implication solver (S.positive_lit w.(e_i).(e_j))))
         clauses
 
@@ -1397,17 +1400,6 @@ module Make_SAT (S : S) : M = struct
       block_rows b v_l |> S.add_clauses solver;
       clauses
 
-    let match_ports_eq p t n_p n_t solver v w clauses =
-      (* replace with add_c8 *)
-      let a_t = Lg.elements t |> List.map (fun e -> e.p) |> Array.of_list
-      and a_p = Lg.elements p |> List.map (fun e -> e.p) |> Array.of_list in
-      List.iter
-        (List.iter (fun (e_i, e_j) ->
-             compat_list a_p.(e_i) a_t.(e_j) n_p n_t
-             |> List.rev_map
-                  (List.rev_map (fun (i, j) -> S.positive_lit v.(i).(j)))
-             |> S.add_implication solver (S.positive_lit w.(e_i).(e_j))))
-        clauses
   end
 
   let ban_solution solver vars =
@@ -1755,38 +1747,31 @@ module Make_SAT (S : S) : M = struct
         P.add_nodes_sites a.p b.p a.n b.n solver v_n;
         (* Link graph *)
         L.match_list_eq a.l b.l a.n b.n solver v_l
-        |> L.match_ports_eq a.l b.l a.n b.n solver v_n v_l;
+        |> L.add_c8 ~target:b.l ~pattern:a.l ~n_t:b.n ~n_p:a.n solver v_n v_l;
         S.simplify solver;
         match S.solve solver with UNSAT -> false | SAT -> true
       with
-      | NOT_TOTAL -> false
-      | NO_MATCH -> false)
+      | NOT_TOTAL | NO_MATCH -> false)
 
   let equal a b =
     Big.(
-      Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
+      Nodes.equal a.n b.n
+      && Place.size a.p = Place.size b.p
+      && Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
       && inter_equal (inner a) (inner b)
       && inter_equal (outer a) (outer b)
-      && Place.size a.p = Place.size b.p
-      && P.deg_regions a.p = P.deg_regions b.p
-      && P.deg_sites a.p = P.deg_sites b.p
-      && Nodes.equal a.n b.n
+      && Base.list_equal Base.int_equal (Place.deg_regions a.p) (Place.deg_regions b.p)
+      && Base.list_equal Base.int_equal (Place.deg_sites a.p) (Place.deg_sites b.p)
+      && Base.list_equal (fun (a, b) (a', b') ->
+             Base.int_equal a a' && Base.int_equal b b')
+           (Place.deg_seq a.p) (Place.deg_seq b.p)
       && Sparse.equal a.p.Place.rs b.p.Place.rs
+      && L.iso_edges ~a:a.l ~b:b.l ~n_a:a.n ~n_b:b.n
+      (* Check number of connected components? *)
       &&
       (* Placing or wiring *)
       if Nodes.size b.n = 0 then
         Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
       else equal_SAT a b)
 
-  (* Comparison over keys already performed and failed *)
-  let equal_key a b =
-    Big.(
-      P.deg_regions a.p = P.deg_regions b.p
-      && P.deg_sites a.p = P.deg_sites b.p
-      && Sparse.equal a.p.Place.rs b.p.Place.rs
-      &&
-      (* Placing or wiring *)
-      if Nodes.size b.n = 0 then
-        Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
-      else equal_SAT a b)
 end

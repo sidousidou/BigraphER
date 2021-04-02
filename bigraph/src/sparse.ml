@@ -88,15 +88,15 @@ let merge_f _ l r =
 
 let row n =
   assert (n >= 0);
-  IntSet.of_int n |> flip2 IntSet.fold (fun j acc -> add 0 j acc) (make 1 n)
+  Base.fold_n (make 1 n) n (fun j acc -> add 0 j acc)
 
 let col n =
   assert (n >= 0);
-  IntSet.of_int n |> flip2 IntSet.fold (fun i acc -> add i 0 acc) (make n 1)
+  Base.fold_n (make n 1) n (fun i acc -> add i 0 acc)
 
 let diag n =
   assert (n >= 0);
-  IntSet.of_int n |> flip2 IntSet.fold (fun i acc -> add i i acc) (make n n)
+  Base.fold_n  (make n n) n (fun i acc -> add i i acc)
 
 let tens a b =
   {
@@ -350,26 +350,26 @@ let sym m =
   assert (m.r = m.c);
   edges m |> List.rev_map (fun (v, u) -> (u, v)) |> add_list m
 
-let descendants m i =
-  assert (i >= 0);
-  assert (i < m.r);
-  let rec dfs stack visited =
-    match stack with
-    | [] -> visited
-    | i :: stack ->
-        let js = chl m i in
-        dfs (IntSet.elements js @ stack) (IntSet.union visited js)
-  in
-  dfs [ i ] (IntSet.of_int i)
-
-(* Connected components for (undirected graphs) *)
-let connected_comps m =
-  assert (m.r = m.c);
-  let rec aux v res =
-    match IntSet.min_elt v with
-    | None -> res
-    | Some i ->
-        let v' = descendants m i in
-        aux (IntSet.diff v v') (v' :: res)
-  in
-  aux (IntSet.of_int m.r) [] |> List.rev
+(* let descendants m i =
+ *   assert (i >= 0);
+ *   assert (i < m.r);
+ *   let rec dfs stack visited =
+ *     match stack with
+ *     | [] -> visited
+ *     | i :: stack ->
+ *         let js = chl m i in
+ *         dfs (IntSet.elements js @ stack) (IntSet.union visited js)
+ *   in
+ *   dfs [ i ] (IntSet.of_int i)
+ * 
+ * (\* Connected components for (undirected graphs) *\)
+ * let connected_comps m =
+ *   assert (m.r = m.c);
+ *   let rec aux v res =
+ *     match IntSet.min_elt v with
+ *     | None -> res
+ *     | Some i ->
+ *         let v' = descendants m i in
+ *         aux (IntSet.diff v v') (v' :: res)
+ *   in
+ *   aux (IntSet.of_int m.r) [] |> List.rev *)

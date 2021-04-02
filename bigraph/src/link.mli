@@ -116,7 +116,7 @@ module Ports : sig
   (** [to_string s] gives the string representation of port set [s]. For
       example:
 
-      ["\{(0, 0), (1, 3)\}"]. *)
+      ["\{(0, 1), (1, 3)\}"]. *)
 end
 
 (** {2 Link graphs} *)

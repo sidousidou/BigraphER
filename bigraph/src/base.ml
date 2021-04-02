@@ -1,6 +1,6 @@
-let int_equal (a : int) (b : int) = a = b
+let int_equal (a : int) (b : int) = a = b [@@inline]
 
-let int_compare a b = a - b
+let int_compare a b = a - b [@@inline]
 
 module type Pp = sig
   type t
@@ -167,11 +167,11 @@ end
 
 let safe = function Some v -> v | None -> assert false
 
-let pair_compare fa fb (a0, b0) (a1, b1) =
-  match fa a0 a1 with 0 -> fb b0 b1 | x -> x
+let pair_compare fa fb ((a0, b0):('a * 'b)) ((a1, b1):('a * 'b)) =
+  match fa a0 a1 with 0 -> fb b0 b1 | x -> x [@@inline]
 
 let ints_compare (i0, p0) (i1, p1) =
-  match i0 - i1 with 0 -> p0 - p1 | x -> x
+  match i0 - i1 with 0 -> p0 - p1 | x -> x [@@inline]
 
 let string_of_ints a b = "(" ^ string_of_int a ^ "," ^ string_of_int b ^ ")"
 
@@ -181,9 +181,9 @@ let opt_equal eq a b =
   | None, _ | _, None -> false
   | Some v, Some v' -> eq v v'
 
-let flip f x y = f y x
+let flip f x y = f y x [@@inline]
 
-let flip2 f a b c = f a c b
+let flip2 f a b c = f a c b [@@inline]
 
 (* "\n12\n4\n678\n" -> ["12"; "4"; "678"] "01234\n" -> ["01234"] "0123" ->
    ["0123"] *)
@@ -247,10 +247,7 @@ let pp_list (out : Format.formatter) open_b pp_x sep l =
   pp l;
   Format.pp_close_box out ()
 
-let list_of_pair (a, b) = [ a; b ]
-
-let rec list_n acc n f =
-  if n <= 0 then acc else list_n (f (n - 1) :: acc) (n - 1) f
+let list_of_pair (a, b) = [ a; b ] [@@inline]
 
 let cartesian a b =
   List.fold_left
@@ -258,3 +255,9 @@ let cartesian a b =
     [] a
 
 let list_rev_split_left l = List.fold_left (fun res (a, _) -> a :: res) [] l
+
+(* Fold over n-1,..,0 *)
+let rec fold_n acc n f =
+  assert (n >= 0);
+  if n >= 1 then fold_n (f (n-1) acc) (n-1) f
+  else acc
