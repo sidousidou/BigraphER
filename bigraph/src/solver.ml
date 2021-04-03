@@ -534,23 +534,32 @@ module Make (ST : ST) (E : E) : S = struct
 
   (* One true per row *)
   let add_fun s m =
-    Base.list_of_rows m
-    |> List.iter (fun c -> add_exactly s (List.rev_map positive_lit c) 1)
+    Array.iter (fun c ->
+        add_exactly s (Array.fold_left (fun acc v ->
+                           positive_lit v :: acc) [] c) 1) m
 
   (* 1. One true per row
    * 2. At most one true per column *)
   let add_injection s m =
     add_fun s m;
-    Base.list_of_cols m
-    |> List.iter (fun c -> add_at_most s (List.rev_map positive_lit c) 1)
+    let cols_m = if Array.length m > 0 then Array.length m.(0) - 1 else -1 in
+    for j = 0 to cols_m do
+      add_at_most s
+        (Base.fold_n [] (Array.length m) (fun i acc ->
+                         (positive_lit m.(i).(j)) :: acc)) 1
+    done
 
   (* 1. One true per row
    * 2. One true per column *)
   let add_bijection s m =
     assert (Base.is_square_matrix m);
     add_fun s m;
-    Base.list_of_cols m
-    |> List.iter (fun c -> add_exactly s (List.rev_map positive_lit c) 1)
+    let cols_m = if Array.length m > 0 then Array.length m.(0) - 1 else -1 in
+    for j = 0 to cols_m do
+      add_exactly s
+        (Base.fold_n [] (Array.length m) (fun i acc ->
+             (positive_lit m.(i).(j)) :: acc)) 1
+    done
 
   let ban s vars =
     List.rev_map

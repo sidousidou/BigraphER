@@ -196,17 +196,6 @@ let remove_block_delims s =
 
 (* Funcitons on square matrices *)
 
-let list_of_rows m = Array.map Array.to_list m |> Array.to_list
-
-let list_of_cols m =
-  let rec scan acc j i =
-    if i < 0 then acc else scan (m.(i).(j) :: acc) j (i - 1)
-  and i = Array.length m - 1 in
-  let rec scan2 acc j =
-    if j < 0 then acc else scan2 (scan [] j i :: acc) (j - 1)
-  in
-  scan2 [] (if i < 0 then -1 else Array.length m.(0) - 1)
-
 let fold_matrix f m acc =
   Array.fold_left
     (fun (i, acc) r ->
