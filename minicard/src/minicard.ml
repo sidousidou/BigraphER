@@ -53,7 +53,7 @@ let add_at_most solver l k =
   match l with [] -> () | _ -> ignore (__add_at_most solver l k)
 
 let add_at_least solver l k =
-  add_at_most solver (List.map negate l) (List.length l - k)
+  add_at_most solver (List.rev_map negate l) (List.length l - k)
 
 let value_of solver v =
   try
