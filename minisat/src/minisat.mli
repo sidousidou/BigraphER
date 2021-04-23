@@ -34,6 +34,16 @@ val add_clause : t -> lit list -> unit
 (** Add a clause (i.e. disjunction of literals) to the set of problem
     constraints. A clause is represented as a list of literals. *)
 
+val add_clause_empty : t -> unit
+
+val add_clause_unit : t -> lit -> unit
+
+val add_clause_binary : t -> lit -> lit -> unit
+
+val add_clause_ternary : t -> lit -> lit -> lit -> unit
+
+val add_clause_quaternary : t -> lit -> lit -> lit -> lit -> unit
+
 val set_verbosity : t -> int -> unit
 (** Set verbosity level (0=silent, 1=some, 2=more). *)
 

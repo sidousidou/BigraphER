@@ -9,6 +9,8 @@ module Make (S : sig
 
   val add_clause : solver -> lit list -> unit
 
+  val add_clause_binary : solver -> lit -> lit -> unit
+
   val negate : lit -> lit
 
   val new_var : solver -> var
@@ -69,7 +71,7 @@ struct
             rest
     in
     List.iter
-      (fun (a, b) -> S.add_clause s [ S.negate a; S.negate b ])
+      (fun (a, b) -> S.add_clause_binary s (S.negate a) (S.negate b))
       (_at_most [] l)
 
   (* Return a list of groups of size at most g + 1. If [0;1;2] [3] then [0;1]
@@ -161,7 +163,8 @@ struct
           List.iter
             (fun (cmd_v, sub) ->
               aux sub
-              |> List.iter (fun l -> S.add_clause s [ cmd_v; S.negate l ]))
+              |> List.iter (fun l ->
+                     S.add_clause_binary s cmd_v (S.negate l)))
             cmd_g;
           Base.list_rev_split_left cmd_g
     in

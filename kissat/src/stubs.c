@@ -44,6 +44,61 @@ CAMLprim value ocaml_kissat_solve(value solver) {
   CAMLreturn(result);
 }
 
+void ocaml_kissat_add_clause_empty (value solver) {
+  CAMLparam1(solver);
+
+  kissat *_solver = solver_val(solver);
+  kissat_add(_solver, Int_val(0));
+
+  CAMLreturn0;
+}
+
+void ocaml_kissat_add_clause_unit (value solver, value l) {
+  CAMLparam2(solver, l);
+
+  kissat *_solver = solver_val(solver);
+  kissat_add(_solver, Int_val(l));
+  kissat_add(_solver, Int_val(0));
+
+  CAMLreturn0;
+}
+
+void ocaml_kissat_add_clause_binary (value solver, value l0, value l1) {
+  CAMLparam3(solver, l0, l1);
+
+  kissat *_solver = solver_val(solver);
+  kissat_add(_solver, Int_val(l0));
+  kissat_add(_solver, Int_val(l1));
+  kissat_add(_solver, Int_val(0));
+
+  CAMLreturn0;
+}
+
+void ocaml_kissat_add_clause_ternary (value solver, value l0, value l1, value l2) {
+  CAMLparam4(solver, l0, l1, l2);
+
+  kissat *_solver = solver_val(solver);
+  kissat_add(_solver, Int_val(l0));
+  kissat_add(_solver, Int_val(l1));
+  kissat_add(_solver, Int_val(l2));
+  kissat_add(_solver, Int_val(0));
+
+  CAMLreturn0;
+}
+
+void ocaml_kissat_add_clause_quaternary (value solver,value l0, value l1, value l2, value l3) {
+  CAMLparam5(solver, l0, l1, l2, l3);
+
+  kissat *_solver = solver_val(solver);
+  kissat_add(_solver, Int_val(l0));
+  kissat_add(_solver, Int_val(l1));
+  kissat_add(_solver, Int_val(l2));
+  kissat_add(_solver, Int_val(l3));
+  kissat_add(_solver, Int_val(0));
+
+  CAMLreturn0;
+}
+
 void ocaml_kissat_add_clause(value solver, value lits) {
   CAMLparam2(solver, lits);
 

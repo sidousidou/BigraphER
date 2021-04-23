@@ -41,6 +41,16 @@ module type E = sig
 
   val add_clause : t -> lit list -> unit
 
+  val add_clause_empty : t -> unit
+
+  val add_clause_unit : t -> lit -> unit
+
+  val add_clause_binary : t -> lit -> lit -> unit
+
+  val add_clause_ternary : t -> lit -> lit -> lit -> unit
+
+  val add_clause_quaternary : t -> lit -> lit -> lit -> lit -> unit
+
   val add_at_most : t -> lit list -> int -> unit
 
   val add_at_least : t -> lit list -> int -> unit
@@ -80,6 +90,16 @@ module MS_W : E = struct
 
   let add_clause = Minisat.add_clause
 
+  let add_clause_empty = Minisat.add_clause_empty
+
+  let add_clause_unit = Minisat.add_clause_unit
+
+  let add_clause_binary = Minisat.add_clause_binary
+
+  let add_clause_ternary = Minisat.add_clause_ternary
+
+  let add_clause_quaternary = Minisat.add_clause_quaternary
+
   let new_var = Minisat.new_var
 
   let simplify = Minisat.simplify
@@ -118,6 +138,8 @@ module MS_W : E = struct
     type solver = t
 
     let add_clause = add_clause
+
+    let add_clause_binary = add_clause_binary
 
     let negate = negate
 
@@ -159,11 +181,29 @@ module MC_W : E = struct
 
   type lit = Minicard.lit
 
-  let create = Minicard.create
+  let create () =
+    Minicard.(
+      let s = create () in
+      (* According to the authors of
+         https://sun.iwu.edu/~mliffito/publications/sat12_liffiton_minicard_poster.pdf,
+         disabling phase-saving corrects much of the poor variable ordering. *)
+      set_phase_saving s 0;
+      set_detect_clause s true;
+      s)
 
   let set_verbosity = Minicard.set_verbosity
 
   let add_clause = Minicard.add_clause
+
+  let add_clause_empty = Minicard.add_clause_empty
+
+  let add_clause_unit = Minicard.add_clause_unit
+
+  let add_clause_binary = Minicard.add_clause_binary
+
+  let add_clause_ternary = Minicard.add_clause_ternary
+
+  let add_clause_quaternary = Minicard.add_clause_quaternary
 
   let new_var = Minicard.new_var
 
@@ -237,6 +277,7 @@ module KS_W : E = struct
     | Old _ ->
         let _s = Kissat.create () in
         List.iter (fun c -> Kissat.add_clause _s c) s.clauses;
+        (* optimise with proper function *)
         s.solver <- Fresh _s;
         _s
     | Fresh _s -> _s
@@ -244,6 +285,24 @@ module KS_W : E = struct
   let add_clause s lits =
     Kissat.add_clause (re_init_solver s) lits;
     s.clauses <- lits :: s.clauses
+
+  let add_clause_empty s = Kissat.add_clause_empty (re_init_solver s)
+
+  let add_clause_unit s l =
+    Kissat.add_clause_unit (re_init_solver s) l;
+    s.clauses <- [ l ] :: s.clauses
+
+  let add_clause_binary s l0 l1 =
+    Kissat.add_clause_binary (re_init_solver s) l0 l1;
+    s.clauses <- [ l0; l1 ] :: s.clauses
+
+  let add_clause_ternary s l0 l1 l2 =
+    Kissat.add_clause_ternary (re_init_solver s) l0 l1 l2;
+    s.clauses <- [ l0; l1; l2 ] :: s.clauses
+
+  let add_clause_quaternary s l0 l1 l2 l3 =
+    Kissat.add_clause_quaternary (re_init_solver s) l0 l1 l2 l3;
+    s.clauses <- [ l0; l1; l2; l3 ] :: s.clauses
 
   let new_var s =
     s.vars <- s.vars + 1;
@@ -313,6 +372,8 @@ module KS_W : E = struct
 
     let add_clause = add_clause
 
+    let add_clause_binary = add_clause_binary
+
     let negate = negate
 
     let new_var = new_var
@@ -359,6 +420,16 @@ module MP_W : E = struct
 
   let add_clause = Maple.add_clause
 
+  let add_clause_empty = Maple.add_clause_empty
+
+  let add_clause_unit = Maple.add_clause_unit
+
+  let add_clause_binary = Maple.add_clause_binary
+
+  let add_clause_ternary = Maple.add_clause_ternary
+
+  let add_clause_quaternary = Maple.add_clause_quaternary
+
   let new_var = Maple.new_var
 
   let simplify = Maple.simplify
@@ -397,6 +468,8 @@ module MP_W : E = struct
     type solver = t
 
     let add_clause = add_clause
+
+    let add_clause_binary = add_clause_binary
 
     let negate = negate
 
@@ -477,66 +550,65 @@ module Make (ST : ST) (E : E) : S = struct
 
   (* Add x => (C && C && ...) *)
   let add_implication s x = List.iter (fun c -> add_clause s (negate x :: c))
+  (* can be optimised ifc'length is < 3*)
 
   (* Add x <=> (C && C && ...) *)
   let add_iff s x clauses =
-    List.iter (List.iter (fun l -> add_clause s [ x; negate l ])) clauses;
+    List.iter (List.iter (fun l -> add_clause_binary s x (negate l))) clauses;
     add_implication s x clauses
 
   (* Add (a && b) || (c && d) || ... via tseitin transformation *)
   (* Return auxiliary vars? *)
   let add_conj_pairs s = function
     | [] -> ()
-    | [ (x, y) ] -> add_clauses s [ [ x ]; [ y ] ]
+    | [ (x, y) ] ->
+        add_clause_unit s x;
+        add_clause_unit s y
     | [ (x, y); (w, z) ] ->
-        add_clauses s [ [ x; w ]; [ x; z ]; [ y; w ]; [ y; z ] ]
+        add_clause_binary s x w;
+        add_clause_binary s x z;
+        add_clause_binary s y w;
+        add_clause_binary s y z
     | [ (x, y); (w, z); (h, k) ] ->
         let a0, a1, a2 = (new_var s, new_var s, new_var s) in
-        add_clauses s
-          [
-            [ positive_lit a0; positive_lit a1; positive_lit a2 ];
-            [ negative_lit a0; x ];
-            [ negative_lit a0; y ];
-            [ negative_lit a1; w ];
-            [ negative_lit a1; z ];
-            [ negative_lit a2; h ];
-            [ negative_lit a2; k ];
-          ]
+        add_clause_ternary s (positive_lit a0) (positive_lit a1)
+          (positive_lit a2);
+        add_clause_binary s (negative_lit a0) x;
+        add_clause_binary s (negative_lit a0) y;
+        add_clause_binary s (negative_lit a1) w;
+        add_clause_binary s (negative_lit a1) z;
+        add_clause_binary s (negative_lit a2) h;
+        add_clause_binary s (negative_lit a2) k
     | [ (x, y); (w, z); (h, k); (u, v) ] ->
         let a0, a1, a2, a3 = (new_var s, new_var s, new_var s, new_var s) in
-        add_clauses s
-          [
-            [
-              positive_lit a0;
-              positive_lit a1;
-              positive_lit a2;
-              positive_lit a3;
-            ];
-            [ negative_lit a0; x ];
-            [ negative_lit a0; y ];
-            [ negative_lit a1; w ];
-            [ negative_lit a1; z ];
-            [ negative_lit a2; h ];
-            [ negative_lit a2; k ];
-            [ negative_lit a3; u ];
-            [ negative_lit a3; v ];
-          ]
+        add_clause_quaternary s (positive_lit a0) (positive_lit a1)
+          (positive_lit a2) (positive_lit a3);
+        add_clause_binary s (negative_lit a0) x;
+        add_clause_binary s (negative_lit a0) y;
+        add_clause_binary s (negative_lit a1) w;
+        add_clause_binary s (negative_lit a1) z;
+        add_clause_binary s (negative_lit a2) h;
+        add_clause_binary s (negative_lit a2) k;
+        add_clause_binary s (negative_lit a3) u;
+        add_clause_binary s (negative_lit a3) v
     | l ->
-        let a, clauses =
-          List.fold_left
-            (fun (acc_a, acc) (x, y) ->
-              let a = new_var s in
-              ( positive_lit a :: acc_a,
-                [ negative_lit a; x ] :: [ negative_lit a; y ] :: acc ))
-            ([], []) l
-        in
-        add_clauses s (a :: clauses)
+        List.fold_left
+          (fun acc (x, y) ->
+            let a = new_var s in
+            add_clause_binary s (negative_lit a) x;
+            add_clause_binary s (negative_lit a) y;
+            positive_lit a :: acc)
+          [] l
+        |> add_clause s
 
   (* One true per row *)
   let add_fun s m =
-    Array.iter (fun c ->
-        add_exactly s (Array.fold_left (fun acc v ->
-                           positive_lit v :: acc) [] c) 1) m
+    Array.iter
+      (fun c ->
+        add_exactly s
+          (Array.fold_left (fun acc v -> positive_lit v :: acc) [] c)
+          1)
+      m
 
   (* 1. One true per row
    * 2. At most one true per column *)
@@ -546,7 +618,8 @@ module Make (ST : ST) (E : E) : S = struct
     for j = 0 to cols_m do
       add_at_most s
         (Base.fold_n [] (Array.length m) (fun i acc ->
-                         (positive_lit m.(i).(j)) :: acc)) 1
+             positive_lit m.(i).(j) :: acc))
+        1
     done
 
   (* 1. One true per row
@@ -558,7 +631,8 @@ module Make (ST : ST) (E : E) : S = struct
     for j = 0 to cols_m do
       add_exactly s
         (Base.fold_n [] (Array.length m) (fun i acc ->
-             (positive_lit m.(i).(j)) :: acc)) 1
+             positive_lit m.(i).(j) :: acc))
+        1
     done
 
   let ban s vars =
@@ -654,8 +728,6 @@ module type M = sig
 
   val equal : Big.t -> Big.t -> bool
 
-  (* val equal_key : Big.t -> Big.t -> bool *)
-
   (* Memoised interface *)
   module Memo : sig
     val auto : Big.t -> Sparse.t -> (Iso.t * Iso.t) list
@@ -733,7 +805,7 @@ module Make_SAT (S : S) : M = struct
     IntSet.iter
       (fun j ->
         Array.iteri
-          (fun i _ -> S.add_clause solver [ S.negative_lit m.(i).(j) ])
+          (fun i _ -> S.add_clause_unit solver (S.negative_lit m.(i).(j)))
           m)
       unmatch_js
 
@@ -883,8 +955,9 @@ module Make_SAT (S : S) : M = struct
             (fun i ->
               IntSet.iter
                 (fun j ->
-                  S.add_clause s
-                    [ S.negative_lit m.(i).(i'); S.negative_lit m.(j).(j') ])
+                  S.add_clause_binary s
+                    (S.negative_lit m.(i).(i'))
+                    (S.negative_lit m.(j).(j')))
                 n_r')
             n_s')
         t.nn
@@ -904,8 +977,7 @@ module Make_SAT (S : S) : M = struct
           let prn_c = IntSet.inter v_p' (Sparse.prn t.nn c) in
           (* Construct a candidate set of sites *)
           let candidate =
-            Base.fold_n IntSet.empty p.s
-              (fun s acc ->
+            Base.fold_n IntSet.empty p.s (fun s acc ->
                 let prn_s = IntSet.apply iso (Sparse.prn p.ns s) in
                 if IntSet.subset prn_s prn_c then IntSet.union prn_s acc
                 else acc)
@@ -919,8 +991,7 @@ module Make_SAT (S : S) : M = struct
           let prn_s = IntSet.inter v_p' (Sparse.prn t.ns s) in
           (* Construct a candidate set of sites *)
           let candidate =
-            Base.fold_n IntSet.empty p.s
-              (fun s acc ->
+            Base.fold_n IntSet.empty p.s (fun s acc ->
                 let prn_s' = IntSet.apply iso (Sparse.prn p.ns s) in
                 if IntSet.subset prn_s' prn_s then IntSet.union prn_s' acc
                 else acc)
@@ -951,8 +1022,7 @@ module Make_SAT (S : S) : M = struct
           let chl_p = IntSet.inter v_p' (Sparse.chl t.nn x) in
           (* Construct a candidate set of regions *)
           let candidate =
-            Base.fold_n IntSet.empty p.r
-              (fun r acc ->
+            Base.fold_n IntSet.empty p.r (fun r acc ->
                 let chl_r = IntSet.apply iso (Sparse.chl p.rn r) in
                 if IntSet.subset chl_r chl_p then IntSet.union chl_r acc
                 else acc)
@@ -966,8 +1036,7 @@ module Make_SAT (S : S) : M = struct
           let chl_r = IntSet.inter v_p' (Sparse.chl t.rn x) in
           (* Construct a candidate set of regions *)
           let candidate =
-            Base.fold_n IntSet.empty p.r
-              (fun r acc ->
+            Base.fold_n IntSet.empty p.r (fun r acc ->
                 let chl_r' = IntSet.apply iso (Sparse.chl p.rn r) in
                 if IntSet.subset chl_r' chl_r then IntSet.union chl_r' acc
                 else acc)
@@ -1088,26 +1157,27 @@ module Make_SAT (S : S) : M = struct
 
     (* Two edges are compatible if they have the same number of ports with
        equal control. *)
-    let compat_edges ~e_t ~e_p ~n_t ~n_p = equal_types (e_p.p, n_p) (e_t.p, n_t)
+    let compat_edges ~e_t ~e_p ~n_t ~n_p =
+      equal_types (e_p.p, n_p) (e_t.p, n_t)
 
     (* Two link graphs are iso iff their edge types sequences are the same *)
     let iso_edges ~a ~b ~n_a ~n_b =
       let link_seq l n =
-        Link.Lg.fold (fun e acc ->
-            (e.i, e.o, ports_type e.p n) :: acc)
-          l []
+        Link.Lg.fold (fun e acc -> (e.i, e.o, ports_type e.p n) :: acc) l []
         |> List.fast_sort (fun (i, o, typ) (i', o', typ') ->
                Base.pair_compare
                  (Base.pair_compare Face.compare Face.compare)
                  compare
-                 ((i, o), typ) ((i', o'), typ')
-             ) in
-      Base.list_equal (fun (i, o, typ) (i', o', typ') ->
-          Face.equal i i'
-          && Face.equal o o'
-          && Base.list_equal (fun (c, n) (c', n') -> Ctrl.equal c c' && n = n') typ typ')
+                 ((i, o), typ)
+                 ((i', o'), typ'))
+      in
+      Base.list_equal
+        (fun (i, o, typ) (i', o', typ') ->
+          Face.equal i i' && Face.equal o o'
+          && Base.list_equal
+               (fun (c, n) (c', n') -> Ctrl.equal c c' && n = n')
+               typ typ')
         (link_seq a n_a) (link_seq b n_b)
-
 
     (* Closed edges in p are matched to closed edges in t. Controls are
        checked to exclude incompatible pairs. Return blocking pairs and
@@ -1143,8 +1213,9 @@ module Make_SAT (S : S) : M = struct
         (List.rev_map (fun (i, j) -> S.positive_lit w.(i).(j)))
         clauses
       |> S.add_clauses s;
-      List.rev_map (fun (i, j) -> [ S.negative_lit w.(i).(j) ]) b_pairs
-      |> S.add_clauses s;
+      List.iter
+        (fun (i, j) -> S.add_clause_unit s (S.negative_lit w.(i).(j)))
+        b_pairs;
       add_c11 b_cols s w;
       clauses
 
@@ -1311,7 +1382,7 @@ module Make_SAT (S : S) : M = struct
           else (
             (* Blockig pairs *)
             IntSet.iter
-              (fun j -> S.add_clause solver [ S.negative_lit w.(i).(j) ])
+              (fun j -> S.add_clause_unit solver (S.negative_lit w.(i).(j)))
               (IntSet.diff c_s compat_t);
             (* Generate possible node matches for every edge assignment. *)
             List.iter
@@ -1326,6 +1397,7 @@ module Make_SAT (S : S) : M = struct
       |> ignore;
       compat_sub open_p non_empty_t f_e n_t n_p
       |> List.rev_map (List.rev_map (fun (i, j) -> S.negative_lit w.(i).(j)))
+      (* add_unit -- not sure *)
       |> S.add_clauses solver;
       (w, iso_p, iso_open)
 
@@ -1346,7 +1418,7 @@ module Make_SAT (S : S) : M = struct
              let vars_w = vars_of_col j w in
              let vars_w' = vars_of_col (convert_j j) w' in
              Base.cartesian vars_w vars_w'
-             |> List.iter (fun (j, j') -> S.add_clause solver [ j; j' ]))
+             |> List.iter (fun (j, j') -> S.add_clause_binary solver j j'))
 
     let edg_iso a b n_a n_b =
       Face.equal a.i b.i && Face.equal a.o b.o
@@ -1404,11 +1476,11 @@ module Make_SAT (S : S) : M = struct
       in
       List.rev_map
         (List.rev_map (fun (i, j) -> S.positive_lit v_l.(i).(j)))
+        (* add_unit -- not sure *)
         clauses
       |> S.add_clauses solver;
       block_rows b v_l |> S.add_clauses solver;
       clauses
-
   end
 
   let ban_solution solver vars =
@@ -1759,8 +1831,7 @@ module Make_SAT (S : S) : M = struct
         |> L.add_c8 ~target:b.l ~pattern:a.l ~n_t:b.n ~n_p:a.n solver v_n v_l;
         S.simplify solver;
         match S.solve solver with UNSAT -> false | SAT -> true
-      with
-      | NOT_TOTAL | NO_MATCH -> false)
+      with NOT_TOTAL | NO_MATCH -> false)
 
   let equal a b =
     Big.(
@@ -1769,9 +1840,12 @@ module Make_SAT (S : S) : M = struct
       && Link.Lg.cardinal a.l = Link.Lg.cardinal b.l
       && inter_equal (inner a) (inner b)
       && inter_equal (outer a) (outer b)
-      && Base.list_equal Base.int_equal (Place.deg_regions a.p) (Place.deg_regions b.p)
-      && Base.list_equal Base.int_equal (Place.deg_sites a.p) (Place.deg_sites b.p)
-      && Base.list_equal (fun (a, b) (a', b') ->
+      && Base.list_equal Base.int_equal (Place.deg_regions a.p)
+           (Place.deg_regions b.p)
+      && Base.list_equal Base.int_equal (Place.deg_sites a.p)
+           (Place.deg_sites b.p)
+      && Base.list_equal
+           (fun (a, b) (a', b') ->
              Base.int_equal a a' && Base.int_equal b b')
            (Place.deg_seq a.p) (Place.deg_seq b.p)
       && Sparse.equal a.p.Place.rs b.p.Place.rs
@@ -1782,5 +1856,4 @@ module Make_SAT (S : S) : M = struct
       if Nodes.size b.n = 0 then
         Place.equal_placing a.p b.p && Link.Lg.equal a.l b.l
       else equal_SAT a b)
-
 end

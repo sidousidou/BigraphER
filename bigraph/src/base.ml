@@ -167,11 +167,13 @@ end
 
 let safe = function Some v -> v | None -> assert false
 
-let pair_compare fa fb ((a0, b0):('a * 'b)) ((a1, b1):('a * 'b)) =
-  match fa a0 a1 with 0 -> fb b0 b1 | x -> x [@@inline]
+let pair_compare fa fb ((a0, b0) : 'a * 'b) ((a1, b1) : 'a * 'b) =
+  match fa a0 a1 with 0 -> fb b0 b1 | x -> x
+  [@@inline]
 
 let ints_compare (i0, p0) (i1, p1) =
-  match i0 - i1 with 0 -> p0 - p1 | x -> x [@@inline]
+  match i0 - i1 with 0 -> p0 - p1 | x -> x
+  [@@inline]
 
 let string_of_ints a b = "(" ^ string_of_int a ^ "," ^ string_of_int b ^ ")"
 
@@ -248,5 +250,4 @@ let list_rev_split_left l = List.fold_left (fun res (a, _) -> a :: res) [] l
 (* Fold over n-1,..,0 *)
 let rec fold_n acc n f =
   assert (n >= 0);
-  if n >= 1 then fold_n (f (n-1) acc) (n-1) f
-  else acc
+  if n >= 1 then fold_n (f (n - 1) acc) (n - 1) f else acc

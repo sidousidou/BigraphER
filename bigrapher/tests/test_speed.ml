@@ -3,7 +3,12 @@ open Printf
 (* bin is assumed to print out a float *)
 let running_time ~bin ~args ~f =
   let chin = Unix.open_process_in (bin ^ String.concat " " args) in
-  let t = f chin in
+  let t =
+    try f chin
+    with e ->
+      failwith
+        (Printexc.to_string e ^ "\ncommand: " ^ bin ^ String.concat " " args)
+  in
   ignore (Unix.close_process_in chin);
   t
 
@@ -17,14 +22,14 @@ let avg n_runs ~bin ~args ~f =
 let benchmark =
   [
     ([], "../examples/rts_cts.big");
-    ([ "-M 100" ], "../examples/hospital.big");
+    ([ "-M 200" ], "../examples/hospital.big");
     ([], "../examples/conditional_turn_taking.big");
     ([ "-M 500" ], "../examples/savannah-general.big");
   ]
 
 let () =
   assert (Array.length Sys.argv = 2);
-  let n = 5
+  let n = 10
   and solver =
     match Sys.getenv_opt "BIGSOLVER" with
     | Some "MCARD" -> "MiniCARD"

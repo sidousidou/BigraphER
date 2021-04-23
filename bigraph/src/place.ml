@@ -253,13 +253,11 @@ let decomp ~target:t ~pattern:p iso =
   in
   let v_c = IntSet.diff (IntSet.of_int t.n) (IntSet.union v_d v_p') in
   (* fix numbering of nodes in c and d : t -> c and t -> d *)
-  let iso_v_c = IntSet.fix v_c
-  and iso_v_d = IntSet.fix v_d in
+  let iso_v_c = IntSet.fix v_c and iso_v_d = IntSet.fix v_d in
   (************************** Identity **************************)
   (* c regions to d nodes *)
   let edg_c_rs0, edg_d_rn0, s0 =
-    Base.fold_n ([], [], 0) t.r
-      (fun r acc ->
+    Base.fold_n ([], [], 0) t.r (fun r acc ->
         IntSet.fold
           (fun c (acc_c, acc_d, j) ->
             if IntSet.mem c v_d then
@@ -271,8 +269,7 @@ let decomp ~target:t ~pattern:p iso =
   in
   (* c regions to d sites *)
   let edg_c_rs1, edg_d_rs0, s1 =
-    Base.fold_n ([], [], 0) t.r
-      (fun r acc ->
+    Base.fold_n ([], [], 0) t.r (fun r acc ->
         IntSet.fold
           (fun c (acc_c, acc_d, s) ->
             ((r, s + p.r + s0) :: acc_c, (s + p.s + s0, c) :: acc_d, s + 1))
@@ -417,14 +414,12 @@ let get_dot p =
   in
   (* Region shapes *)
   let region_shapes =
-    Base.fold_n "" p.r
-      (fun i buff ->
+    Base.fold_n "" p.r (fun i buff ->
         sprintf "%sr%d [ label=\"%d\", style=\"dashed\", %s ];\n" buff i i
           attr)
   (* Site shapes *)
   and site_shapes =
-    Base.fold_n "" p.s
-      (fun i buff ->
+    Base.fold_n "" p.s (fun i buff ->
         sprintf
           "%ss%d [ label=\"%d\", style=\"filled,dashed\", \
            fillcolor=\"gray\", %s ];\n"
@@ -455,20 +450,21 @@ let size p =
   + Sparse.entries p.ns
 
 let deg_regions p =
-  Base.fold_n [] p.r
-    (fun r acc -> IntSet.cardinal (Sparse.chl p.rn r) :: acc)
+  Base.fold_n [] p.r (fun r acc ->
+      IntSet.cardinal (Sparse.chl p.rn r) :: acc)
 
 let deg_sites p =
-  Base.fold_n [] p.s
-    (fun s acc -> IntSet.cardinal (Sparse.prn p.ns s) :: acc)
+  Base.fold_n [] p.s (fun s acc ->
+      IntSet.cardinal (Sparse.prn p.ns s) :: acc)
 
 (* Compute the degree sequence (indeg, outdeg) of the nodes in a place graph *)
 let deg_seq p =
-  Base.fold_n [] p.n
-    (fun n acc -> ((IntSet.cardinal (Sparse.prn p.nn n))
-                   + (IntSet.cardinal (Sparse.prn p.rn n)),
-                   (IntSet.cardinal (Sparse.chl p.nn n))
-                   + (IntSet.cardinal (Sparse.chl p.ns n))) :: acc)
+  Base.fold_n [] p.n (fun n acc ->
+      ( IntSet.cardinal (Sparse.prn p.nn n)
+        + IntSet.cardinal (Sparse.prn p.rn n),
+        IntSet.cardinal (Sparse.chl p.nn n)
+        + IntSet.cardinal (Sparse.chl p.ns n) )
+      :: acc)
   |> List.fast_sort Base.ints_compare
 
 (* Number of connected components -- make DAG undirected (symmetric) first! *)

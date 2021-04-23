@@ -21,6 +21,11 @@ CAMLprim value ocaml_maple_new_var(value solver);
 CAMLprim value ocaml_maple_pos_lit(value v);
 CAMLprim value ocaml_maple_neg_lit(value v);
 CAMLprim value ocaml_maple_negate(value v);
+CAMLprim value ocaml_maple_add_caluse_empty (value solver);
+CAMLprim value ocaml_maple_add_clause_unit (value solver, value l);
+CAMLprim value ocaml_maple_add_clause_binary (value solver, value l0, value l1);
+CAMLprim value ocaml_maple_add_clasue_ternary (value solver, value l0, value l1, value l2);
+CAMLprim value ocaml_maple_add_clause_quaternary (value solver,value l0, value l1, value l2, value l3);
 CAMLprim value ocaml_maple_add_clause(value solver, value c);
 CAMLprim value ocaml_maple_simplify(value solver);
 CAMLprim value ocaml_maple_solve(value solver);
@@ -120,6 +125,66 @@ CAMLprim value ocaml_maple_negate(value l) {
 
   Lit lit = toLit(Int_val(l));
   result = Val_int(toInt(~lit));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_maple_add_caluse_empty (value solver) {
+  CAMLparam1(solver);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  result = Val_bool(_solver->addEmptyClause());
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_maple_add_clause_unit (value solver, value l) {
+  CAMLparam2(solver, l);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l));
+  result = Val_bool(_solver->addClause(p));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_maple_add_clause_binary (value solver, value l0, value l1) {
+  CAMLparam3(solver, l0, l1);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l0));
+  Lit q = toLit(Int_val(l1));
+  result = Val_bool(_solver->addClause(p, q));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_maple_add_clasue_ternary (value solver, value l0, value l1, value l2) {
+  CAMLparam4(solver, l0, l1, l2);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l0));
+  Lit q = toLit(Int_val(l1));
+  Lit r = toLit(Int_val(l2));
+  result = Val_bool(_solver->addClause(p, q, r));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_maple_add_clause_quaternary (value solver,value l0, value l1, value l2, value l3) {
+  CAMLparam5(solver, l0, l1, l2, l3);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l0));
+  Lit q = toLit(Int_val(l1));
+  Lit r = toLit(Int_val(l2));
+  Lit t = toLit(Int_val(l3));
+  result = Val_bool(_solver->addClause(p, q, r, t));
 
   CAMLreturn(result);
 }

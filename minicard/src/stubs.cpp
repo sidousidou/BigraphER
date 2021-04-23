@@ -20,10 +20,17 @@ extern "C"
 {
   CAMLprim value ocaml_minicard_new(value unit);
   void ocaml_minicard_set_verbosity(value solver, value verb);
+  void ocaml_minicard_set_phase_saving(value solver, value x);
+  void ocaml_minicard_set_detect_clause(value solver, value b);
   CAMLprim value ocaml_minicard_new_var(value solver);
   CAMLprim value ocaml_minicard_pos_lit(value v);
   CAMLprim value ocaml_minicard_neg_lit(value v);
   CAMLprim value ocaml_minicard_negate(value v);
+  CAMLprim value ocaml_minicard_add_caluse_empty (value solver);
+  CAMLprim value ocaml_minicard_add_clause_unit (value solver, value l);
+  CAMLprim value ocaml_minicard_add_clause_binary (value solver, value l0, value l1);
+  CAMLprim value ocaml_minicard_add_clasue_ternary (value solver, value l0, value l1, value l2);
+  CAMLprim value ocaml_minicard_add_clause_quaternary (value solver,value l0, value l1, value l2, value l3);
   CAMLprim value ocaml_minicard_add_clause(value solver, value c);
   CAMLprim value ocaml_minicard_add_at_most(value solver, value c, value k);
   CAMLprim value ocaml_minicard_simplify(value solver);
@@ -91,23 +98,41 @@ void ocaml_minicard_set_verbosity(value solver, value verb) {
   CAMLreturn0;
 }
 
+void ocaml_minicard_set_phase_saving(value solver, value x) {
+  CAMLparam2 (solver,x);
+
+  Solver* _solver = solver_val(solver);
+  _solver->phase_saving = Int_val(x);
+
+  CAMLreturn0;
+}
+
+void ocaml_minicard_set_detect_clause(value solver, value b) {
+  CAMLparam2 (solver,b);
+
+  Solver* _solver = solver_val(solver);
+  _solver->detect_clause = Bool_val(b);
+
+  CAMLreturn0;
+}
+
 CAMLprim value ocaml_minicard_new_var(value solver) {
   CAMLparam1(solver);
   CAMLlocal1(result);
-  
+
   Solver* _solver = solver_val(solver);
   result = Val_int(_solver->newVar());
-  
+
   CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minicard_pos_lit(value v) {
   CAMLparam1(v);
   CAMLlocal1(result);
-  
+
   Lit lit = mkLit(Int_val(v), false);
   result = Val_int(toInt(lit));
-  
+
   CAMLreturn(result);
 }
 
@@ -117,52 +142,111 @@ CAMLprim value ocaml_minicard_neg_lit(value v) {
 
   Lit lit = mkLit(Int_val(v), true);
   result = Val_int(toInt(lit));
-  
+
   CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minicard_negate(value l) {
   CAMLparam1(l);
   CAMLlocal1(result);
-  
+
   Lit lit = toLit(Int_val(l));
   result = Val_int(toInt(~lit));
-  
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_minicard_add_caluse_empty (value solver) {
+  CAMLparam1(solver);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  result = Val_bool(_solver->addEmptyClause());
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_minicard_add_clause_unit (value solver, value l) {
+  CAMLparam2(solver, l);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l));
+  result = Val_bool(_solver->addClause(p));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_minicard_add_clause_binary (value solver, value l0, value l1) {
+  CAMLparam3(solver, l0, l1);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l0));
+  Lit q = toLit(Int_val(l1));
+  result = Val_bool(_solver->addClause(p, q));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_minicard_add_clasue_ternary (value solver, value l0, value l1, value l2) {
+  CAMLparam4(solver, l0, l1, l2);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l0));
+  Lit q = toLit(Int_val(l1));
+  Lit r = toLit(Int_val(l2));
+  result = Val_bool(_solver->addClause(p, q, r));
+
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_minicard_add_clause_quaternary (value solver,value l0, value l1, value l2, value l3) {
+  CAMLparam5(solver, l0, l1, l2, l3);
+  CAMLlocal1(result);
+
+  Solver* _solver = solver_val(solver);
+  Lit p = toLit(Int_val(l0));
+  Lit q = toLit(Int_val(l1));
+  Lit r = toLit(Int_val(l2));
+  Lit t = toLit(Int_val(l3));
+  result = Val_bool(_solver->addClause(p, q, r, t));
+
   CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minicard_add_clause(value solver, value c) {
   CAMLparam2(solver, c);
   CAMLlocal1(result);
-  
+
   Solver* _solver = solver_val(solver);
   vec<Lit> clause;
   convert_literals(c, clause);
   result = Val_bool(_solver->addClause_(clause));
-  
+
   CAMLreturn(result);
 }
 
 CAMLprim value ocaml_minicard_add_at_most(value solver, value c, value k) {
   CAMLparam3(solver, c, k);
   CAMLlocal1(result);
-  
+
   Solver* _solver = solver_val(solver);
   vec<Lit> clause;
   convert_literals(c, clause);
   result = Val_bool(_solver->addAtMost_(clause,Int_val(k)));
-  
+
   CAMLreturn(result);
 }
-
 
 CAMLprim value ocaml_minicard_simplify(value solver) {
   CAMLparam1 (solver);
   CAMLlocal1(result);
-  
+
   Solver* _solver = solver_val(solver);
   result = Val_bool(_solver->simplify());
-  
+
   CAMLreturn (result);
 }
 
@@ -221,7 +305,7 @@ CAMLprim value ocaml_minicard_n_clauses(value solver) {
 
   Solver* _solver = solver_val(solver);
   result = Val_int(_solver->nClauses());
-  
+
   CAMLreturn(result);
 }
 

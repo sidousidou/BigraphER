@@ -8,7 +8,7 @@ type react = {
   rct : Big.t;
       (** Reactum, {e i.e.} the right-hand side of a reaction rule. *)
   eta : Fun.t option;  (** Instantiation map. *)
-  rate : float;  (** Reaction rate. *)
+  rate : float;  (** Reaction rate. It must be a value greather than 0. *)
   conds : AppCond.t list;  (** Application conditions. *)
 }
 (** The type of stochastic bigraphical reaction rules.*)

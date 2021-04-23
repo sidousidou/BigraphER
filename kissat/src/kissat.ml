@@ -14,6 +14,19 @@ external __delete : t -> unit = "ocaml_kissat_delete"
 
 external __solve : t -> int = "ocaml_kissat_solve"
 
+external add_clause_empty : t -> unit = "ocaml_kissat_add_clause_empty"
+
+external add_clause_unit : t -> lit -> unit = "ocaml_kissat_add_clause_unit"
+
+external add_clause_binary : t -> lit -> lit -> unit
+  = "ocaml_kissat_add_clause_binary"
+
+external add_clause_ternary : t -> lit -> lit -> lit -> unit
+  = "ocaml_kissat_add_clause_ternary"
+
+external add_clause_quaternary : t -> lit -> lit -> lit -> lit -> unit
+  = "ocaml_kissat_add_clause_quaternary"
+
 external add_clause : t -> lit list -> unit = "ocaml_kissat_add_clause"
 
 external __value : t -> var -> int = "ocaml_kissat_value"

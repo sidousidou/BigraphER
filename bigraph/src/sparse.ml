@@ -96,7 +96,7 @@ let col n =
 
 let diag n =
   assert (n >= 0);
-  Base.fold_n  (make n n) n (fun i acc -> add i i acc)
+  Base.fold_n (make n n) n (fun i acc -> add i i acc)
 
 let tens a b =
   {

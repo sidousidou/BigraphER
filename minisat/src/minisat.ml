@@ -22,6 +22,20 @@ external neg_lit : var -> lit = "ocaml_minisat_neg_lit"
 
 external negate : lit -> lit = "ocaml_minisat_negate"
 
+external __add_clause_empty : t -> bool = "ocaml_minisat_add_caluse_empty"
+
+external __add_clause_unit : t -> lit -> bool
+  = "ocaml_minisat_add_clause_unit"
+
+external __add_clause_binary : t -> lit -> lit -> bool
+  = "ocaml_minisat_add_clause_binary"
+
+external __add_clause_ternary : t -> lit -> lit -> lit -> bool
+  = "ocaml_minisat_add_clasue_ternary"
+
+external __add_clause_quaternary : t -> lit -> lit -> lit -> lit -> bool
+  = "ocaml_minisat_add_clause_quaternary"
+
 external __add_clause : t -> lit list -> bool = "ocaml_minisat_add_clause"
 
 external __simplify : t -> bool = "ocaml_minisat_simplify"
@@ -41,8 +55,26 @@ external __cpu_time : unit -> float = "ocaml_minisat_cpu_time"
 external __all_solutions_true : t -> var list -> var list list
   = "ocaml_minisat_solve_all_true"
 
-let add_clause solver l =
-  match l with [] -> () | _ -> ignore (__add_clause solver l)
+let add_clause_empty solver = ignore (__add_clause_empty solver)
+
+let add_clause_unit solver l = ignore (__add_clause_unit solver l)
+
+let add_clause_binary solver l0 l1 =
+  ignore (__add_clause_binary solver l0 l1)
+
+let add_clause_ternary solver l0 l1 l2 =
+  ignore (__add_clause_ternary solver l0 l1 l2)
+
+let add_clause_quaternary solver l0 l1 l2 l3 =
+  ignore (__add_clause_quaternary solver l0 l1 l2 l3)
+
+let add_clause solver = function
+  | [] -> ignore (__add_clause_empty solver)
+  | [ l ] -> add_clause_unit solver l
+  | [ l0; l1 ] -> add_clause_binary solver l0 l1
+  | [ l0; l1; l2 ] -> add_clause_ternary solver l0 l1 l2
+  | [ l0; l1; l2; l3 ] -> add_clause_quaternary solver l0 l1 l2 l3
+  | c -> ignore (__add_clause solver c)
 
 let simplify solver = ignore (__simplify solver)
 

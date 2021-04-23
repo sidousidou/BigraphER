@@ -27,6 +27,16 @@ val value_of : t -> var -> value
 
 val var_of_int : int -> var
 
+val add_clause_empty : t -> unit
+
+val add_clause_unit : t -> lit -> unit
+
+val add_clause_binary : t -> lit -> lit -> unit
+
+val add_clause_ternary : t -> lit -> lit -> lit -> unit
+
+val add_clause_quaternary : t -> lit -> lit -> lit -> lit -> unit
+
 val add_clause : t -> lit list -> unit
 
 val string_of_value : value -> string

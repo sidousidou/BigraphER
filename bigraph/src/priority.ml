@@ -154,9 +154,6 @@ struct
       _scan_sim b 0 ~const_pri:priorities priorities
   end
 
-  (* let is_enabled b =
-   *   List.exists (fun r -> S.occurs ~target:b ~pattern:(R.lhs r)) *)
-
   (* Stop when there are no more classes or when a non reducible class is
      enabled *)
   let rewrite b priorities =

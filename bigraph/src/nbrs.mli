@@ -11,7 +11,7 @@ type react = {
   rct : Big.t;
       (** Reactum, {e i.e.} the right-hand side of a reaction rule. *)
   eta : Fun.t option;  (** Instantiation map. *)
-  w : float;  (** Weight. *)
+  w : float;  (** Weight. It must be a non-negative value. *)
   conds : AppCond.t list;  (** Application conditions. *)
 }
 (** The type of action bigraphical reaction rules.*)

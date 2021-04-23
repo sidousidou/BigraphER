@@ -300,10 +300,10 @@ module Make (S : Solver.M) (AC : AppCond.C) (R : R with type ac = AppCond.t) :
   let fix b = Memo.fix b (Place.trans b.p)
 
   let step b rules =
-    List.map (fun r -> (r, S.auto (R.lhs r))) rules
+    List.rev_map (fun r -> (r, S.auto (R.lhs r))) rules
     |> Memo.step b (Place.trans b.p)
 
   let random_step b rules =
-    List.map (fun r -> (r, S.auto (R.lhs r))) rules
+    List.rev_map (fun r -> (r, S.auto (R.lhs r))) rules
     |> Memo.random_step b (Place.trans b.p)
 end
